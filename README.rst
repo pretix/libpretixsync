@@ -1,9 +1,8 @@
 libpretixsync
 =============
 
-This is a shared library between [pretixdroid](https://github.com/pretix/pretixdroid) and
-[pretixdesk](https://github.com/pretix/pretixdesk). It handles all core business logic of the
-two applications and the synchronization primitives with the pretix server.
+This is a shared library between `pretixdroid`_ and `pretixdesk`_. It handles all core
+business logic of the two applications and the synchronization primitives with the pretix server.
 
 Release cycle
 -------------
@@ -19,7 +18,7 @@ Contributing
 If you like to contribute to this project, you are very welcome to do so. If you have any
 questions in the process, please do not hesitate to ask us.
 
-Please note that we have a [Code of Conduct](https://docs.pretix.eu/en/latest/development/contribution/codeofconduct.html)
+Please note that we have a `Code of Conduct`_
 in place that applies to all project contributions, including issues, pull requests, etc.
 
 License
@@ -32,4 +31,9 @@ AUTHORS file for a list of all the awesome folks who contributed to this project
 
 This project is 100 percent free and open source software. If you are interested in
 commercial support, hosting services or supporting this project financially, please 
-go to [pretix.eu](https://pretix.eu) or contact Raphael directly.
+go to `pretix.eu`_ or contact Raphael directly.
+
+.. _pretixdroid: https://github.com/pretix/pretixdroid
+.. _pretixdesk: https://github.com/pretix/pretixdesk
+.. _pretix.eu: https://pretix.eu
+.. _Code of Conduct: https://docs.pretix.eu/en/latest/development/contribution/codeofconduct.html
