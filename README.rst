@@ -5,6 +5,23 @@ This is a shared library between [pretixdroid](https://github.com/pretix/pretixd
 [pretixdesk](https://github.com/pretix/pretixdesk). It handles all core business logic of the
 two applications and the synchronization primitives with the pretix server.
 
+Release cycle
+-------------
+
+As we currently do not expect any third parties to use this library, we do not do formal releases
+so far and do not upload the library to Maven repositories, but use it as a git submodule in our
+other software to ease development. If you are interested in using this library for a new project,
+please get in touch with us! :) We'll work something out.
+
+Contributing
+------------
+
+If you like to contribute to this project, you are very welcome to do so. If you have any
+questions in the process, please do not hesitate to ask us.
+
+Please note that we have a [Code of Conduct](https://docs.pretix.eu/en/latest/development/contribution/codeofconduct.html)
+in place that applies to all project contributions, including issues, pull requests, etc.
+
 License
 -------
 The code in this repository is published under the terms of the Apache License. 
