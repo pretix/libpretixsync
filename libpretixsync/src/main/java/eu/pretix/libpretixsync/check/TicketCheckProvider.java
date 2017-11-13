@@ -100,6 +100,17 @@ public interface TicketCheckProvider {
         public SearchResult() {
         }
 
+        public SearchResult(SearchResult r) {
+            secret = r.secret;
+            ticket = r.ticket;
+            variation = r.variation;
+            attendee_name = r.attendee_name;
+            order_code = r.order_code;
+            paid = r.paid;
+            redeemed = r.redeemed;
+            require_attention = r.require_attention;
+        }
+
         public String getSecret() {
             return secret;
         }
