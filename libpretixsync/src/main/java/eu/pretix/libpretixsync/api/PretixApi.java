@@ -137,10 +137,13 @@ public class PretixApi {
         sentry.addHttpBreadcrumb(safe_url, request.method(), response.code());
 
         if (response.code() >= 500) {
+            response.close();
             throw new ApiException("Server error.");
         } else if (response.code() == 404) {
+            response.close();
             throw new ApiException("Invalid configuration, please reset and reconfigure.");
         } else if (response.code() == 403) {
+            response.close();
             throw new ApiException("Permission error, please try again or reset and reconfigure.");
         }
         try {
