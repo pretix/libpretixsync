@@ -28,7 +28,7 @@ public class PretixApi {
      * See https://docs.pretix.eu/en/latest/plugins/pretixdroid.html for API documentation
      */
 
-    public static final int SUPPORTED_API_VERSION = 3;
+    public static final int SUPPORTED_API_VERSION = 4;
     public static final MediaType JSON
             = MediaType.parse("application/json; charset=utf-8");
 

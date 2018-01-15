@@ -24,5 +24,6 @@ public class AbstractQuestion {
     List<QuestionOption> options;
 
     @ManyToMany
+    @JunctionTable
     List<Item> items;
 }

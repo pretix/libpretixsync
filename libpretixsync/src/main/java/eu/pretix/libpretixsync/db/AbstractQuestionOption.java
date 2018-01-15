@@ -1,9 +1,6 @@
 package eu.pretix.libpretixsync.db;
 
-import io.requery.Entity;
-import io.requery.Generated;
-import io.requery.Key;
-import io.requery.ManyToOne;
+import io.requery.*;
 
 @Entity(cacheable = false)
 public class AbstractQuestionOption {
@@ -16,5 +13,6 @@ public class AbstractQuestionOption {
     @ManyToOne
     public Question question;
 
+    @Column(name = "\"value\"")
     public String value;
 }
