@@ -3,6 +3,7 @@ package eu.pretix.libpretixsync.sync;
 import eu.pretix.libpretixsync.SentryInterface;
 import eu.pretix.libpretixsync.api.ApiException;
 import eu.pretix.libpretixsync.api.PretixApi;
+import eu.pretix.libpretixsync.check.TicketCheckProvider;
 import eu.pretix.libpretixsync.config.ConfigStore;
 import eu.pretix.libpretixsync.db.QueuedCheckIn;
 import eu.pretix.libpretixsync.db.Ticket;
@@ -69,7 +70,7 @@ public class SyncManager {
 
         try {
             for (QueuedCheckIn qci : queued) {
-                JSONObject response = api.redeem(qci.getSecret(), qci.getDatetime(), true, qci.getNonce());
+                JSONObject response = api.redeem(qci.getSecret(), qci.getDatetime(), true, qci.getNonce(), new ArrayList<TicketCheckProvider.Answer>());
                 String status = response.getString("status");
                 if ("ok".equals(status)) {
                     dataStore.delete(qci);

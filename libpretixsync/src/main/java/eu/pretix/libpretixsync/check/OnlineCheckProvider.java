@@ -1,6 +1,9 @@
 package eu.pretix.libpretixsync.check;
 
 
+import eu.pretix.libpretixsync.db.Question;
+import eu.pretix.libpretixsync.db.QuestionOption;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -40,14 +43,39 @@ public class OnlineCheckProvider implements TicketCheckProvider {
     }
 
     @Override
-    public CheckResult check(String ticketid) {
+    public CheckResult check(String ticketid, List<Answer> answers) {
         sentry.addBreadcrumb("provider.check", "started");
         try {
             CheckResult res = new CheckResult(CheckResult.Type.ERROR);
-            JSONObject response = api.redeem(ticketid);
+            JSONObject response = api.redeem(ticketid, answers);
             String status = response.getString("status");
             if ("ok".equals(status)) {
                 res.setType(CheckResult.Type.VALID);
+            } else if ("incomplete".equals(status)) {
+                res.setType(CheckResult.Type.ANSWERS_REQUIRED);
+                List<RequiredAnswer> required_answers = new ArrayList<>();
+                for (int i = 0; i < response.getJSONArray("questions").length(); i++) {
+                    JSONObject q = response.getJSONArray("questions").getJSONObject(i);
+                    Question question = new Question();
+                    question.setServer_id(q.getLong("id"));
+                    question.setType(QuestionType.fromString(q.getString("type")));
+                    question.setQuestion(q.getString("question"));
+                    question.setRequired(q.optBoolean("required", true));
+                    question.setPosition(q.optLong("position", 0));
+
+                    JSONArray options = q.getJSONArray("options");
+                    for (int j = 0; j < options.length(); j++) {
+                        JSONObject opt = options.getJSONObject(j);
+                        QuestionOption qopt = new QuestionOption();
+                        qopt.setQuestion(question);
+                        qopt.setServer_id(opt.getLong("id"));
+                        qopt.setValue(opt.getString("answer"));
+                        question.getOptions().add(qopt);
+                    }
+
+                    required_answers.add(new RequiredAnswer(question, ""));
+                }
+                res.setRequiredAnswers(required_answers);
             } else {
                 String reason = response.optString("reason");
                 if ("already_redeemed".equals(reason)) {
@@ -82,6 +110,11 @@ public class OnlineCheckProvider implements TicketCheckProvider {
                 cr.setTicket(e.getCause().getMessage());
             return cr;
         }
+    }
+
+    @Override
+    public CheckResult check(String ticketid) {
+        return check(ticketid, new ArrayList<Answer>());
     }
 
     @Override

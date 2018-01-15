@@ -4,12 +4,53 @@ package eu.pretix.libpretixsync.check;
 import java.util.List;
 
 import eu.pretix.libpretixsync.SentryInterface;
+import eu.pretix.libpretixsync.db.Question;
 
 public interface TicketCheckProvider {
 
+    class RequiredAnswer {
+        private Question question;
+        private String current_value;
+
+        public RequiredAnswer(Question question, String current_value) {
+            this.question = question;
+            this.current_value = current_value;
+        }
+
+        public Question getQuestion() {
+            return question;
+        }
+
+        public String getCurrentValue() {
+            return current_value;
+        }
+    }
+
+    class Answer {
+        private Question question;
+        private String value;
+
+        public Answer(Question question, String value) {
+            this.question = question;
+            this.value = value;
+        }
+
+        public String getValue() {
+            return value;
+        }
+
+        public void setValue(String value) {
+            this.value = value;
+        }
+
+        public Question getQuestion() {
+            return question;
+        }
+    }
+
     class CheckResult {
         public enum Type {
-            INVALID, VALID, USED, ERROR, UNPAID, PRODUCT
+            INVALID, VALID, USED, ERROR, UNPAID, PRODUCT, ANSWERS_REQUIRED
         }
 
         private Type type;
@@ -19,6 +60,7 @@ public interface TicketCheckProvider {
         private String message;
         private String order_code;
         private boolean require_attention;
+        private List<RequiredAnswer> required_answers;
 
         public CheckResult(Type type, String message) {
             this.type = type;
@@ -83,6 +125,14 @@ public interface TicketCheckProvider {
 
         public void setRequireAttention(boolean require_attention) {
             this.require_attention = require_attention;
+        }
+
+        public List<RequiredAnswer> getRequiredAnswers() {
+            return required_answers;
+        }
+
+        public void setRequiredAnswers(List<RequiredAnswer> required_answers) {
+            this.required_answers = required_answers;
         }
     }
 
@@ -305,6 +355,8 @@ public interface TicketCheckProvider {
             this.alreadyScanned = alreadyScanned;
         }
     }
+
+    CheckResult check(String ticketid, List<Answer> answers);
 
     CheckResult check(String ticketid);
 

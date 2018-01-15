@@ -1,5 +1,6 @@
 package eu.pretix.libpretixsync.api;
 
+import eu.pretix.libpretixsync.check.TicketCheckProvider;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -8,9 +9,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
-import java.util.TimeZone;
+import java.util.*;
 
 import javax.net.ssl.SSLException;
 
@@ -56,10 +55,14 @@ public class PretixApi {
     }
 
     public JSONObject redeem(String secret) throws ApiException {
-        return redeem(secret, null, false, null);
+        return redeem(secret, new ArrayList<TicketCheckProvider.Answer>());
     }
 
-    public JSONObject redeem(String secret, Date datetime, boolean force, String nonce) throws ApiException {
+    public JSONObject redeem(String secret, List<TicketCheckProvider.Answer> answers) throws ApiException {
+        return redeem(secret, null, false, null, answers);
+    }
+
+    public JSONObject redeem(String secret, Date datetime, boolean force, String nonce, List<TicketCheckProvider.Answer> answers) throws ApiException {
         FormBody.Builder body = new FormBody.Builder()
                 .add("secret", secret);
         if (datetime != null) {
@@ -73,6 +76,9 @@ public class PretixApi {
         }
         if (nonce != null) {
             body.add("nonce", nonce);
+        }
+        for (TicketCheckProvider.Answer a : answers) {
+            body.add("answer_" + a.getQuestion().getServer_id(), a.getValue());
         }
         Request request = new Request.Builder()
                 .url(url + "redeem/?key=" + key)

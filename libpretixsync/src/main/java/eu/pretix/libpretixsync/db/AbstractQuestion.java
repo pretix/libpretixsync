@@ -1,5 +1,6 @@
 package eu.pretix.libpretixsync.db;
 
+import eu.pretix.libpretixsync.check.QuestionType;
 import io.requery.*;
 
 import java.util.List;

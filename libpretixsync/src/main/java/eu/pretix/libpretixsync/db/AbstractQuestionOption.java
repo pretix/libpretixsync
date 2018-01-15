@@ -15,4 +15,9 @@ public class AbstractQuestionOption {
 
     @Column(name = "\"value\"")
     public String value;
+
+    @Override
+    public String toString() {
+        return value;
+    }
 }
