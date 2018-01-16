@@ -3,8 +3,11 @@ package eu.pretix.libpretixsync.sync;
 import eu.pretix.libpretixsync.SentryInterface;
 import eu.pretix.libpretixsync.api.ApiException;
 import eu.pretix.libpretixsync.api.PretixApi;
+import eu.pretix.libpretixsync.check.QuestionType;
 import eu.pretix.libpretixsync.check.TicketCheckProvider;
 import eu.pretix.libpretixsync.config.ConfigStore;
+import eu.pretix.libpretixsync.db.Item;
+import eu.pretix.libpretixsync.db.Question;
 import eu.pretix.libpretixsync.db.QueuedCheckIn;
 import eu.pretix.libpretixsync.db.Ticket;
 import io.requery.BlockingEntityStore;
@@ -51,7 +54,7 @@ public class SyncManager {
             uploadTicketData();
 
             if ((System.currentTimeMillis() - configStore.getLastDownload()) > download_interval) {
-                downloadTicketData();
+                downloadTicketAndItemData();
                 configStore.setLastDownload(System.currentTimeMillis());
             }
 
@@ -104,7 +107,7 @@ public class SyncManager {
                 || (newstring != null && oldstring != null && !newstring.equals(oldstring));
     }
 
-    private void downloadTicketData() throws SyncException {
+    private void downloadTicketAndItemData() throws SyncException {
         sentry.addBreadcrumb("sync.tickets", "Start download");
 
         // Download metadata
@@ -124,6 +127,90 @@ public class SyncManager {
             sentry.addBreadcrumb("sync.tickets", "API Error: " + e.getMessage());
             throw new SyncException(e.getMessage());
         }
+
+        parseItemData(response);
+        parseTicketData(response);
+
+        sentry.addBreadcrumb("sync.tickets", "Download complete");
+    }
+
+    private void parseItemData(JSONObject response) throws SyncException {
+        // Index all known objects
+        Map<Long, Item> knownItems = new HashMap<>();
+        CloseableIterator<Item> items = dataStore.select(Item.class).get().iterator();
+        try {
+            while (items.hasNext()) {
+                Item i = items.next();
+                knownItems.put(i.getServer_id(), i);
+            }
+        } finally {
+            items.close();
+        }
+
+        Map<Long, Question> knownQuestions = new HashMap<>();
+        CloseableIterator<Question> questions = dataStore.select(Question.class).get().iterator();
+        try {
+            while (questions.hasNext()) {
+                Question q = questions.next();
+                knownQuestions.put(q.getServer_id(), q);
+            }
+        } finally {
+            questions.close();
+        }
+
+        try {
+            List<Item> insertItems = new ArrayList<>();
+            List<Question> insertQuestions = new ArrayList<>();
+
+            // Insert or update
+            for (int i = 0; i < response.getJSONArray("questions").length(); i++) {
+                JSONObject res = response.getJSONArray("questions").getJSONObject(i);
+                Question question;
+                boolean created = false;
+                if (!knownQuestions.containsKey(res.getLong("id"))) {
+                    question = new Question();
+                    created = true;
+                } else {
+                    question = knownQuestions.get(res.getLong("id"));
+                }
+
+                if (string_changed(res.getString("type"), question.getType().toString())) {
+                    question.setType(QuestionType.fromString(res.getString("type")));
+                }
+                if (string_changed(res.getString("question"), question.getQuestion())) {
+                    question.setQuestion(res.getString("question"));
+                }
+                if (res.optBoolean("required", false) != question.isRequired()) {
+                    question.setRequired(res.optBoolean("required", false));
+                }
+                if (long_changed(res.optLong("position"), question.getPosition())) {
+                    question.setPosition(res.optLong("position", 0));
+                }
+                // Items
+                // Options
+
+                if (created) {
+                    dataStore.insert(question);
+                } else {
+                    dataStore.update(question);
+                }
+                knownQuestions.remove(question.getServer_id());
+            }
+        } catch (JSONException e) {
+            sentry.captureException(e);
+            throw new SyncException("Unknown server response");
+        }
+
+        // Those have been deleted online, delete them here as well
+        for (Long key : knownItems.keySet()) {
+            dataStore.delete(knownItems.get(key));
+        }
+        for (Long key : knownQuestions.keySet()) {
+            dataStore.delete(knownQuestions.get(key));
+        }
+    }
+
+    private void parseTicketData(JSONObject response) throws SyncException {
 
         // Index all known objects
         Map<String, Ticket> known = new HashMap<>();
@@ -201,6 +288,5 @@ public class SyncManager {
         for (String key : known.keySet()) {
             dataStore.delete(known.get(key));
         }
-        sentry.addBreadcrumb("sync.tickets", "Download complete");
     }
 }
