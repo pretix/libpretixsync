@@ -10,6 +10,7 @@ import eu.pretix.libpretixsync.db.*;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
 import io.requery.util.CloseableIterator;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -67,7 +68,19 @@ public class SyncManager {
 
         try {
             for (QueuedCheckIn qci : queued) {
-                JSONObject response = api.redeem(qci.getSecret(), qci.getDatetime(), true, qci.getNonce(), new ArrayList<TicketCheckProvider.Answer>());
+                List<TicketCheckProvider.Answer> answers = new ArrayList<>();
+                try {
+                    JSONArray ja = new JSONArray(qci.getAnswers());
+                    for (int i = 0; i < ja.length(); i++) {
+                        JSONObject jo = ja.getJSONObject(i);
+                        Question q = new Question();
+                        q.setServer_id(jo.getLong("question"));
+                        answers.add(new TicketCheckProvider.Answer(q, jo.getString("answer")));
+                    }
+                } catch (JSONException e) {
+                }
+
+                JSONObject response = api.redeem(qci.getSecret(), qci.getDatetime(), true, qci.getNonce(), answers);
                 String status = response.getString("status");
                 if ("ok".equals(status)) {
                     dataStore.delete(qci);

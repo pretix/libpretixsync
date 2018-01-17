@@ -54,10 +54,6 @@ public class PretixApi {
         return PretixApi.fromConfig(config, new DefaultHttpClientFactory());
     }
 
-    public JSONObject redeem(String secret) throws ApiException {
-        return redeem(secret, new ArrayList<TicketCheckProvider.Answer>());
-    }
-
     public JSONObject redeem(String secret, List<TicketCheckProvider.Answer> answers) throws ApiException {
         return redeem(secret, null, false, null, answers);
     }

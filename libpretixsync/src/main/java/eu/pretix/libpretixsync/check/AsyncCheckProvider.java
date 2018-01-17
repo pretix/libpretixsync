@@ -1,11 +1,11 @@
 package eu.pretix.libpretixsync.check;
 
+import eu.pretix.libpretixsync.db.*;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 import eu.pretix.libpretixsync.DummySentryImplementation;
 import eu.pretix.libpretixsync.SentryInterface;
@@ -13,8 +13,6 @@ import eu.pretix.libpretixsync.api.DefaultHttpClientFactory;
 import eu.pretix.libpretixsync.api.HttpClientFactory;
 import eu.pretix.libpretixsync.api.PretixApi;
 import eu.pretix.libpretixsync.config.ConfigStore;
-import eu.pretix.libpretixsync.db.QueuedCheckIn;
-import eu.pretix.libpretixsync.db.Ticket;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
 
@@ -63,6 +61,13 @@ public class AsyncCheckProvider implements TicketCheckProvider {
 
         Ticket ticket = tickets.get(0);
 
+        List<Item> items = dataStore.select(Item.class).where(Item.SERVER_ID.eq(ticket.getItem_id())).get().toList();
+        List<Question> questions = new ArrayList<>();
+        if (items.size() == 1) {
+            Item item = items.get(0);
+            questions = item.getQuestions();
+        }
+
         CheckResult res = new CheckResult(CheckResult.Type.ERROR);
 
         long queuedCheckIns = dataStore.count(QueuedCheckIn.class)
@@ -74,15 +79,45 @@ public class AsyncCheckProvider implements TicketCheckProvider {
         } else if (ticket.isRedeemed() || queuedCheckIns > 0) {
             res.setType(CheckResult.Type.USED);
         } else {
-            res.setType(CheckResult.Type.VALID);
-            ticket.setRedeemed(true);
-            dataStore.update(ticket);
+            Map<Long, String> answerMap = new HashMap<>();
+            for (Answer a : answers) {
+                answerMap.put(a.getQuestion().getServer_id(), a.getValue());
+            }
+            JSONArray givenAnswers = new JSONArray();
+            List<RequiredAnswer> required_answers = new ArrayList<>();
+            for (Question q : questions) {
+                String answer = "";
+                if (answerMap.containsKey(q.getServer_id())) {
+                    answer = answerMap.get(q.getServer_id());
+                    try {
+                        answer = q.clean_answer(answer);
+                        JSONObject jo = new JSONObject();
+                        jo.put("answer", answer);
+                        jo.put("question", q.getServer_id());
+                        givenAnswers.put(jo);
+                        continue;
+                    } catch (AbstractQuestion.ValidationException | JSONException e) {
+                        required_answers.add(new RequiredAnswer(q, ""));
+                    }
+                }
+                required_answers.add(new RequiredAnswer(q, answer));
+            }
 
-            QueuedCheckIn qci = new QueuedCheckIn();
-            qci.generateNonce();
-            qci.setSecret(ticketid);
-            qci.setDatetime(new Date());
-            dataStore.insert(qci);
+            if (required_answers.size()> 0) {
+                res.setType(CheckResult.Type.ANSWERS_REQUIRED);
+                res.setRequiredAnswers(required_answers);
+            } else {
+                res.setType(CheckResult.Type.VALID);
+                ticket.setRedeemed(true);
+                dataStore.update(ticket);
+
+                QueuedCheckIn qci = new QueuedCheckIn();
+                qci.generateNonce();
+                qci.setSecret(ticketid);
+                qci.setDatetime(new Date());
+                qci.setAnswers(givenAnswers.toString());
+                dataStore.insert(qci);
+            }
         }
 
         res.setTicket(ticket.getItem());

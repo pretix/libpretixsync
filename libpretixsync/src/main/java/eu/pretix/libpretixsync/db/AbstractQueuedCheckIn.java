@@ -19,6 +19,8 @@ public abstract class AbstractQueuedCheckIn {
 
     public Date datetime;
 
+    public String answers;
+
     public void generateNonce() {
         this.nonce = NonceGenerator.nextNonce();
     }
