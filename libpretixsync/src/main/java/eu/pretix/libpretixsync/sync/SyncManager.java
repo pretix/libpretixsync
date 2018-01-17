@@ -6,20 +6,14 @@ import eu.pretix.libpretixsync.api.PretixApi;
 import eu.pretix.libpretixsync.check.QuestionType;
 import eu.pretix.libpretixsync.check.TicketCheckProvider;
 import eu.pretix.libpretixsync.config.ConfigStore;
-import eu.pretix.libpretixsync.db.Item;
-import eu.pretix.libpretixsync.db.Question;
-import eu.pretix.libpretixsync.db.QueuedCheckIn;
-import eu.pretix.libpretixsync.db.Ticket;
+import eu.pretix.libpretixsync.db.*;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
 import io.requery.util.CloseableIterator;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class SyncManager {
     private SentryInterface sentry;
@@ -135,8 +129,15 @@ public class SyncManager {
     }
 
     private void parseItemData(JSONObject response) throws SyncException {
-        // Index all known objects
+        System.out.println(response);
+
+        if (!response.has("questions")) {
+            return;
+        }
+
+        // Index all known items and questions
         Map<Long, Item> knownItems = new HashMap<>();
+        Set<Long> seenItems = new HashSet<>();  // Store items that we've seen anywhere in the operation
         CloseableIterator<Item> items = dataStore.select(Item.class).get().iterator();
         try {
             while (items.hasNext()) {
@@ -159,23 +160,23 @@ public class SyncManager {
         }
 
         try {
-            List<Item> insertItems = new ArrayList<>();
-            List<Question> insertQuestions = new ArrayList<>();
-
             // Insert or update
             for (int i = 0; i < response.getJSONArray("questions").length(); i++) {
                 JSONObject res = response.getJSONArray("questions").getJSONObject(i);
+                // Get or create question
                 Question question;
                 boolean created = false;
                 if (!knownQuestions.containsKey(res.getLong("id"))) {
                     question = new Question();
+                    question.setServer_id(res.getLong("id"));
                     created = true;
                 } else {
                     question = knownQuestions.get(res.getLong("id"));
                 }
 
-                if (string_changed(res.getString("type"), question.getType().toString())) {
-                    question.setType(QuestionType.fromString(res.getString("type")));
+                // Update question properties
+                if (string_changed(res.getString("type"), question.getType() != null ? question.getType().toString() : "")) {
+                    question.setType(QuestionType.valueOf(res.getString("type")));
                 }
                 if (string_changed(res.getString("question"), question.getQuestion())) {
                     question.setQuestion(res.getString("question"));
@@ -186,14 +187,78 @@ public class SyncManager {
                 if (long_changed(res.optLong("position"), question.getPosition())) {
                     question.setPosition(res.optLong("position", 0));
                 }
-                // Items
-                // Options
 
+                // Save to database now, so we can use relations
                 if (created) {
                     dataStore.insert(question);
-                } else {
-                    dataStore.update(question);
                 }
+
+                // Items
+                Map<Long, Item> foundItems = new HashMap<>();
+                if (!created) {
+                    for (Item item : question.getItems()) {
+                        foundItems.put(item.getServer_id(), item);
+                    }
+                }
+                for (int j = 0; j < res.getJSONArray("items").length(); j++) {
+                    long item_id = res.getJSONArray("items").getLong(j);
+
+                    if (foundItems.containsKey(item_id)) {
+                        foundItems.remove(item_id);
+                    } else {
+                        if (knownItems.containsKey(item_id)) {
+                            question.getItems().add(knownItems.get(item_id));
+                        } else {
+                            Item item = new Item();
+                            item.setServer_id(item_id);
+                            dataStore.insert(item);
+                            question.getItems().add(item);
+                            knownItems.put(item_id, item);
+                        }
+                    }
+                    seenItems.add(item_id);
+                }
+                for (Long key : foundItems.keySet()) {
+                    question.getItems().remove(foundItems.get(key));
+                }
+
+                // Options
+                Map<Long, QuestionOption> foundOptions = new HashMap<>();
+                if (!created) {
+                    for (QuestionOption opt : question.getOptions()) {
+                        foundOptions.put(opt.getServer_id(), opt);
+                    }
+                }
+                for (int j = 0; j < res.getJSONArray("options").length(); j++) {
+                    JSONObject opt_res = res.getJSONArray("options").getJSONObject(j);
+                    QuestionOption option;
+                    boolean opt_created = false;
+                    long opt_id = opt_res.getLong("id");
+
+                    if (foundOptions.containsKey(opt_id)) {
+                        option = foundOptions.get(opt_id);
+                        foundOptions.remove(opt_id);
+                    } else {
+                        option = new QuestionOption();
+                        option.setQuestion(question);
+                        option.setServer_id(opt_id);
+                        opt_created = true;
+                    }
+                    if (string_changed(opt_res.getString("answer"), option.getValue())) {
+                        option.setValue(opt_res.getString("answer"));
+                    }
+                    if (opt_created) {
+                        dataStore.insert(option);
+                    } else {
+                        dataStore.update(option);
+                    }
+                }
+                for (Long key : foundOptions.keySet()) {
+                    dataStore.delete(foundOptions.get(key));
+                }
+
+                dataStore.update(question);
+                // Remove from list so it doesn't get deleted later
                 knownQuestions.remove(question.getServer_id());
             }
         } catch (JSONException e) {
@@ -201,10 +266,12 @@ public class SyncManager {
             throw new SyncException("Unknown server response");
         }
 
-        // Those have been deleted online, delete them here as well
+        // Delete all items that we haven't seen anywhere
         for (Long key : knownItems.keySet()) {
-            dataStore.delete(knownItems.get(key));
+            if (!seenItems.contains(key))
+                dataStore.delete(knownItems.get(key));
         }
+        // Delete all questions that we haven't seen anywhere
         for (Long key : knownQuestions.keySet()) {
             dataStore.delete(knownQuestions.get(key));
         }

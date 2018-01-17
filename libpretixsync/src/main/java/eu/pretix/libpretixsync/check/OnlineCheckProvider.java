@@ -58,7 +58,7 @@ public class OnlineCheckProvider implements TicketCheckProvider {
                     JSONObject q = response.getJSONArray("questions").getJSONObject(i);
                     Question question = new Question();
                     question.setServer_id(q.getLong("id"));
-                    question.setType(QuestionType.fromString(q.getString("type")));
+                    question.setType(QuestionType.valueOf(q.getString("type")));
                     question.setQuestion(q.getString("question"));
                     question.setRequired(q.optBoolean("required", true));
                     question.setPosition(q.optLong("position", 0));
