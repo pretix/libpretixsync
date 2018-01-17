@@ -3,10 +3,10 @@ version '1.0'
 
 apply plugin: 'java-library'
 apply plugin: 'net.ltgt.apt-idea'
+apply plugin: 'jacoco'
 
 sourceCompatibility = 1.7
 targetCompatibility = 1.7
-
 
 buildscript {
     repositories {
@@ -25,6 +25,14 @@ repositories {
     jcenter()
 }
 
+jacocoTestReport {
+    reports {
+        xml.enabled true
+        html.enabled true
+    }
+}
+
+check.dependsOn jacocoTestReport
 
 dependencies {
     compile 'com.squareup.okhttp3:okhttp:3.9.0'
@@ -36,5 +44,5 @@ dependencies {
     apt 'io.requery:requery-processor:1.4.1'
     apt 'javax.annotation:jsr250-api:1.0'
 
-    testCompile group: 'junit', name: 'junit', version: '4.12'
+    testCompile 'junit:junit:4.12'
 }
