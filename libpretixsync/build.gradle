@@ -45,4 +45,5 @@ dependencies {
     apt 'javax.annotation:jsr250-api:1.0'
 
     testCompile 'junit:junit:4.12'
+    testCompile 'org.xerial:sqlite-jdbc:3.20.1'
 }

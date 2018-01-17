@@ -114,7 +114,7 @@ public class SyncManager {
                 || (newstring != null && oldstring != null && !newstring.equals(oldstring));
     }
 
-    private void downloadTicketAndItemData() throws SyncException {
+    protected void downloadTicketAndItemData() throws SyncException {
         sentry.addBreadcrumb("sync.tickets", "Start download");
 
         // Download metadata
