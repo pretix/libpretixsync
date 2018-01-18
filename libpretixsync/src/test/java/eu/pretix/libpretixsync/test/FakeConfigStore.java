@@ -9,7 +9,11 @@ public class FakeConfigStore implements ConfigStore {
     private long last_failed_sync;
     private String last_failed_sync_msg;
     private String last_status_data;
+    private boolean allow_search;
 
+    public void setAllow_search(boolean allow_search) {
+        this.allow_search = allow_search;
+    }
 
     @Override
     public boolean isDebug() {
@@ -43,12 +47,12 @@ public class FakeConfigStore implements ConfigStore {
 
     @Override
     public boolean getAllowSearch() {
-        return true;
+        return allow_search;
     }
 
     @Override
     public String getLastStatusData() {
-        return null;
+        return last_status_data;
     }
 
     @Override

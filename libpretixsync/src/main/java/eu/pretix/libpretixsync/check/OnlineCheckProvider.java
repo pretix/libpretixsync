@@ -19,7 +19,7 @@ import eu.pretix.libpretixsync.api.PretixApi;
 import eu.pretix.libpretixsync.config.ConfigStore;
 
 public class OnlineCheckProvider implements TicketCheckProvider {
-    private PretixApi api;
+    protected PretixApi api;
     private ConfigStore config;
     private SentryInterface sentry;
 

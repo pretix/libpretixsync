@@ -9,28 +9,19 @@ import java.util.*;
 
 import eu.pretix.libpretixsync.DummySentryImplementation;
 import eu.pretix.libpretixsync.SentryInterface;
-import eu.pretix.libpretixsync.api.DefaultHttpClientFactory;
-import eu.pretix.libpretixsync.api.HttpClientFactory;
-import eu.pretix.libpretixsync.api.PretixApi;
 import eu.pretix.libpretixsync.config.ConfigStore;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
 
 public class AsyncCheckProvider implements TicketCheckProvider {
-    private PretixApi api;
     private ConfigStore config;
     private BlockingEntityStore<Persistable> dataStore;
     private SentryInterface sentry;
 
-    public AsyncCheckProvider(ConfigStore config, BlockingEntityStore<Persistable> dataStore, HttpClientFactory httpClientFactory) {
+    public AsyncCheckProvider(ConfigStore config, BlockingEntityStore<Persistable> dataStore) {
         this.config = config;
-        this.api = PretixApi.fromConfig(config, httpClientFactory);
         this.dataStore = dataStore;
         this.sentry = new DummySentryImplementation();
-    }
-
-    public AsyncCheckProvider(ConfigStore config, BlockingEntityStore<Persistable> dataStore) {
-        this(config, dataStore, new DefaultHttpClientFactory());
     }
 
     public SentryInterface getSentry() {
@@ -39,7 +30,6 @@ public class AsyncCheckProvider implements TicketCheckProvider {
 
     public void setSentry(SentryInterface sentry) {
         this.sentry = sentry;
-        this.api.setSentry(sentry);
     }
 
     @Override
