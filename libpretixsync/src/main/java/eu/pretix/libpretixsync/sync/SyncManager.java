@@ -61,7 +61,7 @@ public class SyncManager {
         }
     }
 
-    private void uploadTicketData() throws SyncException {
+    protected void uploadTicketData() throws SyncException {
         sentry.addBreadcrumb("sync.queue", "Start upload");
 
         List<QueuedCheckIn> queued = dataStore.select(QueuedCheckIn.class).get().toList();
