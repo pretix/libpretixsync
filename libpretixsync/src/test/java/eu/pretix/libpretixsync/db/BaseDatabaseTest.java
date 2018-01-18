@@ -47,7 +47,7 @@ public abstract class BaseDatabaseTest {
         String dbname = byteArray2Hex(md.digest());
 
         SQLiteDataSource dataSource = new SQLiteDataSource();
-        dataSource.setUrl("jdbc:sqlite:" + dbname + "?mode=memory&cache=shared");
+        dataSource.setUrl("jdbc:sqlite:file:" + dbname + "?mode=memory&cache=shared");
         SQLiteConfig config = new SQLiteConfig();
         config.setDateClass("TEXT");
         dataSource.setConfig(config);
