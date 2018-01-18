@@ -4,6 +4,9 @@ libpretixsync
 .. image:: https://travis-ci.org/pretix/libpretixsync.svg?branch=master
    :target: https://travis-ci.org/pretix/libpretixsync
 
+.. image:: https://codecov.io/gh/pretix/libpretixsync/branch/master/graph/badge.svg
+   :target: https://codecov.io/gh/pretix/libpretixsync
+
 This is a shared library between `pretixdroid`_ and `pretixdesk`_. It handles all core
 business logic of the two applications and the synchronization primitives with the pretix server.
 
