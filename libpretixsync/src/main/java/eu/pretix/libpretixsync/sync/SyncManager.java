@@ -329,7 +329,7 @@ public class SyncManager {
                     ticket.setItem_id(res.optLong("item_id", 0));
                 }
                 if (string_changed(res.getString("variation"), ticket.getVariation())) {
-                    ticket.setVariation(res.getString("variation"));
+                    ticket.setVariation(res.optString("variation"));
                 }
                 if (long_changed(res.optLong("variation_id"), ticket.getVariation_id())) {
                     ticket.setVariation_id(res.optLong("variation_id", 0));

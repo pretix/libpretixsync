@@ -19,7 +19,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-public class SyncManagerDownloadTest extends BaseDatabaseTest {
+public class SyncManagerQuestionDownloadTest extends BaseDatabaseTest {
     private FakeConfigStore configStore;
     private FakePretixApi api;
 
