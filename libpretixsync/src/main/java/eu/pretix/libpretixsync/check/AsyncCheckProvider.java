@@ -88,6 +88,7 @@ public class AsyncCheckProvider implements TicketCheckProvider {
                         continue;
                     } catch (AbstractQuestion.ValidationException | JSONException e) {
                         required_answers.add(new RequiredAnswer(q, ""));
+                        continue;
                     }
                 }
                 required_answers.add(new RequiredAnswer(q, answer));
