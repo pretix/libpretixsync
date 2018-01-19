@@ -4,7 +4,12 @@ import eu.pretix.libpretixsync.check.QuestionType;
 import io.requery.*;
 
 import java.math.BigDecimal;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.format.DateTimeFormatter;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity(cacheable = false)
 public class AbstractQuestion {
@@ -54,6 +59,47 @@ public class AbstractQuestion {
             }
         } else if (type == QuestionType.B) {
             return (answer.equals("True") || answer.equals("true")) ? "True" : "False";
+        } else if (type == QuestionType.C) {
+            for (QuestionOption o : options) {
+                if (o.getServer_id().toString().equals(answer)) {
+                    return answer;
+                }
+            }
+            throw new ValidationException("Invalid choice supplied");
+        } else if (type == QuestionType.M) {
+            Set<String> validChoices = new HashSet<>();
+            for (QuestionOption o : options) {
+                validChoices.add(o.getServer_id().toString());
+            }
+            for (String a : answer.split(",")) {
+                if (!validChoices.contains(a)) {
+                    throw new ValidationException("Invalid choice supplied");
+                }
+            }
+        } else if (type == QuestionType.D) {
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+            dateFormat.setLenient(false);
+            try {
+                dateFormat.parse(answer);
+            } catch (ParseException e) {
+                throw new ValidationException("Invalid date supplied");
+            }
+        } else if (type == QuestionType.H) {
+            SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm");
+            dateFormat.setLenient(false);
+            try {
+                dateFormat.parse(answer);
+            } catch (ParseException e) {
+                throw new ValidationException("Invalid time supplied");
+            }
+        } else if (type == QuestionType.W) {
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm");
+            dateFormat.setLenient(false);
+            try {
+                dateFormat.parse(answer);
+            } catch (ParseException e) {
+                throw new ValidationException("Invalid datetime supplied");
+            }
         }
         return answer;
     }
