@@ -37,6 +37,15 @@ public class AbstractQuestion {
     List<Item> items;
 
     public String clean_answer(String answer) throws ValidationException {
+        if (required) {
+            if (type == QuestionType.B) {
+                if (!answer.equals("True") && !answer.equals("true")) {
+                    throw new ValidationException("Question is required");
+                }
+            } else if (answer == null || answer.trim().equals("")) {
+                throw new ValidationException("Question is required");
+            }
+        }
         if (type == QuestionType.N) {
             try {
                 return new BigDecimal(answer.toString()).toPlainString();
@@ -46,6 +55,6 @@ public class AbstractQuestion {
         } else if (type == QuestionType.B) {
             return (answer.equals("True") || answer.equals("true")) ? "True" : "False";
         }
-        return answer.toString();
+        return answer;
     }
 }
