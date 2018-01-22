@@ -49,7 +49,7 @@ public class AbstractQuestion {
             } else if (answer == null || answer.trim().equals("")) {
                 throw new ValidationException("Question is required");
             }
-        } else if (answer == null || answer.trim().equals("")) {
+        } else if ((answer == null || answer.trim().equals("")) && type != QuestionType.B) {
             return "";
         }
         if (type == QuestionType.N) {
