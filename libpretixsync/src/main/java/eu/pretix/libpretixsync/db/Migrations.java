@@ -61,6 +61,7 @@ public class Migrations {
         if (db_version < 3) {
             migrate_from_2_to_3(dataSource);
         }
+        // Note that the Android app currently does not use these queries!
 
         updateVersionTable(c, CURRENT_VERSION);
     }

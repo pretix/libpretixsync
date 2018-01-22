@@ -142,8 +142,6 @@ public class SyncManager {
     }
 
     private void parseItemData(JSONObject response) throws SyncException {
-        System.out.println(response);
-
         if (!response.has("questions")) {
             return;
         }

@@ -13,7 +13,7 @@ public class AbstractQuestionOption {
     @ManyToOne
     public Question question;
 
-    @Column(name = "\"value\"")
+    @Column(name = "value")
     public String value;
 
     @Override
