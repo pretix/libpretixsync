@@ -75,26 +75,28 @@ public class AsyncCheckProvider implements TicketCheckProvider {
             }
             JSONArray givenAnswers = new JSONArray();
             List<RequiredAnswer> required_answers = new ArrayList<>();
+            boolean ask_questions = false;
             for (Question q : questions) {
                 String answer = "";
                 if (answerMap.containsKey(q.getServer_id())) {
                     answer = answerMap.get(q.getServer_id());
                     try {
-                        answer = q.clean_answer(answer);
+                        answer = q.clean_answer(answer, q.getOptions());
                         JSONObject jo = new JSONObject();
                         jo.put("answer", answer);
                         jo.put("question", q.getServer_id());
                         givenAnswers.put(jo);
-                        continue;
                     } catch (AbstractQuestion.ValidationException | JSONException e) {
-                        required_answers.add(new RequiredAnswer(q, ""));
-                        continue;
+                        answer = "";
+                        ask_questions = true;
                     }
+                } else {
+                    ask_questions = true;
                 }
                 required_answers.add(new RequiredAnswer(q, answer));
             }
 
-            if (required_answers.size()> 0) {
+            if (ask_questions && required_answers.size() > 0) {
                 res.setType(CheckResult.Type.ANSWERS_REQUIRED);
                 res.setRequiredAnswers(required_answers);
             } else {

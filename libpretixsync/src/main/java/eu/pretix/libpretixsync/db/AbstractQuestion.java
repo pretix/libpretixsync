@@ -40,7 +40,7 @@ public class AbstractQuestion {
     @JunctionTable
     List<Item> items;
 
-    public String clean_answer(String answer) throws ValidationException {
+    public String clean_answer(String answer, List<QuestionOption> opts) throws ValidationException {
         if (required) {
             if (type == QuestionType.B) {
                 if (!answer.equals("True") && !answer.equals("true")) {
@@ -49,6 +49,8 @@ public class AbstractQuestion {
             } else if (answer == null || answer.trim().equals("")) {
                 throw new ValidationException("Question is required");
             }
+        } else if (answer == null || answer.trim().equals("")) {
+            return "";
         }
         if (type == QuestionType.N) {
             try {
@@ -59,7 +61,7 @@ public class AbstractQuestion {
         } else if (type == QuestionType.B) {
             return (answer.equals("True") || answer.equals("true")) ? "True" : "False";
         } else if (type == QuestionType.C) {
-            for (QuestionOption o : options) {
+            for (QuestionOption o : opts) {
                 if (o.getServer_id().toString().equals(answer)) {
                     return answer;
                 }
@@ -67,7 +69,7 @@ public class AbstractQuestion {
             throw new ValidationException("Invalid choice supplied");
         } else if (type == QuestionType.M) {
             Set<String> validChoices = new HashSet<>();
-            for (QuestionOption o : options) {
+            for (QuestionOption o : opts) {
                 validChoices.add(o.getServer_id().toString());
             }
             for (String a : answer.split(",")) {

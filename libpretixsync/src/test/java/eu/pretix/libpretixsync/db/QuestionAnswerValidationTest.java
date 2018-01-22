@@ -83,13 +83,13 @@ public class QuestionAnswerValidationTest {
 
         if (expected == null) {
             try {
-                q.clean_answer(input);
+                q.clean_answer(input, q.getOptions());
                 fail("Expected an ValidationException to be thrown");
             } catch (Question.ValidationException e) {
             }
         } else {
             try {
-                assertEquals(q.clean_answer(input), expected);
+                assertEquals(q.clean_answer(input, q.getOptions()), expected);
             } catch (AbstractQuestion.ValidationException e) {
                 fail(e.getMessage());
             }

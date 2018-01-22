@@ -19,9 +19,9 @@ public class QuestionAnswerRequiredValidationTest {
         Question q = new Question();
         q.setType(QuestionType.B);
         q.setRequired(true);
-        q.clean_answer("True");
+        q.clean_answer("True", q.getOptions());
         try {
-            q.clean_answer("False");
+            q.clean_answer("False", q.getOptions());
             fail("Expected an ValidationException to be thrown");
         } catch (Question.ValidationException e) {
         }
@@ -32,9 +32,9 @@ public class QuestionAnswerRequiredValidationTest {
         Question q = new Question();
         q.setType(QuestionType.T);
         q.setRequired(true);
-        q.clean_answer("True");
+        q.clean_answer("True", q.getOptions());
         try {
-            q.clean_answer("");
+            q.clean_answer("", q.getOptions());
             fail("Expected an ValidationException to be thrown");
         } catch (Question.ValidationException e) {
         }
