@@ -27,7 +27,7 @@ public class PretixApi {
      * See https://docs.pretix.eu/en/latest/plugins/pretixdroid.html for API documentation
      */
 
-    public static final int SUPPORTED_API_VERSION = 4;
+    public static final int SUPPORTED_API_VERSION = 3;
     public static final MediaType JSON
             = MediaType.parse("application/json; charset=utf-8");
 
@@ -76,6 +76,7 @@ public class PretixApi {
         for (TicketCheckProvider.Answer a : answers) {
             body.add("answer_" + a.getQuestion().getServer_id(), a.getValue());
         }
+        body.add("questions_supported", "true");
         Request request = new Request.Builder()
                 .url(url + "redeem/?key=" + key)
                 .post(body.build())
