@@ -34,11 +34,11 @@ public class AsyncCheckProvider implements TicketCheckProvider {
 
     @Override
     public CheckResult check(String ticketid) {
-        return check(ticketid, new ArrayList<Answer>());
+        return check(ticketid, new ArrayList<Answer>(), false);
     }
 
     @Override
-    public CheckResult check(String ticketid, List<Answer> answers) {
+    public CheckResult check(String ticketid, List<Answer> answers, boolean ignore_unpaid) {
         sentry.addBreadcrumb("provider.check", "offline check started");
 
         List<Ticket> tickets = dataStore.select(Ticket.class)
@@ -59,12 +59,13 @@ public class AsyncCheckProvider implements TicketCheckProvider {
         }
 
         CheckResult res = new CheckResult(CheckResult.Type.ERROR);
+        res.setCheckinAllowed(ticket.isCheckin_allowed());
 
         long queuedCheckIns = dataStore.count(QueuedCheckIn.class)
                 .where(QueuedCheckIn.SECRET.eq(ticketid))
                 .get().value();
 
-        if (!ticket.isPaid()) {
+        if ((!ticket.isPaid() && !ignore_unpaid) || !ticket.isCheckin_allowed()) {
             res.setType(CheckResult.Type.UNPAID);
         } else if (ticket.isRedeemed() || queuedCheckIns > 0) {
             res.setType(CheckResult.Type.USED);
@@ -118,6 +119,7 @@ public class AsyncCheckProvider implements TicketCheckProvider {
         res.setAttendee_name(ticket.getAttendee_name());
         res.setOrderCode(ticket.getOrder());
         res.setRequireAttention(ticket.isRequire_attention());
+        res.setCheckinAllowed(ticket.isCheckin_allowed());
 
         return res;
     }

@@ -60,6 +60,7 @@ public interface TicketCheckProvider {
         private String message;
         private String order_code;
         private boolean require_attention;
+        private boolean checkin_allowed;
         private List<RequiredAnswer> required_answers;
 
         public CheckResult(Type type, String message) {
@@ -133,6 +134,14 @@ public interface TicketCheckProvider {
 
         public void setRequiredAnswers(List<RequiredAnswer> required_answers) {
             this.required_answers = required_answers;
+        }
+
+        public boolean isCheckinAllowed() {
+            return checkin_allowed;
+        }
+
+        public void setCheckinAllowed(boolean checkin_allowed) {
+            this.checkin_allowed = checkin_allowed;
         }
     }
 
@@ -356,7 +365,7 @@ public interface TicketCheckProvider {
         }
     }
 
-    CheckResult check(String ticketid, List<Answer> answers);
+    CheckResult check(String ticketid, List<Answer> answers, boolean ignore_unpaid);
 
     CheckResult check(String ticketid);
 

@@ -43,11 +43,11 @@ public class OnlineCheckProvider implements TicketCheckProvider {
     }
 
     @Override
-    public CheckResult check(String ticketid, List<Answer> answers) {
+    public CheckResult check(String ticketid, List<Answer> answers, boolean ignore_unpaid) {
         sentry.addBreadcrumb("provider.check", "started");
         try {
             CheckResult res = new CheckResult(CheckResult.Type.ERROR);
-            JSONObject response = api.redeem(ticketid, answers);
+            JSONObject response = api.redeem(ticketid, answers, ignore_unpaid);
             String status = response.getString("status");
             if ("ok".equals(status)) {
                 res.setType(CheckResult.Type.VALID);
@@ -95,6 +95,7 @@ public class OnlineCheckProvider implements TicketCheckProvider {
                 res.setAttendee_name(response.getJSONObject("data").getString("attendee_name"));
                 res.setOrderCode(response.getJSONObject("data").getString("order"));
                 res.setRequireAttention(response.getJSONObject("data").optBoolean("attention", false));
+                res.setCheckinAllowed(response.getJSONObject("data").optBoolean("checkin_allowed", res.getType() != CheckResult.Type.UNPAID));
             }
             return res;
         } catch (JSONException e) {
@@ -114,7 +115,7 @@ public class OnlineCheckProvider implements TicketCheckProvider {
 
     @Override
     public CheckResult check(String ticketid) {
-        return check(ticketid, new ArrayList<Answer>());
+        return check(ticketid, new ArrayList<Answer>(), false);
     }
 
     @Override

@@ -12,7 +12,7 @@ import java.sql.Statement;
 
 public class Migrations {
     private static EntityModel model = Models.DEFAULT;
-    public static int CURRENT_VERSION = 3;
+    public static int CURRENT_VERSION = 4;
 
     private static void createVersionTable(Connection c, int version) throws SQLException {
         Statement s2 = c.createStatement();
@@ -61,6 +61,9 @@ public class Migrations {
         if (db_version < 3) {
             migrate_from_2_to_3(dataSource);
         }
+        if (db_version < 4) {
+            migrate_from_3_to_4(dataSource);
+        }
         // Note that the Android app currently does not use these queries!
 
         updateVersionTable(c, CURRENT_VERSION);
@@ -74,6 +77,14 @@ public class Migrations {
         Connection c = dataSource.getConnection();
         Statement s = c.createStatement();
         s.execute("ALTER TABLE QueuedCheckIn ADD COLUMN answers TEXT;");
+        s.close();
+    }
+
+    private static void migrate_from_3_to_4(DataSource dataSource) throws SQLException {
+        Connection c = dataSource.getConnection();
+        Statement s = c.createStatement();
+        s.execute("ALTER TABLE Ticket ADD COLUMN checkin_allowed INTEGER;");
+        s.execute("UPDATE Ticket SET checkin_allowed = paid;");
         s.close();
     }
 }

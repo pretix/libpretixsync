@@ -52,14 +52,14 @@ public class FakePretixApi extends PretixApi {
     }
 
     @Override
-    public JSONObject redeem(String secret, List<TicketCheckProvider.Answer> answers) throws ApiException {
+    public JSONObject redeem(String secret, List<TicketCheckProvider.Answer> answers, boolean ignore_unpaid) throws ApiException {
         lastAnswers = answers;
         lastSecret = secret;
         return nextRedeemResponse;
     }
 
     @Override
-    public JSONObject redeem(String secret, Date datetime, boolean force, String nonce, List<TicketCheckProvider.Answer> answers) throws ApiException {
+    public JSONObject redeem(String secret, Date datetime, boolean force, String nonce, List<TicketCheckProvider.Answer> answers, boolean ignore_unpaid) throws ApiException {
         lastAnswers = answers;
         lastSecret = secret;
         return nextRedeemResponse;

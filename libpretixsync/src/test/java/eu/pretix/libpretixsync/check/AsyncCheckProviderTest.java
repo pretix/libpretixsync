@@ -32,6 +32,7 @@ public class AsyncCheckProviderTest extends BaseDatabaseTest {
         ticket.setOrder("12345");
         ticket.setPaid(true);
         ticket.setRequire_attention(false);
+        ticket.setCheckin_allowed(true);
         dataStore.insert(ticket);
 
         TicketCheckProvider.CheckResult r = p.check("foooooo");
@@ -57,6 +58,7 @@ public class AsyncCheckProviderTest extends BaseDatabaseTest {
         ticket.setAttendee_name("Niels Bohr");
         ticket.setOrder("12345");
         ticket.setRequire_attention(false);
+        ticket.setCheckin_allowed(true);
         dataStore.insert(ticket);
 
         TicketCheckProvider.CheckResult r = p.check("abc");
@@ -75,6 +77,7 @@ public class AsyncCheckProviderTest extends BaseDatabaseTest {
         ticket.setOrder("12345");
         ticket.setPaid(false);
         ticket.setRequire_attention(false);
+        ticket.setCheckin_allowed(false);
         dataStore.insert(ticket);
 
         TicketCheckProvider.CheckResult r = p.check("foooooo");
@@ -83,6 +86,40 @@ public class AsyncCheckProviderTest extends BaseDatabaseTest {
         assertEquals(null, r.getVariation());
         assertEquals("Niels Bohr", r.getAttendee_name());
         assertEquals(false, r.isRequireAttention());
+        assertEquals(false, r.isCheckinAllowed());
+    }
+
+    @Test
+    public void testSimpleUnpaidAllowed() {
+        AsyncCheckProvider p = new AsyncCheckProvider(configStore, dataStore);
+
+        Ticket ticket = new Ticket();
+        ticket.setRedeemed(false);
+        ticket.setSecret("foooooo");
+        ticket.setItem("Standard Ticket");
+        ticket.setAttendee_name("Niels Bohr");
+        ticket.setOrder("12345");
+        ticket.setPaid(false);
+        ticket.setRequire_attention(false);
+        ticket.setCheckin_allowed(true);
+        dataStore.insert(ticket);
+
+        TicketCheckProvider.CheckResult r = p.check("foooooo");
+        assertEquals(TicketCheckProvider.CheckResult.Type.UNPAID, r.getType());
+        assertEquals("Standard Ticket", r.getTicket());
+        assertEquals(null, r.getVariation());
+        assertEquals("Niels Bohr", r.getAttendee_name());
+        assertEquals(false, r.isRequireAttention());
+        assertEquals(true, r.isCheckinAllowed());
+
+        ticket.setCheckin_allowed(true);
+        r = p.check("foooooo", new ArrayList<TicketCheckProvider.Answer>(), true);
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.getType());
+        assertEquals("Standard Ticket", r.getTicket());
+        assertEquals(null, r.getVariation());
+        assertEquals("Niels Bohr", r.getAttendee_name());
+        assertEquals(false, r.isRequireAttention());
+        assertEquals(true, r.isCheckinAllowed());
     }
 
     @Test
@@ -97,6 +134,7 @@ public class AsyncCheckProviderTest extends BaseDatabaseTest {
         ticket.setOrder("12345");
         ticket.setPaid(true);
         ticket.setRequire_attention(false);
+        ticket.setCheckin_allowed(true);
         dataStore.insert(ticket);
 
         TicketCheckProvider.CheckResult r = p.check("foooooo");
@@ -119,6 +157,7 @@ public class AsyncCheckProviderTest extends BaseDatabaseTest {
         ticket.setOrder("12345");
         ticket.setPaid(true);
         ticket.setRequire_attention(false);
+        ticket.setCheckin_allowed(true);
         dataStore.insert(ticket);
 
         QueuedCheckIn queuedCheckIn = new QueuedCheckIn();
@@ -152,6 +191,7 @@ public class AsyncCheckProviderTest extends BaseDatabaseTest {
         ticket.setOrder("12345");
         ticket.setPaid(true);
         ticket.setRequire_attention(false);
+        ticket.setCheckin_allowed(true);
         dataStore.insert(ticket);
 
         Item item = new Item();
@@ -182,6 +222,7 @@ public class AsyncCheckProviderTest extends BaseDatabaseTest {
         ticket.setOrder("12345");
         ticket.setPaid(true);
         ticket.setRequire_attention(false);
+        ticket.setCheckin_allowed(true);
         dataStore.insert(ticket);
 
         Item item = new Item();
@@ -204,7 +245,7 @@ public class AsyncCheckProviderTest extends BaseDatabaseTest {
         List<TicketCheckProvider.Answer> answers = new ArrayList<>();
         answers.add(new TicketCheckProvider.Answer(q, "True"));
 
-        r = p.check(ticket.getSecret(), answers);
+        r = p.check(ticket.getSecret(), answers, false);
         assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.getType());
 
         List<QueuedCheckIn> qciList = dataStore.select(QueuedCheckIn.class).get().toList();
@@ -226,6 +267,7 @@ public class AsyncCheckProviderTest extends BaseDatabaseTest {
         ticket.setOrder("12345");
         ticket.setPaid(true);
         ticket.setRequire_attention(false);
+        ticket.setCheckin_allowed(true);
         dataStore.insert(ticket);
 
         Item item = new Item();
@@ -248,7 +290,7 @@ public class AsyncCheckProviderTest extends BaseDatabaseTest {
         List<TicketCheckProvider.Answer> answers = new ArrayList<>();
         answers.add(new TicketCheckProvider.Answer(q, "True"));
 
-        r = p.check(ticket.getSecret(), answers);
+        r = p.check(ticket.getSecret(), answers, false);
         assertEquals(TicketCheckProvider.CheckResult.Type.ANSWERS_REQUIRED, r.getType());
 
         List<QueuedCheckIn> qciList = dataStore.select(QueuedCheckIn.class).get().toList();
@@ -268,6 +310,7 @@ public class AsyncCheckProviderTest extends BaseDatabaseTest {
         ticket.setOrder("12345");
         ticket.setPaid(true);
         ticket.setRequire_attention(false);
+        ticket.setCheckin_allowed(true);
         dataStore.insert(ticket);
 
         configStore.setAllow_search(true);
@@ -317,6 +360,7 @@ public class AsyncCheckProviderTest extends BaseDatabaseTest {
         ticket.setOrder("12345");
         ticket.setPaid(true);
         ticket.setRequire_attention(false);
+        ticket.setCheckin_allowed(true);
         dataStore.insert(ticket);
 
         configStore.setAllow_search(false);
@@ -359,6 +403,7 @@ public class AsyncCheckProviderTest extends BaseDatabaseTest {
         ticket.setVariation_id(1L);
         ticket.setPaid(true);
         ticket.setRequire_attention(false);
+        ticket.setCheckin_allowed(true);
         dataStore.insert(ticket);
 
         ticket = new Ticket();
@@ -372,6 +417,7 @@ public class AsyncCheckProviderTest extends BaseDatabaseTest {
         ticket.setPaid(true);
         ticket.setRedeemed(true);
         ticket.setRequire_attention(false);
+        ticket.setCheckin_allowed(true);
         dataStore.insert(ticket);
 
         configStore.setLastStatusData("{\"status\": \"ok\"," +

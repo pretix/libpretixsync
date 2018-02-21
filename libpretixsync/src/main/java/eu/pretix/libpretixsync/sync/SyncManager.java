@@ -80,7 +80,7 @@ public class SyncManager {
                 } catch (JSONException e) {
                 }
 
-                JSONObject response = api.redeem(qci.getSecret(), qci.getDatetime(), true, qci.getNonce(), answers);
+                JSONObject response = api.redeem(qci.getSecret(), qci.getDatetime(), true, qci.getNonce(), answers, false);
                 String status = response.getString("status");
                 if ("ok".equals(status)) {
                     dataStore.delete(qci);
@@ -346,6 +346,11 @@ public class SyncManager {
                 }
                 if (res.getBoolean("paid") != ticket.isPaid()) {
                     ticket.setPaid(res.getBoolean("paid"));
+                }
+                if (!res.has("checkin_allowed")) {
+                    ticket.setCheckin_allowed(ticket.isPaid());
+                } else if (res.getBoolean("checkin_allowed") != ticket.isCheckin_allowed()) {
+                    ticket.setCheckin_allowed(res.getBoolean("checkin_allowed"));
                 }
 
                 if (created) {

@@ -39,4 +39,6 @@ public abstract class AbstractTicket {
     public boolean require_attention;
 
     public boolean paid;
+
+    public boolean checkin_allowed;
 }

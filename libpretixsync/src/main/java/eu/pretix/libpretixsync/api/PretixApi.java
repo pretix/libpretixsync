@@ -54,11 +54,11 @@ public class PretixApi {
         return PretixApi.fromConfig(config, new DefaultHttpClientFactory());
     }
 
-    public JSONObject redeem(String secret, List<TicketCheckProvider.Answer> answers) throws ApiException {
-        return redeem(secret, null, false, null, answers);
+    public JSONObject redeem(String secret, List<TicketCheckProvider.Answer> answers, boolean ignore_unpaid) throws ApiException {
+        return redeem(secret, null, false, null, answers, ignore_unpaid);
     }
 
-    public JSONObject redeem(String secret, Date datetime, boolean force, String nonce, List<TicketCheckProvider.Answer> answers) throws ApiException {
+    public JSONObject redeem(String secret, Date datetime, boolean force, String nonce, List<TicketCheckProvider.Answer> answers, boolean ignore_unpaid) throws ApiException {
         FormBody.Builder body = new FormBody.Builder()
                 .add("secret", secret);
         if (datetime != null) {
@@ -69,6 +69,8 @@ public class PretixApi {
         }
         if (force) {
             body.add("force", "true");
+        } else if (ignore_unpaid) {
+            body.add("ignore_unpaid", "true");
         }
         if (nonce != null) {
             body.add("nonce", nonce);
