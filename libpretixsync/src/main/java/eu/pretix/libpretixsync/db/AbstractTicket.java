@@ -40,5 +40,6 @@ public abstract class AbstractTicket {
 
     public boolean paid;
 
+    @Column(value = "0")
     public boolean checkin_allowed;
 }
