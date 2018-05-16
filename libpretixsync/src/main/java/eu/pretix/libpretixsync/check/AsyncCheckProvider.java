@@ -40,7 +40,9 @@ public class AsyncCheckProvider implements TicketCheckProvider {
     @Override
     public CheckResult check(String ticketid, List<Answer> answers, boolean ignore_unpaid) {
         sentry.addBreadcrumb("provider.check", "offline check started");
+        return new CheckResult(CheckResult.Type.INVALID);
 
+        /*
         List<Ticket> tickets = dataStore.select(Ticket.class)
                 .where(Ticket.SECRET.eq(ticketid))
                 .get().toList();
@@ -123,6 +125,7 @@ public class AsyncCheckProvider implements TicketCheckProvider {
         res.setAddonText(ticket.getAddon_text());
 
         return res;
+        */
     }
 
     @Override
@@ -130,6 +133,7 @@ public class AsyncCheckProvider implements TicketCheckProvider {
         sentry.addBreadcrumb("provider.search", "offline search started");
 
         List<SearchResult> results = new ArrayList<>();
+        /*
 
         if (query.length() < 4) {
             return results;
@@ -168,7 +172,7 @@ public class AsyncCheckProvider implements TicketCheckProvider {
             sr.setAddonText(ticket.getAddon_text());
             results.add(sr);
         }
-
+        */
         return results;
     }
 
@@ -185,6 +189,7 @@ public class AsyncCheckProvider implements TicketCheckProvider {
             e.printStackTrace();
             throw new CheckException("Invalid status data available.");
         }
+        /*
 
         if (dataStore.count(Ticket.class).where(Ticket.ITEM_ID.eq((long) 0)).get().value() > 0) {
             throw new CheckException("Incompatible with your current pretix version.");
@@ -232,7 +237,7 @@ public class AsyncCheckProvider implements TicketCheckProvider {
         }
         statusResult.setAlreadyScanned(checkins_all);
         statusResult.setTotalTickets(total_all);
-
+        */
         return statusResult;
     }
 }

@@ -55,14 +55,8 @@ public class Migrations {
             if (s != null) s.close();
         }
 
-        if (db_version < 2) {
-            migrate_from_1_to_2(dataSource);
-        }
-        if (db_version < 3) {
-            migrate_from_2_to_3(dataSource);
-        }
-        if (db_version < 4) {
-            migrate_from_3_to_4(dataSource);
+        if (db_version < 5) {
+            migrate_from_4_to_5(dataSource);
         }
         if (db_version < 5) {
             migrate_from_4_to_5(dataSource);
@@ -72,23 +66,8 @@ public class Migrations {
         updateVersionTable(c, CURRENT_VERSION);
     }
 
-    private static void migrate_from_1_to_2(DataSource dataSource) {
-        new SchemaModifier(dataSource, model).createTables(TableCreationMode.CREATE_NOT_EXISTS);
-    }
-
-    private static void migrate_from_2_to_3(DataSource dataSource) throws SQLException {
-        Connection c = dataSource.getConnection();
-        Statement s = c.createStatement();
-        s.execute("ALTER TABLE QueuedCheckIn ADD COLUMN answers TEXT;");
-        s.close();
-    }
-
-    private static void migrate_from_3_to_4(DataSource dataSource) throws SQLException {
-        Connection c = dataSource.getConnection();
-        Statement s = c.createStatement();
-        s.execute("ALTER TABLE Ticket ADD COLUMN checkin_allowed INTEGER;");
-        s.execute("UPDATE Ticket SET checkin_allowed = paid;");
-        s.close();
+    private static void migrate_from_4_to_5(DataSource dataSource) {
+        new SchemaModifier(dataSource, model).createTables(TableCreationMode.DROP_CREATE);
     }
 
     private static void migrate_from_4_to_5(DataSource dataSource) throws SQLException {

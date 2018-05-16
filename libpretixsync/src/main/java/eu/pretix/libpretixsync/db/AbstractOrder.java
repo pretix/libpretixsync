@@ -7,36 +7,30 @@ import java.util.List;
 
 import io.requery.Entity;
 import io.requery.Generated;
+import io.requery.JunctionTable;
 import io.requery.Key;
 import io.requery.ManyToMany;
-import io.requery.Nullable;
+import io.requery.Table;
 
+@Table(name = "orders")
 @Entity(cacheable = false)
-public class AbstractItem implements RemoteObject {
+public class AbstractOrder implements RemoteObject {
+
     @Generated
     @Key
     public Long id;
 
     public String event_slug;
 
-    public Long server_id;
+    public String code;
 
-    public Long position;
+    public String status;
 
-    @Nullable
-    public Long category_id;
+    public String email;
 
-    public boolean admission;
-
-    public boolean active;
+    public boolean checkin_attention;
 
     public String json_data;
-
-    @ManyToMany
-    List<Question> questions;
-
-    @ManyToMany
-    List<Question> quotas;
 
     @Override
     public JSONObject getJSON() throws JSONException {
@@ -45,11 +39,11 @@ public class AbstractItem implements RemoteObject {
 
     @Override
     public void fromJSON(JSONObject data) throws JSONException {
-        server_id = data.getLong("id");
-        position = data.optLong("position", 0L);
-        category_id = data.optLong("category");
-        admission = data.optBoolean("admission", false);
-        active = data.optBoolean("active", true);
+        code = data.getString("code");
+        status = data.getString("status");
+        email = data.getString("email");
+        checkin_attention = data.optBoolean("checkin_attention", false);
         json_data = data.toString();
     }
+
 }
