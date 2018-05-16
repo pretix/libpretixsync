@@ -1,42 +1,42 @@
 package eu.pretix.libpretixsync.db;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.math.BigDecimal;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
+import eu.pretix.libpretixsync.check.QuestionType;
 import io.requery.Entity;
 import io.requery.Generated;
+import io.requery.JunctionTable;
 import io.requery.Key;
 import io.requery.ManyToMany;
-import io.requery.Nullable;
 
 @Entity(cacheable = false)
-public class AbstractItem implements RemoteObject {
+public class AbstractQuota implements RemoteObject {
+
     @Generated
     @Key
     public Long id;
 
-    public String event_slug;
-
     public Long server_id;
 
-    public Long position;
+    public String event_slug;
 
-    @Nullable
-    public Long category_id;
-
-    public boolean admission;
-
-    public boolean active;
+    public Long subevent_id;
 
     public String json_data;
 
     @ManyToMany
-    List<Question> questions;
-
-    @ManyToMany
-    List<Question> quotas;
+    @JunctionTable
+    List<Item> items;
 
     @Override
     public JSONObject getJSON() throws JSONException {
@@ -46,10 +46,8 @@ public class AbstractItem implements RemoteObject {
     @Override
     public void fromJSON(JSONObject data) throws JSONException {
         server_id = data.getLong("id");
-        position = data.optLong("position", 0L);
-        category_id = data.optLong("category");
-        admission = data.optBoolean("admission", false);
-        active = data.optBoolean("active", true);
+        subevent_id = data.getLong("subevent");
         json_data = data.toString();
     }
+
 }
