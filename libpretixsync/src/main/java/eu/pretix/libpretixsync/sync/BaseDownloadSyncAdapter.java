@@ -21,10 +21,12 @@ public abstract class BaseDownloadSyncAdapter<T extends RemoteObject & Persistab
 
     protected BlockingEntityStore<Persistable> store;
     protected PretixApi api;
+    protected String eventSlug;
 
-    public BaseDownloadSyncAdapter(BlockingEntityStore<Persistable> store, PretixApi api) {
+    public BaseDownloadSyncAdapter(BlockingEntityStore<Persistable> store, String eventSlug, PretixApi api) {
         this.store = store;
         this.api = api;
+        this.eventSlug = eventSlug;
     }
 
     @Override
@@ -62,13 +64,14 @@ public abstract class BaseDownloadSyncAdapter<T extends RemoteObject & Persistab
                     } else {
                         obj = newEmptyObject();
                     }
-                    updateObject(obj, jsonobj);
                     if (known.containsKey(jsonid)) {
                         known.remove(jsonid);
-                        if (JSONUtils.similar(jsonobj, old)) {
+                        if (!JSONUtils.similar(jsonobj, old)) {
+                            updateObject(obj, jsonobj);
                             store.update(obj);
                         }
                     } else {
+                        updateObject(obj, jsonobj);
                         inserts.add(obj);
                     }
                 }
@@ -79,22 +82,20 @@ public abstract class BaseDownloadSyncAdapter<T extends RemoteObject & Persistab
         });
     }
 
-    protected void updateObject(T obj, JSONObject jsonobj) throws JSONException {
-        obj.fromJSON(jsonobj);
-    }
+    abstract void updateObject(T obj, JSONObject jsonobj) throws JSONException;
 
     protected List<JSONObject> downloadRawData() throws JSONException, ApiException {
         List<JSONObject> result = new ArrayList<>();
-        String url = api.resourceUrl(getResourceName());
+        String url = api.eventResourceUrl(getResourceName());
         while (true) {
             JSONObject page = downloadPage(url);
             for (int i = 0; i < page.getJSONArray("results").length(); i++) {
                 result.add(page.getJSONArray("results").getJSONObject(i));
             }
-            url = page.optString("next");
-            if (url == null) {
+            if (page.isNull("next")) {
                 break;
             }
+            url = page.getString("next");
         }
         return result;
     }

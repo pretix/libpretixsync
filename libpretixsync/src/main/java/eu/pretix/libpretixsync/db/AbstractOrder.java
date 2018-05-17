@@ -10,6 +10,7 @@ import io.requery.Generated;
 import io.requery.JunctionTable;
 import io.requery.Key;
 import io.requery.ManyToMany;
+import io.requery.OneToMany;
 import io.requery.Table;
 
 @Table(name = "orders")
@@ -32,18 +33,12 @@ public class AbstractOrder implements RemoteObject {
 
     public String json_data;
 
+    @OneToMany
+    public List<OrderPosition> positions;
+
     @Override
     public JSONObject getJSON() throws JSONException {
         return new JSONObject(json_data);
-    }
-
-    @Override
-    public void fromJSON(JSONObject data) throws JSONException {
-        code = data.getString("code");
-        status = data.getString("status");
-        email = data.getString("email");
-        checkin_attention = data.optBoolean("checkin_attention", false);
-        json_data = data.toString();
     }
 
 }

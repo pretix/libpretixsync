@@ -49,7 +49,6 @@ public class AbstractOrderPosition implements RemoteObject {
         return new JSONObject(json_data);
     }
 
-    @Override
     public void fromJSON(JSONObject data) throws JSONException {
         server_id = data.getLong("server_id");
         positionid = data.getLong("position");

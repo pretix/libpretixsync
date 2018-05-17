@@ -6,34 +6,36 @@ import org.json.JSONObject;
 import java.util.Iterator;
 
 import eu.pretix.libpretixsync.api.PretixApi;
-import eu.pretix.libpretixsync.db.ItemCategory;
+import eu.pretix.libpretixsync.db.Item;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
 
-public class ItemCategorySyncAdapter extends BaseDownloadSyncAdapter<ItemCategory, Long> {
-    public ItemCategorySyncAdapter(BlockingEntityStore<Persistable> store, String eventSlug, PretixApi api) {
+public class ItemSyncAdapter extends BaseDownloadSyncAdapter<Item, Long> {
+    public ItemSyncAdapter(BlockingEntityStore<Persistable> store, String eventSlug, PretixApi api) {
         super(store, eventSlug, api);
     }
 
     @Override
-    protected void updateObject(ItemCategory obj, JSONObject jsonobj) throws JSONException {
+    protected void updateObject(Item obj, JSONObject jsonobj) throws JSONException {
         obj.setEvent_slug(eventSlug);
         obj.setServer_id(jsonobj.getLong("id"));
         obj.setPosition(jsonobj.getLong("position"));
-        obj.setIs_addon(jsonobj.optBoolean("is_addon", false));
+        obj.setCategory_id(jsonobj.optLong("category"));
+        obj.setAdmission(jsonobj.optBoolean("admission", false));
+        obj.setActive(jsonobj.optBoolean("active", true));
         obj.setJson_data(jsonobj.toString());
     }
 
     @Override
-    Iterator<ItemCategory> getKnownObjectsIterator() {
-        return store.select(ItemCategory.class)
-                .where(ItemCategory.EVENT_SLUG.eq(eventSlug))
+    Iterator<Item> getKnownObjectsIterator() {
+        return store.select(Item.class)
+                .where(Item.EVENT_SLUG.eq(eventSlug))
                 .get().iterator();
     }
 
     @Override
     String getResourceName() {
-        return "categories";
+        return "items";
     }
 
     @Override
@@ -42,12 +44,12 @@ public class ItemCategorySyncAdapter extends BaseDownloadSyncAdapter<ItemCategor
     }
 
     @Override
-    Long getId(ItemCategory obj) {
+    Long getId(Item obj) {
         return obj.getServer_id();
     }
 
     @Override
-    ItemCategory newEmptyObject() {
-        return new ItemCategory();
+    Item newEmptyObject() {
+        return new Item();
     }
 }

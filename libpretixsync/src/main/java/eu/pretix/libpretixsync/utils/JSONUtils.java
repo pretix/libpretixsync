@@ -60,11 +60,11 @@ public class JSONUtils {
                 Object valueThis = first.get(name);
                 Object valueOther = ((JSONObject) other).get(name);
                 if (valueThis instanceof JSONObject) {
-                    if (JSONUtils.similar((JSONObject) valueThis, valueOther)) {
+                    if (!JSONUtils.similar((JSONObject) valueThis, valueOther)) {
                         return false;
                     }
                 } else if (valueThis instanceof JSONArray) {
-                    if (JSONUtils.similar((JSONArray) valueThis, valueOther)) {
+                    if (!JSONUtils.similar((JSONArray) valueThis, valueOther)) {
                         return false;
                     }
                 } else if (!valueThis.equals(valueOther)) {

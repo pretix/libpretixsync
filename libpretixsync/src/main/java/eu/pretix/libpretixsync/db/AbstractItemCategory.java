@@ -27,12 +27,4 @@ public class AbstractItemCategory implements RemoteObject {
     public JSONObject getJSON() throws JSONException {
         return new JSONObject(json_data);
     }
-
-    @Override
-    public void fromJSON(JSONObject data) throws JSONException {
-        server_id = data.getLong("id");
-        position = data.optLong("position", 0L);
-        is_addon = data.optBoolean("is_addon", false);
-        json_data = data.toString();
-    }
 }
