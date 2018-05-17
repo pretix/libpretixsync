@@ -38,21 +38,13 @@ public class AbstractQuestion implements RemoteObject {
 
     public String json_data;
 
-    @ManyToMany
+    @ManyToMany(cascade = CascadeAction.NONE)
     @JunctionTable
     List<Item> items;
 
     @Override
     public JSONObject getJSON() throws JSONException {
         return new JSONObject(json_data);
-    }
-
-    @Override
-    public void fromJSON(JSONObject data) throws JSONException {
-        server_id = data.getLong("id");
-        position = data.optLong("position", 0L);
-        required = data.optBoolean("required", false);
-        json_data = data.toString();
     }
 
     public String getQuestion() {

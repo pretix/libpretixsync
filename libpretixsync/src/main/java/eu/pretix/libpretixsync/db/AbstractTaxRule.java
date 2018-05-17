@@ -15,16 +15,12 @@ public class AbstractTaxRule implements RemoteObject {
 
     public Long server_id;
 
+    public String event_slug;
+
     public String json_data;
 
     @Override
     public JSONObject getJSON() throws JSONException {
         return new JSONObject(json_data);
-    }
-
-    @Override
-    public void fromJSON(JSONObject data) throws JSONException {
-        server_id = data.getLong("id");
-        json_data = data.toString();
     }
 }

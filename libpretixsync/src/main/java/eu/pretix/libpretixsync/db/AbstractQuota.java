@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Set;
 
 import eu.pretix.libpretixsync.check.QuestionType;
+import io.requery.CascadeAction;
 import io.requery.Entity;
 import io.requery.Generated;
 import io.requery.JunctionTable;
@@ -34,7 +35,7 @@ public class AbstractQuota implements RemoteObject {
 
     public String json_data;
 
-    @ManyToMany
+    @ManyToMany(cascade = CascadeAction.NONE)
     @JunctionTable
     List<Item> items;
 
@@ -42,12 +43,4 @@ public class AbstractQuota implements RemoteObject {
     public JSONObject getJSON() throws JSONException {
         return new JSONObject(json_data);
     }
-
-    @Override
-    public void fromJSON(JSONObject data) throws JSONException {
-        server_id = data.getLong("id");
-        subevent_id = data.getLong("subevent");
-        json_data = data.toString();
-    }
-
 }

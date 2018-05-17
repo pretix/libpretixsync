@@ -7,33 +7,32 @@ import java.util.Iterator;
 
 import eu.pretix.libpretixsync.api.PretixApi;
 import eu.pretix.libpretixsync.db.ItemCategory;
+import eu.pretix.libpretixsync.db.TaxRule;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
 
-public class ItemCategorySyncAdapter extends BaseDownloadSyncAdapter<ItemCategory, Long> {
-    public ItemCategorySyncAdapter(BlockingEntityStore<Persistable> store, String eventSlug, PretixApi api) {
+public class TaxRuleSyncAdapter extends BaseDownloadSyncAdapter<TaxRule, Long> {
+    public TaxRuleSyncAdapter(BlockingEntityStore<Persistable> store, String eventSlug, PretixApi api) {
         super(store, eventSlug, api);
     }
 
     @Override
-    protected void updateObject(ItemCategory obj, JSONObject jsonobj) throws JSONException {
+    protected void updateObject(TaxRule obj, JSONObject jsonobj) throws JSONException {
         obj.setEvent_slug(eventSlug);
         obj.setServer_id(jsonobj.getLong("id"));
-        obj.setPosition(jsonobj.getLong("position"));
-        obj.setIs_addon(jsonobj.optBoolean("is_addon", false));
         obj.setJson_data(jsonobj.toString());
     }
 
     @Override
-    Iterator<ItemCategory> getKnownObjectsIterator() {
-        return store.select(ItemCategory.class)
-                .where(ItemCategory.EVENT_SLUG.eq(eventSlug))
+    Iterator<TaxRule> getKnownObjectsIterator() {
+        return store.select(TaxRule.class)
+                .where(TaxRule.EVENT_SLUG.eq(eventSlug))
                 .get().iterator();
     }
 
     @Override
     String getResourceName() {
-        return "categories";
+        return "taxrules";
     }
 
     @Override
@@ -42,12 +41,12 @@ public class ItemCategorySyncAdapter extends BaseDownloadSyncAdapter<ItemCategor
     }
 
     @Override
-    Long getId(ItemCategory obj) {
+    Long getId(TaxRule obj) {
         return obj.getServer_id();
     }
 
     @Override
-    ItemCategory newEmptyObject() {
-        return new ItemCategory();
+    TaxRule newEmptyObject() {
+        return new TaxRule();
     }
 }

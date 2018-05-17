@@ -42,14 +42,4 @@ public class AbstractItem implements RemoteObject {
     public JSONObject getJSON() throws JSONException {
         return new JSONObject(json_data);
     }
-
-    @Override
-    public void fromJSON(JSONObject data) throws JSONException {
-        server_id = data.getLong("id");
-        position = data.optLong("position", 0L);
-        category_id = data.optLong("category");
-        admission = data.optBoolean("admission", false);
-        active = data.optBoolean("active", true);
-        json_data = data.toString();
-    }
 }

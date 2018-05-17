@@ -12,6 +12,8 @@ public interface ConfigStore {
 
     public String getApiKey();
 
+    public String getEventSlug();
+
     public boolean getShowInfo();
 
     public boolean getAllowSearch();

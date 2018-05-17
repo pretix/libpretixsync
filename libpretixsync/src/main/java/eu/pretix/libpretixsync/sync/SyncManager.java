@@ -65,7 +65,12 @@ public class SyncManager {
         sentry.addBreadcrumb("sync.queue", "Start download");
 
         try {
-            (new ItemCategorySyncAdapter(dataStore, api)).download();
+            (new ItemCategorySyncAdapter(dataStore, configStore.getEventSlug(), api)).download();
+            (new ItemSyncAdapter(dataStore, configStore.getEventSlug(), api)).download();
+            (new QuestionSyncAdapter(dataStore, configStore.getEventSlug(), api)).download();
+            (new QuotaSyncAdapter(dataStore, configStore.getEventSlug(), api)).download();
+            (new TaxRuleSyncAdapter(dataStore, configStore.getEventSlug(), api)).download();
+            (new OrderSyncAdapter(dataStore, configStore.getEventSlug(), api)).download();
         } catch (JSONException e) {
             e.printStackTrace();
             throw new SyncException("Unknown server response");

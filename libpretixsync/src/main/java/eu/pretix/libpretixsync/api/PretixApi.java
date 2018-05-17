@@ -34,25 +34,27 @@ public class PretixApi {
             = MediaType.parse("application/json; charset=utf-8");
 
     private String url;
+    private String eventSlug;
     private String key;
     private int version;
     private OkHttpClient client;
     private SentryInterface sentry;
 
-    public PretixApi(String url, String key, int version, HttpClientFactory httpClientFactory) {
+    public PretixApi(String url, String key, String eventSlug, int version, HttpClientFactory httpClientFactory) {
         if (!url.endsWith("/")) {
             url += "/";
         }
         this.url = url;
         this.key = key;
+        this.eventSlug = eventSlug;
         this.version = version;
         this.client = httpClientFactory.buildClient();
         this.sentry = new DummySentryImplementation();
     }
 
     public static PretixApi fromConfig(ConfigStore config, HttpClientFactory httpClientFactory) {
-        return new PretixApi(config.getApiUrl(), config.getApiKey(), config.getApiVersion(),
-                httpClientFactory);
+        return new PretixApi(config.getApiUrl(), config.getApiKey(), config.getEventSlug(),
+                config.getApiVersion(), httpClientFactory);
     }
 
     public static PretixApi fromConfig(ConfigStore config) {
@@ -79,9 +81,9 @@ public class PretixApi {
         return new JSONObject();
     }
 
-    public String resourceUrl(String resource) {
+    public String eventResourceUrl(String resource) {
         try {
-            return new URL(new URL(url), resource).toString();
+            return new URL(new URL(url), "events/" + eventSlug + "/" + resource + "/").toString();
         } catch (MalformedURLException e) {
             e.printStackTrace();
             return null;
