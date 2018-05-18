@@ -10,11 +10,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import eu.pretix.libpretixsync.api.ApiException;
 import eu.pretix.libpretixsync.api.PretixApi;
+import eu.pretix.libpretixsync.api.ResourceNotModified;
 import eu.pretix.libpretixsync.db.Item;
 import eu.pretix.libpretixsync.db.Order;
 import eu.pretix.libpretixsync.db.OrderPosition;
 import eu.pretix.libpretixsync.db.Quota;
+import eu.pretix.libpretixsync.db.ResourceLastModified;
 import eu.pretix.libpretixsync.utils.JSONUtils;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
@@ -73,6 +76,31 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
         }
         store.insert(inserts);
         store.delete(known.values());
+    }
+
+    @Override
+    protected JSONObject downloadPage(String url, boolean isFirstPage) throws ApiException, ResourceNotModified {
+        ResourceLastModified resourceLastModified = store.select(ResourceLastModified.class)
+                .where(ResourceLastModified.RESOURCE.eq("orders"))
+                .limit(1)
+                .get().firstOrNull();
+        if (resourceLastModified == null) {
+            resourceLastModified = new ResourceLastModified();
+            resourceLastModified.setResource("orders");
+        } else {
+            if (url.contains("?")) {
+                url += "&modified_since=" + resourceLastModified.getLast_modified();
+            } else {
+                url += "?modified_since=" + resourceLastModified.getLast_modified();
+            }
+        }
+
+        PretixApi.ApiResponse apiResponse = api.fetchResource(url);
+        if (isFirstPage && apiResponse.getResponse().header("X-Page-Generated") != null) {
+            resourceLastModified.setLast_modified(apiResponse.getResponse().header("X-Page-Generated"));
+            store.upsert(resourceLastModified);
+        }
+        return apiResponse.getData();
     }
 
     @Override

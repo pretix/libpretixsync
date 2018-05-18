@@ -14,7 +14,7 @@ import eu.pretix.libpretixsync.db.Question;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
 
-public class QuestionSyncAdapter extends BaseDownloadSyncAdapter<Question, Long> {
+public class QuestionSyncAdapter extends BaseConditionalSyncAdapter<Question, Long> {
     public QuestionSyncAdapter(BlockingEntityStore<Persistable> store, String eventSlug, PretixApi api) {
         super(store, eventSlug, api);
     }

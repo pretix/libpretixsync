@@ -1,6 +1,7 @@
 package eu.pretix.libpretixsync.api;
 
 import eu.pretix.libpretixsync.check.TicketCheckProvider;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -39,6 +40,24 @@ public class PretixApi {
     private int version;
     private OkHttpClient client;
     private SentryInterface sentry;
+
+    public class ApiResponse {
+        private JSONObject data;
+        private Response response;
+
+        public ApiResponse(JSONObject data, Response response) {
+            this.data = data;
+            this.response = response;
+        }
+
+        public JSONObject getData() {
+            return data;
+        }
+
+        public Response getResponse() {
+            return response;
+        }
+    }
 
     public PretixApi(String url, String key, String eventSlug, int version, HttpClientFactory httpClientFactory) {
         if (!url.endsWith("/")) {
@@ -90,13 +109,18 @@ public class PretixApi {
         }
     }
 
-    public JSONObject fetchResource(String full_url) throws ApiException {
-        Request request = new Request.Builder()
+    public ApiResponse fetchResource(String full_url, String if_modified_since) throws ApiException, ResourceNotModified {
+        Request.Builder request = new Request.Builder()
                 .url(full_url)
-                .header("Authorization", "Token " + key)
-                .get()
-                .build();
-        return apiCall(request);
+                .header("Authorization", "Token " + key);
+        if (if_modified_since != null) {
+            request = request.header("If-Modified-Since", if_modified_since);
+        }
+        return apiCall(request.get().build());
+    }
+
+    public ApiResponse fetchResource(String full_url) throws ApiException, ResourceNotModified {
+        return fetchResource(full_url, null);
     }
 
     public SentryInterface getSentry() {
@@ -107,7 +131,7 @@ public class PretixApi {
         this.sentry = sentry;
     }
 
-    private JSONObject apiCall(Request request) throws ApiException {
+    private ApiResponse apiCall(Request request) throws ApiException, ResourceNotModified {
         Response response;
         try {
             response = client.newCall(request).execute();
@@ -128,12 +152,17 @@ public class PretixApi {
         } else if (response.code() == 404) {
             response.close();
             throw new ApiException("Invalid configuration, please reset and reconfigure.");
+        } else if (response.code() == 304) {
+            throw new ResourceNotModified();
         } else if (response.code() == 403) {
             response.close();
             throw new ApiException("Permission error, please try again or reset and reconfigure.");
         }
         try {
-            return new JSONObject(response.body().string());
+            return new ApiResponse(
+                    new JSONObject(response.body().string()),
+                    response
+            );
         } catch (JSONException e) {
             e.printStackTrace();
             sentry.captureException(e);
