@@ -120,6 +120,7 @@ public class AsyncCheckProvider implements TicketCheckProvider {
         res.setOrderCode(ticket.getOrder());
         res.setRequireAttention(ticket.isRequire_attention());
         res.setCheckinAllowed(ticket.isCheckin_allowed());
+        res.setAddonText(ticket.getAddon_text());
 
         return res;
     }
@@ -164,6 +165,7 @@ public class AsyncCheckProvider implements TicketCheckProvider {
             sr.setRedeemed(ticket.isRedeemed());
             sr.setPaid(ticket.isPaid());
             sr.setRequireAttention(ticket.isRequire_attention());
+            sr.setAddonText(ticket.getAddon_text());
             results.add(sr);
         }
 

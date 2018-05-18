@@ -59,6 +59,7 @@ public interface TicketCheckProvider {
         private String attendee_name;
         private String message;
         private String order_code;
+        private String addon_text;
         private boolean require_attention;
         private boolean checkin_allowed;
         private List<RequiredAnswer> required_answers;
@@ -120,6 +121,14 @@ public interface TicketCheckProvider {
             this.order_code = order_code;
         }
 
+        public String getAddonText() {
+            return addon_text;
+        }
+
+        public void setAddonText(String addon_text) {
+            this.addon_text = addon_text;
+        }
+
         public boolean isRequireAttention() {
             return require_attention;
         }
@@ -152,6 +161,7 @@ public interface TicketCheckProvider {
         private String variation;
         private String attendee_name;
         private String order_code;
+        private String addon_text;
         private boolean paid;
         private boolean redeemed;
         private boolean require_attention;
@@ -168,6 +178,7 @@ public interface TicketCheckProvider {
             paid = r.paid;
             redeemed = r.redeemed;
             require_attention = r.require_attention;
+            addon_text = r.addon_text;
         }
 
         public String getSecret() {
@@ -224,6 +235,14 @@ public interface TicketCheckProvider {
 
         public void setOrderCode(String order_code) {
             this.order_code = order_code;
+        }
+
+        public String getAddonText() {
+            return addon_text;
+        }
+
+        public void setAddonText(String addon_text) {
+            this.addon_text = addon_text;
         }
 
         public boolean isRequireAttention() {

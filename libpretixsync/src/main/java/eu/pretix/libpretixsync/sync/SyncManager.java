@@ -335,6 +335,9 @@ public class SyncManager {
                 if (string_changed(res.getString("order"), ticket.getOrder())) {
                     ticket.setOrder(res.getString("order"));
                 }
+                if (string_changed(res.optString("addons_text", ""), ticket.getAddon_text())) {
+                    ticket.setAddon_text(res.optString("addons_text", ""));
+                }
                 if (string_changed(res.getString("secret"), ticket.getSecret())) {
                     ticket.setSecret(res.getString("secret"));
                 }

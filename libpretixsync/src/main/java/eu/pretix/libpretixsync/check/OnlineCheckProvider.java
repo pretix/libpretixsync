@@ -96,6 +96,7 @@ public class OnlineCheckProvider implements TicketCheckProvider {
                 res.setOrderCode(response.getJSONObject("data").getString("order"));
                 res.setRequireAttention(response.getJSONObject("data").optBoolean("attention", false));
                 res.setCheckinAllowed(response.getJSONObject("data").optBoolean("checkin_allowed", res.getType() != CheckResult.Type.UNPAID));
+                res.setAddonText(response.getJSONObject("data").optString("addons_text", ""));
             }
             return res;
         } catch (JSONException e) {
@@ -136,6 +137,7 @@ public class OnlineCheckProvider implements TicketCheckProvider {
                 sr.setRedeemed(res.getBoolean("redeemed"));
                 sr.setPaid(res.getBoolean("paid"));
                 sr.setRequireAttention(res.optBoolean("attention", false));
+                sr.setAddonText(res.optString("addons_text", ""));
                 results.add(sr);
             }
             return results;

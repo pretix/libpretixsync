@@ -42,4 +42,6 @@ public abstract class AbstractTicket {
 
     @Column(value = "0")
     public boolean checkin_allowed;
+
+    public String addon_text;
 }
