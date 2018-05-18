@@ -11,7 +11,7 @@ import eu.pretix.libpretixsync.db.TaxRule;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
 
-public class TaxRuleSyncAdapter extends BaseDownloadSyncAdapter<TaxRule, Long> {
+public class TaxRuleSyncAdapter extends BaseConditionalSyncAdapter<TaxRule, Long> {
     public TaxRuleSyncAdapter(BlockingEntityStore<Persistable> store, String eventSlug, PretixApi api) {
         super(store, eventSlug, api);
     }

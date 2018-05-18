@@ -10,7 +10,7 @@ import eu.pretix.libpretixsync.db.ItemCategory;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
 
-public class ItemCategorySyncAdapter extends BaseDownloadSyncAdapter<ItemCategory, Long> {
+public class ItemCategorySyncAdapter extends BaseConditionalSyncAdapter<ItemCategory, Long> {
     public ItemCategorySyncAdapter(BlockingEntityStore<Persistable> store, String eventSlug, PretixApi api) {
         super(store, eventSlug, api);
     }

@@ -15,7 +15,7 @@ import eu.pretix.libpretixsync.db.Quota;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
 
-public class QuotaSyncAdapter extends BaseDownloadSyncAdapter<Quota, Long> {
+public class QuotaSyncAdapter extends BaseConditionalSyncAdapter<Quota, Long> {
     public QuotaSyncAdapter(BlockingEntityStore<Persistable> store, String eventSlug, PretixApi api) {
         super(store, eventSlug, api);
     }

@@ -5,13 +5,16 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 
 import eu.pretix.libpretixsync.api.ApiException;
 import eu.pretix.libpretixsync.api.PretixApi;
+import eu.pretix.libpretixsync.api.ResourceNotModified;
 import eu.pretix.libpretixsync.db.RemoteObject;
 import eu.pretix.libpretixsync.utils.JSONUtils;
 import io.requery.BlockingEntityStore;
@@ -31,8 +34,12 @@ public abstract class BaseDownloadSyncAdapter<T extends RemoteObject & Persistab
 
     @Override
     public void download() throws JSONException, ApiException {
-        List<JSONObject> data = downloadRawData();
-        processData(data);
+        try {
+            List<JSONObject> data = downloadRawData();
+            processData(data);
+        } catch (ResourceNotModified e) {
+            // Do nothing
+        }
     }
 
     abstract Iterator<T> getKnownObjectsIterator();
@@ -52,13 +59,16 @@ public abstract class BaseDownloadSyncAdapter<T extends RemoteObject & Persistab
             @Override
             public Void call() throws Exception {
                 Map<K, T> known = getKnownObjects();
+                Set<K> seen = new HashSet<>();
                 List<T> inserts = new ArrayList<>();
 
                 for (JSONObject jsonobj : data) {
                     K jsonid = getId(jsonobj);
                     T obj;
                     JSONObject old = null;
-                    if (known.containsKey(jsonid)) {
+                    if (seen.contains(jsonid)) {
+                        continue;
+                    } else if (known.containsKey(jsonid)) {
                         obj = known.get(jsonid);
                         old = obj.getJSON();
                     } else {
@@ -74,6 +84,7 @@ public abstract class BaseDownloadSyncAdapter<T extends RemoteObject & Persistab
                         updateObject(obj, jsonobj);
                         inserts.add(obj);
                     }
+                    seen.add(jsonid);
                 }
                 store.insert(inserts);
                 store.delete(known.values());
@@ -84,11 +95,12 @@ public abstract class BaseDownloadSyncAdapter<T extends RemoteObject & Persistab
 
     abstract void updateObject(T obj, JSONObject jsonobj) throws JSONException;
 
-    protected List<JSONObject> downloadRawData() throws JSONException, ApiException {
+    protected List<JSONObject> downloadRawData() throws JSONException, ApiException, ResourceNotModified {
         List<JSONObject> result = new ArrayList<>();
         String url = api.eventResourceUrl(getResourceName());
+        boolean isFirstPage = true;
         while (true) {
-            JSONObject page = downloadPage(url);
+            JSONObject page = downloadPage(url, isFirstPage);
             for (int i = 0; i < page.getJSONArray("results").length(); i++) {
                 result.add(page.getJSONArray("results").getJSONObject(i));
             }
@@ -96,12 +108,13 @@ public abstract class BaseDownloadSyncAdapter<T extends RemoteObject & Persistab
                 break;
             }
             url = page.getString("next");
+            isFirstPage = false;
         }
         return result;
     }
 
-    protected JSONObject downloadPage(String url) throws ApiException {
-        return api.fetchResource(url);
+    protected JSONObject downloadPage(String url, boolean isFirstPage) throws ApiException, ResourceNotModified {
+        return api.fetchResource(url).getData();
     }
 
     abstract String getResourceName();
