@@ -5,6 +5,7 @@ import org.json.JSONObject;
 
 import java.util.List;
 
+import eu.pretix.libpretixsync.utils.I18nString;
 import io.requery.Entity;
 import io.requery.Generated;
 import io.requery.Key;
@@ -41,5 +42,14 @@ public class AbstractItem implements RemoteObject {
     @Override
     public JSONObject getJSON() throws JSONException {
         return new JSONObject(json_data);
+    }
+
+    public String getName() {
+        try {
+            return I18nString.toString(getJSON().getJSONObject("name"));
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return "";
+        }
     }
 }
