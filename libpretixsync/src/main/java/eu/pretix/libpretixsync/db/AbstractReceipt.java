@@ -14,6 +14,7 @@ import io.requery.Entity;
 import io.requery.Generated;
 import io.requery.Key;
 import io.requery.ManyToMany;
+import io.requery.Naming;
 import io.requery.Nullable;
 import io.requery.OneToMany;
 
