@@ -3,6 +3,7 @@ package eu.pretix.libpretixsync.db;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import eu.pretix.libpretixsync.utils.I18nString;
@@ -50,6 +51,14 @@ public class AbstractItem implements RemoteObject {
         } catch (JSONException e) {
             e.printStackTrace();
             return "";
+        }
+    }
+
+    public BigDecimal getDefaultPrice() {
+        try {
+            return new BigDecimal(getJSON().getString("default_price"));
+        } catch (JSONException e) {
+            return new BigDecimal(0.00);
         }
     }
 }
