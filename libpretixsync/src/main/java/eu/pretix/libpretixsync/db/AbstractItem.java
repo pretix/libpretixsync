@@ -1,9 +1,11 @@
 package eu.pretix.libpretixsync.db;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 import eu.pretix.libpretixsync.utils.I18nString;
@@ -54,10 +56,41 @@ public class AbstractItem implements RemoteObject {
         }
     }
 
+    public boolean hasVariations() {
+        try {
+            return getJSON().getBoolean("has_variations");
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public List<ItemVariation> getVariations() {
+        List<ItemVariation> l = new ArrayList<>();
+        try {
+            JSONArray vars = getJSON().getJSONArray("variations");
+            for (int i = 0; i < vars.length(); i++) {
+                JSONObject var = vars.getJSONObject(i);
+                ItemVariation v = new ItemVariation();
+                v.setActive(var.getBoolean("active"));
+                v.setDescription(var.getJSONObject("description"));
+                v.setPosition(var.getLong("position"));
+                v.setPrice(new BigDecimal(var.getString("price")));
+                v.setServer_id(var.getLong("id"));
+                v.setValue(var.getJSONObject("value"));
+                l.add(v);
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return l;
+    }
+
     public BigDecimal getDefaultPrice() {
         try {
             return new BigDecimal(getJSON().getString("default_price"));
         } catch (JSONException e) {
+            e.printStackTrace();
             return new BigDecimal(0.00);
         }
     }
