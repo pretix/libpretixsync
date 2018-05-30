@@ -82,18 +82,30 @@ public abstract class BaseDownloadSyncAdapter<T extends RemoteObject & Persistab
                         }
                     } else {
                         updateObject(obj, jsonobj);
-                        inserts.add(obj);
+                        if (autoPersist()) {
+                            inserts.add(obj);
+                        }
                     }
                     seen.add(jsonid);
                 }
                 store.insert(inserts);
-                store.delete(known.values());
+                if (deleteUnseen()) {
+                    store.delete(known.values());
+                }
                 return null;
             }
         });
     }
 
-    abstract void updateObject(T obj, JSONObject jsonobj) throws JSONException;
+    protected boolean autoPersist() {
+        return true;
+    }
+
+    protected boolean deleteUnseen() {
+        return true;
+    }
+
+    public abstract void updateObject(T obj, JSONObject jsonobj) throws JSONException;
 
     protected List<JSONObject> downloadRawData() throws JSONException, ApiException, ResourceNotModified {
         List<JSONObject> result = new ArrayList<>();

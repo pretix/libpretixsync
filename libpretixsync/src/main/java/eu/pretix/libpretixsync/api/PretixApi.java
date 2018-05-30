@@ -23,6 +23,7 @@ import okhttp3.FormBody;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
+import okhttp3.RequestBody;
 import okhttp3.Response;
 
 public class PretixApi {
@@ -106,6 +107,19 @@ public class PretixApi {
         } catch (MalformedURLException e) {
             e.printStackTrace();
             return null;
+        }
+    }
+
+    public ApiResponse postResource(String full_url, JSONObject data) throws ApiException {
+        Request.Builder request = new Request.Builder()
+                .url(full_url)
+                .post(RequestBody.create(MediaType.parse("application/json"), data.toString()))
+                .header("Authorization", "Token " + key);
+        try {
+            return apiCall(request.build());
+        } catch (ResourceNotModified resourceNotModified) {
+            resourceNotModified.printStackTrace();
+            throw new ApiException("Resource not modified");
         }
     }
 

@@ -10,9 +10,7 @@ import io.requery.Generated;
 import io.requery.Key;
 import io.requery.ManyToOne;
 import io.requery.Nullable;
-import io.requery.OneToMany;
 import io.requery.ReferentialAction;
-import io.requery.query.Order;
 
 @Entity(cacheable = false)
 public class AbstractOrderPosition implements RemoteObject {
