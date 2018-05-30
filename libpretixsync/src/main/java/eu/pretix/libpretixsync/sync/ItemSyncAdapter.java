@@ -18,7 +18,7 @@ public class ItemSyncAdapter extends BaseConditionalSyncAdapter<Item, Long> {
     }
 
     @Override
-    protected void updateObject(Item obj, JSONObject jsonobj) throws JSONException {
+    public void updateObject(Item obj, JSONObject jsonobj) throws JSONException {
         obj.setEvent_slug(eventSlug);
         obj.setServer_id(jsonobj.getLong("id"));
         obj.setPosition(jsonobj.getLong("position"));

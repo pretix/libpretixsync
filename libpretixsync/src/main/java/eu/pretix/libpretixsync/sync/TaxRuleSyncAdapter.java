@@ -17,7 +17,7 @@ public class TaxRuleSyncAdapter extends BaseConditionalSyncAdapter<TaxRule, Long
     }
 
     @Override
-    protected void updateObject(TaxRule obj, JSONObject jsonobj) throws JSONException {
+    public void updateObject(TaxRule obj, JSONObject jsonobj) throws JSONException {
         obj.setEvent_slug(eventSlug);
         obj.setServer_id(jsonobj.getLong("id"));
         obj.setJson_data(jsonobj.toString());

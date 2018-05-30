@@ -21,7 +21,7 @@ public class QuotaSyncAdapter extends BaseConditionalSyncAdapter<Quota, Long> {
     }
 
     @Override
-    protected void updateObject(Quota obj, JSONObject jsonobj) throws JSONException {
+    public void updateObject(Quota obj, JSONObject jsonobj) throws JSONException {
         obj.setEvent_slug(eventSlug);
         obj.setServer_id(jsonobj.getLong("id"));
         obj.setSubevent_id(jsonobj.optLong("subevent"));

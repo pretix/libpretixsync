@@ -20,7 +20,7 @@ public class QuestionSyncAdapter extends BaseConditionalSyncAdapter<Question, Lo
     }
 
     @Override
-    protected void updateObject(Question obj, JSONObject jsonobj) throws JSONException {
+    public void updateObject(Question obj, JSONObject jsonobj) throws JSONException {
         obj.setEvent_slug(eventSlug);
         obj.setServer_id(jsonobj.getLong("id"));
         obj.setPosition(jsonobj.getLong("position"));

@@ -37,13 +37,17 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
     }
 
     @Override
-    protected void updateObject(Order obj, JSONObject jsonobj) throws JSONException {
+    public void updateObject(Order obj, JSONObject jsonobj) throws JSONException {
         obj.setEvent_slug(eventSlug);
         obj.setCode(jsonobj.getString("code"));
         obj.setStatus(jsonobj.getString("status"));
         obj.setEmail(jsonobj.optString("email"));
         obj.setCheckin_attention(jsonobj.optBoolean("checkin_attention"));
         obj.setJson_data(jsonobj.toString());
+
+        if (obj.getId() == null) {
+            store.insert(obj);
+        }
 
         Map<Long, OrderPosition> known = new HashMap<>();
         for (OrderPosition op : obj.getPositions()) {
@@ -62,6 +66,7 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
                 old = obj.getJSON();
             } else {
                 posobj = new OrderPosition();
+                posobj.setOrder(obj);
             }
             if (known.containsKey(jsonid)) {
                 known.remove(jsonid);
@@ -76,6 +81,11 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
         }
         store.insert(inserts);
         store.delete(known.values());
+    }
+
+    @Override
+    protected boolean deleteUnseen() {
+        return false;
     }
 
     @Override
@@ -108,6 +118,11 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
         return store.select(Order.class)
                 .where(Order.EVENT_SLUG.eq(eventSlug))
                 .get().iterator();
+    }
+
+    @Override
+    protected boolean autoPersist() {
+        return false;
     }
 
     @Override
