@@ -197,8 +197,8 @@ public class AsyncCheckProvider implements TicketCheckProvider {
         for (StatusResultItem resultItem : statusResult.getItems()) {
             int total = 0;
             int checkins = 0;
-            if (resultItem.getVariations().size() > 0) {
-                for (StatusResultItemVariation itemVariation : resultItem.getVariations()) {
+            if (resultItem.getActiveVariations().size() > 0) {
+                for (StatusResultItemVariation itemVariation : resultItem.getActiveVariations()) {
                     itemVariation.setTotal(
                             dataStore.count(Ticket.class).where(
                                     Ticket.ITEM_ID.eq(resultItem.getId())
