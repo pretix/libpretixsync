@@ -65,7 +65,7 @@ public class AbstractItem implements RemoteObject {
         }
     }
 
-    public List<ItemVariation> getVariations() {
+    public List<ItemVariation> getActiveVariations() {
         List<ItemVariation> l = new ArrayList<>();
         try {
             JSONArray vars = getJSON().getJSONArray("variations");
@@ -73,12 +73,14 @@ public class AbstractItem implements RemoteObject {
                 JSONObject var = vars.getJSONObject(i);
                 ItemVariation v = new ItemVariation();
                 v.setActive(var.getBoolean("active"));
-                v.setDescription(var.getJSONObject("description"));
+                v.setDescription(var.optJSONObject("description"));
                 v.setPosition(var.getLong("position"));
                 v.setPrice(new BigDecimal(var.getString("price")));
                 v.setServer_id(var.getLong("id"));
                 v.setValue(var.getJSONObject("value"));
-                l.add(v);
+                if (v.isActive()) {
+                    l.add(v);
+                }
             }
         } catch (JSONException e) {
             e.printStackTrace();
