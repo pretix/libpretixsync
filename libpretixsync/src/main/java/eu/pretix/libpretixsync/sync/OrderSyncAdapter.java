@@ -97,11 +97,16 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
         if (resourceLastModified == null) {
             resourceLastModified = new ResourceLastModified();
             resourceLastModified.setResource("orders");
+            if (url.contains("?")) {
+                url += "&pdf_data=true";
+            } else {
+                url += "?pdf_data=true";
+            }
         } else {
             if (url.contains("?")) {
-                url += "&modified_since=" + resourceLastModified.getLast_modified();
+                url += "&pdf_data=true&3modified_since=" + resourceLastModified.getLast_modified();
             } else {
-                url += "?modified_since=" + resourceLastModified.getLast_modified();
+                url += "?pdf_data=true&modified_since=" + resourceLastModified.getLast_modified();
             }
         }
 
