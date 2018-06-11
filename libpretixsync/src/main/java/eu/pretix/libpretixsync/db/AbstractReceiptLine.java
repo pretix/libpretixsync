@@ -56,6 +56,21 @@ public class AbstractReceiptLine implements LocalObject {
 
     public String sale_text;
 
+    @Nullable
+    public Long cart_position_id;
+
+    @Nullable
+    public Date created;
+
+    @Nullable
+    public String cart_id;
+
+    @Nullable
+    public String remote_error;
+
+    @Nullable
+    public Date cart_expires;
+
     @ForeignKey
     @ManyToOne
     @Nullable
