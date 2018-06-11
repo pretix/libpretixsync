@@ -110,6 +110,19 @@ public class PretixApi {
         }
     }
 
+    public ApiResponse deleteResource(String full_url) throws ApiException {
+        Request.Builder request = new Request.Builder()
+                .url(full_url)
+                .delete()
+                .header("Authorization", "Token " + key);
+        try {
+            return apiCall(request.build(), false);
+        } catch (ResourceNotModified resourceNotModified) {
+            resourceNotModified.printStackTrace();
+            throw new ApiException("Resource not modified");
+        }
+    }
+
     public ApiResponse postResource(String full_url, JSONObject data) throws ApiException {
         Request.Builder request = new Request.Builder()
                 .url(full_url)
@@ -146,6 +159,10 @@ public class PretixApi {
     }
 
     private ApiResponse apiCall(Request request) throws ApiException, ResourceNotModified {
+        return apiCall(request, true);
+    }
+
+    private ApiResponse apiCall(Request request, boolean json) throws ApiException, ResourceNotModified {
         Response response;
         try {
             response = client.newCall(request).execute();
@@ -173,10 +190,21 @@ public class PretixApi {
             throw new ApiException("Permission error, please try again or reset and reconfigure.");
         }
         try {
-            return new ApiResponse(
-                    new JSONObject(response.body().string()),
-                    response
-            );
+            if (json) {
+                String body = response.body().string();
+                if (body.startsWith("[")) {
+                    body = "{\"content\": " + body + "}";
+                }
+                return new ApiResponse(
+                        new JSONObject(body),
+                        response
+                );
+            } else {
+                return new ApiResponse(
+                        null,
+                        response
+                );
+            }
         } catch (JSONException e) {
             e.printStackTrace();
             sentry.captureException(e);
