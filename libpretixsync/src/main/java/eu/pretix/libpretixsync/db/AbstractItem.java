@@ -96,4 +96,13 @@ public class AbstractItem implements RemoteObject {
             return new BigDecimal(0.00);
         }
     }
+
+    public Long getTaxRuleId() {
+        try {
+            return getJSON().optLong("tax_rule");
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return Long.valueOf(0);
+        }
+    }
 }
