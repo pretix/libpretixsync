@@ -44,6 +44,9 @@ public class AbstractClosing implements LocalObject {
     @Nullable
     public BigDecimal payment_sum_cash;
 
+    @Nullable
+    public BigDecimal cash_counted;
+
     @Override
     public JSONObject toJSON() throws JSONException {
         TimeZone tz = TimeZone.getTimeZone("UTC");
@@ -56,6 +59,7 @@ public class AbstractClosing implements LocalObject {
         jo.put("last_receipt", last_receipt);
         jo.put("payment_sum", payment_sum);
         jo.put("payment_sum_cash", payment_sum_cash);
+        jo.put("cash_counted", cash_counted);
         jo.put("datetime", df.format(datetime));
         return jo;
     }
