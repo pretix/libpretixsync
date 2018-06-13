@@ -33,22 +33,22 @@ public class SyncManager {
         this.dataStore = dataStore;
     }
 
-    public void sync() {
+    public void sync(boolean force) {
         if (!configStore.isConfigured()) {
             return;
         }
 
-        if ((System.currentTimeMillis() - configStore.getLastSync()) < upload_interval) {
+        if (!force && (System.currentTimeMillis() - configStore.getLastSync()) < upload_interval) {
             return;
         }
-        if ((System.currentTimeMillis() - configStore.getLastFailedSync()) < 30000) {
+        if (!force && (System.currentTimeMillis() - configStore.getLastFailedSync()) < 30000) {
             return;
         }
 
         try {
             uploadTicketData();
 
-            if ((System.currentTimeMillis() - configStore.getLastDownload()) > download_interval) {
+            if (force || (System.currentTimeMillis() - configStore.getLastDownload()) > download_interval) {
                 downloadData();
                 configStore.setLastDownload(System.currentTimeMillis());
             }
