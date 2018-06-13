@@ -101,6 +101,15 @@ public class PretixApi {
         return new JSONObject();
     }
 
+    public String organizerResourceUrl(String resource) {
+        try {
+            return new URL(new URL(url), resource + "/").toString();
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
     public String eventResourceUrl(String resource) {
         try {
             return new URL(new URL(url), "events/" + eventSlug + "/" + resource + "/").toString();
