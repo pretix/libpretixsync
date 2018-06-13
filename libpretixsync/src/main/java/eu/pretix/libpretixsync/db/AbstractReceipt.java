@@ -11,9 +11,11 @@ import java.util.List;
 import eu.pretix.libpretixsync.utils.I18nString;
 import io.requery.Column;
 import io.requery.Entity;
+import io.requery.ForeignKey;
 import io.requery.Generated;
 import io.requery.Key;
 import io.requery.ManyToMany;
+import io.requery.ManyToOne;
 import io.requery.Naming;
 import io.requery.Nullable;
 import io.requery.OneToMany;
@@ -33,12 +35,22 @@ public class AbstractReceipt implements LocalObject {
 
     public Boolean open;
 
-    public Date datetime;
+    @Nullable
+    public Date datetime_opened;
+
+    @Nullable
+    public Date datetime_closed;
 
     public String payment_type;
 
     @OneToMany
     public List<ReceiptLine> lines;
+
+    @ForeignKey
+    @ManyToOne
+    public Closing closing;
+
+    public Boolean canceled;
 
     @Override
     public JSONObject toJSON() throws JSONException {
@@ -48,8 +60,11 @@ public class AbstractReceipt implements LocalObject {
         jo.put("event_slug", event_slug);
         jo.put("open", open);
         jo.put("payment_type", payment_type);
-        jo.put("datetime", datetime);
+        jo.put("datetime_opened", datetime_opened);
+        jo.put("datetime_closed", datetime_closed);
         jo.put("order_code", order_code);
+        jo.put("closing", closing.getId());
+        jo.put("canceled", order_code);
 
         JSONArray linesarr = new JSONArray();
         for (ReceiptLine line : lines) {
