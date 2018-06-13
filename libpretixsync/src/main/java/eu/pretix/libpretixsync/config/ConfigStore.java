@@ -37,4 +37,6 @@ public interface ConfigStore {
     public void setLastFailedSyncMsg(String val);
 
     public void setLastStatusData(String val);
+
+    public Long getPosId();
 }

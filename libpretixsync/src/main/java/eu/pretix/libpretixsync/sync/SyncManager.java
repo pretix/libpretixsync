@@ -1,5 +1,7 @@
 package eu.pretix.libpretixsync.sync;
 
+import com.sun.corba.se.impl.orbutil.concurrent.Sync;
+
 import eu.pretix.libpretixsync.SentryInterface;
 import eu.pretix.libpretixsync.api.ApiException;
 import eu.pretix.libpretixsync.api.PretixApi;
@@ -10,6 +12,7 @@ import eu.pretix.libpretixsync.db.*;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
 import io.requery.util.CloseableIterator;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -47,6 +50,8 @@ public class SyncManager {
 
         try {
             uploadTicketData();
+            uploadReceipts();
+            uploadClosings();
 
             if (force || (System.currentTimeMillis() - configStore.getLastDownload()) > download_interval) {
                 downloadData();
@@ -80,8 +85,78 @@ public class SyncManager {
         }
     }
 
+    protected void uploadReceipts() throws SyncException {
+        sentry.addBreadcrumb("sync.queue", "Start receipt upload");
+
+        List<Receipt> receipts = dataStore.select(Receipt.class)
+                .where(Receipt.OPEN.eq(false))
+                .and(Receipt.SERVER_ID.isNull())
+                .get().toList();
+
+        try {
+            for (Receipt receipt : receipts) {
+                JSONObject data = receipt.toJSON();
+                JSONArray lines = new JSONArray();
+                for (ReceiptLine line : receipt.getLines()) {
+                    lines.put(line.toJSON());
+                }
+                data.put("lines", lines);
+                PretixApi.ApiResponse response = api.postResource(
+                        api.organizerResourceUrl("posdevices/" + configStore.getPosId() + "/receipts"),
+                        data
+                );
+                if (response.getResponse().code() == 201) {
+                    receipt.setServer_id(response.getData().getLong("receipt_id"));
+                    dataStore.update(receipt);
+                } else {
+                    throw new SyncException(response.getData().toString());
+                }
+            }
+        } catch (JSONException e) {
+            sentry.captureException(e);
+            throw new SyncException("Unknown server response");
+        } catch (ApiException e) {
+            sentry.addBreadcrumb("sync.queue", "API Error: " + e.getMessage());
+            throw new SyncException(e.getMessage());
+        }
+
+        sentry.addBreadcrumb("sync.queue", "Receipt upload complete");
+    }
+
+    protected void uploadClosings() throws SyncException {
+        sentry.addBreadcrumb("sync.queue", "Start closings upload");
+
+        List<Closing> closings = dataStore.select(Closing.class)
+                .where(Closing.OPEN.eq(false))
+                .and(Closing.SERVER_ID.isNull())
+                .get().toList();
+
+        try {
+            for (Closing closing : closings) {
+                PretixApi.ApiResponse response = api.postResource(
+                        api.organizerResourceUrl("posdevices/" + configStore.getPosId() + "/closings"),
+                        closing.toJSON()
+                );
+                if (response.getResponse().code() == 201) {
+                    closing.setServer_id(response.getData().getLong("closing_id"));
+                    dataStore.update(closing);
+                } else {
+                    throw new SyncException(response.getData().toString());
+                }
+            }
+        } catch (JSONException e) {
+            sentry.captureException(e);
+            throw new SyncException("Unknown server response");
+        } catch (ApiException e) {
+            sentry.addBreadcrumb("sync.queue", "API Error: " + e.getMessage());
+            throw new SyncException(e.getMessage());
+        }
+
+        sentry.addBreadcrumb("sync.queue", "Closings upload complete");
+    }
+
     protected void uploadTicketData() throws SyncException {
-        sentry.addBreadcrumb("sync.queue", "Start upload");
+        sentry.addBreadcrumb("sync.queue", "Start check-in upload");
 
         List<QueuedCheckIn> queued = dataStore.select(QueuedCheckIn.class).get().toList();
 
@@ -118,6 +193,6 @@ public class SyncManager {
             sentry.addBreadcrumb("sync.tickets", "API Error: " + e.getMessage());
             throw new SyncException(e.getMessage());
         }
-        sentry.addBreadcrumb("sync.queue", "Upload complete");
+        sentry.addBreadcrumb("sync.queue", "Check-in upload complete");
     }
 }
