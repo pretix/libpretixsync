@@ -5,8 +5,11 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.math.BigDecimal;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.TimeZone;
 
 import eu.pretix.libpretixsync.utils.I18nString;
 import io.requery.Column;
@@ -54,23 +57,20 @@ public class AbstractReceipt implements LocalObject {
 
     @Override
     public JSONObject toJSON() throws JSONException {
+        TimeZone tz = TimeZone.getTimeZone("UTC");
+        DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'");
+        df.setTimeZone(tz);
+
         JSONObject jo = new JSONObject();
-        jo.put("id", id);
-        jo.put("server_id", server_id);
-        jo.put("event_slug", event_slug);
+        jo.put("receipt_id", id);
+        jo.put("event", event_slug != null ? event_slug : JSONObject.NULL);
+        jo.put("order", order_code != null ? order_code : JSONObject.NULL);
         jo.put("open", open);
         jo.put("payment_type", payment_type);
-        jo.put("datetime_opened", datetime_opened);
-        jo.put("datetime_closed", datetime_closed);
-        jo.put("order_code", order_code);
-        jo.put("closing", closing.getId());
-        jo.put("canceled", order_code);
-
-        JSONArray linesarr = new JSONArray();
-        for (ReceiptLine line : lines) {
-            linesarr.put(line.toJSON());
-        }
-        jo.put("lines", linesarr);
+        jo.put("datetime_opened", df.format(datetime_opened));
+        jo.put("datetime_closed", df.format(datetime_closed));
+        jo.put("closing_id", closing.getId());
+        jo.put("canceled", canceled);
         return jo;
     }
 }

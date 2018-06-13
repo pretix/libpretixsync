@@ -84,16 +84,18 @@ public class AbstractReceiptLine implements LocalObject {
         JSONObject jo = new JSONObject();
         jo.put("id", id);
         jo.put("type", type);
-        jo.put("positionid", positionid);
+        jo.put("position_id", positionid);
         jo.put("canceled", canceled);
         jo.put("price", price);
         jo.put("tax_rate", tax_rate);
         jo.put("tax_value", tax_value);
+        jo.put("tax_rule", tax_rule);
         jo.put("secret", secret);
         jo.put("subevent", subevent_id);
         jo.put("item", item_id);
         jo.put("variation", variation_id);
         jo.put("sale_text", sale_text);
+        jo.put("addon_to", JSONObject.NULL);
         return jo;
     }
 }

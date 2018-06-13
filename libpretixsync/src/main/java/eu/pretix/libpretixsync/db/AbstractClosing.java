@@ -5,8 +5,11 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.math.BigDecimal;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.TimeZone;
 
 import io.requery.Entity;
 import io.requery.Generated;
@@ -43,14 +46,17 @@ public class AbstractClosing implements LocalObject {
 
     @Override
     public JSONObject toJSON() throws JSONException {
+        TimeZone tz = TimeZone.getTimeZone("UTC");
+        DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'");
+        df.setTimeZone(tz);
+
         JSONObject jo = new JSONObject();
-        jo.put("id", id);
-        jo.put("server_id", server_id);
+        jo.put("closing_id", id);
         jo.put("first_receipt", first_receipt);
         jo.put("last_receipt", last_receipt);
         jo.put("payment_sum", payment_sum);
         jo.put("payment_sum_cash", payment_sum_cash);
-        jo.put("datetime", datetime);
+        jo.put("datetime", df.format(datetime));
         return jo;
     }
 }
