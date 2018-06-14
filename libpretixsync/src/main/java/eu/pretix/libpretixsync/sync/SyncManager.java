@@ -1,23 +1,24 @@
 package eu.pretix.libpretixsync.sync;
 
-import com.sun.corba.se.impl.orbutil.concurrent.Sync;
-
-import eu.pretix.libpretixsync.SentryInterface;
-import eu.pretix.libpretixsync.api.ApiException;
-import eu.pretix.libpretixsync.api.PretixApi;
-import eu.pretix.libpretixsync.check.QuestionType;
-import eu.pretix.libpretixsync.check.TicketCheckProvider;
-import eu.pretix.libpretixsync.config.ConfigStore;
-import eu.pretix.libpretixsync.db.*;
-import io.requery.BlockingEntityStore;
-import io.requery.Persistable;
-import io.requery.util.CloseableIterator;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+
+import eu.pretix.libpretixsync.SentryInterface;
+import eu.pretix.libpretixsync.api.ApiException;
+import eu.pretix.libpretixsync.api.PretixApi;
+import eu.pretix.libpretixsync.check.TicketCheckProvider;
+import eu.pretix.libpretixsync.config.ConfigStore;
+import eu.pretix.libpretixsync.db.Closing;
+import eu.pretix.libpretixsync.db.Question;
+import eu.pretix.libpretixsync.db.QueuedCheckIn;
+import eu.pretix.libpretixsync.db.Receipt;
+import eu.pretix.libpretixsync.db.ReceiptLine;
+import io.requery.BlockingEntityStore;
+import io.requery.Persistable;
 
 public class SyncManager {
     private SentryInterface sentry;
