@@ -36,6 +36,15 @@ public class AbstractOrder implements RemoteObject {
     @OneToMany
     public List<OrderPosition> positions;
 
+    public String getPaymentProvider() {
+        try {
+            return getJSON().getString("payment_provider");
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
     @Override
     public JSONObject getJSON() throws JSONException {
         return new JSONObject(json_data);
