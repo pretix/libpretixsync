@@ -3,6 +3,8 @@ package eu.pretix.libpretixsync.db;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.math.BigDecimal;
+
 import io.requery.Column;
 import io.requery.Entity;
 import io.requery.ForeignKey;
@@ -41,6 +43,60 @@ public class AbstractOrderPosition implements RemoteObject {
     public String secret;
 
     public String json_data;
+
+    public BigDecimal getPrice() {
+        try {
+            return new BigDecimal(getJSON().getString("price"));
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public BigDecimal getTaxRate() {
+        try {
+            return new BigDecimal(getJSON().getString("tax_rate"));
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public BigDecimal getTaxValue() {
+        try {
+            return new BigDecimal(getJSON().getString("tax_value"));
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public Long getTaxRule() {
+        try {
+            return getJSON().optLong("tax_rule", 0L);
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public Long getSubeventId() {
+        try {
+            return getJSON().optLong("subevent", 0L);
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public Long getVariationId() {
+        try {
+            return getJSON().optLong("variation", 0L);
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
 
     @Override
     public JSONObject getJSON() throws JSONException {
