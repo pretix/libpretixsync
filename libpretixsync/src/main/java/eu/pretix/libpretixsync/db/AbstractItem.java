@@ -42,6 +42,12 @@ public class AbstractItem implements RemoteObject {
     @ManyToMany
     List<Question> quotas;
 
+    @Nullable
+    public Long badge_layout_id;
+
+    @Nullable
+    public Long ticket_layout_id;
+
     @Override
     public JSONObject getJSON() throws JSONException {
         return new JSONObject(json_data);

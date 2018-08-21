@@ -27,14 +27,16 @@ public class SyncManager {
     private long upload_interval;
     private long download_interval;
     private BlockingEntityStore<Persistable> dataStore;
+    private FileStorage fileStorage;
 
-    public SyncManager(ConfigStore configStore, PretixApi api, SentryInterface sentry, BlockingEntityStore<Persistable> dataStore, long upload_interval, long download_interval) {
+    public SyncManager(ConfigStore configStore, PretixApi api, SentryInterface sentry, BlockingEntityStore<Persistable> dataStore, FileStorage fileStorage, long upload_interval, long download_interval) {
         this.configStore = configStore;
         this.api = api;
         this.sentry = sentry;
         this.upload_interval = upload_interval;
         this.download_interval = download_interval;
         this.dataStore = dataStore;
+        this.fileStorage = fileStorage;
     }
 
     public void sync(boolean force) {
@@ -71,12 +73,13 @@ public class SyncManager {
         sentry.addBreadcrumb("sync.queue", "Start download");
 
         try {
-            (new ItemCategorySyncAdapter(dataStore, configStore.getEventSlug(), api)).download();
-            (new ItemSyncAdapter(dataStore, configStore.getEventSlug(), api)).download();
-            (new QuestionSyncAdapter(dataStore, configStore.getEventSlug(), api)).download();
-            (new QuotaSyncAdapter(dataStore, configStore.getEventSlug(), api)).download();
-            (new TaxRuleSyncAdapter(dataStore, configStore.getEventSlug(), api)).download();
-            (new OrderSyncAdapter(dataStore, configStore.getEventSlug(), api)).download();
+            (new ItemCategorySyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api)).download();
+            (new ItemSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api)).download();
+            (new QuestionSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api)).download();
+            (new QuotaSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api)).download();
+            (new TaxRuleSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api)).download();
+            (new OrderSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api)).download();
+            (new TicketLayoutSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api)).download();
         } catch (JSONException e) {
             e.printStackTrace();
             throw new SyncException("Unknown server response");

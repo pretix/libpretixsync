@@ -25,11 +25,13 @@ public abstract class BaseDownloadSyncAdapter<T extends RemoteObject & Persistab
     protected BlockingEntityStore<Persistable> store;
     protected PretixApi api;
     protected String eventSlug;
+    protected FileStorage fileStorage;
 
-    public BaseDownloadSyncAdapter(BlockingEntityStore<Persistable> store, String eventSlug, PretixApi api) {
+    public BaseDownloadSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, PretixApi api) {
         this.store = store;
         this.api = api;
         this.eventSlug = eventSlug;
+        this.fileStorage = fileStorage;
     }
 
     @Override
@@ -90,11 +92,18 @@ public abstract class BaseDownloadSyncAdapter<T extends RemoteObject & Persistab
                 }
                 store.insert(inserts);
                 if (deleteUnseen()) {
-                    store.delete(known.values());
+                    for (T obj : known.values()) {
+                        prepareDelete(obj);
+                        store.delete(obj);
+                    }
                 }
                 return null;
             }
         });
+    }
+
+    protected void prepareDelete(T obj) {
+
     }
 
     protected boolean autoPersist() {
