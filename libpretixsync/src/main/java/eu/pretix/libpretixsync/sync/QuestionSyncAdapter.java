@@ -15,8 +15,8 @@ import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
 
 public class QuestionSyncAdapter extends BaseConditionalSyncAdapter<Question, Long> {
-    public QuestionSyncAdapter(BlockingEntityStore<Persistable> store, String eventSlug, PretixApi api) {
-        super(store, eventSlug, api);
+    public QuestionSyncAdapter(BlockingEntityStore<Persistable> store,FileStorage fileStorage, String eventSlug, PretixApi api) {
+        super(store, fileStorage, eventSlug, api);
     }
 
     @Override

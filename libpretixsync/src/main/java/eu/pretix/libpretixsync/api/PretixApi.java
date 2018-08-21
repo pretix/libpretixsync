@@ -159,6 +159,18 @@ public class PretixApi {
         return fetchResource(full_url, null);
     }
 
+    public ApiResponse downloadFile(String full_url) throws ApiException {
+        Request.Builder request = new Request.Builder()
+                .url(full_url)
+                .header("Authorization", "Token " + key);
+        try {
+            return apiCall(request.build(), false);
+        } catch (ResourceNotModified resourceNotModified) {
+            resourceNotModified.printStackTrace();
+            throw new ApiException("Resource not modified");
+        }
+    }
+
     public SentryInterface getSentry() {
         return sentry;
     }

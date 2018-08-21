@@ -4,6 +4,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -22,8 +23,8 @@ import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
 
 abstract public class BaseConditionalSyncAdapter<T extends RemoteObject & Persistable, K> extends BaseDownloadSyncAdapter<T, K> {
-    public BaseConditionalSyncAdapter(BlockingEntityStore<Persistable> store, String eventSlug, PretixApi api) {
-        super(store, eventSlug, api);
+    public BaseConditionalSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, PretixApi api) {
+        super(store, fileStorage, eventSlug, api);
     }
 
     @Override

@@ -3,6 +3,7 @@ package eu.pretix.libpretixsync.sync;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
 import java.util.Iterator;
 
 import eu.pretix.libpretixsync.api.PretixApi;
@@ -11,8 +12,8 @@ import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
 
 public class ItemCategorySyncAdapter extends BaseConditionalSyncAdapter<ItemCategory, Long> {
-    public ItemCategorySyncAdapter(BlockingEntityStore<Persistable> store, String eventSlug, PretixApi api) {
-        super(store, eventSlug, api);
+    public ItemCategorySyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, PretixApi api) {
+        super(store, fileStorage, eventSlug, api);
     }
 
     @Override

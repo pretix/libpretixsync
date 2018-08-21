@@ -23,8 +23,8 @@ import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
 
 public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
-    public OrderSyncAdapter(BlockingEntityStore<Persistable> store, String eventSlug, PretixApi api) {
-        super(store, eventSlug, api);
+    public OrderSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, PretixApi api) {
+        super(store, fileStorage, eventSlug, api);
     }
 
     private Map<Long, Item> itemCache = new HashMap<>();

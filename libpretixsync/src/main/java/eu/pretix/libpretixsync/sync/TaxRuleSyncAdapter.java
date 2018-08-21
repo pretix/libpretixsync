@@ -12,8 +12,8 @@ import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
 
 public class TaxRuleSyncAdapter extends BaseConditionalSyncAdapter<TaxRule, Long> {
-    public TaxRuleSyncAdapter(BlockingEntityStore<Persistable> store, String eventSlug, PretixApi api) {
-        super(store, eventSlug, api);
+    public TaxRuleSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, PretixApi api) {
+        super(store, fileStorage, eventSlug, api);
     }
 
     @Override
