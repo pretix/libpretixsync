@@ -16,7 +16,7 @@ buildscript {
         }
     }
     dependencies {
-        classpath "net.ltgt.gradle:gradle-apt-plugin:0.13"
+        classpath "net.ltgt.gradle:gradle-apt-plugin:0.17"
     }
 }
 
