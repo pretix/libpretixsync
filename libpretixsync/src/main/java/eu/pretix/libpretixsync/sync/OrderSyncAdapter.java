@@ -4,6 +4,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -118,10 +120,14 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
                 url += "?pdf_data=true";
             }
         } else {
-            if (url.contains("?")) {
-                url += "&pdf_data=true&3modified_since=" + resourceLastModified.getLast_modified();
-            } else {
-                url += "?pdf_data=true&modified_since=" + resourceLastModified.getLast_modified();
+            try {
+                if (url.contains("?")) {
+                    url += "&pdf_data=true&3modified_since=" + URLEncoder.encode(resourceLastModified.getLast_modified(), "UTF-8");
+                } else {
+                    url += "?pdf_data=true&modified_since=" + URLEncoder.encode(resourceLastModified.getLast_modified(), "UTF-8");
+                }
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
             }
         }
 
