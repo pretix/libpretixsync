@@ -39,24 +39,31 @@ public class SyncManager {
         this.fileStorage = fileStorage;
     }
 
-    public void sync(boolean force) {
+    /**
+     * Synchronize data with the pretix server
+     *
+     * @param force Force a new sync
+     * @return A SyncResult describing the results of the synchronization
+     */
+    public SyncResult sync(boolean force) {
         if (!configStore.isConfigured()) {
-            return;
+            return new SyncResult(false, false);
         }
 
         if (!force && (System.currentTimeMillis() - configStore.getLastSync()) < upload_interval) {
-            return;
+            return new SyncResult(false, false);
         }
         if (!force && (System.currentTimeMillis() - configStore.getLastFailedSync()) < 30000) {
-            return;
+            return new SyncResult(false, false);
         }
 
+        boolean download = force || (System.currentTimeMillis() - configStore.getLastDownload()) > download_interval;
         try {
             uploadTicketData();
             uploadReceipts();
             uploadClosings();
 
-            if (force || (System.currentTimeMillis() - configStore.getLastDownload()) > download_interval) {
+            if (download) {
                 downloadData();
                 configStore.setLastDownload(System.currentTimeMillis());
             }
@@ -67,6 +74,7 @@ public class SyncManager {
             configStore.setLastFailedSync(System.currentTimeMillis());
             configStore.setLastFailedSyncMsg(e.getMessage());
         }
+        return new SyncResult(true, download);
     }
 
     protected void downloadData() throws SyncException {
@@ -198,5 +206,23 @@ public class SyncManager {
             throw new SyncException(e.getMessage());
         }
         sentry.addBreadcrumb("sync.queue", "Check-in upload complete");
+    }
+
+    public class SyncResult {
+        private boolean dataUploaded;
+        private boolean dataDownloaded;
+
+        public SyncResult(boolean dataUploaded, boolean dataDownloaded) {
+            this.dataUploaded = dataUploaded;
+            this.dataDownloaded = dataDownloaded;
+        }
+
+        public boolean isDataUploaded() {
+            return dataUploaded;
+        }
+
+        public boolean isDataDownloaded() {
+            return dataDownloaded;
+        }
     }
 }
