@@ -37,6 +37,7 @@ public class PretixApi {
 
     private String url;
     private String eventSlug;
+    private String orgaSlug;
     private String key;
     private int version;
     private OkHttpClient client;
@@ -60,21 +61,22 @@ public class PretixApi {
         }
     }
 
-    public PretixApi(String url, String key, String eventSlug, int version, HttpClientFactory httpClientFactory) {
+    public PretixApi(String url, String key, String orgaSlug, String eventSlug, int version, HttpClientFactory httpClientFactory) {
         if (!url.endsWith("/")) {
             url += "/";
         }
         this.url = url;
         this.key = key;
         this.eventSlug = eventSlug;
+        this.orgaSlug = orgaSlug;
         this.version = version;
         this.client = httpClientFactory.buildClient();
         this.sentry = new DummySentryImplementation();
     }
 
     public static PretixApi fromConfig(ConfigStore config, HttpClientFactory httpClientFactory) {
-        return new PretixApi(config.getApiUrl(), config.getApiKey(), config.getEventSlug(),
-                config.getApiVersion(), httpClientFactory);
+        return new PretixApi(config.getApiUrl(), config.getApiKey(), config.getOrganizerSlug(),
+                config.getEventSlug(), config.getApiVersion(), httpClientFactory);
     }
 
     public static PretixApi fromConfig(ConfigStore config) {
@@ -103,7 +105,7 @@ public class PretixApi {
 
     public String organizerResourceUrl(String resource) {
         try {
-            return new URL(new URL(url), resource + "/").toString();
+            return new URL(new URL(url), "/api/v1/organizer/" + orgaSlug + "/" + resource + "/").toString();
         } catch (MalformedURLException e) {
             e.printStackTrace();
             return null;
@@ -112,7 +114,7 @@ public class PretixApi {
 
     public String eventResourceUrl(String resource) {
         try {
-            return new URL(new URL(url), "events/" + eventSlug + "/" + resource + "/").toString();
+            return new URL(new URL(url), "/api/v1/organizer/" + orgaSlug + "/events/" + eventSlug + "/" + resource + "/").toString();
         } catch (MalformedURLException e) {
             e.printStackTrace();
             return null;
@@ -123,7 +125,7 @@ public class PretixApi {
         Request.Builder request = new Request.Builder()
                 .url(full_url)
                 .delete()
-                .header("Authorization", "Token " + key);
+                .header("Authorization", "Device " + key);
         try {
             return apiCall(request.build(), false);
         } catch (ResourceNotModified resourceNotModified) {
@@ -136,7 +138,7 @@ public class PretixApi {
         Request.Builder request = new Request.Builder()
                 .url(full_url)
                 .post(RequestBody.create(MediaType.parse("application/json"), data.toString()))
-                .header("Authorization", "Token " + key);
+                .header("Authorization", "Device " + key);
         try {
             return apiCall(request.build());
         } catch (ResourceNotModified resourceNotModified) {
@@ -148,7 +150,7 @@ public class PretixApi {
     public ApiResponse fetchResource(String full_url, String if_modified_since) throws ApiException, ResourceNotModified {
         Request.Builder request = new Request.Builder()
                 .url(full_url)
-                .header("Authorization", "Token " + key);
+                .header("Authorization", "Device " + key);
         if (if_modified_since != null) {
             request = request.header("If-Modified-Since", if_modified_since);
         }
@@ -162,7 +164,7 @@ public class PretixApi {
     public ApiResponse downloadFile(String full_url) throws ApiException {
         Request.Builder request = new Request.Builder()
                 .url(full_url)
-                .header("Authorization", "Token " + key);
+                .header("Authorization", "Device " + key);
         try {
             return apiCall(request.build(), false);
         } catch (ResourceNotModified resourceNotModified) {
