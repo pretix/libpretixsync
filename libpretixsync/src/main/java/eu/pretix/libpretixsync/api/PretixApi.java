@@ -105,7 +105,7 @@ public class PretixApi {
 
     public String organizerResourceUrl(String resource) {
         try {
-            return new URL(new URL(url), "/api/v1/organizer/" + orgaSlug + "/" + resource + "/").toString();
+            return new URL(new URL(url), "/api/v1/organizers/" + orgaSlug + "/" + resource + "/").toString();
         } catch (MalformedURLException e) {
             e.printStackTrace();
             return null;
@@ -114,7 +114,7 @@ public class PretixApi {
 
     public String eventResourceUrl(String resource) {
         try {
-            return new URL(new URL(url), "/api/v1/organizer/" + orgaSlug + "/events/" + eventSlug + "/" + resource + "/").toString();
+            return new URL(new URL(url), "/api/v1/organizers/" + orgaSlug + "/events/" + eventSlug + "/" + resource + "/").toString();
         } catch (MalformedURLException e) {
             e.printStackTrace();
             return null;
