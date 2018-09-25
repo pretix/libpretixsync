@@ -12,6 +12,8 @@ public interface ConfigStore {
 
     public String getApiKey();
 
+    public String getOrganizerSlug();
+
     public String getEventSlug();
 
     public boolean getShowInfo();
