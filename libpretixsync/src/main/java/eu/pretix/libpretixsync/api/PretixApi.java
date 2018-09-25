@@ -205,12 +205,12 @@ public class PretixApi {
             throw new ApiException("Server error.");
         } else if (response.code() == 404) {
             response.close();
-            throw new ApiException("Invalid configuration, please reset and reconfigure.");
+            throw new ApiException("Server error: Resource not found.");
         } else if (response.code() == 304) {
             throw new ResourceNotModified();
         } else if (response.code() == 403) {
             response.close();
-            throw new ApiException("Permission error, please try again or reset and reconfigure.");
+            throw new ApiException("Server error: Permission denied.");
         }
         try {
             if (json) {
