@@ -31,10 +31,12 @@ abstract public class BaseConditionalSyncAdapter<T extends RemoteObject & Persis
     protected JSONObject downloadPage(String url, boolean isFirstPage) throws ApiException, ResourceNotModified {
         ResourceLastModified resourceLastModified = store.select(ResourceLastModified.class)
                 .where(ResourceLastModified.RESOURCE.eq(getResourceName()))
+                .and(ResourceLastModified.EVENT_SLUG.eq(eventSlug))
                 .limit(1)
                 .get().firstOrNull();
         if (resourceLastModified == null) {
             resourceLastModified = new ResourceLastModified();
+            resourceLastModified.setEvent_slug(eventSlug);
             resourceLastModified.setResource(getResourceName());
         }
 
