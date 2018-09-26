@@ -109,11 +109,13 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
     protected JSONObject downloadPage(String url, boolean isFirstPage) throws ApiException, ResourceNotModified {
         ResourceLastModified resourceLastModified = store.select(ResourceLastModified.class)
                 .where(ResourceLastModified.RESOURCE.eq("orders"))
+                .and(ResourceLastModified.EVENT_SLUG.eq(eventSlug))
                 .limit(1)
                 .get().firstOrNull();
         if (resourceLastModified == null) {
             resourceLastModified = new ResourceLastModified();
             resourceLastModified.setResource("orders");
+            resourceLastModified.setEvent_slug(eventSlug);
             if (url.contains("?")) {
                 url += "&pdf_data=true";
             } else {

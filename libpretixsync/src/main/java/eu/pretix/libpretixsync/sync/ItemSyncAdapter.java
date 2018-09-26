@@ -5,10 +5,8 @@ import org.json.JSONObject;
 
 import java.util.Iterator;
 
-import eu.pretix.libpretixsync.api.ApiException;
 import eu.pretix.libpretixsync.api.PretixApi;
 import eu.pretix.libpretixsync.db.Item;
-import eu.pretix.libpretixsync.db.ResourceLastModified;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
 
