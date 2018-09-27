@@ -1,8 +1,10 @@
 package eu.pretix.libpretixsync.db;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.math.BigDecimal;
 import java.util.Date;
 
 import eu.pretix.libpretixsync.utils.I18nString;
@@ -42,5 +44,35 @@ public class AbstractSubEvent implements RemoteObject {
             e.printStackTrace();
             return "";
         }
+    }
+
+    public BigDecimal getPriceForItem(Long item_id, BigDecimal original_price) throws JSONException {
+        JSONObject jd = getJSON();
+        JSONArray ja = jd.getJSONArray("item_price_overrides");
+        for (int i = 0; i < ja.length(); i++) {
+            JSONObject or = ja.getJSONObject(i);
+            if (or.getLong("item") == item_id) {
+                if (or.isNull("price")) {
+                    return original_price;
+                }
+                return new BigDecimal(or.getString("price"));
+            }
+        }
+        return original_price;
+    }
+
+    public BigDecimal getPriceForVariation(Long var_id, BigDecimal original_price) throws JSONException {
+        JSONObject jd = getJSON();
+        JSONArray ja = jd.getJSONArray("variation_price_overrides");
+        for (int i = 0; i < ja.length(); i++) {
+            JSONObject or = ja.getJSONObject(i);
+            if (or.getLong("variation") == var_id) {
+                if (or.isNull("price")) {
+                    return original_price;
+                }
+                return new BigDecimal(or.getString("price"));
+            }
+        }
+        return original_price;
     }
 }
