@@ -31,6 +31,9 @@ public class AbstractReceipt implements LocalObject {
 
     public String event_slug;
 
+    @Column(nullable = false, value = "\"EUR\"")
+    public String currency;
+
     public String order_code;
 
     @Nullable
@@ -71,6 +74,7 @@ public class AbstractReceipt implements LocalObject {
         jo.put("datetime_closed", df.format(datetime_closed));
         jo.put("closing_id", closing.getId());
         jo.put("canceled", canceled);
+        jo.put("currency", currency);
         return jo;
     }
 }
