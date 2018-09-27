@@ -6,7 +6,9 @@ import org.json.JSONObject;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import eu.pretix.libpretixsync.utils.I18nString;
 import io.requery.Entity;
@@ -40,7 +42,7 @@ public class AbstractItem implements RemoteObject {
     List<Question> questions;
 
     @ManyToMany
-    List<Question> quotas;
+    List<Quota> quotas;
 
     @Nullable
     public Long badge_layout_id;
@@ -69,29 +71,6 @@ public class AbstractItem implements RemoteObject {
             e.printStackTrace();
             return false;
         }
-    }
-
-    public List<ItemVariation> getActiveVariations() {
-        List<ItemVariation> l = new ArrayList<>();
-        try {
-            JSONArray vars = getJSON().getJSONArray("variations");
-            for (int i = 0; i < vars.length(); i++) {
-                JSONObject var = vars.getJSONObject(i);
-                ItemVariation v = new ItemVariation();
-                v.setActive(var.getBoolean("active"));
-                v.setDescription(var.optJSONObject("description"));
-                v.setPosition(var.getLong("position"));
-                v.setPrice(new BigDecimal(var.getString("price")));
-                v.setServer_id(var.getLong("id"));
-                v.setValue(var.getJSONObject("value"));
-                if (v.isActive()) {
-                    l.add(v);
-                }
-            }
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-        return l;
     }
 
     public BigDecimal getDefaultPrice() {
