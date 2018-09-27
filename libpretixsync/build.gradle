@@ -37,6 +37,7 @@ check.dependsOn jacocoTestReport
 dependencies {
     compile 'com.squareup.okhttp3:okhttp:3.10.0'
     compile 'io.requery:requery:1.5.1'
+    compile 'joda-time:joda-time:2.9.9'
 
     // Use older org.json version to have an environment equivalent to the android platform
     compile 'org.json:json:20090211'

@@ -13,6 +13,7 @@ import eu.pretix.libpretixsync.api.PretixApi;
 import eu.pretix.libpretixsync.check.TicketCheckProvider;
 import eu.pretix.libpretixsync.config.ConfigStore;
 import eu.pretix.libpretixsync.db.Closing;
+import eu.pretix.libpretixsync.db.Event;
 import eu.pretix.libpretixsync.db.Question;
 import eu.pretix.libpretixsync.db.QueuedCheckIn;
 import eu.pretix.libpretixsync.db.Receipt;
@@ -81,6 +82,10 @@ public class SyncManager {
         sentry.addBreadcrumb("sync.queue", "Start download");
 
         try {
+            (new EventSyncAdapter(dataStore, configStore.getEventSlug(), configStore.getEventSlug(), api)).download();
+            if (configStore.getSubEventId() != null) {
+                (new SubEventSyncAdapter(dataStore, configStore.getEventSlug(), String.valueOf(configStore.getSubEventId()), api)).download();
+            }
             (new ItemCategorySyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api)).download();
             (new ItemSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api)).download();
             (new QuestionSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api)).download();

@@ -16,6 +16,8 @@ public interface ConfigStore {
 
     public String getEventSlug();
 
+    public Long getSubEventId();
+
     public boolean getShowInfo();
 
     public boolean getAllowSearch();
