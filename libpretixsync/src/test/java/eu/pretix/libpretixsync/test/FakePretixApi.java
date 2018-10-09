@@ -20,7 +20,7 @@ public class FakePretixApi extends PretixApi {
     private String lastQuery;
 
     public FakePretixApi() {
-        super("", "", SUPPORTED_API_VERSION, new DefaultHttpClientFactory());
+        super("", "", "demo", "demo", SUPPORTED_API_VERSION, new DefaultHttpClientFactory());
     }
 
     public void setNextRedeemResponse(JSONObject nextRedeemResponse) {
