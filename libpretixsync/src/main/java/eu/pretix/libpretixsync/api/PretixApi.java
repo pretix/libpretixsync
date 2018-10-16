@@ -102,7 +102,7 @@ public class PretixApi {
             requestJSONObject.put("software_brand", software_brand);
             requestJSONObject.put("software_version", software_version);
 
-            ApiResponse apiResponse = postResource(initDeviceUrl(), requestJSONObject, false);
+            ApiResponse apiResponse = postInitDeviceRequest(requestJSONObject);
             return apiResponse.getData();
         } catch (JSONException e) {
             e.printStackTrace();
@@ -116,6 +116,54 @@ public class PretixApi {
         } catch (MalformedURLException e) {
             e.printStackTrace();
             return null;
+        }
+    }
+
+    public ApiResponse postInitDeviceRequest(JSONObject data) throws ApiException {
+        Request.Builder request = new Request.Builder()
+                .url(initDeviceUrl())
+                .post(RequestBody.create(MediaType.parse("application/json"), data.toString()));
+
+        Response response;
+        try {
+            response = client.newCall(request.build()).execute();
+        } catch (SSLException e) {
+            e.printStackTrace();
+            throw new ApiException("Error while creating a secure connection.", e);
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new ApiException("Connection error.", e);
+        }
+
+        if (response.code() >= 500) {
+            response.close();
+            throw new ApiException("Server error.");
+        } else if (response.code() == 404) {
+            response.close();
+            throw new ApiException("Server error: Resource not found.");
+        } else if (response.code() == 400) {
+            response.close();
+            throw new ApiException("This initialization token has already been used.");
+        } else if (response.code() == 403) {
+            response.close();
+            throw new ApiException("Server error: Permission denied.");
+        }
+        try {
+            String body = response.body().string();
+            if (body.startsWith("[")) {
+                body = "{\"content\": " + body + "}";
+            }
+            return new ApiResponse(
+                    new JSONObject(body),
+                    response
+            );
+        } catch (JSONException e) {
+            e.printStackTrace();
+            sentry.captureException(e);
+            throw new ApiException("Invalid JSON received.", e);
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new ApiException("Connection error.", e);
         }
     }
 
@@ -163,17 +211,10 @@ public class PretixApi {
     }
 
     public ApiResponse postResource(String full_url, JSONObject data) throws ApiException {
-        return postResource(full_url, data, true);
-    }
-
-    public ApiResponse postResource(String full_url, JSONObject data, boolean addAuthorization) throws ApiException {
         Request.Builder request = new Request.Builder()
                 .url(full_url)
-                .post(RequestBody.create(MediaType.parse("application/json"), data.toString()));
-
-        if (addAuthorization) {
-            request.header("Authorization", "Device " + key);
-        }
+                .post(RequestBody.create(MediaType.parse("application/json"), data.toString()))
+                .header("Authorization", "Device " + key);
 
         try {
             return apiCall(request.build());
@@ -243,10 +284,8 @@ public class PretixApi {
             response.close();
             throw new ApiException("Server error: Resource not found.");
         } else if (response.code() == 304) {
-            throw new ResourceNotModified();
-        } else if (response.code() == 400) {
             response.close();
-            throw new ApiException("This initialization token has already been used.");
+            throw new ResourceNotModified();
         } else if (response.code() == 403) {
             response.close();
             throw new ApiException("Server error: Permission denied.");

@@ -8,15 +8,26 @@ import eu.pretix.libpretixsync.config.ConfigStore;
 public abstract class DeviceInitializer {
 
     public class InitializationResult {
+        private boolean success;
+        private String reason;
+
         private String organizer;
         private String device_id;
         private String unique_serial;
         private String api_token;
         private String name;
 
-        public InitializationResult() {}
+        /**
+         * Negative result constructor
+         */
+        public InitializationResult(String reason) {
+            this.success = false;
+            this.reason = reason;
+        }
 
         public InitializationResult(String organizer, String device_id, String unique_serial, String api_token, String name) {
+            this.success = true;
+
             this.organizer = organizer;
             this.device_id = device_id;
             this.unique_serial = unique_serial;
@@ -42,6 +53,14 @@ public abstract class DeviceInitializer {
 
         public String getName() {
             return name;
+        }
+
+        public boolean isSuccess() {
+            return success;
+        }
+
+        public String getReason() {
+            return reason;
         }
     }
 
@@ -71,11 +90,11 @@ public abstract class DeviceInitializer {
 
         } catch (JSONException e) {
             e.printStackTrace();
+            return new InitializationResult("Invalid JSON response");
         } catch (ApiException e) {
             e.printStackTrace();
+            return new InitializationResult(e.getMessage());
         }
-
-        return new InitializationResult();
     }
 
     public abstract String fetchHardwareBrand();
