@@ -32,6 +32,7 @@ public class PretixApi {
      */
 
     public static final int SUPPORTED_API_VERSION = 4;
+    public static final int SUPPORTED_DEVICE_HANDSHAKE_VERSION = 1;
     public static final MediaType JSON
             = MediaType.parse("application/json; charset=utf-8");
 
@@ -91,6 +92,33 @@ public class PretixApi {
         return new JSONObject();
     }
 
+    public JSONObject initializeDevice(String token, String hardware_brand, String hardware_model, String software_brand, String software_version) throws ApiException {
+        JSONObject requestJSONObject = new JSONObject();
+
+        try {
+            requestJSONObject.put("token", token);
+            requestJSONObject.put("hardware_brand", hardware_brand);
+            requestJSONObject.put("hardware_model", hardware_model);
+            requestJSONObject.put("software_brand", software_brand);
+            requestJSONObject.put("software_version", software_version);
+
+            ApiResponse apiResponse = postResource(initDeviceUrl(), requestJSONObject, false);
+            return apiResponse.getData();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return new JSONObject();
+    }
+
+    public String initDeviceUrl() {
+        try {
+            return new URL(new URL(url), "/api/v1/device/initialize").toString();
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
     public JSONObject status() throws ApiException {
         return new JSONObject();
     }
@@ -135,10 +163,18 @@ public class PretixApi {
     }
 
     public ApiResponse postResource(String full_url, JSONObject data) throws ApiException {
+        return postResource(full_url, data, true);
+    }
+
+    public ApiResponse postResource(String full_url, JSONObject data, boolean addAuthorization) throws ApiException {
         Request.Builder request = new Request.Builder()
                 .url(full_url)
-                .post(RequestBody.create(MediaType.parse("application/json"), data.toString()))
-                .header("Authorization", "Device " + key);
+                .post(RequestBody.create(MediaType.parse("application/json"), data.toString()));
+
+        if (addAuthorization) {
+            request.header("Authorization", "Device " + key);
+        }
+
         try {
             return apiCall(request.build());
         } catch (ResourceNotModified resourceNotModified) {
@@ -208,6 +244,9 @@ public class PretixApi {
             throw new ApiException("Server error: Resource not found.");
         } else if (response.code() == 304) {
             throw new ResourceNotModified();
+        } else if (response.code() == 400) {
+            response.close();
+            throw new ApiException("This initialization token has already been used.");
         } else if (response.code() == 403) {
             response.close();
             throw new ApiException("Server error: Permission denied.");
