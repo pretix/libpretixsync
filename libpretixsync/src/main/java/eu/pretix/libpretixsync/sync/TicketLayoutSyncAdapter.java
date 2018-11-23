@@ -8,8 +8,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import eu.pretix.libpretixsync.api.ApiException;
 import eu.pretix.libpretixsync.api.PretixApi;
@@ -31,15 +35,35 @@ public class TicketLayoutSyncAdapter extends BaseDownloadSyncAdapter<TicketLayou
         obj.setServer_id(jsonobj.getLong("id"));
         obj.setJson_data(jsonobj.toString());
 
+        Set<Long> pretixpos_assigned = new HashSet<>();
         JSONArray assignmentarr = jsonobj.getJSONArray("item_assignments");
         List<Long> itemids = new ArrayList<>();
         for (int i = 0; i < assignmentarr.length(); i++) {
-            itemids.add(assignmentarr.getJSONObject(i).getLong("item"));
+            Long item = assignmentarr.getJSONObject(i).getLong("item");
+            String sc = assignmentarr.getJSONObject(i).optString("sales_channel", "web");
+            if (!sc.equals("web") && !sc.equals("pretixpos")) {
+                continue;
+            }
+            itemids.add(item);
+            if (!pretixpos_assigned.contains(item) && sc.equals("pretixpos")) {
+                pretixpos_assigned.add(item);
+            }
         }
         List<Item> items = store.select(Item.class).where(
                 Item.SERVER_ID.in(itemids)
         ).get().toList();
         for (Item item : items) {
+            if (item.getTicket_layout_id().equals(obj.getServer_id())) {
+                continue;
+            }
+            if (item.getTicket_layout_id() != null) {
+                TicketLayout previous = store.select(TicketLayout.class).where(
+                        TicketLayout.SERVER_ID.eq(item.getTicket_layout_id())
+                ).get().firstOrNull();
+                if (previous != null && !pretixpos_assigned.contains(item.getServer_id())) {
+                    continue;
+                }
+            }
             item.setTicket_layout_id(obj.getServer_id());
             store.update(item, Item.TICKET_LAYOUT_ID);
         }

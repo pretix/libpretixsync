@@ -90,4 +90,22 @@ public class AbstractItem implements RemoteObject {
             return Long.valueOf(0);
         }
     }
+
+    public boolean availableOnSalesChannel(String channel) {
+        try {
+            JSONArray channels = getJSON().optJSONArray("sales_channels");
+            if (channels == null) {
+                return true;
+            }
+            for (int i = 0; i < channels.length(); i++) {
+                if (channels.getString(i).equals(channel)) {
+                    return true;
+                }
+            }
+            return false;
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return true;
+        }
+    }
 }
