@@ -37,10 +37,13 @@ check.dependsOn jacocoTestReport
 dependencies {
     compile 'com.squareup.okhttp3:okhttp:3.10.0'
     compile 'io.requery:requery:1.5.1'
+    compile 'io.requery:requery-kotlin:1.5.1'
     compile 'joda-time:joda-time:2.9.9'
 
     // Use older org.json version to have an environment equivalent to the android platform
     compile 'org.json:json:20090211'
+
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 
     apt 'io.requery:requery-processor:1.4.1'
     apt 'javax.annotation:jsr250-api:1.0'
