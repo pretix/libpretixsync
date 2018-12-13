@@ -25,6 +25,7 @@ public class CheckInListSyncAdapter extends BaseConditionalSyncAdapter<CheckInLi
         obj.setEvent_slug(eventSlug);
         obj.setServer_id(jsonobj.getLong("id"));
         obj.setSubevent_id(jsonobj.optLong("subevent"));
+        obj.setName(jsonobj.optString("name", ""));
         obj.setInclude_pending(jsonobj.optBoolean("include_pending"));
         obj.setAll_items(jsonobj.optBoolean("all_products"));
         obj.setJson_data(jsonobj.toString());
