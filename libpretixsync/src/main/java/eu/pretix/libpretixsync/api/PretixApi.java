@@ -2,6 +2,7 @@ package eu.pretix.libpretixsync.api;
 
 import eu.pretix.libpretixsync.check.TicketCheckProvider;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -83,12 +84,26 @@ public class PretixApi {
         return PretixApi.fromConfig(config, new DefaultHttpClientFactory());
     }
 
-    public JSONObject redeem(String secret, List<TicketCheckProvider.Answer> answers, boolean ignore_unpaid) throws ApiException {
-        return new JSONObject();
-    }
-
-    public JSONObject redeem(String secret, Date datetime, boolean force, String nonce, List<TicketCheckProvider.Answer> answers, boolean ignore_unpaid) throws ApiException {
-        return new JSONObject();
+    public ApiResponse redeem(String secret, Date datetime, boolean force, String nonce, List<TicketCheckProvider.Answer> answers, Long listId, boolean ignore_unpaid) throws ApiException, JSONException {
+        JSONObject body = new JSONObject();
+        if (datetime != null) {
+            TimeZone tz = TimeZone.getTimeZone("UTC");
+            DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'", Locale.ENGLISH); // Quoted "Z" to indicate UTC, no timezone offset
+            df.setTimeZone(tz);
+            body.put("datetime", df.format(datetime));
+        }
+        body.put("force", force);
+        body.put("ignore_unpaid", ignore_unpaid);
+        body.put("nonce", nonce);
+        JSONObject answerbody = new JSONObject();
+        if (answers != null) {
+            for (TicketCheckProvider.Answer a : answers) {
+                answerbody.put("" + a.getQuestion().getServer_id(), a.getValue());
+            }
+        }
+        body.put("answers", answerbody);
+        body.put("questions_supported", true);
+        return postResource(eventResourceUrl("checkinlists/" + listId + "/positions/" + secret + "/redeem"), body);
     }
 
     public JSONObject status() throws ApiException {

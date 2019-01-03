@@ -5,6 +5,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import eu.pretix.libpretixsync.check.QuestionType;
+import eu.pretix.libpretixsync.utils.I18nString;
 import io.requery.*;
 
 import java.math.BigDecimal;
@@ -49,7 +50,7 @@ public class AbstractQuestion implements RemoteObject {
 
     public String getQuestion() {
         try {
-            return getJSON().getString("question");
+            return I18nString.toString(getJSON().getJSONObject("question"));
         } catch (JSONException e) {
             e.printStackTrace();
             return "<invalid>";
@@ -70,11 +71,17 @@ public class AbstractQuestion implements RemoteObject {
             JSONArray arr = getJSON().getJSONArray("options");
             for (int i = 0; i < arr.length(); i++) {
                 JSONObject oobj = arr.getJSONObject(i);
+                String answ;
+                try {
+                    answ = I18nString.toString(oobj.getJSONObject("answer"));
+                } catch(JSONException e) {
+                    answ = oobj.getString("answer");
+                }
                 opts.add(new QuestionOption(
                         oobj.getLong("id"),
                         oobj.getLong("position"),
                         oobj.getString("identifier"),
-                        oobj.getString("answer")
+                        answ
                 ));
             }
             return opts;

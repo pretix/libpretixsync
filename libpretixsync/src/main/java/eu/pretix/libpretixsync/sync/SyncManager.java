@@ -174,6 +174,7 @@ public class SyncManager {
     }
 
     protected void uploadTicketData() throws SyncException {
+        /*
         sentry.addBreadcrumb("sync.queue", "Start check-in upload");
 
         List<QueuedCheckIn> queued = dataStore.select(QueuedCheckIn.class).get().toList();
@@ -212,6 +213,7 @@ public class SyncManager {
             throw new SyncException(e.getMessage());
         }
         sentry.addBreadcrumb("sync.queue", "Check-in upload complete");
+        */
     }
 
     public class SyncResult {

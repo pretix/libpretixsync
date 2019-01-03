@@ -22,15 +22,17 @@ public class OnlineCheckProvider implements TicketCheckProvider {
     protected PretixApi api;
     private ConfigStore config;
     private SentryInterface sentry;
+    private Long listId;
 
-    public OnlineCheckProvider(ConfigStore config, HttpClientFactory httpClientFactory) {
+    public OnlineCheckProvider(ConfigStore config, HttpClientFactory httpClientFactory, Long listId) {
         this.config = config;
         this.api = PretixApi.fromConfig(config, httpClientFactory);
         this.sentry = new DummySentryImplementation();
+        this.listId = listId;
     }
 
-    public OnlineCheckProvider(ConfigStore config) {
-        this(config, new DefaultHttpClientFactory());
+    public OnlineCheckProvider(ConfigStore config, Long listId) {
+        this(config, new DefaultHttpClientFactory(), listId);
     }
 
     public SentryInterface getSentry() {
@@ -47,7 +49,8 @@ public class OnlineCheckProvider implements TicketCheckProvider {
         sentry.addBreadcrumb("provider.check", "started");
         try {
             CheckResult res = new CheckResult(CheckResult.Type.ERROR);
-            JSONObject response = api.redeem(ticketid, answers, ignore_unpaid);
+            PretixApi.ApiResponse responseObj = api.redeem(ticketid, null, false, null, answers, listId, ignore_unpaid);
+            JSONObject response = responseObj.getData();
             String status = response.getString("status");
             if ("ok".equals(status)) {
                 res.setType(CheckResult.Type.VALID);
@@ -57,6 +60,9 @@ public class OnlineCheckProvider implements TicketCheckProvider {
                 for (int i = 0; i < response.getJSONArray("questions").length(); i++) {
                     JSONObject q = response.getJSONArray("questions").getJSONObject(i);
                     Question question = new Question();
+                    question.setServer_id(q.getLong("id"));
+                    question.setRequired(q.getBoolean("required"));
+                    question.setPosition(q.getLong("position"));
                     question.setJson_data(q.toString());
                     required_answers.add(new RequiredAnswer(question, ""));
                 }
