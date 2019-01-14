@@ -54,6 +54,9 @@ public class TicketLayoutSyncAdapter extends BaseDownloadSyncAdapter<TicketLayou
         for (int i = 0; i < assignmentarr.length(); i++) {
             Long item = assignmentarr.getJSONObject(i).getLong("item");
             String sc = assignmentarr.getJSONObject(i).optString("sales_channel", "web");
+            if (sc == null) {
+                sc = "web";
+            }
 
             if (!sc.equals("web") && !sc.equals("pretixpos")) {
                 // This is some channel we don't care about, e.g. pretixPOS
