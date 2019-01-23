@@ -214,11 +214,18 @@ public class PretixApi {
 
         String safe_url = request.url().toString().replaceAll("^(.*)key=([0-9A-Za-z]+)([^0-9A-Za-z]*)", "$1key=redacted$3");
         sentry.addHttpBreadcrumb(safe_url, request.method(), response.code());
+        String body;
+        try {
+            body = response.body().string();
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new ApiException("Connection error.", e);
+        }
 
         if (response.code() >= 500) {
             response.close();
             throw new ApiException("Server error.");
-        } else if (response.code() == 404) {
+        } else if (response.code() == 404 && !body.startsWith("{")) {
             response.close();
             throw new ApiException("Server error: Resource not found.");
         } else if (response.code() == 304) {
@@ -226,10 +233,12 @@ public class PretixApi {
         } else if (response.code() == 403) {
             response.close();
             throw new ApiException("Server error: Permission denied.");
+        } else if (response.code() >= 405) {
+            response.close();
+            throw new ApiException("Server error: " + response.code() + ".");
         }
         try {
             if (json) {
-                String body = response.body().string();
                 if (body.startsWith("[")) {
                     body = "{\"content\": " + body + "}";
                 }
@@ -247,9 +256,6 @@ public class PretixApi {
             e.printStackTrace();
             sentry.captureException(e);
             throw new ApiException("Invalid JSON received.", e);
-        } catch (IOException e) {
-            e.printStackTrace();
-            throw new ApiException("Connection error.", e);
         }
     }
 
