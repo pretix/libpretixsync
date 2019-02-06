@@ -8,9 +8,6 @@ import okhttp3.RequestBody
 import okhttp3.Response
 import org.json.JSONException
 import org.json.JSONObject
-import sun.rmi.runtime.Log
-import java.io.IOException
-import javax.net.ssl.SSLException
 
 
 open class SetupException(override var message: String?) : Exception(message)

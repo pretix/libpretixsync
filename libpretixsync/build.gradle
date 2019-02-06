@@ -60,7 +60,7 @@ dependencies {
 
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 
-    apt 'io.requery:requery-processor:1.4.1'
+    apt 'io.requery:requery-processor:1.5.1'
     apt 'javax.annotation:jsr250-api:1.0'
 
     testCompile 'junit:junit:4.12'
