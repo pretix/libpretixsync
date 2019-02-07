@@ -29,7 +29,9 @@ class EventManager(private val store: BlockingEntityStore<Persistable>, private 
         }
         events += parseEvents(resp_subevents.data, subevents=true)
 
-        return events
+        return events.sortedBy {
+            return@sortedBy it.date_from
+        }
     }
 
     private fun parseEvents(data: JSONObject, subevents: Boolean = false): List<RemoteEvent> {
