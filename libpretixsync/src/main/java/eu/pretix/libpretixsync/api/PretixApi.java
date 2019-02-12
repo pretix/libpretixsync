@@ -95,7 +95,7 @@ public class PretixApi {
         }
         body.put("answers", answerbody);
         body.put("questions_supported", true);
-        return postResource(eventResourceUrl("checkinlists/" + listId + "/positions/" + secret + "/redeem"), body);
+        return postResource(eventResourceUrl("checkinlists/" + listId + "/positions/" + secret + "/redeem") + "?pdf_data=true", body);
     }
 
     public JSONObject status() throws ApiException {
