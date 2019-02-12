@@ -5,6 +5,7 @@ import java.util.List;
 
 import eu.pretix.libpretixsync.SentryInterface;
 import eu.pretix.libpretixsync.db.Question;
+import org.json.JSONObject;
 
 public interface TicketCheckProvider {
 
@@ -63,6 +64,7 @@ public interface TicketCheckProvider {
         private boolean require_attention;
         private boolean checkin_allowed;
         private List<RequiredAnswer> required_answers;
+        private JSONObject position;
 
         public CheckResult(Type type, String message) {
             this.type = type;
@@ -151,6 +153,14 @@ public interface TicketCheckProvider {
 
         public void setCheckinAllowed(boolean checkin_allowed) {
             this.checkin_allowed = checkin_allowed;
+        }
+
+        public JSONObject getPosition() {
+            return position;
+        }
+
+        public void setPosition(JSONObject position) {
+            this.position = position;
         }
     }
 

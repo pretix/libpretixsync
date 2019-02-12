@@ -109,6 +109,7 @@ public class OnlineCheckProvider implements TicketCheckProvider {
                         // TODO: Fall back to parent position or invoice address!
                     }
                     res.setOrderCode(posjson.optString("order"));
+                    res.setPosition(posjson);
                 }
                 res.setRequireAttention(response.optBoolean("require_attention", false));
             }
