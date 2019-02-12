@@ -80,6 +80,7 @@ public class BadgeLayoutSyncAdapter extends BaseDownloadSyncAdapter<BadgeLayout,
                 } catch (IOException e) {
                     // TODO: What to do?
                     e.printStackTrace();
+                    fileStorage.delete(local_filename);
                 }
             } else {
                 obj.setBackground_filename(local_filename);

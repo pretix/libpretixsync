@@ -1,31 +1,23 @@
 package eu.pretix.libpretixsync.api;
 
+import eu.pretix.libpretixsync.DummySentryImplementation;
+import eu.pretix.libpretixsync.SentryInterface;
 import eu.pretix.libpretixsync.check.TicketCheckProvider;
-
-import org.json.JSONArray;
+import eu.pretix.libpretixsync.config.ConfigStore;
+import okhttp3.*;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import javax.net.ssl.SSLException;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLEncoder;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.*;
-
-import javax.net.ssl.SSLException;
-
-import eu.pretix.libpretixsync.DummySentryImplementation;
-import eu.pretix.libpretixsync.SentryInterface;
-import eu.pretix.libpretixsync.config.ConfigStore;
-import okhttp3.FormBody;
-import okhttp3.MediaType;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+import java.util.TimeZone;
 
 public class PretixApi {
     /**
@@ -214,18 +206,20 @@ public class PretixApi {
 
         String safe_url = request.url().toString().replaceAll("^(.*)key=([0-9A-Za-z]+)([^0-9A-Za-z]*)", "$1key=redacted$3");
         sentry.addHttpBreadcrumb(safe_url, request.method(), response.code());
-        String body;
-        try {
-            body = response.body().string();
-        } catch (IOException e) {
-            e.printStackTrace();
-            throw new ApiException("Connection error.", e);
+        String body = "";
+        if (json) {
+            try {
+                body = response.body().string();
+            } catch (IOException e) {
+                e.printStackTrace();
+                throw new ApiException("Connection error.", e);
+            }
         }
 
         if (response.code() >= 500) {
             response.close();
             throw new ApiException("Server error.");
-        } else if (response.code() == 404 && !body.startsWith("{")) {
+        } else if (response.code() == 404 && (!json || !body.startsWith("{"))) {
             response.close();
             throw new ApiException("Server error: Resource not found.");
         } else if (response.code() == 304) {
