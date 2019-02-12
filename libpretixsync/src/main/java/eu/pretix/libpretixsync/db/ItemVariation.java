@@ -1,8 +1,11 @@
 package eu.pretix.libpretixsync.db;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.math.BigDecimal;
+
+import eu.pretix.libpretixsync.utils.I18nString;
 
 public class ItemVariation {
     private Long server_id;
@@ -54,6 +57,10 @@ public class ItemVariation {
 
     public JSONObject getValue() {
         return value;
+    }
+
+    public String getStringValue() {
+        return I18nString.toString(getValue());
     }
 
     public Long getPosition() {

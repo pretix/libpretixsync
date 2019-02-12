@@ -1,6 +1,8 @@
 package eu.pretix.libpretixsync.check;
 
 
+import eu.pretix.libpretixsync.db.Item;
+import eu.pretix.libpretixsync.db.ItemVariation;
 import eu.pretix.libpretixsync.db.Question;
 import eu.pretix.libpretixsync.db.QuestionOption;
 import org.json.JSONArray;
@@ -17,22 +19,26 @@ import eu.pretix.libpretixsync.api.DefaultHttpClientFactory;
 import eu.pretix.libpretixsync.api.HttpClientFactory;
 import eu.pretix.libpretixsync.api.PretixApi;
 import eu.pretix.libpretixsync.config.ConfigStore;
+import io.requery.BlockingEntityStore;
+import io.requery.Persistable;
 
 public class OnlineCheckProvider implements TicketCheckProvider {
     protected PretixApi api;
     private ConfigStore config;
     private SentryInterface sentry;
+    private BlockingEntityStore<Persistable> dataStore;
     private Long listId;
 
-    public OnlineCheckProvider(ConfigStore config, HttpClientFactory httpClientFactory, Long listId) {
+    public OnlineCheckProvider(ConfigStore config, HttpClientFactory httpClientFactory, BlockingEntityStore<Persistable> dataStore, Long listId) {
         this.config = config;
         this.api = PretixApi.fromConfig(config, httpClientFactory);
         this.sentry = new DummySentryImplementation();
         this.listId = listId;
+        this.dataStore = dataStore;
     }
 
-    public OnlineCheckProvider(ConfigStore config, Long listId) {
-        this(config, new DefaultHttpClientFactory(), listId);
+    public OnlineCheckProvider(ConfigStore config, BlockingEntityStore<Persistable> dataStore, Long listId) {
+        this(config, new DefaultHttpClientFactory(), dataStore, listId);
     }
 
     public SentryInterface getSentry() {
@@ -50,44 +56,61 @@ public class OnlineCheckProvider implements TicketCheckProvider {
         try {
             CheckResult res = new CheckResult(CheckResult.Type.ERROR);
             PretixApi.ApiResponse responseObj = api.redeem(ticketid, null, false, null, answers, listId, ignore_unpaid);
-            JSONObject response = responseObj.getData();
-            String status = response.getString("status");
-            if ("ok".equals(status)) {
-                res.setType(CheckResult.Type.VALID);
-            } else if ("incomplete".equals(status)) {
-                res.setType(CheckResult.Type.ANSWERS_REQUIRED);
-                List<RequiredAnswer> required_answers = new ArrayList<>();
-                for (int i = 0; i < response.getJSONArray("questions").length(); i++) {
-                    JSONObject q = response.getJSONArray("questions").getJSONObject(i);
-                    Question question = new Question();
-                    question.setServer_id(q.getLong("id"));
-                    question.setRequired(q.getBoolean("required"));
-                    question.setPosition(q.getLong("position"));
-                    question.setJson_data(q.toString());
-                    required_answers.add(new RequiredAnswer(question, ""));
-                }
-                res.setRequiredAnswers(required_answers);
+            if (responseObj.getResponse().code() == 404) {
+                res.setType(CheckResult.Type.INVALID);
             } else {
-                String reason = response.optString("reason");
-                if ("already_redeemed".equals(reason)) {
-                    res.setType(CheckResult.Type.USED);
-                } else if ("unknown_ticket".equals(reason)) {
-                    res.setType(CheckResult.Type.INVALID);
-                } else if ("unpaid".equals(reason)) {
-                    res.setType(CheckResult.Type.UNPAID);
-                } else if ("product".equals(reason)) {
-                    res.setType(CheckResult.Type.PRODUCT);
+                JSONObject response = responseObj.getData();
+                String status = response.getString("status");
+                if ("ok".equals(status)) {
+                    res.setType(CheckResult.Type.VALID);
+                } else if ("incomplete".equals(status)) {
+                    res.setType(CheckResult.Type.ANSWERS_REQUIRED);
+                    List<RequiredAnswer> required_answers = new ArrayList<>();
+                    for (int i = 0; i < response.getJSONArray("questions").length(); i++) {
+                        JSONObject q = response.getJSONArray("questions").getJSONObject(i);
+                        Question question = new Question();
+                        question.setServer_id(q.getLong("id"));
+                        question.setRequired(q.getBoolean("required"));
+                        question.setPosition(q.getLong("position"));
+                        question.setJson_data(q.toString());
+                        required_answers.add(new RequiredAnswer(question, ""));
+                    }
+                    res.setRequiredAnswers(required_answers);
+                } else {
+                    String reason = response.optString("reason");
+                    if ("already_redeemed".equals(reason)) {
+                        res.setType(CheckResult.Type.USED);
+                    } else if ("unknown_ticket".equals(reason)) {
+                        res.setType(CheckResult.Type.INVALID);
+                    } else if ("unpaid".equals(reason)) {
+                        res.setType(CheckResult.Type.UNPAID);
+                    } else if ("product".equals(reason)) {
+                        res.setType(CheckResult.Type.PRODUCT);
+                    }
                 }
-            }
 
-            if (response.has("data")) {
-                res.setTicket(response.getJSONObject("data").getString("item"));
-                res.setVariation(response.getJSONObject("data").getString("variation"));
-                res.setAttendee_name(response.getJSONObject("data").getString("attendee_name"));
-                res.setOrderCode(response.getJSONObject("data").getString("order"));
-                res.setRequireAttention(response.getJSONObject("data").optBoolean("attention", false));
-                res.setCheckinAllowed(response.getJSONObject("data").optBoolean("checkin_allowed", res.getType() != CheckResult.Type.UNPAID));
-                res.setAddonText(response.getJSONObject("data").optString("addons_text", ""));
+                if (response.has("position")) {
+                    JSONObject posjson = response.getJSONObject("position");
+
+                    Item item = dataStore.select(Item.class)
+                            .where(Item.SERVER_ID.eq(posjson.getLong("item")))
+                            .get().firstOrNull();
+                    if (item != null) {
+                        res.setTicket(item.getName());
+                        if (posjson.optLong("variation", 0) > 0) {
+                            ItemVariation iv = item.getVariation(posjson.getLong("variation"));
+                            if (iv != null) {
+                                res.setVariation(iv.getStringValue());
+                            }
+                        }
+                    }
+                    if (!posjson.isNull("attendee_name")) {
+                        res.setAttendee_name(posjson.optString("attendee_name"));
+                        // TODO: Fall back to parent position or invoice address!
+                    }
+                    res.setOrderCode(posjson.optString("order"));
+                }
+                res.setRequireAttention(response.optBoolean("require_attention", false));
             }
             return res;
         } catch (JSONException e) {

@@ -108,4 +108,30 @@ public class AbstractItem implements RemoteObject {
             return true;
         }
     }
+
+    public List<ItemVariation> getVariations() throws JSONException {
+        List<ItemVariation> l = new ArrayList<>();
+        JSONArray vars = getJSON().getJSONArray("variations");
+        for (int i = 0; i < vars.length(); i++) {
+            JSONObject variation = vars.getJSONObject(i);
+            ItemVariation v = new ItemVariation();
+            v.setActive(variation.getBoolean("active"));
+            v.setDescription(variation.optJSONObject("description"));
+            v.setPosition(variation.getLong("position"));
+            v.setPrice(new BigDecimal(variation.getString("price")));
+            v.setServer_id(variation.getLong("id"));
+            v.setValue(variation.getJSONObject("value"));
+            l.add(v);
+        }
+        return l;
+    }
+
+    public ItemVariation getVariation(Long variation_id) throws JSONException {
+        for (ItemVariation var : getVariations()) {
+            if (var.getServer_id().equals(String.valueOf(variation_id))) {
+                return var;
+            }
+        }
+        return null;
+    }
 }
