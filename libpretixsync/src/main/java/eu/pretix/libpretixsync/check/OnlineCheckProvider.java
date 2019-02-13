@@ -138,19 +138,35 @@ public class OnlineCheckProvider implements TicketCheckProvider {
     public List<SearchResult> search(String query) throws CheckException {
         sentry.addBreadcrumb("provider.search", "started");
         try {
-            JSONObject response = api.search(query);
+            PretixApi.ApiResponse response = api.search(listId, query);
+            JSONArray resdata = response.getData().getJSONArray("results");
 
             List<SearchResult> results = new ArrayList<>();
-            for (int i = 0; i < response.getJSONArray("results").length(); i++) {
-                JSONObject res = response.getJSONArray("results").getJSONObject(i);
+            for (int i = 0; i < resdata.length(); i++) {
+                JSONObject res = resdata.getJSONObject(i);
                 SearchResult sr = new SearchResult();
-                sr.setAttendee_name(res.getString("attendee_name"));
-                sr.setTicket(res.getString("item"));
-                sr.setVariation(res.getString("variation"));
-                sr.setOrderCode(res.getString("order"));
-                sr.setSecret(res.getString("secret"));
-                sr.setRedeemed(res.getBoolean("redeemed"));
-                sr.setPaid(res.getBoolean("paid"));
+
+                Item item = dataStore.select(Item.class)
+                        .where(Item.SERVER_ID.eq(res.getLong("item")))
+                        .get().firstOrNull();
+                if (item != null) {
+                    sr.setTicket(item.getName());
+                    if (res.optLong("variation", 0) > 0) {
+                        ItemVariation iv = item.getVariation(res.getLong("variation"));
+                        if (iv != null) {
+                            sr.setVariation(iv.getStringValue());
+                        }
+                    }
+                }
+                if (!res.isNull("attendee_name")) {
+                    sr.setAttendee_name(res.optString("attendee_name"));
+                    // TODO: Fall back to parent position or invoice address!
+                }
+                sr.setOrderCode(res.optString("order"));
+                sr.setSecret(res.optString("secret"));
+                sr.setRedeemed(res.getJSONArray("checkins").length() > 0);
+                // TODO: sr.setPaid(res.getBoolean("paid"));
+                sr.setPaid(true);
                 sr.setRequireAttention(res.optBoolean("attention", false));
                 sr.setAddonText(res.optString("addons_text", ""));
                 results.add(sr);

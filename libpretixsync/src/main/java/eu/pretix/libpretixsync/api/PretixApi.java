@@ -10,8 +10,10 @@ import org.json.JSONObject;
 
 import javax.net.ssl.SSLException;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -102,12 +104,12 @@ public class PretixApi {
         return new JSONObject();
     }
 
-    public JSONObject search(String query) throws ApiException {
-        return new JSONObject();
-    }
-
-    public JSONObject download() throws ApiException {
-        return new JSONObject();
+    public ApiResponse search(Long listId, String query) throws ApiException {
+        try {
+            return fetchResource(eventResourceUrl("checkinlists/" + listId + "/positions") + "?search=" + URLEncoder.encode(query, "UTF-8"));
+        } catch (ResourceNotModified | UnsupportedEncodingException resourceNotModified) {
+            throw new ApiException("invalid error");
+        }
     }
 
     public String organizerResourceUrl(String resource) {
