@@ -211,55 +211,27 @@ public class AsyncCheckProvider implements TicketCheckProvider {
         }
 
         List<OrderPosition> positions;
+        Condition search = null;
         if (config.getAllowSearch()) {
-            if (list.all_items) {
-                positions = dataStore.select(OrderPosition.class)
-                        .leftJoin(Order.class).on(Order.ID.eq(OrderPosition.ORDER_ID))
-                        .leftJoin(Item.class).on(Item.ID.eq(OrderPosition.ITEM_ID))
-                        .where(
-                                OrderPosition.SECRET.like(query + "%")
-                                        .or(OrderPosition.ATTENDEE_NAME.like("%" + query + "%"))
-                                        // TODO (for some very absurd reason, this breaks compilation through gradle): .or(Order.CODE.like(query + "%"))
-                        ).limit(25).get().toList();
-            } else {
-                List<Long> itemids = new ArrayList<>();
-                for (Item item : list.getItems()) {
-                    itemids.add(item.getId());
-                }
-                positions = dataStore.select(OrderPosition.class)
-                        .leftJoin(Order.class).on(Order.ID.eq(OrderPosition.ORDER_ID))
-                        .leftJoin(Item.class).on(Item.ID.eq(OrderPosition.ITEM_ID))
-                        .where(
-                                OrderPosition.SECRET.like(query + "%")
-                                        .or(OrderPosition.ATTENDEE_NAME.like("%" + query + "%"))
-                                // TODO (for some very absurd reason, this breaks compilation through gradle): .or(Order.CODE.like(query + "%"))
-                        ).and(
-                                Item.ID.in(itemids)
-                        ).limit(25).get().toList();
-            }
+            search = OrderPosition.SECRET.like(query + "%")
+                            .or(OrderPosition.ATTENDEE_NAME.like("%" + query + "%"))
+                            .or(Order.CODE.like(query + "%"));
         } else {
-            if (list.all_items) {
-                positions = dataStore.select(OrderPosition.class)
-                        .leftJoin(Order.class).on(Order.ID.eq(OrderPosition.ORDER_ID))
-                        .leftJoin(Item.class).on(Item.ID.eq(OrderPosition.ITEM_ID))
-                        .where(
-                                OrderPosition.SECRET.like(query + "%")
-                        ).limit(25).get().toList();
-            } else {
-                List<Long> itemids = new ArrayList<>();
-                for (Item item : list.getItems()) {
-                    itemids.add(item.getId());
-                }
-                positions = dataStore.select(OrderPosition.class)
-                        .leftJoin(Order.class).on(Order.ID.eq(OrderPosition.ORDER_ID))
-                        .leftJoin(Item.class).on(Item.ID.eq(OrderPosition.ITEM_ID))
-                        .where(
-                                OrderPosition.SECRET.like(query + "%")
-                        ).and(
-                                Item.ID.in(itemids)
-                        ).limit(25).get().toList();
-            }
+            search = OrderPosition.SECRET.like(query + "%");
         }
+        if (!list.all_items) {
+            List<Long> itemids = new ArrayList<>();
+            for (Item item : list.getItems()) {
+                itemids.add(item.getId());
+            }
+            search = Item.ID.in(itemids).and(search);
+        }
+        // The weird typecasting is apparently due to a bug in the Java compiler
+        // see https://github.com/requery/requery/issues/229#issuecomment-240470748
+        positions = ((Result<OrderPosition>) dataStore.select(OrderPosition.class)
+                .leftJoin(Order.class).on((Condition) Order.ID.eq(OrderPosition.ORDER_ID))
+                .leftJoin(Item.class).on(Item.ID.eq(OrderPosition.ITEM_ID))
+                .where(search).limit(25).get()).toList();
         // TODO: search addon_to and invoice_address?
 
         for (OrderPosition position : positions) {
