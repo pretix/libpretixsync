@@ -57,6 +57,7 @@ public class OnlineCheckProvider implements TicketCheckProvider {
             CheckResult res = new CheckResult(CheckResult.Type.ERROR);
             PretixApi.ApiResponse responseObj = api.redeem(ticketid, null, false, null, answers, listId, ignore_unpaid);
             if (responseObj.getResponse().code() == 404) {
+                // TODO: unpaid?
                 res.setType(CheckResult.Type.INVALID);
             } else {
                 JSONObject response = responseObj.getData();
@@ -83,6 +84,7 @@ public class OnlineCheckProvider implements TicketCheckProvider {
                     } else if ("unknown_ticket".equals(reason)) {
                         res.setType(CheckResult.Type.INVALID);
                     } else if ("unpaid".equals(reason)) {
+                        // TODO: still allowed?
                         res.setType(CheckResult.Type.UNPAID);
                     } else if ("product".equals(reason)) {
                         res.setType(CheckResult.Type.PRODUCT);

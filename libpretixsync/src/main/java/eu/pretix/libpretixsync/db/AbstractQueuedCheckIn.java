@@ -21,6 +21,8 @@ public abstract class AbstractQueuedCheckIn {
 
     public String answers;
 
+    public Long checkinListId;
+
     public void generateNonce() {
         this.nonce = NonceGenerator.nextNonce();
     }

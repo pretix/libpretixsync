@@ -12,7 +12,7 @@ import java.sql.Statement;
 
 public class Migrations {
     private static EntityModel model = Models.DEFAULT;
-    public static int CURRENT_VERSION = 21;
+    public static int CURRENT_VERSION = 22;
 
     private static void createVersionTable(Connection c, int version) throws SQLException {
         Statement s2 = c.createStatement();
@@ -58,8 +58,8 @@ public class Migrations {
         if (db_version < 5) {
             migrate_from_4_to_5(dataSource);
         }
-        if (db_version < 5) {
-            migrate_from_4_to_5(dataSource);
+        if (db_version < 22) {
+            migrate_from_5_to_22(dataSource);
         }
         // Note that the Android app currently does not use these queries!
 
@@ -70,10 +70,7 @@ public class Migrations {
         new SchemaModifier(dataSource, model).createTables(TableCreationMode.DROP_CREATE);
     }
 
-    private static void migrate_from_4_to_5(DataSource dataSource) throws SQLException {
-        Connection c = dataSource.getConnection();
-        Statement s = c.createStatement();
-        s.execute("ALTER TABLE Ticket ADD COLUMN addon_text TEXT;");
-        s.close();
+    private static void migrate_from_5_to_22(DataSource dataSource) {
+        new SchemaModifier(dataSource, model).createTables(TableCreationMode.DROP_CREATE);
     }
 }

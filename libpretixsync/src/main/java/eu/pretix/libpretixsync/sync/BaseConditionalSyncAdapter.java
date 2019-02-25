@@ -27,6 +27,8 @@ abstract public class BaseConditionalSyncAdapter<T extends RemoteObject & Persis
         super(store, fileStorage, eventSlug, api);
     }
 
+    private PretixApi.ApiResponse firstResponse;
+
     @Override
     protected JSONObject downloadPage(String url, boolean isFirstPage) throws ApiException, ResourceNotModified {
         ResourceLastModified resourceLastModified = store.select(ResourceLastModified.class)
@@ -36,16 +38,33 @@ abstract public class BaseConditionalSyncAdapter<T extends RemoteObject & Persis
                 .get().firstOrNull();
         if (resourceLastModified == null) {
             resourceLastModified = new ResourceLastModified();
-            resourceLastModified.setEvent_slug(eventSlug);
-            resourceLastModified.setResource(getResourceName());
         }
-
         PretixApi.ApiResponse apiResponse = api.fetchResource(url, resourceLastModified.getLast_modified());
-
-        if (isFirstPage && apiResponse.getResponse().header("Last-Modified") != null) {
-            resourceLastModified.setLast_modified(apiResponse.getResponse().header("Last-Modified"));
-            store.upsert(resourceLastModified);
+        if (isFirstPage) {
+            firstResponse = apiResponse;
         }
         return apiResponse.getData();
+    }
+
+    @Override
+    public void download() throws JSONException, ApiException {
+        super.download();
+        if (firstResponse != null) {
+            ResourceLastModified resourceLastModified = store.select(ResourceLastModified.class)
+                    .where(ResourceLastModified.RESOURCE.eq("orders"))
+                    .and(ResourceLastModified.EVENT_SLUG.eq(eventSlug))
+                    .limit(1)
+                    .get().firstOrNull();
+            if (resourceLastModified == null) {
+                resourceLastModified = new ResourceLastModified();
+                resourceLastModified.setResource(getResourceName());
+                resourceLastModified.setEvent_slug(eventSlug);
+            }
+            if (firstResponse.getResponse().header("Last-Modified") != null) {
+                resourceLastModified.setLast_modified(firstResponse.getResponse().header("Last-Modified"));
+                store.upsert(resourceLastModified);
+            }
+            firstResponse = null;
+        }
     }
 }

@@ -73,7 +73,11 @@ public class AbstractOrderPosition implements RemoteObject {
 
     public Long getTaxRule() {
         try {
-            return getJSON().optLong("tax_rule", 0L);
+            long var = getJSON().optLong("tax_rule", 0L);
+            if (var == 0) {
+                return null;
+            }
+            return var;
         } catch (JSONException e) {
             e.printStackTrace();
             return null;
@@ -82,7 +86,11 @@ public class AbstractOrderPosition implements RemoteObject {
 
     public Long getSubeventId() {
         try {
-            return getJSON().optLong("subevent", 0L);
+            long var = getJSON().optLong("subevent", 0L);
+            if (var == 0) {
+                return null;
+            }
+            return var;
         } catch (JSONException e) {
             e.printStackTrace();
             return null;
@@ -91,7 +99,11 @@ public class AbstractOrderPosition implements RemoteObject {
 
     public Long getVariationId() {
         try {
-            return getJSON().optLong("variation", 0L);
+            long var = getJSON().optLong("variation", 0L);
+            if (var == 0) {
+                return null;
+            }
+            return var;
         } catch (JSONException e) {
             e.printStackTrace();
             return null;

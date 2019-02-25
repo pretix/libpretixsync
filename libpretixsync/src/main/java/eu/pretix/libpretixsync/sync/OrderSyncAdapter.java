@@ -30,6 +30,29 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
     }
 
     private Map<Long, Item> itemCache = new HashMap<>();
+    private PretixApi.ApiResponse firstResponse;
+
+    @Override
+    public void download() throws JSONException, ApiException {
+        super.download();
+        if (firstResponse != null) {
+            ResourceLastModified resourceLastModified = store.select(ResourceLastModified.class)
+                    .where(ResourceLastModified.RESOURCE.eq("orders"))
+                    .and(ResourceLastModified.EVENT_SLUG.eq(eventSlug))
+                    .limit(1)
+                    .get().firstOrNull();
+            if (resourceLastModified == null) {
+                resourceLastModified = new ResourceLastModified();
+                resourceLastModified.setResource("orders");
+                resourceLastModified.setEvent_slug(eventSlug);
+            }
+            if (firstResponse.getResponse().header("X-Page-Generated") != null) {
+                resourceLastModified.setLast_modified(firstResponse.getResponse().header("X-Page-Generated"));
+                store.upsert(resourceLastModified);
+            }
+            firstResponse = null;
+        }
+    }
 
     private Item getItem(long id) {
         if (itemCache.size() == 0) {
@@ -43,7 +66,7 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
         return itemCache.get(id);
     }
 
-    private void updatePositionObject(OrderPosition obj, JSONObject jsonobj) throws JSONException {
+    private void updatePositionObject(OrderPosition obj, JSONObject jsonobj, JSONObject jsonorder, JSONObject parent) throws JSONException {
         obj.setServer_id(jsonobj.getLong("id"));
         obj.setPositionid(jsonobj.getLong("positionid"));
         obj.setAttendee_name(jsonobj.optString("attendee_name"));
@@ -51,6 +74,21 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
         obj.setSecret(jsonobj.optString("secret"));
         obj.setJson_data(jsonobj.toString());
         obj.setItem(getItem(jsonobj.getLong("item")));
+
+        if (obj.getAttendee_name() == null && parent != null && !parent.isNull("attendee_name")) {
+            obj.setAttendee_name(parent.getString("attendee_name"));
+        }
+
+        if (obj.getAttendee_name() == null) {
+            try {
+                JSONObject jInvoiceAddress = jsonorder.getJSONObject("invoice_address");
+                if (jInvoiceAddress.isNull("name")) {
+                    obj.setAttendee_name(jInvoiceAddress.getString("name"));
+                }
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     @Override
@@ -73,6 +111,11 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
 
         JSONArray posarray = jsonobj.getJSONArray("positions");
         List<OrderPosition> inserts = new ArrayList<>();
+        Map<Long, JSONObject> posmap = new HashMap<>();
+        for (int i = 0; i < posarray.length(); i++) {
+            JSONObject posjson = posarray.getJSONObject(i);
+            posmap.put(posjson.getLong("id"), posjson);
+        }
         for (int i = 0; i < posarray.length(); i++) {
             JSONObject posjson = posarray.getJSONObject(i);
             Long jsonid = posjson.getLong("id");
@@ -85,14 +128,18 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
                 posobj = new OrderPosition();
                 posobj.setOrder(obj);
             }
+            JSONObject parent = null;
+            if (!posjson.isNull("addon_to")) {
+                parent = posmap.getOrDefault(posjson.getLong("addon_to"), null);
+            }
             if (known.containsKey(jsonid)) {
                 known.remove(jsonid);
                 if (!JSONUtils.similar(posjson, old)) {
-                    updatePositionObject(posobj, posjson);
+                    updatePositionObject(posobj, posjson, jsonobj, parent);
                     store.update(posobj);
                 }
             } else {
-                updatePositionObject(posobj, posjson);
+                updatePositionObject(posobj, posjson, jsonobj, parent);
                 inserts.add(posobj);
             }
         }
@@ -114,8 +161,6 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
                 .get().firstOrNull();
         if (resourceLastModified == null) {
             resourceLastModified = new ResourceLastModified();
-            resourceLastModified.setResource("orders");
-            resourceLastModified.setEvent_slug(eventSlug);
             if (url.contains("?")) {
                 url += "&pdf_data=true&testmode=false";
             } else {
@@ -134,9 +179,8 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
         }
 
         PretixApi.ApiResponse apiResponse = api.fetchResource(url);
-        if (isFirstPage && apiResponse.getResponse().header("X-Page-Generated") != null) {
-            resourceLastModified.setLast_modified(apiResponse.getResponse().header("X-Page-Generated"));
-            store.upsert(resourceLastModified);
+        if (isFirstPage) {
+            firstResponse = apiResponse;
         }
         return apiResponse.getData();
     }
