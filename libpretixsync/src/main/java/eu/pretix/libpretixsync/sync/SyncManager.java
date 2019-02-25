@@ -175,7 +175,6 @@ public class SyncManager {
     }
 
     protected void uploadTicketData() throws SyncException {
-        /*
         sentry.addBreadcrumb("sync.queue", "Start check-in upload");
 
         List<QueuedCheckIn> queued = dataStore.select(QueuedCheckIn.class).get().toList();
@@ -194,7 +193,8 @@ public class SyncManager {
                 } catch (JSONException e) {
                 }
 
-                JSONObject response = api.redeem(qci.getSecret(), qci.getDatetime(), true, qci.getNonce(), answers, false);
+                PretixApi.ApiResponse ar = api.redeem(qci.getSecret(), qci.getDatetime(), true, qci.getNonce(), answers, qci.checkinListId, false);
+                JSONObject response = ar.getData();
                 String status = response.getString("status");
                 if ("ok".equals(status)) {
                     dataStore.delete(qci);
@@ -214,7 +214,6 @@ public class SyncManager {
             throw new SyncException(e.getMessage());
         }
         sentry.addBreadcrumb("sync.queue", "Check-in upload complete");
-        */
     }
 
     public class SyncResult {
