@@ -219,7 +219,7 @@ public class AsyncCheckProvider implements TicketCheckProvider {
                         .where(
                                 OrderPosition.SECRET.like(query + "%")
                                         .or(OrderPosition.ATTENDEE_NAME.like("%" + query + "%"))
-                                        .or(Order.CODE.like(query + "%"))
+                                        // TODO (for some very absurd reason, this breaks compilation through gradle): .or(Order.CODE.like(query + "%"))
                         ).limit(25).get().toList();
             } else {
                 List<Long> itemids = new ArrayList<>();
@@ -232,7 +232,7 @@ public class AsyncCheckProvider implements TicketCheckProvider {
                         .where(
                                 OrderPosition.SECRET.like(query + "%")
                                         .or(OrderPosition.ATTENDEE_NAME.like("%" + query + "%"))
-                                        .or(Order.CODE.like(query + "%"))
+                                // TODO (for some very absurd reason, this breaks compilation through gradle): .or(Order.CODE.like(query + "%"))
                         ).and(
                                 Item.ID.in(itemids)
                         ).limit(25).get().toList();
