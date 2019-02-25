@@ -1,6 +1,9 @@
 package eu.pretix.libpretixsync.check;
 
 import eu.pretix.libpretixsync.db.*;
+import io.requery.kotlin.Logical;
+import io.requery.query.Condition;
+import io.requery.query.Expression;
 import io.requery.query.Result;
 import io.requery.query.WhereAndOr;
 import org.json.JSONArray;
@@ -208,32 +211,56 @@ public class AsyncCheckProvider implements TicketCheckProvider {
         }
 
         List<OrderPosition> positions;
-        WhereAndOr<? extends Result<OrderPosition>> sqs = dataStore.select(OrderPosition.class)
-                .leftJoin(Order.class).on(Order.ID.eq(OrderPosition.ORDER_ID))
-                .leftJoin(Item.class).on(Item.ID.eq(OrderPosition.ITEM_ID))
-                .where(
-                        OrderPosition.SECRET.like(query + "%")
-                                .or(OrderPosition.ATTENDEE_NAME.like("%" + query + "%"))
-                                .or(Order.CODE.like(query + "%"))
-                );
-        // TODO: search addon_to and invoice_address?
-        if (!config.getAllowSearch()) {
-            sqs = dataStore.select(OrderPosition.class)
-                    .leftJoin(Item.class).on(Item.ID.eq(OrderPosition.ITEM_ID))
-                    .where(
-                            OrderPosition.SECRET.like(query + "%")
-                    );
-        }
-        if (!list.all_items) {
-            List<Long> itemids = new ArrayList<>();
-            for (Item item : list.getItems()) {
-                itemids.add(item.getId());
+        if (config.getAllowSearch()) {
+            if (list.all_items) {
+                positions = dataStore.select(OrderPosition.class)
+                        .leftJoin(Order.class).on(Order.ID.eq(OrderPosition.ORDER_ID))
+                        .leftJoin(Item.class).on(Item.ID.eq(OrderPosition.ITEM_ID))
+                        .where(
+                                OrderPosition.SECRET.like(query + "%")
+                                        .or(OrderPosition.ATTENDEE_NAME.like("%" + query + "%"))
+                                        .or(Order.CODE.like(query + "%"))
+                        ).limit(25).get().toList();
+            } else {
+                List<Long> itemids = new ArrayList<>();
+                for (Item item : list.getItems()) {
+                    itemids.add(item.getId());
+                }
+                positions = dataStore.select(OrderPosition.class)
+                        .leftJoin(Order.class).on(Order.ID.eq(OrderPosition.ORDER_ID))
+                        .leftJoin(Item.class).on(Item.ID.eq(OrderPosition.ITEM_ID))
+                        .where(
+                                OrderPosition.SECRET.like(query + "%")
+                                        .or(OrderPosition.ATTENDEE_NAME.like("%" + query + "%"))
+                                        .or(Order.CODE.like(query + "%"))
+                        ).and(
+                                Item.ID.in(itemids)
+                        ).limit(25).get().toList();
             }
-            sqs = sqs.and(Item.ID.in(itemids));
+        } else {
+            if (list.all_items) {
+                positions = dataStore.select(OrderPosition.class)
+                        .leftJoin(Order.class).on(Order.ID.eq(OrderPosition.ORDER_ID))
+                        .leftJoin(Item.class).on(Item.ID.eq(OrderPosition.ITEM_ID))
+                        .where(
+                                OrderPosition.SECRET.like(query + "%")
+                        ).limit(25).get().toList();
+            } else {
+                List<Long> itemids = new ArrayList<>();
+                for (Item item : list.getItems()) {
+                    itemids.add(item.getId());
+                }
+                positions = dataStore.select(OrderPosition.class)
+                        .leftJoin(Order.class).on(Order.ID.eq(OrderPosition.ORDER_ID))
+                        .leftJoin(Item.class).on(Item.ID.eq(OrderPosition.ITEM_ID))
+                        .where(
+                                OrderPosition.SECRET.like(query + "%")
+                        ).and(
+                                Item.ID.in(itemids)
+                        ).limit(25).get().toList();
+            }
         }
-        positions = sqs
-                .limit(25)
-                .get().toList();
+        // TODO: search addon_to and invoice_address?
 
         for (OrderPosition position : positions) {
             Item item = position.getItem();
