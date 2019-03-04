@@ -78,6 +78,9 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
         if (obj.getAttendee_name() == null && parent != null && !parent.isNull("attendee_name")) {
             obj.setAttendee_name(parent.getString("attendee_name"));
         }
+        if (obj.getAttendee_email() == null && parent != null && !parent.isNull("attendee_email")) {
+            obj.setAttendee_email(parent.getString("attendee_email"));
+        }
 
         if (obj.getAttendee_name() == null) {
             try {

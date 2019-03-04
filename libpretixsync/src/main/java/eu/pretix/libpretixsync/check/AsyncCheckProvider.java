@@ -215,6 +215,8 @@ public class AsyncCheckProvider implements TicketCheckProvider {
         if (config.getAllowSearch()) {
             search = OrderPosition.SECRET.like(query + "%")
                             .or(OrderPosition.ATTENDEE_NAME.like("%" + query + "%"))
+                            .or(OrderPosition.ATTENDEE_EMAIL.like("%" + query + "%"))
+                            .or(Order.EMAIL.like("%" + query + "%"))
                             .or(Order.CODE.like(query + "%"));
         } else {
             search = OrderPosition.SECRET.like(query + "%");
@@ -232,7 +234,7 @@ public class AsyncCheckProvider implements TicketCheckProvider {
                 .leftJoin(Order.class).on((Condition) Order.ID.eq(OrderPosition.ORDER_ID))
                 .leftJoin(Item.class).on(Item.ID.eq(OrderPosition.ITEM_ID))
                 .where(search).limit(25).get()).toList();
-        // TODO: search addon_to and invoice_address?
+        // TODO: search invoice_address?
 
         for (OrderPosition position : positions) {
             Item item = position.getItem();
