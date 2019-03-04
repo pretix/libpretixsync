@@ -78,7 +78,7 @@ public class PretixApi {
         return PretixApi.fromConfig(config, new DefaultHttpClientFactory());
     }
 
-    public ApiResponse redeem(String secret, Date datetime, boolean force, String nonce, List<TicketCheckProvider.Answer> answers, Long listId, boolean ignore_unpaid) throws ApiException, JSONException {
+    public ApiResponse redeem(String secret, Date datetime, boolean force, String nonce, List<TicketCheckProvider.Answer> answers, Long listId, boolean ignore_unpaid, boolean pdf_data) throws ApiException, JSONException {
         JSONObject body = new JSONObject();
         if (datetime != null) {
             TimeZone tz = TimeZone.getTimeZone("UTC");
@@ -97,7 +97,11 @@ public class PretixApi {
         }
         body.put("answers", answerbody);
         body.put("questions_supported", true);
-        return postResource(eventResourceUrl("checkinlists/" + listId + "/positions/" + secret + "/redeem") + "?pdf_data=true", body);
+        String pd = "";
+        if (pdf_data) {
+            pd = "?pdf_data=true";
+        }
+        return postResource(eventResourceUrl("checkinlists/" + listId + "/positions/" + secret + "/redeem") + pd, body);
     }
 
     public ApiResponse status(Long listId) throws ApiException {

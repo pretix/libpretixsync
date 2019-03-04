@@ -193,7 +193,7 @@ public class SyncManager {
                 } catch (JSONException e) {
                 }
 
-                PretixApi.ApiResponse ar = api.redeem(qci.getSecret(), qci.getDatetime(), true, qci.getNonce(), answers, qci.checkinListId, false);
+                PretixApi.ApiResponse ar = api.redeem(qci.getSecret(), qci.getDatetime(), true, qci.getNonce(), answers, qci.checkinListId, false, false);
                 JSONObject response = ar.getData();
                 String status = response.getString("status");
                 if ("ok".equals(status)) {

@@ -51,11 +51,11 @@ public class OnlineCheckProvider implements TicketCheckProvider {
     }
 
     @Override
-    public CheckResult check(String ticketid, List<Answer> answers, boolean ignore_unpaid) {
+    public CheckResult check(String ticketid, List<Answer> answers, boolean ignore_unpaid, boolean with_badge_data) {
         sentry.addBreadcrumb("provider.check", "started");
         try {
             CheckResult res = new CheckResult(CheckResult.Type.ERROR);
-            PretixApi.ApiResponse responseObj = api.redeem(ticketid, null, false, null, answers, listId, ignore_unpaid);
+            PretixApi.ApiResponse responseObj = api.redeem(ticketid, null, false, null, answers, listId, ignore_unpaid, with_badge_data);
             if (responseObj.getResponse().code() == 404) {
                 // TODO: unpaid?
                 res.setType(CheckResult.Type.INVALID);
@@ -133,7 +133,7 @@ public class OnlineCheckProvider implements TicketCheckProvider {
 
     @Override
     public CheckResult check(String ticketid) {
-        return check(ticketid, new ArrayList<Answer>(), false);
+        return check(ticketid, new ArrayList<Answer>(), false, true);
     }
 
     @Override

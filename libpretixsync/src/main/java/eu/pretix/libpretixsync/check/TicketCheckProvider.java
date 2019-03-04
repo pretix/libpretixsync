@@ -394,7 +394,7 @@ public interface TicketCheckProvider {
         }
     }
 
-    CheckResult check(String ticketid, List<Answer> answers, boolean ignore_unpaid);
+    CheckResult check(String ticketid, List<Answer> answers, boolean ignore_unpaid, boolean with_badge_data);
 
     CheckResult check(String ticketid);
 

@@ -39,11 +39,11 @@ public class AsyncCheckProvider implements TicketCheckProvider {
 
     @Override
     public CheckResult check(String ticketid) {
-        return check(ticketid, new ArrayList<Answer>(), false);
+        return check(ticketid, new ArrayList<Answer>(), false, true);
     }
 
     @Override
-    public CheckResult check(String ticketid, List<Answer> answers, boolean ignore_unpaid) {
+    public CheckResult check(String ticketid, List<Answer> answers, boolean ignore_unpaid, boolean with_badge_data) {
         sentry.addBreadcrumb("provider.check", "offline check started");
 
         List<OrderPosition> tickets = dataStore.select(OrderPosition.class)
