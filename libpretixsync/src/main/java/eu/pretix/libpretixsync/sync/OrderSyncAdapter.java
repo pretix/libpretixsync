@@ -201,18 +201,21 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
                 .limit(1)
                 .get().firstOrNull();
         if (resourceLastModified == null) {
-            resourceLastModified = new ResourceLastModified();
-            if (url.contains("?")) {
-                url += "&pdf_data=true&testmode=false";
-            } else {
-                url += "?pdf_data=true&testmode=false";
+            if (!url.contains("testmode")) {
+                if (url.contains("?")) {
+                    url += "&pdf_data=true&testmode=false";
+                } else {
+                    url += "?pdf_data=true&testmode=false";
+                }
             }
         } else {
             try {
-                if (url.contains("?")) {
-                    url += "&pdf_data=true&testmode=false&modified_since=" + URLEncoder.encode(resourceLastModified.getLast_modified(), "UTF-8");
-                } else {
-                    url += "?pdf_data=true&testmode=false&modified_since=" + URLEncoder.encode(resourceLastModified.getLast_modified(), "UTF-8");
+                if (!url.contains("modified_since")) {
+                    if (url.contains("?")) {
+                        url += "&pdf_data=true&testmode=false&modified_since=" + URLEncoder.encode(resourceLastModified.getLast_modified(), "UTF-8");
+                    } else {
+                        url += "?pdf_data=true&testmode=false&modified_since=" + URLEncoder.encode(resourceLastModified.getLast_modified(), "UTF-8");
+                    }
                 }
             } catch (UnsupportedEncodingException e) {
                 e.printStackTrace();
