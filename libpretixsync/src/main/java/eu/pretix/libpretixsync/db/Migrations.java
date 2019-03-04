@@ -12,7 +12,7 @@ import java.sql.Statement;
 
 public class Migrations {
     private static EntityModel model = Models.DEFAULT;
-    public static int CURRENT_VERSION = 22;
+    public static int CURRENT_VERSION = 25;
 
     private static void createVersionTable(Connection c, int version) throws SQLException {
         Statement s2 = c.createStatement();
@@ -30,6 +30,9 @@ public class Migrations {
         Statement s3 = c.createStatement();
         s3.execute("INSERT INTO _version (version) VALUES (" + version + ");");
         s3.close();
+        Statement s4 = c.createStatement();
+        s4.execute("DELETE FROM ResourceLastModified;");
+        s4.close();
     }
 
     public static void migrate(DataSource dataSource, boolean dbIsNew) throws SQLException {
@@ -55,22 +58,19 @@ public class Migrations {
             if (s != null) s.close();
         }
 
-        if (db_version < 5) {
-            migrate_from_4_to_5(dataSource);
-        }
-        if (db_version < 22) {
-            migrate_from_5_to_22(dataSource);
+        if (db_version < 24) {
+            create_drop(dataSource);
         }
         // Note that the Android app currently does not use these queries!
 
         updateVersionTable(c, CURRENT_VERSION);
     }
 
-    private static void migrate_from_4_to_5(DataSource dataSource) {
+    private static void create_drop(DataSource dataSource) {
         new SchemaModifier(dataSource, model).createTables(TableCreationMode.DROP_CREATE);
     }
 
-    private static void migrate_from_5_to_22(DataSource dataSource) {
-        new SchemaModifier(dataSource, model).createTables(TableCreationMode.DROP_CREATE);
+    private static void create_notexists(DataSource dataSource) {
+        new SchemaModifier(dataSource, model).createTables(TableCreationMode.CREATE_NOT_EXISTS);
     }
 }

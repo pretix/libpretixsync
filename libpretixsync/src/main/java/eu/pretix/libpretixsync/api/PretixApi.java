@@ -100,8 +100,12 @@ public class PretixApi {
         return postResource(eventResourceUrl("checkinlists/" + listId + "/positions/" + secret + "/redeem") + "?pdf_data=true", body);
     }
 
-    public JSONObject status() throws ApiException {
-        return new JSONObject();
+    public ApiResponse status(Long listId) throws ApiException {
+        try {
+            return fetchResource(eventResourceUrl("checkinlists/" + listId + "/status"));
+        } catch (ResourceNotModified resourceNotModified) {
+            throw new ApiException("invalid error");
+        }
     }
 
     public ApiResponse search(Long listId, String query) throws ApiException {

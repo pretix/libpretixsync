@@ -196,17 +196,17 @@ public class OnlineCheckProvider implements TicketCheckProvider {
                 JSONObject var = item.getJSONArray("variations").getJSONObject(j);
                 variations.add(new StatusResultItemVariation(
                         var.getLong("id"),
-                        var.getString("name"),
-                        var.getInt("total"),
-                        var.getInt("checkins")
+                        var.getString("value"),
+                        var.getInt("position_count"),
+                        var.getInt("checkin_count")
                 ));
             }
 
             items.add(new StatusResultItem(
                     item.getLong("id"),
                     item.getString("name"),
-                    item.getInt("total"),
-                    item.getInt("checkins"),
+                    item.getInt("position_count"),
+                    item.getInt("checkin_count"),
                     variations,
                     item.getBoolean("admission")
             ));
@@ -214,8 +214,8 @@ public class OnlineCheckProvider implements TicketCheckProvider {
 
         return new StatusResult(
                 response.getJSONObject("event").getString("name"),
-                response.getInt("total"),
-                response.getInt("checkins"),
+                response.getInt("position_count"),
+                response.getInt("checkin_count"),
                 items
         );
     }
@@ -224,8 +224,8 @@ public class OnlineCheckProvider implements TicketCheckProvider {
     public StatusResult status() throws CheckException {
         sentry.addBreadcrumb("provider.status", "started");
         try {
-            JSONObject response = api.status();
-            return parseStatusResponse(response);
+            PretixApi.ApiResponse response = api.status(listId);
+            return parseStatusResponse(response.getData());
         } catch (JSONException e) {
             sentry.captureException(e);
             throw new CheckException("Unknown server response");

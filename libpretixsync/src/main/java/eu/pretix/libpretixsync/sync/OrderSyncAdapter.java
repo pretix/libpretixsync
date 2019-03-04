@@ -1,5 +1,6 @@
 package eu.pretix.libpretixsync.sync;
 
+import eu.pretix.libpretixsync.db.*;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -15,11 +16,6 @@ import java.util.Map;
 import eu.pretix.libpretixsync.api.ApiException;
 import eu.pretix.libpretixsync.api.PretixApi;
 import eu.pretix.libpretixsync.api.ResourceNotModified;
-import eu.pretix.libpretixsync.db.Item;
-import eu.pretix.libpretixsync.db.Order;
-import eu.pretix.libpretixsync.db.OrderPosition;
-import eu.pretix.libpretixsync.db.Quota;
-import eu.pretix.libpretixsync.db.ResourceLastModified;
 import eu.pretix.libpretixsync.utils.JSONUtils;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
@@ -30,6 +26,7 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
     }
 
     private Map<Long, Item> itemCache = new HashMap<>();
+    private Map<Long, CheckInList> listCache = new HashMap<>();
     private PretixApi.ApiResponse firstResponse;
 
     @Override
@@ -66,6 +63,18 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
         return itemCache.get(id);
     }
 
+    private CheckInList getList(long id) {
+        if (listCache.size() == 0) {
+            List<CheckInList> items = store
+                    .select(CheckInList.class)
+                    .get().toList();
+            for (CheckInList item : items) {
+                listCache.put(item.getServer_id(), item);
+            }
+        }
+        return listCache.get(id);
+    }
+
     private void updatePositionObject(OrderPosition obj, JSONObject jsonobj, JSONObject jsonorder, JSONObject parent) throws JSONException {
         obj.setServer_id(jsonobj.getLong("id"));
         obj.setPositionid(jsonobj.getLong("positionid"));
@@ -74,6 +83,8 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
         obj.setSecret(jsonobj.optString("secret"));
         obj.setJson_data(jsonobj.toString());
         obj.setItem(getItem(jsonobj.getLong("item")));
+        obj.setSubevent_id(jsonobj.optLong("subevent"));
+        obj.setVariation_id(jsonobj.optLong("variation"));
 
         if (obj.getAttendee_name() == null && parent != null && !parent.isNull("attendee_name")) {
             obj.setAttendee_name(parent.getString("attendee_name"));
@@ -92,6 +103,36 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
                 e.printStackTrace();
             }
         }
+
+        if (obj.getId() == null) {
+            store.insert(obj);
+        }
+
+        Map<Long, CheckIn> known = new HashMap<>();
+        for (CheckIn op : obj.getCheckins()) {
+            known.put(op.getList().getServer_id(), op);
+        }
+        JSONArray checkins = jsonobj.getJSONArray("checkins");
+        for (int i = 0; i < checkins.length(); i++) {
+            JSONObject ci = checkins.getJSONObject(i);
+            Long listid = ci.getLong("list");
+            CheckInList list = getList(listid);
+            if (list == null) {
+                continue;
+            }
+            if (known.containsKey(listid)) {
+                CheckIn ciobj = known.remove(listid);
+                ciobj.fromJSON(ci);
+                store.update(ciobj);
+            } else {
+                CheckIn ciobj = new CheckIn();
+                ciobj.setPosition(obj);
+                ciobj.setList(getList(listid));
+                ciobj.fromJSON(ci);
+                store.insert(ciobj);
+            }
+        }
+        store.delete(known.values());
     }
 
     @Override
@@ -113,7 +154,6 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
         }
 
         JSONArray posarray = jsonobj.getJSONArray("positions");
-        List<OrderPosition> inserts = new ArrayList<>();
         Map<Long, JSONObject> posmap = new HashMap<>();
         for (int i = 0; i < posarray.length(); i++) {
             JSONObject posjson = posarray.getJSONObject(i);
@@ -143,10 +183,8 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
                 }
             } else {
                 updatePositionObject(posobj, posjson, jsonobj, parent);
-                inserts.add(posobj);
             }
         }
-        store.insert(inserts);
         store.delete(known.values());
     }
 

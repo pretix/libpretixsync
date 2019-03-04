@@ -1,11 +1,9 @@
 package eu.pretix.libpretixsync.check;
 
 import eu.pretix.libpretixsync.db.*;
+import eu.pretix.libpretixsync.db.Order;
 import io.requery.kotlin.Logical;
-import io.requery.query.Condition;
-import io.requery.query.Expression;
-import io.requery.query.Result;
-import io.requery.query.WhereAndOr;
+import io.requery.query.*;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -49,7 +47,9 @@ public class AsyncCheckProvider implements TicketCheckProvider {
         sentry.addBreadcrumb("provider.check", "offline check started");
 
         List<OrderPosition> tickets = dataStore.select(OrderPosition.class)
+                .leftJoin(Order.class).on(Order.ID.eq(OrderPosition.ORDER_ID))
                 .where(OrderPosition.SECRET.eq(ticketid))
+                .and(Order.EVENT_SLUG.eq(config.getEventSlug()))
                 .get().toList();
 
         if (tickets.size() == 0) {
@@ -63,9 +63,13 @@ public class AsyncCheckProvider implements TicketCheckProvider {
 
         CheckInList list = dataStore.select(CheckInList.class)
                 .where(CheckInList.SERVER_ID.eq(listId))
+                .and(CheckInList.EVENT_SLUG.eq(config.getEventSlug()))
                 .get().firstOrNull();
         if (list == null) {
             return new CheckResult(CheckResult.Type.ERROR, "Check-in list not found");
+        }
+        if (list.getSubevent_id() != null && list.getSubevent_id() > 0 && !list.getSubevent_id().equals(position.getSubeventId())) {
+            return new CheckResult(CheckResult.Type.INVALID);
         }
         if (!list.all_items) {
             int is_in_list = dataStore.count(CheckInList_Item.class)
@@ -84,16 +88,15 @@ public class AsyncCheckProvider implements TicketCheckProvider {
                 .get().value();
 
         boolean is_checked_in = queuedCheckIns > 0;
+        for (CheckIn ci : position.getCheckins()) {
+            if (ci.getList().getServer_id() == listId) {
+                is_checked_in = true;
+                break;
+            }
+        }
         JSONObject jPosition;
         try {
             jPosition = position.getJSON();
-            for (int i = 0; i < jPosition.getJSONArray("checkins").length(); i++) {
-                JSONObject c = jPosition.getJSONArray("checkins").getJSONObject(i);
-                if (c.getLong("list") == listId) {
-                    is_checked_in = true;
-                    break;
-                }
-            }
         } catch (JSONException e) {
             sentry.captureException(e);
             return new CheckResult(CheckResult.Type.ERROR);
@@ -154,18 +157,12 @@ public class AsyncCheckProvider implements TicketCheckProvider {
                 qci.setCheckinListId(listId);
                 dataStore.insert(qci);
 
-                try {
-                    JSONArray c = jPosition.getJSONArray("checkins");
-                    JSONObject cj = new JSONObject();
-                    cj.put("list", listId);
-                    cj.put("local", true);
-                    c.put(cj);
-                    jPosition.put("checkins", c);
-                    position.setJson_data(jPosition.toString());
-                    dataStore.update(position);
-                } catch (JSONException e) {
-                    sentry.captureException(e);
-                }
+                CheckIn ci = new CheckIn();
+                ci.setList(list);
+                ci.setPosition(position);
+                ci.setDatetime(new Date());
+                ci.setJson_data("{\"local\": true}");
+                dataStore.insert(ci);
             }
         }
 
@@ -205,6 +202,7 @@ public class AsyncCheckProvider implements TicketCheckProvider {
 
         CheckInList list = dataStore.select(CheckInList.class)
                 .where(CheckInList.SERVER_ID.eq(listId))
+                .and(CheckInList.EVENT_SLUG.eq(config.getEventSlug()))
                 .get().firstOrNull();
         if (list == null) {
             throw new CheckException("Check-in list not found");
@@ -214,10 +212,10 @@ public class AsyncCheckProvider implements TicketCheckProvider {
         Condition search = null;
         if (config.getAllowSearch()) {
             search = OrderPosition.SECRET.like(query + "%")
-                            .or(OrderPosition.ATTENDEE_NAME.like("%" + query + "%"))
-                            .or(OrderPosition.ATTENDEE_EMAIL.like("%" + query + "%"))
-                            .or(Order.EMAIL.like("%" + query + "%"))
-                            .or(Order.CODE.like(query + "%"));
+                    .or(OrderPosition.ATTENDEE_NAME.like("%" + query + "%"))
+                    .or(OrderPosition.ATTENDEE_EMAIL.like("%" + query + "%"))
+                    .or(Order.EMAIL.like("%" + query + "%"))
+                    .or(Order.CODE.like(query + "%"));
         } else {
             search = OrderPosition.SECRET.like(query + "%");
         }
@@ -227,6 +225,10 @@ public class AsyncCheckProvider implements TicketCheckProvider {
                 itemids.add(item.getId());
             }
             search = Item.ID.in(itemids).and(search);
+        }
+        search = Order.EVENT_SLUG.eq(config.getEventSlug()).and(search);
+        if (list.getSubevent_id() != null && list.getSubevent_id() > 0) {
+            search = OrderPosition.SUBEVENT_ID.eq(list.getSubevent_id()).and(search);
         }
         // The weird typecasting is apparently due to a bug in the Java compiler
         // see https://github.com/requery/requery/issues/229#issuecomment-240470748
@@ -253,27 +255,18 @@ public class AsyncCheckProvider implements TicketCheckProvider {
             sr.setOrderCode(order.getCode());
             sr.setSecret(position.getSecret());
 
-            CheckResult res = new CheckResult(CheckResult.Type.ERROR);
             long queuedCheckIns = dataStore.count(QueuedCheckIn.class)
                     .where(QueuedCheckIn.SECRET.eq(position.getSecret()))
                     .and(QueuedCheckIn.CHECKIN_LIST_ID.eq(listId))
                     .get().value();
 
             boolean is_checked_in = queuedCheckIns > 0;
-            JSONObject jPosition;
-            try {
-                jPosition = position.getJSON();
-                for (int i = 0; i < jPosition.getJSONArray("checkins").length(); i++) {
-                    JSONObject c = jPosition.getJSONArray("checkins").getJSONObject(i);
-                    if (c.getLong("list") == listId) {
-                        is_checked_in = true;
-                        break;
-                    }
+            for (CheckIn ci : position.getCheckins()) {
+                if (ci.getList().getServer_id() == listId) {
+                    is_checked_in = true;
+                    break;
                 }
-            } catch (JSONException e) {
-                sentry.captureException(e);
             }
-
             sr.setRedeemed(is_checked_in);
             sr.setPaid(order.getStatus().equals("p"));
             boolean require_attention = position.getOrder().isCheckin_attention();
@@ -288,68 +281,106 @@ public class AsyncCheckProvider implements TicketCheckProvider {
         return results;
     }
 
+    private WhereAndOr<? extends Scalar<Integer>> basePositionQuery(CheckInList list) {
+        List<String> status = new ArrayList<>();
+        status.add("p");
+        if (list.include_pending) {
+            status.add("n");
+        }
+
+        WhereAndOr<? extends Scalar<Integer>> q = dataStore.count(OrderPosition.class).distinct()
+                .leftJoin(Order.class).on(OrderPosition.ORDER_ID.eq(Order.ID))
+                .where(Order.EVENT_SLUG.eq(config.getEventSlug()))
+                .and(Order.STATUS.in(status));
+        if (list.getSubevent_id() != null && list.getSubevent_id() > 0) {
+            q = q.and(OrderPosition.SUBEVENT_ID.eq(list.getSubevent_id()));
+        }
+        return q;
+    }
+
+    private WhereAndOr<? extends Scalar<Integer>> baseCheckInQuery(CheckInList list) {
+        List<String> status = new ArrayList<>();
+        status.add("p");
+        if (list.include_pending) {
+            status.add("n");
+        }
+
+        WhereAndOr<? extends Scalar<Integer>> q = dataStore.count(CheckIn.class).distinct()
+                .leftJoin(OrderPosition.class).on(CheckIn.POSITION_ID.eq(OrderPosition.ID))
+                .leftJoin(Order.class).on(OrderPosition.ORDER_ID.eq(Order.ID))
+                .where(Order.EVENT_SLUG.eq(config.getEventSlug()))
+                .and(CheckIn.LIST_ID.eq(list.getId()))
+                .and(Order.STATUS.in(status));
+        if (list.getSubevent_id() != null && list.getSubevent_id() > 0) {
+            q = q.and(OrderPosition.SUBEVENT_ID.eq(list.getSubevent_id()));
+        }
+        return q;
+    }
+
     @Override
     public StatusResult status() throws CheckException {
         sentry.addBreadcrumb("provider.status", "offline status started");
-        if (config.getLastStatusData() == null) {
-            throw new CheckException("No current data available.");
-        }
-        StatusResult statusResult;
-        try {
-            statusResult = OnlineCheckProvider.parseStatusResponse(new JSONObject(config.getLastStatusData()));
-        } catch (JSONException e) {
-            e.printStackTrace();
-            throw new CheckException("Invalid status data available.");
-        }
-        /*
 
-        if (dataStore.count(Ticket.class).where(Ticket.ITEM_ID.eq((long) 0)).get().value() > 0) {
-            throw new CheckException("Incompatible with your current pretix version.");
+        List<StatusResultItem> items = new ArrayList<>();
+
+        CheckInList list = dataStore.select(CheckInList.class)
+                .where(CheckInList.SERVER_ID.eq(listId))
+                .and(CheckInList.EVENT_SLUG.eq(config.getEventSlug()))
+                .get().firstOrNull();
+        if (list == null) {
+            throw new CheckException("Check-in list not found");
         }
-        int total_all = 0;
-        int checkins_all = 0;
-        for (StatusResultItem resultItem : statusResult.getItems()) {
-            int total = 0;
-            int checkins = 0;
-            if (resultItem.getActiveVariations().size() > 0) {
-                for (StatusResultItemVariation itemVariation : resultItem.getActiveVariations()) {
-                    itemVariation.setTotal(
-                            dataStore.count(Ticket.class).where(
-                                    Ticket.ITEM_ID.eq(resultItem.getId())
-                                            .and(Ticket.VARIATION_ID.eq(itemVariation.getId()))
-                                            .and(Ticket.PAID.eq(true))
-                            ).get().value()
-                    );
-                    itemVariation.setCheckins(
-                            dataStore.count(Ticket.class).where(
-                                    Ticket.ITEM_ID.eq(resultItem.getId())
-                                            .and(Ticket.VARIATION_ID.eq(itemVariation.getId()))
-                                            .and(Ticket.REDEEMED.eq(true))
-                                            .and(Ticket.PAID.eq(true))
-                            ).get().value()
-                    );
-                    total += itemVariation.getTotal();
-                    checkins += itemVariation.getCheckins();
+
+        List<Item> products;
+        if (list.all_items) {
+            products = dataStore.select(Item.class)
+                    .where(Item.EVENT_SLUG.eq(config.getEventSlug()))
+                    .get().toList();
+        } else {
+            products = list.getItems();
+        }
+
+        int sum_pos = 0;
+        int sum_ci = 0;
+        for (Item product: products) {
+            List<StatusResultItemVariation> variations = new ArrayList<>();
+
+            try {
+                for (ItemVariation var: product.getVariations()) {
+                    int position_count = basePositionQuery(list)
+                            .and(OrderPosition.ITEM_ID.eq(product.id))
+                            .and(OrderPosition.VARIATION_ID.eq(var.getServer_id())).get().value();
+                    int ci_count = baseCheckInQuery(list)
+                            .and(OrderPosition.ITEM_ID.eq(product.id))
+                            .and(OrderPosition.VARIATION_ID.eq(var.getServer_id())).get().value();
+                    variations.add(new StatusResultItemVariation(
+                            var.getServer_id(),
+                            var.getStringValue(),
+                            position_count,
+                            ci_count
+                    ));
                 }
-            } else {
-                total = dataStore.count(Ticket.class).where(
-                        Ticket.ITEM_ID.eq(resultItem.getId())
-                                .and(Ticket.PAID.eq(true))
-                ).get().value();
-                checkins = dataStore.count(Ticket.class).where(
-                        Ticket.ITEM_ID.eq(resultItem.getId())
-                                .and(Ticket.REDEEMED.eq(true))
-                                .and(Ticket.PAID.eq(true))
-                ).get().value();
+                int position_count = basePositionQuery(list)
+                        .and(OrderPosition.ITEM_ID.eq(product.id)).get().value();
+                int ci_count = baseCheckInQuery(list)
+                        .and(OrderPosition.ITEM_ID.eq(product.id)).get().value();
+                items.add(new StatusResultItem(
+                        product.getServer_id(),
+                        product.getName(),
+                        position_count,
+                        ci_count,
+                        variations,
+                        product.isAdmission()
+                ));
+                sum_pos += position_count;
+                sum_ci += ci_count;
+            } catch (JSONException e) {
+                e.printStackTrace();
             }
-            resultItem.setTotal(total);
-            resultItem.setCheckins(checkins);
-            total_all += total;
-            checkins_all += checkins;
         }
-        statusResult.setAlreadyScanned(checkins_all);
-        statusResult.setTotalTickets(total_all);
-        */
+
+
+        StatusResult statusResult = new StatusResult(list.name, sum_pos, sum_ci, items);
         return statusResult;
     }
 }

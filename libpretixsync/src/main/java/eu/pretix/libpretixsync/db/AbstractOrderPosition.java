@@ -1,18 +1,11 @@
 package eu.pretix.libpretixsync.db;
 
+import io.requery.*;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.math.BigDecimal;
-
-import io.requery.Column;
-import io.requery.Entity;
-import io.requery.ForeignKey;
-import io.requery.Generated;
-import io.requery.Key;
-import io.requery.ManyToOne;
-import io.requery.Nullable;
-import io.requery.ReferentialAction;
+import java.util.List;
 
 @Entity(cacheable = false)
 public class AbstractOrderPosition implements RemoteObject {
@@ -30,6 +23,10 @@ public class AbstractOrderPosition implements RemoteObject {
 
     public Long positionid;
 
+    public Long subevent_id;
+
+    public Long variation_id;
+
     @Nullable
     public String attendee_name;
 
@@ -43,6 +40,9 @@ public class AbstractOrderPosition implements RemoteObject {
     public String secret;
 
     public String json_data;
+
+    @OneToMany
+    public List<CheckIn> checkins;
 
     public BigDecimal getPrice() {
         try {
