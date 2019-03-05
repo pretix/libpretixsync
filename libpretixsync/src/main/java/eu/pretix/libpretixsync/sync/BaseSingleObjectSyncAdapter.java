@@ -19,16 +19,21 @@ public abstract class BaseSingleObjectSyncAdapter<T extends RemoteObject & Persi
     protected PretixApi api;
     protected String eventSlug;
     protected String key;
+    protected SyncManager.ProgressFeedback feedback;
 
-    public BaseSingleObjectSyncAdapter(BlockingEntityStore<Persistable> store, String eventSlug, String key, PretixApi api) {
+    public BaseSingleObjectSyncAdapter(BlockingEntityStore<Persistable> store, String eventSlug, String key, PretixApi api, SyncManager.ProgressFeedback feedback) {
         this.store = store;
         this.api = api;
         this.eventSlug = eventSlug;
         this.key = key;
+        this.feedback = feedback;
     }
 
     @Override
     public void download() throws JSONException, ApiException {
+        if (feedback != null) {
+            feedback.postFeedback("Downloading " + getResourceName() + "…");
+        }
         try {
             JSONObject data = downloadRawData();
             processData(data);

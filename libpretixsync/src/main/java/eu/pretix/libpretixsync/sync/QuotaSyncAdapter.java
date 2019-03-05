@@ -16,8 +16,8 @@ import io.requery.Persistable;
 import io.requery.query.Tuple;
 
 public class QuotaSyncAdapter extends BaseConditionalSyncAdapter<Quota, Long> {
-    public QuotaSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, PretixApi api) {
-        super(store, fileStorage, eventSlug, api);
+    public QuotaSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, PretixApi api, SyncManager.ProgressFeedback feedback) {
+        super(store, fileStorage, eventSlug, api, feedback);
     }
 
     @Override

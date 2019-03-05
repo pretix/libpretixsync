@@ -13,8 +13,8 @@ import io.requery.Persistable;
 import io.requery.query.Tuple;
 
 public class ItemSyncAdapter extends BaseConditionalSyncAdapter<Item, Long> {
-    public ItemSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, PretixApi api) {
-        super(store, fileStorage, eventSlug, api);
+    public ItemSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, PretixApi api, SyncManager.ProgressFeedback feedback) {
+        super(store, fileStorage, eventSlug, api, feedback);
     }
 
     @Override

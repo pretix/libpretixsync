@@ -6,6 +6,7 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import eu.pretix.libpretixsync.SentryInterface;
 import eu.pretix.libpretixsync.api.ApiException;
@@ -29,6 +30,10 @@ public class SyncManager {
     private BlockingEntityStore<Persistable> dataStore;
     private FileStorage fileStorage;
 
+    public interface ProgressFeedback {
+        public void postFeedback(String current_action);
+    }
+
     public SyncManager(ConfigStore configStore, PretixApi api, SentryInterface sentry, BlockingEntityStore<Persistable> dataStore, FileStorage fileStorage, long upload_interval, long download_interval) {
         this.configStore = configStore;
         this.api = api;
@@ -39,13 +44,17 @@ public class SyncManager {
         this.fileStorage = fileStorage;
     }
 
+    public SyncResult sync(boolean force) {
+        return sync(force, null);
+    }
+
     /**
      * Synchronize data with the pretix server
      *
      * @param force Force a new sync
      * @return A SyncResult describing the results of the synchronization
      */
-    public SyncResult sync(boolean force) {
+    public SyncResult sync(boolean force, SyncManager.ProgressFeedback feedback) {
         if (!configStore.isConfigured()) {
             return new SyncResult(false, false);
         }
@@ -59,12 +68,18 @@ public class SyncManager {
 
         boolean download = force || (System.currentTimeMillis() - configStore.getLastDownload()) > download_interval;
         try {
+            if (feedback != null) {
+                feedback.postFeedback("Uploading data…");
+            }
             uploadTicketData();
             uploadReceipts();
             uploadClosings();
 
             if (download) {
-                downloadData();
+                if (feedback != null) {
+                    feedback.postFeedback("Downloading data…");
+                }
+                downloadData(feedback);
                 configStore.setLastDownload(System.currentTimeMillis());
             }
 
@@ -77,28 +92,34 @@ public class SyncManager {
         return new SyncResult(true, download);
     }
 
-    protected void downloadData() throws SyncException {
+    protected void downloadData(SyncManager.ProgressFeedback feedback) throws SyncException {
         sentry.addBreadcrumb("sync.queue", "Start download");
 
         try {
-            (new EventSyncAdapter(dataStore, configStore.getEventSlug(), configStore.getEventSlug(), api)).download();
+            (new EventSyncAdapter(dataStore, configStore.getEventSlug(), configStore.getEventSlug(), api, feedback)).download();
             if (configStore.getSubEventId() != null) {
-                (new SubEventSyncAdapter(dataStore, configStore.getEventSlug(), String.valueOf(configStore.getSubEventId()), api)).download();
+                (new SubEventSyncAdapter(dataStore, configStore.getEventSlug(), String.valueOf(configStore.getSubEventId()), api, feedback)).download();
             }
-            (new ItemCategorySyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api)).download();
-            (new ItemSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api)).download();
-            (new QuestionSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api)).download();
-            (new QuotaSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api)).download();
-            (new TaxRuleSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api)).download();
-            (new TicketLayoutSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api)).download();
-            (new BadgeLayoutSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api)).download();
-            (new CheckInListSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api)).download();
-            (new OrderSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api)).download();
+            (new ItemCategorySyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback)).download();
+            (new ItemSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback)).download();
+            (new QuestionSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback)).download();
+            (new QuotaSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback)).download();
+            (new TaxRuleSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback)).download();
+                (new TicketLayoutSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback)).download();
+            (new BadgeLayoutSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback)).download();
+            (new CheckInListSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback)).download();
+            (new OrderSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback)).download();
         } catch (JSONException e) {
             e.printStackTrace();
             throw new SyncException("Unknown server response");
         } catch (ApiException e) {
             sentry.addBreadcrumb("sync.tickets", "API Error: " + e.getMessage());
+            throw new SyncException(e.getMessage());
+        } catch (ExecutionException e) {
+            sentry.captureException(e);
+            throw new SyncException(e.getMessage());
+        } catch (InterruptedException e) {
+            sentry.captureException(e);
             throw new SyncException(e.getMessage());
         }
     }

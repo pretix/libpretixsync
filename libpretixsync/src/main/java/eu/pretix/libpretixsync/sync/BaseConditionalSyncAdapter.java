@@ -3,6 +3,8 @@ package eu.pretix.libpretixsync.sync;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.concurrent.ExecutionException;
+
 import eu.pretix.libpretixsync.api.ApiException;
 import eu.pretix.libpretixsync.api.PretixApi;
 import eu.pretix.libpretixsync.api.ResourceNotModified;
@@ -12,8 +14,8 @@ import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
 
 abstract public class BaseConditionalSyncAdapter<T extends RemoteObject & Persistable, K> extends BaseDownloadSyncAdapter<T, K> {
-    public BaseConditionalSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, PretixApi api) {
-        super(store, fileStorage, eventSlug, api);
+    public BaseConditionalSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, PretixApi api, SyncManager.ProgressFeedback feedback) {
+        super(store, fileStorage, eventSlug, api, feedback);
     }
 
     private PretixApi.ApiResponse firstResponse;
@@ -36,7 +38,7 @@ abstract public class BaseConditionalSyncAdapter<T extends RemoteObject & Persis
     }
 
     @Override
-    public void download() throws JSONException, ApiException {
+    public void download() throws JSONException, ApiException, ExecutionException, InterruptedException {
         firstResponse = null;
         super.download();
         if (firstResponse != null) {

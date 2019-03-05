@@ -36,17 +36,24 @@ public abstract class BaseDownloadSyncAdapter<T extends RemoteObject & Persistab
     protected Set<K> knownIDs;
     protected Set<K> seenIDs;
     protected ExecutorService threadPool = Executors.newCachedThreadPool();
+    protected SyncManager.ProgressFeedback feedback;
+    protected int total;
 
-    public BaseDownloadSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, PretixApi api) {
+    public BaseDownloadSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, PretixApi api, SyncManager.ProgressFeedback feedback) {
         this.store = store;
         this.api = api;
         this.eventSlug = eventSlug;
         this.fileStorage = fileStorage;
+        this.feedback = feedback;
     }
 
     @Override
     public void download() throws JSONException, ApiException, ExecutionException, InterruptedException {
+        if (feedback != null) {
+            feedback.postFeedback("Downloading " + getResourceName() + "…");
+        }
         try {
+            total = 0;
             knownIDs = getKnownIDs();
             seenIDs = new HashSet<>();
             downloadData();
@@ -138,6 +145,10 @@ public abstract class BaseDownloadSyncAdapter<T extends RemoteObject & Persistab
                 return null;
             }
         });
+        total += l;
+        if (feedback != null) {
+            feedback.postFeedback("Processed " + total + " " + getResourceName() + "…");
+        }
     }
 
     protected void prepareDelete(T obj) {

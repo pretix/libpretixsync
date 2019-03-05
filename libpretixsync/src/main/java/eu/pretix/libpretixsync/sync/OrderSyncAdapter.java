@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 import eu.pretix.libpretixsync.api.ApiException;
 import eu.pretix.libpretixsync.api.PretixApi;
@@ -26,8 +27,8 @@ import io.requery.Persistable;
 import io.requery.query.Tuple;
 
 public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
-    public OrderSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, PretixApi api) {
-        super(store, fileStorage, eventSlug, api);
+    public OrderSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, PretixApi api, SyncManager.ProgressFeedback feedback) {
+        super(store, fileStorage, eventSlug, api, feedback);
     }
 
     private Map<Long, Item> itemCache = new HashMap<>();
@@ -35,7 +36,7 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
     private PretixApi.ApiResponse firstResponse;
 
     @Override
-    public void download() throws JSONException, ApiException {
+    public void download() throws JSONException, ApiException, ExecutionException, InterruptedException {
         super.download();
         if (firstResponse != null) {
             ResourceLastModified resourceLastModified = store.select(ResourceLastModified.class)
@@ -178,7 +179,7 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
             }
             JSONObject parent = null;
             if (!posjson.isNull("addon_to")) {
-                parent = posmap.getOrDefault(posjson.getLong("addon_to"), null);
+                parent = posmap.get(posjson.getLong("addon_to"));
             }
             if (known.containsKey(jsonid)) {
                 known.remove(jsonid);

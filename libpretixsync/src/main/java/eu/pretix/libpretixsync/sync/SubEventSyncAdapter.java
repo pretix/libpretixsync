@@ -10,8 +10,8 @@ import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
 
 public class SubEventSyncAdapter extends BaseSingleObjectSyncAdapter<SubEvent> {
-    public SubEventSyncAdapter(BlockingEntityStore<Persistable> store, String eventSlug, String key, PretixApi api) {
-        super(store, eventSlug, key, api);
+    public SubEventSyncAdapter(BlockingEntityStore<Persistable> store, String eventSlug, String key, PretixApi api, SyncManager.ProgressFeedback feedback) {
+        super(store, eventSlug, key, api, feedback);
     }
 
     @Override
