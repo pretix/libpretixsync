@@ -1,5 +1,6 @@
 package eu.pretix.libpretixsync.sync;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -19,13 +20,16 @@ import eu.pretix.libpretixsync.db.RemoteObject;
 import eu.pretix.libpretixsync.utils.JSONUtils;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
+import io.requery.query.Tuple;
 
-public abstract class BaseDownloadSyncAdapter<T extends RemoteObject & Persistable, K> implements DownloadSyncAdapter {
+public abstract class BaseDownloadSyncAdapter<T extends RemoteObject & Persistable, K> implements DownloadSyncAdapter, BatchedQueryIterator.BatchedQueryCall<K, T> {
 
     protected BlockingEntityStore<Persistable> store;
     protected PretixApi api;
     protected String eventSlug;
     protected FileStorage fileStorage;
+    protected Set<K> knownIDs;
+    protected Set<K> seenIDs;
 
     public BaseDownloadSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, PretixApi api) {
         this.store = store;
@@ -37,38 +41,71 @@ public abstract class BaseDownloadSyncAdapter<T extends RemoteObject & Persistab
     @Override
     public void download() throws JSONException, ApiException {
         try {
-            List<JSONObject> data = downloadRawData();
-            processData(data);
+            knownIDs = getKnownIDs();
+            seenIDs = new HashSet<>();
+            downloadData();
+
+            if (deleteUnseen()) {
+                for (Map.Entry<K, T> obj : getKnownObjects(knownIDs).entrySet()) {
+                    prepareDelete(obj.getValue());
+                    store.delete(obj.getValue());
+                }
+            }
         } catch (ResourceNotModified e) {
             // Do nothing
         }
     }
 
-    abstract Iterator<T> getKnownObjectsIterator();
+    protected Iterator<T> getKnownObjectsIterator(Set<K> ids) {
+        return new BatchedQueryIterator<K, T>(ids.iterator(), this);
+    }
 
-    protected Map<K, T> getKnownObjects() {
-        Iterator<T> it = getKnownObjectsIterator();
-        Map<K, T> known = new HashMap<>();
+    abstract Iterator<Tuple> getKnownIDsIterator();
+
+    protected Set<K> getKnownIDs() {
+        Iterator<Tuple> it = getKnownIDsIterator();
+        Set<K> known = new HashSet<>();
         while (it.hasNext()) {
-            T obj = it.next();
-            known.put(getId(obj), obj);
+            Tuple obj = it.next();
+            known.add(obj.get(0));
         }
         return known;
     }
 
-    protected void processData(final List<JSONObject> data) {
+    protected Map<K, T> getKnownObjects(Set<K> ids) {
+        Iterator<T> it = getKnownObjectsIterator(ids);
+        Map<K, T> known = new HashMap<>();
+        while (it.hasNext()) {
+            try {
+                T obj = it.next();
+                known.put(getId(obj), obj);
+            } catch (BatchEmptyException e) {
+                // Ignore
+            }
+        }
+        return known;
+    }
+
+    protected void processPage(final JSONArray data) {
+        int l = data.length();
         store.runInTransaction(new Callable<Void>() {
             @Override
             public Void call() throws Exception {
-                Map<K, T> known = getKnownObjects();
-                Set<K> seen = new HashSet<>();
+                Set<K> fetchIds = new HashSet<>();
+                for (int i = 0; i < l; i++) {
+                    JSONObject jsonobj = data.getJSONObject(i);
+                    fetchIds.add(getId(jsonobj));
+                }
+
+                Map<K, T> known = getKnownObjects(fetchIds);
                 List<T> inserts = new ArrayList<>();
 
-                for (JSONObject jsonobj : data) {
+                for (int i = 0; i < l; i++) {
+                    JSONObject jsonobj = data.getJSONObject(i);
                     K jsonid = getId(jsonobj);
                     T obj;
                     JSONObject old = null;
-                    if (seen.contains(jsonid)) {
+                    if (seenIDs.contains(jsonid)) {
                         continue;
                     } else if (known.containsKey(jsonid)) {
                         obj = known.get(jsonid);
@@ -78,6 +115,7 @@ public abstract class BaseDownloadSyncAdapter<T extends RemoteObject & Persistab
                     }
                     if (known.containsKey(jsonid)) {
                         known.remove(jsonid);
+                        knownIDs.remove(jsonid);
                         if (!JSONUtils.similar(jsonobj, old)) {
                             updateObject(obj, jsonobj);
                             store.update(obj);
@@ -88,15 +126,9 @@ public abstract class BaseDownloadSyncAdapter<T extends RemoteObject & Persistab
                             inserts.add(obj);
                         }
                     }
-                    seen.add(jsonid);
+                    seenIDs.add(jsonid);
                 }
                 store.insert(inserts);
-                if (deleteUnseen()) {
-                    for (T obj : known.values()) {
-                        prepareDelete(obj);
-                        store.delete(obj);
-                    }
-                }
                 return null;
             }
         });
@@ -116,22 +148,18 @@ public abstract class BaseDownloadSyncAdapter<T extends RemoteObject & Persistab
 
     public abstract void updateObject(T obj, JSONObject jsonobj) throws JSONException;
 
-    protected List<JSONObject> downloadRawData() throws JSONException, ApiException, ResourceNotModified {
-        List<JSONObject> result = new ArrayList<>();
+    protected void downloadData() throws JSONException, ApiException, ResourceNotModified {
         String url = api.eventResourceUrl(getResourceName());
         boolean isFirstPage = true;
         while (true) {
             JSONObject page = downloadPage(url, isFirstPage);
-            for (int i = 0; i < page.getJSONArray("results").length(); i++) {
-                result.add(page.getJSONArray("results").getJSONObject(i));
-            }
+            processPage(page.getJSONArray("results"));
             if (page.isNull("next")) {
                 break;
             }
             url = page.getString("next");
             isFirstPage = false;
         }
-        return result;
     }
 
     protected JSONObject downloadPage(String url, boolean isFirstPage) throws ApiException, ResourceNotModified {

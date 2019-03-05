@@ -1,24 +1,13 @@
 package eu.pretix.libpretixsync.sync;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
 
 import eu.pretix.libpretixsync.api.ApiException;
 import eu.pretix.libpretixsync.api.PretixApi;
 import eu.pretix.libpretixsync.api.ResourceNotModified;
-import eu.pretix.libpretixsync.db.Order;
-import eu.pretix.libpretixsync.db.OrderPosition;
 import eu.pretix.libpretixsync.db.RemoteObject;
 import eu.pretix.libpretixsync.db.ResourceLastModified;
-import eu.pretix.libpretixsync.utils.JSONUtils;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
 
@@ -48,6 +37,7 @@ abstract public class BaseConditionalSyncAdapter<T extends RemoteObject & Persis
 
     @Override
     public void download() throws JSONException, ApiException {
+        firstResponse = null;
         super.download();
         if (firstResponse != null) {
             ResourceLastModified resourceLastModified = store.select(ResourceLastModified.class)

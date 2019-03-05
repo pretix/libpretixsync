@@ -11,9 +11,9 @@ import java.util.List;
 import eu.pretix.libpretixsync.api.PretixApi;
 import eu.pretix.libpretixsync.db.CheckInList;
 import eu.pretix.libpretixsync.db.Item;
-import eu.pretix.libpretixsync.db.Quota;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
+import io.requery.query.Tuple;
 
 public class CheckInListSyncAdapter extends BaseConditionalSyncAdapter<CheckInList, Long> {
     public CheckInListSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, PretixApi api) {
@@ -45,9 +45,18 @@ public class CheckInListSyncAdapter extends BaseConditionalSyncAdapter<CheckInLi
         obj.getItems().retainAll(items);
     }
 
+
     @Override
-    Iterator<CheckInList> getKnownObjectsIterator() {
+    public Iterator<CheckInList> runBatch(List<Long> ids) {
         return store.select(CheckInList.class)
+                .where(CheckInList.EVENT_SLUG.eq(eventSlug))
+                .and(CheckInList.SERVER_ID.in(ids))
+                .get().iterator();
+    }
+
+    @Override
+    Iterator<Tuple> getKnownIDsIterator() {
+        return store.select(CheckInList.SERVER_ID)
                 .where(CheckInList.EVENT_SLUG.eq(eventSlug))
                 .get().iterator();
     }

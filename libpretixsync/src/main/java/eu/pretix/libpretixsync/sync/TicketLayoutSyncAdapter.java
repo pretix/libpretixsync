@@ -8,11 +8,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import eu.pretix.libpretixsync.api.ApiException;
@@ -22,6 +20,7 @@ import eu.pretix.libpretixsync.db.TicketLayout;
 import eu.pretix.libpretixsync.utils.HashUtils;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
+import io.requery.query.Tuple;
 
 public class TicketLayoutSyncAdapter extends BaseDownloadSyncAdapter<TicketLayout, Long> {
     public TicketLayoutSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, PretixApi api) {
@@ -162,8 +161,16 @@ public class TicketLayoutSyncAdapter extends BaseDownloadSyncAdapter<TicketLayou
     }
 
     @Override
-    Iterator<TicketLayout> getKnownObjectsIterator() {
+    public Iterator<TicketLayout> runBatch(List<Long> ids) {
         return store.select(TicketLayout.class)
+                .where(TicketLayout.EVENT_SLUG.eq(eventSlug))
+                .and(TicketLayout.SERVER_ID.in(ids))
+                .get().iterator();
+    }
+
+    @Override
+    Iterator<Tuple> getKnownIDsIterator() {
+        return store.select(TicketLayout.SERVER_ID)
                 .where(TicketLayout.EVENT_SLUG.eq(eventSlug))
                 .get().iterator();
     }

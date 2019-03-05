@@ -10,10 +10,10 @@ import java.util.List;
 
 import eu.pretix.libpretixsync.api.PretixApi;
 import eu.pretix.libpretixsync.db.Item;
-import eu.pretix.libpretixsync.db.Question;
 import eu.pretix.libpretixsync.db.Quota;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
+import io.requery.query.Tuple;
 
 public class QuotaSyncAdapter extends BaseConditionalSyncAdapter<Quota, Long> {
     public QuotaSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, PretixApi api) {
@@ -43,8 +43,16 @@ public class QuotaSyncAdapter extends BaseConditionalSyncAdapter<Quota, Long> {
     }
 
     @Override
-    Iterator<Quota> getKnownObjectsIterator() {
+    public Iterator<Quota> runBatch(List<Long> ids) {
         return store.select(Quota.class)
+                .where(Quota.EVENT_SLUG.eq(eventSlug))
+                .and(Quota.SERVER_ID.in(ids))
+                .get().iterator();
+    }
+
+    @Override
+    Iterator<Tuple> getKnownIDsIterator() {
+        return store.select(Quota.SERVER_ID)
                 .where(Quota.EVENT_SLUG.eq(eventSlug))
                 .get().iterator();
     }

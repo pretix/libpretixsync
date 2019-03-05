@@ -4,11 +4,13 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.Iterator;
+import java.util.List;
 
 import eu.pretix.libpretixsync.api.PretixApi;
 import eu.pretix.libpretixsync.db.Item;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
+import io.requery.query.Tuple;
 
 public class ItemSyncAdapter extends BaseConditionalSyncAdapter<Item, Long> {
     public ItemSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, PretixApi api) {
@@ -27,8 +29,16 @@ public class ItemSyncAdapter extends BaseConditionalSyncAdapter<Item, Long> {
     }
 
     @Override
-    Iterator<Item> getKnownObjectsIterator() {
+    public Iterator<Item> runBatch(List<Long> ids) {
         return store.select(Item.class)
+                .where(Item.EVENT_SLUG.eq(eventSlug))
+                .and(Item.SERVER_ID.in(ids))
+                .get().iterator();
+    }
+
+    @Override
+    Iterator<Tuple> getKnownIDsIterator() {
+        return store.select(Item.SERVER_ID)
                 .where(Item.EVENT_SLUG.eq(eventSlug))
                 .get().iterator();
     }

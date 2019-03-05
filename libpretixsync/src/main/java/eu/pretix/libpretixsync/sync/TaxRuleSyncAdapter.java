@@ -4,12 +4,13 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.Iterator;
+import java.util.List;
 
 import eu.pretix.libpretixsync.api.PretixApi;
-import eu.pretix.libpretixsync.db.ItemCategory;
 import eu.pretix.libpretixsync.db.TaxRule;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
+import io.requery.query.Tuple;
 
 public class TaxRuleSyncAdapter extends BaseConditionalSyncAdapter<TaxRule, Long> {
     public TaxRuleSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, PretixApi api) {
@@ -24,8 +25,16 @@ public class TaxRuleSyncAdapter extends BaseConditionalSyncAdapter<TaxRule, Long
     }
 
     @Override
-    Iterator<TaxRule> getKnownObjectsIterator() {
+    public Iterator<TaxRule> runBatch(List<Long> ids) {
         return store.select(TaxRule.class)
+                .where(TaxRule.EVENT_SLUG.eq(eventSlug))
+                .and(TaxRule.SERVER_ID.in(ids))
+                .get().iterator();
+    }
+
+    @Override
+    Iterator<Tuple> getKnownIDsIterator() {
+        return store.select(TaxRule.SERVER_ID)
                 .where(TaxRule.EVENT_SLUG.eq(eventSlug))
                 .get().iterator();
     }

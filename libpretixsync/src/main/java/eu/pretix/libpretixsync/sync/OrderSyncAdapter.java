@@ -1,13 +1,11 @@
 package eu.pretix.libpretixsync.sync;
 
-import eu.pretix.libpretixsync.db.*;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -16,9 +14,16 @@ import java.util.Map;
 import eu.pretix.libpretixsync.api.ApiException;
 import eu.pretix.libpretixsync.api.PretixApi;
 import eu.pretix.libpretixsync.api.ResourceNotModified;
+import eu.pretix.libpretixsync.db.CheckIn;
+import eu.pretix.libpretixsync.db.CheckInList;
+import eu.pretix.libpretixsync.db.Item;
+import eu.pretix.libpretixsync.db.Order;
+import eu.pretix.libpretixsync.db.OrderPosition;
+import eu.pretix.libpretixsync.db.ResourceLastModified;
 import eu.pretix.libpretixsync.utils.JSONUtils;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
+import io.requery.query.Tuple;
 
 public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
     public OrderSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, PretixApi api) {
@@ -230,9 +235,17 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
     }
 
     @Override
-    Iterator<Order> getKnownObjectsIterator() {
+    public Iterator<Order> runBatch(List<String> ids) {
         return store.select(Order.class)
                 .where(Order.EVENT_SLUG.eq(eventSlug))
+                .and(Order.CODE.in(ids))
+                .get().iterator();
+    }
+
+    @Override
+    Iterator<Tuple> getKnownIDsIterator() {
+        return store.select(Order.CODE)
+                .where(Item.EVENT_SLUG.eq(eventSlug))
                 .get().iterator();
     }
 

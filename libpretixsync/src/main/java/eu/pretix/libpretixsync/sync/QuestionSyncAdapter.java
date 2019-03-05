@@ -13,6 +13,7 @@ import eu.pretix.libpretixsync.db.Item;
 import eu.pretix.libpretixsync.db.Question;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
+import io.requery.query.Tuple;
 
 public class QuestionSyncAdapter extends BaseConditionalSyncAdapter<Question, Long> {
     public QuestionSyncAdapter(BlockingEntityStore<Persistable> store,FileStorage fileStorage, String eventSlug, PretixApi api) {
@@ -43,8 +44,16 @@ public class QuestionSyncAdapter extends BaseConditionalSyncAdapter<Question, Lo
     }
 
     @Override
-    Iterator<Question> getKnownObjectsIterator() {
+    public Iterator<Question> runBatch(List<Long> ids) {
         return store.select(Question.class)
+                .where(Question.EVENT_SLUG.eq(eventSlug))
+                .and(Question.SERVER_ID.in(ids))
+                .get().iterator();
+    }
+
+    @Override
+    Iterator<Tuple> getKnownIDsIterator() {
+        return store.select(Question.SERVER_ID)
                 .where(Question.EVENT_SLUG.eq(eventSlug))
                 .get().iterator();
     }

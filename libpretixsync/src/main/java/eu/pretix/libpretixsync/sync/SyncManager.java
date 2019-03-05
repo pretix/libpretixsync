@@ -13,7 +13,6 @@ import eu.pretix.libpretixsync.api.PretixApi;
 import eu.pretix.libpretixsync.check.TicketCheckProvider;
 import eu.pretix.libpretixsync.config.ConfigStore;
 import eu.pretix.libpretixsync.db.Closing;
-import eu.pretix.libpretixsync.db.Event;
 import eu.pretix.libpretixsync.db.Question;
 import eu.pretix.libpretixsync.db.QueuedCheckIn;
 import eu.pretix.libpretixsync.db.Receipt;

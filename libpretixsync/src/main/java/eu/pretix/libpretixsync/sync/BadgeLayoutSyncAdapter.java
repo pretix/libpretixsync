@@ -13,11 +13,12 @@ import java.util.List;
 
 import eu.pretix.libpretixsync.api.ApiException;
 import eu.pretix.libpretixsync.api.PretixApi;
-import eu.pretix.libpretixsync.db.Item;
 import eu.pretix.libpretixsync.db.BadgeLayout;
+import eu.pretix.libpretixsync.db.Item;
 import eu.pretix.libpretixsync.utils.HashUtils;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
+import io.requery.query.Tuple;
 
 public class BadgeLayoutSyncAdapter extends BaseDownloadSyncAdapter<BadgeLayout, Long> {
     public BadgeLayoutSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, PretixApi api) {
@@ -102,8 +103,16 @@ public class BadgeLayoutSyncAdapter extends BaseDownloadSyncAdapter<BadgeLayout,
     }
 
     @Override
-    Iterator<BadgeLayout> getKnownObjectsIterator() {
+    public Iterator<BadgeLayout> runBatch(List<Long> ids) {
         return store.select(BadgeLayout.class)
+                .where(BadgeLayout.EVENT_SLUG.eq(eventSlug))
+                .and(BadgeLayout.SERVER_ID.in(ids))
+                .get().iterator();
+    }
+
+    @Override
+    Iterator<Tuple> getKnownIDsIterator() {
+        return store.select(BadgeLayout.SERVER_ID)
                 .where(BadgeLayout.EVENT_SLUG.eq(eventSlug))
                 .get().iterator();
     }
