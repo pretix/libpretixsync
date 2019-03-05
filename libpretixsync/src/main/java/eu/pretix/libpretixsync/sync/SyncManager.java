@@ -83,6 +83,9 @@ public class SyncManager {
                 configStore.setLastDownload(System.currentTimeMillis());
             }
 
+            if (feedback != null) {
+                feedback.postFeedback("Finishing touches…");
+            }
             configStore.setLastSync(System.currentTimeMillis());
             configStore.setLastFailedSync(0);
         } catch (SyncException e) {
