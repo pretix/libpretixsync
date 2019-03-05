@@ -43,7 +43,7 @@ abstract public class BaseConditionalSyncAdapter<T extends RemoteObject & Persis
         super.download();
         if (firstResponse != null) {
             ResourceLastModified resourceLastModified = store.select(ResourceLastModified.class)
-                    .where(ResourceLastModified.RESOURCE.eq("orders"))
+                    .where(ResourceLastModified.RESOURCE.eq(getResourceName()))
                     .and(ResourceLastModified.EVENT_SLUG.eq(eventSlug))
                     .limit(1)
                     .get().firstOrNull();
