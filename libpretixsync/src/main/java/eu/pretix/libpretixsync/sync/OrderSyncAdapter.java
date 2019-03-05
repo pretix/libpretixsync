@@ -156,7 +156,7 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
 
         Map<Long, OrderPosition> known = new HashMap<>();
         for (OrderPosition op : obj.getPositions()) {
-            known.put(op.getId(), op);
+            known.put(op.getServer_id(), op);
         }
 
         JSONArray posarray = jsonobj.getJSONArray("positions");
