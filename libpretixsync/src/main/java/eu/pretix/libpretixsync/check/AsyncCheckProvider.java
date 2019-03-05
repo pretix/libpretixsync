@@ -117,8 +117,10 @@ public class AsyncCheckProvider implements TicketCheckProvider {
         } else {
             List<Question> questions = item.getQuestions();
             Map<Long, String> answerMap = new HashMap<>();
-            for (Answer a : answers) {
-                answerMap.put(a.getQuestion().getServer_id(), a.getValue());
+            if (answers != null) {
+                for (Answer a : answers) {
+                    answerMap.put(a.getQuestion().getServer_id(), a.getValue());
+                }
             }
             JSONArray givenAnswers = new JSONArray();
             List<RequiredAnswer> required_answers = new ArrayList<>();

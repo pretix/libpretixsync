@@ -84,7 +84,7 @@ public class OnlineCheckProvider implements TicketCheckProvider {
                     } else if ("unknown_ticket".equals(reason)) {
                         res.setType(CheckResult.Type.INVALID);
                     } else if ("unpaid".equals(reason)) {
-                        // TODO: still allowed?
+                        res.setCheckinAllowed(true);  // if false, we wouldn't even get the result
                         res.setType(CheckResult.Type.UNPAID);
                     } else if ("product".equals(reason)) {
                         res.setType(CheckResult.Type.PRODUCT);
