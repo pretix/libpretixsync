@@ -59,6 +59,7 @@ dependencies {
     compile 'org.json:json:20090211'
 
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    implementation 'net.sourceforge.streamsupport:streamsupport-cfuture:1.7.0'
 
     annotationProcessor 'io.requery:requery-processor:1.5.1'
     annotationProcessor 'javax.annotation:jsr250-api:1.0'

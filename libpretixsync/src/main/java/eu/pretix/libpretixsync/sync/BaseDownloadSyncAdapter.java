@@ -12,6 +12,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import java8.util.concurrent.CompletableFuture;
 
 import eu.pretix.libpretixsync.api.ApiException;
 import eu.pretix.libpretixsync.api.PretixApi;
@@ -30,6 +35,7 @@ public abstract class BaseDownloadSyncAdapter<T extends RemoteObject & Persistab
     protected FileStorage fileStorage;
     protected Set<K> knownIDs;
     protected Set<K> seenIDs;
+    protected ExecutorService threadPool = Executors.newCachedThreadPool();
 
     public BaseDownloadSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, PretixApi api) {
         this.store = store;
@@ -39,7 +45,7 @@ public abstract class BaseDownloadSyncAdapter<T extends RemoteObject & Persistab
     }
 
     @Override
-    public void download() throws JSONException, ApiException {
+    public void download() throws JSONException, ApiException, ExecutionException, InterruptedException {
         try {
             knownIDs = getKnownIDs();
             seenIDs = new HashSet<>();
@@ -148,17 +154,35 @@ public abstract class BaseDownloadSyncAdapter<T extends RemoteObject & Persistab
 
     public abstract void updateObject(T obj, JSONObject jsonobj) throws JSONException;
 
-    protected void downloadData() throws JSONException, ApiException, ResourceNotModified {
+    protected CompletableFuture<Boolean> asyncProcessPage(JSONArray data) {
+        CompletableFuture<Boolean> completableFuture = new CompletableFuture<>();
+
+        threadPool.submit(() -> {
+            processPage(data);
+            completableFuture.complete(true);
+        });
+
+        return completableFuture;
+    }
+
+    protected void downloadData() throws JSONException, ApiException, ResourceNotModified, ExecutionException, InterruptedException {
         String url = api.eventResourceUrl(getResourceName());
         boolean isFirstPage = true;
+        CompletableFuture<Boolean> future = null;
         while (true) {
             JSONObject page = downloadPage(url, isFirstPage);
-            processPage(page.getJSONArray("results"));
+            if (future != null) {
+                future.get();
+            }
+            future = asyncProcessPage(page.getJSONArray("results"));
             if (page.isNull("next")) {
                 break;
             }
             url = page.getString("next");
             isFirstPage = false;
+        }
+        if (future != null) {
+            future.get();
         }
     }
 
