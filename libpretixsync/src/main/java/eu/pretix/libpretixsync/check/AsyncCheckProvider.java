@@ -192,7 +192,7 @@ public class AsyncCheckProvider implements TicketCheckProvider {
     }
 
     @Override
-    public List<SearchResult> search(String query) throws CheckException {
+    public List<SearchResult> search(String query, int page) throws CheckException {
         sentry.addBreadcrumb("provider.search", "offline search started");
 
         List<SearchResult> results = new ArrayList<>();
@@ -235,7 +235,7 @@ public class AsyncCheckProvider implements TicketCheckProvider {
         positions = ((Result<OrderPosition>) dataStore.select(OrderPosition.class)
                 .leftJoin(Order.class).on((Condition) Order.ID.eq(OrderPosition.ORDER_ID))
                 .leftJoin(Item.class).on(Item.ID.eq(OrderPosition.ITEM_ID))
-                .where(search).limit(25).get()).toList();
+                .where(search).limit(50).offset(50 * (page - 1)).get()).toList();
         // TODO: search invoice_address?
 
         for (OrderPosition position : positions) {

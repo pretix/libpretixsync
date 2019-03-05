@@ -2,6 +2,7 @@ package eu.pretix.libpretixsync.check;
 
 
 import java.util.List;
+import java.util.Objects;
 
 import eu.pretix.libpretixsync.SentryInterface;
 import eu.pretix.libpretixsync.db.Question;
@@ -398,7 +399,7 @@ public interface TicketCheckProvider {
 
     CheckResult check(String ticketid);
 
-    List<SearchResult> search(String query) throws CheckException;
+    List<SearchResult> search(String query, int page) throws CheckException;
 
     StatusResult status() throws CheckException;
 

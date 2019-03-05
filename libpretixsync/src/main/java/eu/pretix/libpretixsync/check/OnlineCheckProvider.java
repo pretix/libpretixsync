@@ -137,10 +137,10 @@ public class OnlineCheckProvider implements TicketCheckProvider {
     }
 
     @Override
-    public List<SearchResult> search(String query) throws CheckException {
+    public List<SearchResult> search(String query, int page) throws CheckException {
         sentry.addBreadcrumb("provider.search", "started");
         try {
-            PretixApi.ApiResponse response = api.search(listId, query);
+            PretixApi.ApiResponse response = api.search(listId, query, page);
             JSONArray resdata = response.getData().getJSONArray("results");
 
             List<SearchResult> results = new ArrayList<>();

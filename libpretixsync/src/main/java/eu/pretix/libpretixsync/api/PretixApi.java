@@ -5,10 +5,12 @@ import eu.pretix.libpretixsync.SentryInterface;
 import eu.pretix.libpretixsync.check.TicketCheckProvider;
 import eu.pretix.libpretixsync.config.ConfigStore;
 import okhttp3.*;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import javax.net.ssl.SSLException;
+
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
@@ -112,9 +114,9 @@ public class PretixApi {
         }
     }
 
-    public ApiResponse search(Long listId, String query) throws ApiException {
+    public ApiResponse search(Long listId, String query, int page) throws ApiException {
         try {
-            return fetchResource(eventResourceUrl("checkinlists/" + listId + "/positions") + "?search=" + URLEncoder.encode(query, "UTF-8"));
+            return fetchResource(eventResourceUrl("checkinlists/" + listId + "/positions") + "?page=" + page + "&search=" + URLEncoder.encode(query, "UTF-8"));
         } catch (ResourceNotModified | UnsupportedEncodingException resourceNotModified) {
             throw new ApiException("invalid error");
         }
