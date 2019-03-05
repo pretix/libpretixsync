@@ -142,6 +142,7 @@ public abstract class BaseDownloadSyncAdapter<T extends RemoteObject & Persistab
                     seenIDs.add(jsonid);
                 }
                 store.insert(inserts);
+                afterPage();
                 return null;
             }
         });
@@ -149,6 +150,10 @@ public abstract class BaseDownloadSyncAdapter<T extends RemoteObject & Persistab
         if (feedback != null) {
             feedback.postFeedback("Processed " + total + " " + getResourceName() + "…");
         }
+    }
+
+    protected void afterPage() {
+
     }
 
     protected void prepareDelete(T obj) {

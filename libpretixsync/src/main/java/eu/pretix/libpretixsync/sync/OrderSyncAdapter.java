@@ -6,10 +6,12 @@ import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 import eu.pretix.libpretixsync.api.ApiException;
@@ -33,6 +35,9 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
 
     private Map<Long, Item> itemCache = new HashMap<>();
     private Map<Long, CheckInList> listCache = new HashMap<>();
+    private Map<String, List<OrderPosition>> positionCache = new HashMap<>();
+    private Map<Long, List<CheckIn>> checkinCache = new HashMap<>();
+    private List<CheckIn> checkinCreateCache = new ArrayList<>();
     private PretixApi.ApiResponse firstResponse;
 
     @Override
@@ -115,8 +120,11 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
         }
 
         Map<Long, CheckIn> known = new HashMap<>();
-        for (CheckIn op : obj.getCheckins()) {
-            known.put(op.getList().getServer_id(), op);
+        List<CheckIn> checkincache = checkinCache.get(obj.getId());
+        if (checkincache != null) {
+            for (CheckIn op : checkincache) {
+                known.put(op.getList().getServer_id(), op);
+            }
         }
         JSONArray checkins = jsonobj.getJSONArray("checkins");
         for (int i = 0; i < checkins.length(); i++) {
@@ -135,10 +143,19 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
                 ciobj.setPosition(obj);
                 ciobj.setList(getList(listid));
                 ciobj.fromJSON(ci);
-                store.insert(ciobj);
+                checkinCreateCache.add(ciobj);
             }
         }
-        store.delete(known.values());
+        if (known.size() > 0) {
+            store.delete(known.values());
+        }
+    }
+
+    @Override
+    protected void afterPage() {
+        super.afterPage();
+        store.insert(checkinCreateCache);
+        checkinCreateCache.clear();
     }
 
     @Override
@@ -155,8 +172,11 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
         }
 
         Map<Long, OrderPosition> known = new HashMap<>();
-        for (OrderPosition op : obj.getPositions()) {
-            known.put(op.getServer_id(), op);
+        List<OrderPosition> positions = positionCache.get(obj.getCode());
+        if (positions != null) {
+            for (OrderPosition op : positions) {
+                known.put(op.getServer_id(), op);
+            }
         }
 
         JSONArray posarray = jsonobj.getJSONArray("positions");
@@ -191,7 +211,9 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
                 updatePositionObject(posobj, posjson, jsonobj, parent);
             }
         }
-        store.delete(known.values());
+        if (known.size() > 0) {
+            store.delete(known.values());
+        }
     }
 
     @Override
@@ -233,6 +255,43 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
             firstResponse = apiResponse;
         }
         return apiResponse.getData();
+    }
+
+    @Override
+    protected Map<String, Order> getKnownObjects(Set<String> ids) {
+        positionCache.clear();
+        checkinCache.clear();
+
+        List<OrderPosition> allPos = store.select(OrderPosition.class)
+                .leftJoin(Order.class).on(Order.ID.eq(OrderPosition.ORDER_ID))
+                .where(Order.CODE.in(ids)).get().toList();
+        for (OrderPosition p : allPos) {
+            String code = p.getOrder().getCode();
+            if (positionCache.containsKey(code)) {
+                positionCache.get(code).add(p);
+            } else {
+                List<OrderPosition> opos = new ArrayList<>();
+                opos.add(p);
+                positionCache.put(code, opos);
+            }
+        }
+
+        List<CheckIn> allCheckins = store.select(CheckIn.class)
+                .leftJoin(OrderPosition.class).on(OrderPosition.ID.eq(CheckIn.POSITION_ID))
+                .leftJoin(Order.class).on(Order.ID.eq(OrderPosition.ORDER_ID))
+                .where(Order.CODE.in(ids)).get().toList();
+        for (CheckIn c : allCheckins) {
+            Long pk = c.getPosition().getId();
+            if (checkinCache.containsKey(pk)) {
+                checkinCache.get(pk).add(c);
+            } else {
+                List<CheckIn> l = new ArrayList<>();
+                l.add(c);
+                checkinCache.put(pk, l);
+            }
+        }
+
+        return super.getKnownObjects(ids);
     }
 
     @Override
