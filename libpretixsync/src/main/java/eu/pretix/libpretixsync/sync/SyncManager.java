@@ -29,12 +29,13 @@ public class SyncManager {
     private long download_interval;
     private BlockingEntityStore<Persistable> dataStore;
     private FileStorage fileStorage;
+    private boolean is_pretixpos;
 
     public interface ProgressFeedback {
         public void postFeedback(String current_action);
     }
 
-    public SyncManager(ConfigStore configStore, PretixApi api, SentryInterface sentry, BlockingEntityStore<Persistable> dataStore, FileStorage fileStorage, long upload_interval, long download_interval) {
+    public SyncManager(ConfigStore configStore, PretixApi api, SentryInterface sentry, BlockingEntityStore<Persistable> dataStore, FileStorage fileStorage, long upload_interval, long download_interval, boolean is_pretixpos) {
         this.configStore = configStore;
         this.api = api;
         this.sentry = sentry;
@@ -42,6 +43,7 @@ public class SyncManager {
         this.download_interval = download_interval;
         this.dataStore = dataStore;
         this.fileStorage = fileStorage;
+        this.is_pretixpos = is_pretixpos;
     }
 
     public SyncResult sync(boolean force) {
@@ -112,7 +114,21 @@ public class SyncManager {
             (new BadgeLayoutSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback)).download();
             (new CheckInListSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback)).download();
             (new OrderSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback)).download();
-            (new InvoicesettingsSyncAdapter(dataStore, configStore.getEventSlug(), configStore.getEventSlug(), api, feedback)).download();
+
+            if (is_pretixpos) {
+                // Endpoint is only available with posbackend plugin
+                (new InvoicesettingsSyncAdapter(dataStore, configStore.getEventSlug(), configStore.getEventSlug(), api, feedback)).download();
+            }
+
+            try {
+                (new BadgeLayoutItemSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback)).download();
+            } catch (ApiException e) {
+                if (e.getMessage().toLowerCase().contains("not found")) {
+                    // ignore, this is only supported from pretix 2.5. We have legacy code in BadgeLayoutSyncAdapter to fall back to
+                } else {
+                    throw e;
+                }
+            }
         } catch (JSONException e) {
             e.printStackTrace();
             throw new SyncException("Unknown server response");

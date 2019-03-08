@@ -32,6 +32,7 @@ public class BadgeLayoutSyncAdapter extends BaseDownloadSyncAdapter<BadgeLayout,
         obj.setServer_id(jsonobj.getLong("id"));
         obj.setJson_data(jsonobj.toString());
 
+        /* Legacy mechanism: Keep around until pretix 2.5 is end of life */
         JSONArray assignmentarr = jsonobj.getJSONArray("item_assignments");
         List<Long> itemids = new ArrayList<>();
         for (int i = 0; i < assignmentarr.length(); i++) {
@@ -53,6 +54,7 @@ public class BadgeLayoutSyncAdapter extends BaseDownloadSyncAdapter<BadgeLayout,
             item.setBadge_layout_id(null);
             store.update(item, Item.BADGE_LAYOUT_ID);
         }
+        /* End of legacy mechanism: Keep around until pretix 2.5 is end of life */
 
         String remote_filename = jsonobj.optString("background");
         if (remote_filename != null && remote_filename.startsWith("http")) {
