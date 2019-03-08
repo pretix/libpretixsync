@@ -82,6 +82,15 @@ public class AbstractItem implements RemoteObject {
         }
     }
 
+    public boolean isGenerateTickets() {
+        try {
+            return getJSON().getBoolean("generate_tickets");
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return true;
+        }
+    }
+
     public Long getTaxRuleId() {
         try {
             return getJSON().optLong("tax_rule");
