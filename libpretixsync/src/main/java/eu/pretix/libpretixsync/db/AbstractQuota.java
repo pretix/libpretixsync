@@ -39,6 +39,30 @@ public class AbstractQuota implements RemoteObject {
     @JunctionTable
     List<Item> items;
 
+    public boolean isUnlimited() {
+        try {
+            return getJSON().isNull("size");
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean appliesToVariation(ItemVariation var) {
+        try {
+            JSONArray ja = getJSON().getJSONArray("variations");
+            for (int i = 0; i < ja.length(); i++) {
+                if (ja.getLong(i) == var.getServer_id()) {
+                    return true;
+                }
+            }
+            return false;
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
     @Override
     public JSONObject getJSON() throws JSONException {
         return new JSONObject(json_data);
