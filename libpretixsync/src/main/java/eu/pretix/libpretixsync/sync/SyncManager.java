@@ -108,9 +108,12 @@ public class SyncManager {
             (new ItemCategorySyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback)).download();
             (new ItemSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback)).download();
             (new QuestionSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback)).download();
-            (new QuotaSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback)).download();
-            (new TaxRuleSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback)).download();
-            (new TicketLayoutSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback)).download();
+            if (is_pretixpos) {
+                // We don't need these on pretixSCAN, so we can save some traffic
+                (new QuotaSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback)).download();
+                (new TaxRuleSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback)).download();
+                (new TicketLayoutSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback)).download();
+            }
             (new BadgeLayoutSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback)).download();
             (new CheckInListSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback)).download();
             (new OrderSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback)).download();
