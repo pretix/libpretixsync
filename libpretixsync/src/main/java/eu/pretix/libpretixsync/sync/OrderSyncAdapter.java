@@ -8,6 +8,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -332,5 +333,17 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
     @Override
     Order newEmptyObject() {
         return new Order();
+    }
+
+    public void standaloneRefreshFromJSON(JSONObject data) throws JSONException {
+        Order order = store.select(Order.class)
+                            .where(Order.CODE.eq(data.getString("code")))
+                .get().firstOr(newEmptyObject());
+        // Warm up cache
+        Set<String> ids = new HashSet<>();
+        ids.add(data.getString("code"));
+        getKnownObjects(ids);
+        // Store object
+        updateObject(order, data);
     }
 }
