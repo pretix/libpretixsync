@@ -1,25 +1,20 @@
 package eu.pretix.libpretixsync.db;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.math.BigDecimal;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
 
-import eu.pretix.libpretixsync.utils.I18nString;
 import io.requery.Column;
 import io.requery.Entity;
 import io.requery.ForeignKey;
 import io.requery.Generated;
 import io.requery.Key;
-import io.requery.ManyToMany;
 import io.requery.ManyToOne;
-import io.requery.Naming;
 import io.requery.Nullable;
 import io.requery.OneToMany;
 
@@ -58,6 +53,8 @@ public class AbstractReceipt implements LocalObject {
 
     public Boolean canceled;
 
+    public String payment_data;
+
     @Override
     public JSONObject toJSON() throws JSONException {
         TimeZone tz = TimeZone.getTimeZone("UTC");
@@ -75,6 +72,7 @@ public class AbstractReceipt implements LocalObject {
         jo.put("closing_id", closing.getId());
         jo.put("canceled", canceled);
         jo.put("currency", currency);
+        jo.put("payment_data", payment_data.equals("null") ? new JSONObject() : new JSONObject(payment_data));
         return jo;
     }
 }
