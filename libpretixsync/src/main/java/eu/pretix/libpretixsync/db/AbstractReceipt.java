@@ -72,7 +72,7 @@ public class AbstractReceipt implements LocalObject {
         jo.put("closing_id", closing.getId());
         jo.put("canceled", canceled);
         jo.put("currency", currency);
-        jo.put("payment_data", payment_data.equals("null") ? new JSONObject() : new JSONObject(payment_data));
+        jo.put("payment_data", payment_data == null || payment_data.equals("null") || payment_data.isEmpty() ? new JSONObject() : new JSONObject(payment_data));
         return jo;
     }
 }
