@@ -61,7 +61,13 @@ public class Migrations {
         if (db_version < 24) {
             create_drop(dataSource);
         }
+        if (db_version < 28) {
+            create_notexists(dataSource);
+        }
         if (db_version < 30) {
+            Statement s1 = c.createStatement();
+            s1.execute("ALTER TABLE Receipt ADD payment_data TEXT;");
+            s1.close();
             create_notexists(dataSource);
         }
         // Note that the Android app currently does not use these queries!
