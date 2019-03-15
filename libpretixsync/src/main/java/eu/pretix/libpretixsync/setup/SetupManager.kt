@@ -31,7 +31,7 @@ class SetupManager(private val hardware_brand: String, private val hardware_mode
                 .url(url + "/api/v1/device/initialize")
                 .post(RequestBody.create(MediaType.parse("application/json"), apiBody.toString()))
                 .build()
-        var response: Response? = null
+        var response: Response?
         response = client.newCall(request).execute();
 
         if (response.code() >= 500) {
@@ -51,8 +51,8 @@ class SetupManager(private val hardware_brand: String, private val hardware_mode
                         url, respo.getString("api_token"), respo.getString("organizer"), respo.getLong("device_id"), respo.getString("unique_serial")
                 )
             } catch (e: JSONException) {
-                throw SetupBadResponseException(response?.body()?.string())
                 e.printStackTrace()
+                throw SetupBadResponseException(response?.body()?.string())
             }
         }
     }
