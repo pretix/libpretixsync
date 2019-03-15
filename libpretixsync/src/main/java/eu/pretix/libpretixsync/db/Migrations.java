@@ -30,9 +30,6 @@ public class Migrations {
         Statement s3 = c.createStatement();
         s3.execute("INSERT INTO _version (version) VALUES (" + version + ");");
         s3.close();
-        Statement s4 = c.createStatement();
-        s4.execute("DELETE FROM ResourceLastModified;");
-        s4.close();
     }
 
     public static void migrate(DataSource dataSource, boolean dbIsNew) throws SQLException {
@@ -71,6 +68,12 @@ public class Migrations {
             create_notexists(dataSource);
         }
         // Note that the Android app currently does not use these queries!
+
+        if (db_version < CURRENT_VERSION) {
+            Statement s4 = c.createStatement();
+            s4.execute("DELETE FROM ResourceLastModified;");
+            s4.close();
+        }
 
         updateVersionTable(c, CURRENT_VERSION);
     }
