@@ -55,6 +55,9 @@ public class AbstractReceipt implements LocalObject {
 
     public String payment_data;
 
+    @Column(nullable = false)
+    public Boolean printed;
+
     @Override
     public JSONObject toJSON() throws JSONException {
         TimeZone tz = TimeZone.getTimeZone("UTC");
@@ -72,6 +75,7 @@ public class AbstractReceipt implements LocalObject {
         jo.put("closing_id", closing.getId());
         jo.put("canceled", canceled);
         jo.put("currency", currency);
+        jo.put("printed", printed);
         jo.put("payment_data", payment_data == null || payment_data.equals("null") || payment_data.isEmpty() ? new JSONObject() : new JSONObject(payment_data));
         return jo;
     }
