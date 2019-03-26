@@ -68,6 +68,7 @@ public class AbstractReceipt implements LocalObject {
         jo.put("receipt_id", id);
         jo.put("event", event_slug != null ? event_slug : JSONObject.NULL);
         jo.put("order", order_code != null ? order_code : JSONObject.NULL);
+        jo.put("order_full", order_code != null ? event_slug.toUpperCase() + "-" + order_code : "-");
         jo.put("open", open);
         jo.put("payment_type", payment_type);
         jo.put("datetime_opened", df.format(datetime_opened));
