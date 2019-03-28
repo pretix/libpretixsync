@@ -6,6 +6,7 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.ExecutionException;
 
 import eu.pretix.libpretixsync.SentryInterface;
@@ -16,6 +17,7 @@ import eu.pretix.libpretixsync.config.ConfigStore;
 import eu.pretix.libpretixsync.db.Closing;
 import eu.pretix.libpretixsync.db.Question;
 import eu.pretix.libpretixsync.db.QueuedCheckIn;
+import eu.pretix.libpretixsync.db.QueuedOrder;
 import eu.pretix.libpretixsync.db.Receipt;
 import eu.pretix.libpretixsync.db.ReceiptLine;
 import io.requery.BlockingEntityStore;
@@ -73,6 +75,7 @@ public class SyncManager {
             if (feedback != null) {
                 feedback.postFeedback("Uploading data…");
             }
+            uploadOrders();
             uploadTicketData();
             uploadReceipts();
             uploadClosings();
@@ -172,6 +175,42 @@ public class SyncManager {
                     dataStore.update(receipt);
                 } else {
                     throw new SyncException(response.getData().toString());
+                }
+            }
+        } catch (JSONException e) {
+            sentry.captureException(e);
+            throw new SyncException("Unknown server response");
+        } catch (ApiException e) {
+            sentry.addBreadcrumb("sync.queue", "API Error: " + e.getMessage());
+            throw new SyncException(e.getMessage());
+        }
+
+        sentry.addBreadcrumb("sync.queue", "Receipt upload complete");
+    }
+
+    protected void uploadOrders() throws SyncException {
+        sentry.addBreadcrumb("sync.queue", "Start order upload");
+
+        List<QueuedOrder> orders = dataStore.select(QueuedOrder.class)
+                .where(QueuedOrder.ERROR.isNull())
+                .get().toList();
+
+        try {
+            for (QueuedOrder qo : orders) {
+                PretixApi.ApiResponse resp = api.postResource(
+                        api.eventResourceUrl("orders") + "?pdf_data=true&force=true",
+                        new JSONObject(qo.getPayload())
+                );
+                if (resp.getResponse().code() == 201) {
+                    // TODO: Ensure idempotency?
+                    Receipt r = qo.getReceipt();
+                    r.setOrder_code(resp.getData().getString("code"));
+                    dataStore.delete(qo);
+                    (new OrderSyncAdapter(dataStore, null, configStore.getEventSlug(), api, null)).standaloneRefreshFromJSON(resp.getData());
+                } else if (resp.getResponse().code() == 400) {
+                    // TODO: User feedback in some way?
+                    qo.setError(resp.getData().toString());
+                    dataStore.update(qo);
                 }
             }
         } catch (JSONException e) {

@@ -55,8 +55,11 @@ public class AbstractReceipt implements LocalObject {
 
     public String payment_data;
 
-    @Column(nullable = false)
+    @Column(nullable = false, value = "false")
     public Boolean printed;
+
+    @OneToMany
+    public List<QueuedOrder> queuedorders;
 
     @Override
     public JSONObject toJSON() throws JSONException {

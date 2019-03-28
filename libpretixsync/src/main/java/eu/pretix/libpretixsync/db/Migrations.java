@@ -12,7 +12,7 @@ import java.sql.Statement;
 
 public class Migrations {
     private static EntityModel model = Models.DEFAULT;
-    public static int CURRENT_VERSION = 31;
+    public static int CURRENT_VERSION = 32;
 
     private static void createVersionTable(Connection c, int version) throws SQLException {
         Statement s2 = c.createStatement();
@@ -65,6 +65,9 @@ public class Migrations {
             Statement s1 = c.createStatement();
             s1.execute("ALTER TABLE Receipt ADD payment_data TEXT;");
             s1.close();
+            create_notexists(dataSource);
+        }
+        if (db_version < 32) {
             create_notexists(dataSource);
         }
         // Note that the Android app currently does not use these queries!
