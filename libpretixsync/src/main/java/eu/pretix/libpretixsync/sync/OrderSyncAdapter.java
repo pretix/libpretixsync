@@ -1,5 +1,6 @@
 package eu.pretix.libpretixsync.sync;
 
+import org.joda.time.format.ISODateTimeFormat;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -137,13 +138,15 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
             }
             if (known.containsKey(listid)) {
                 CheckIn ciobj = known.remove(listid);
-                ciobj.fromJSON(ci);
+                ciobj.setDatetime(ISODateTimeFormat.dateTimeParser().parseDateTime(ci.getString("datetime")).toDate());
+                ciobj.setJson_data(ci.toString());
                 store.update(ciobj);
             } else {
                 CheckIn ciobj = new CheckIn();
                 ciobj.setPosition(obj);
                 ciobj.setList(getList(listid));
-                ciobj.fromJSON(ci);
+                ciobj.setDatetime(ISODateTimeFormat.dateTimeParser().parseDateTime(ci.getString("datetime")).toDate());
+                ciobj.setJson_data(ci.toString());
                 checkinCreateCache.add(ciobj);
             }
         }

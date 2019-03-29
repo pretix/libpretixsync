@@ -34,9 +34,4 @@ public class AbstractCheckIn implements RemoteObject {
         return new JSONObject(json_data);
     }
 
-    public void fromJSON(JSONObject data) throws JSONException {
-        datetime = ISODateTimeFormat.dateTimeParser().parseDateTime(data.getString("datetime")).toDate();
-        json_data = data.toString();
-    }
-
 }

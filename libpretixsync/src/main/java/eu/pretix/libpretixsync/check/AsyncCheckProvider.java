@@ -89,7 +89,7 @@ public class AsyncCheckProvider implements TicketCheckProvider {
 
         boolean is_checked_in = queuedCheckIns > 0;
         for (CheckIn ci : position.getCheckins()) {
-            if (ci.getList().getServer_id() == listId) {
+            if (ci.getList().getServer_id().equals(listId)) {
                 is_checked_in = true;
                 break;
             }
@@ -265,7 +265,7 @@ public class AsyncCheckProvider implements TicketCheckProvider {
 
             boolean is_checked_in = queuedCheckIns > 0;
             for (CheckIn ci : position.getCheckins()) {
-                if (ci.getList().getServer_id() == listId) {
+                if (ci.getList().getServer_id().equals(listId)) {
                     is_checked_in = true;
                     break;
                 }
