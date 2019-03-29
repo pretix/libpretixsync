@@ -1,6 +1,7 @@
 package eu.pretix.libpretixsync.setup
 
 import eu.pretix.libpretixsync.api.HttpClientFactory
+import eu.pretix.libpretixsync.utils.NetUtils
 import eu.pretix.libpretixsync.utils.flatJsonError
 import okhttp3.MediaType
 import okhttp3.Request
@@ -19,7 +20,7 @@ data class SetupResult(val url: String, val api_token: String, val organizer: St
 
 class SetupManager(private val hardware_brand: String, private val hardware_model: String, private val software_brand: String, private val software_version: String, private val http_factory: HttpClientFactory) {
     fun initialize(url: String, token: String): SetupResult {
-        val client = http_factory.buildClient()
+        val client = http_factory.buildClient(NetUtils.ignoreSSLforURL(url));
         val apiBody = JSONObject()
         apiBody.put("token", token)
         apiBody.put("hardware_brand", hardware_brand)

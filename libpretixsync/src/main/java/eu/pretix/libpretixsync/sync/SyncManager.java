@@ -119,6 +119,7 @@ public class SyncManager {
             }
             (new BadgeLayoutSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback)).download();
             (new CheckInListSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback)).download();
+
             (new OrderSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback)).download();
 
             if (is_pretixpos) {

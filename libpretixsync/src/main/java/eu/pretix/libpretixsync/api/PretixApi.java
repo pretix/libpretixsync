@@ -4,6 +4,7 @@ import eu.pretix.libpretixsync.DummySentryImplementation;
 import eu.pretix.libpretixsync.SentryInterface;
 import eu.pretix.libpretixsync.check.TicketCheckProvider;
 import eu.pretix.libpretixsync.config.ConfigStore;
+import eu.pretix.libpretixsync.utils.NetUtils;
 import okhttp3.*;
 
 import org.json.JSONException;
@@ -67,7 +68,7 @@ public class PretixApi {
         this.eventSlug = eventSlug;
         this.orgaSlug = orgaSlug;
         this.version = version;
-        this.client = httpClientFactory.buildClient();
+        this.client = httpClientFactory.buildClient(NetUtils.ignoreSSLforURL(url));
         this.sentry = new DummySentryImplementation();
     }
 
