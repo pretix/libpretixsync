@@ -3,6 +3,7 @@ package eu.pretix.libpretixsync.db;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import io.requery.Entity;
@@ -39,6 +40,15 @@ public class AbstractOrder implements RemoteObject {
     public String getPaymentProvider() {
         try {
             return getJSON().getString("payment_provider");
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public BigDecimal getTotal() {
+        try {
+            return new BigDecimal(getJSON().getString("total"));
         } catch (JSONException e) {
             e.printStackTrace();
             return null;

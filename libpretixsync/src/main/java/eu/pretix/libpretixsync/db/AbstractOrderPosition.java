@@ -1,6 +1,7 @@
 package eu.pretix.libpretixsync.db;
 
 import io.requery.*;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -16,7 +17,7 @@ public class AbstractOrderPosition implements RemoteObject {
 
     public Long server_id;
 
-    @Column(name="order_ref")
+    @Column(name = "order_ref")
     @ForeignKey(update = ReferentialAction.CASCADE)
     @ManyToOne
     public Order order;
