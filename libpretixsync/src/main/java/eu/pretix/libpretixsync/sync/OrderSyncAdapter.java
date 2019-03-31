@@ -342,11 +342,23 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
         Order order = store.select(Order.class)
                             .where(Order.CODE.eq(data.getString("code")))
                 .get().firstOr(newEmptyObject());
+        JSONObject old = null;
+        if (order.getId() != null) {
+            old = order.getJSON();
+        }
+
         // Warm up cache
         Set<String> ids = new HashSet<>();
         ids.add(data.getString("code"));
         getKnownObjects(ids);
         // Store object
-        updateObject(order, data);
+        if (old == null) {
+            updateObject(order, data);
+        } else {
+            if (!JSONUtils.similar(data, old)) {
+                updateObject(order, data);
+                store.update(order);
+            }
+        }
     }
 }
