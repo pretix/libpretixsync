@@ -42,6 +42,7 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
     private List<CheckIn> checkinCreateCache = new ArrayList<>();
     private String firstResponseTimestamp;
     private String lastOrderTimestamp;
+    private ResourceLastModified rlm;
 
     @Override
     public void download() throws JSONException, ApiException, ExecutionException, InterruptedException {
@@ -255,11 +256,13 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
 
     @Override
     protected JSONObject downloadPage(String url, boolean isFirstPage) throws ApiException, ResourceNotModified {
-        ResourceLastModified resourceLastModified = store.select(ResourceLastModified.class)
-                .where(ResourceLastModified.RESOURCE.eq("orders"))
-                .and(ResourceLastModified.EVENT_SLUG.eq(eventSlug))
-                .limit(1)
-                .get().firstOrNull();
+        if (isFirstPage) {
+            rlm = store.select(ResourceLastModified.class)
+                    .where(ResourceLastModified.RESOURCE.eq("orders"))
+                    .and(ResourceLastModified.EVENT_SLUG.eq(eventSlug))
+                    .limit(1)
+                    .get().firstOrNull();
+        }
         boolean is_continued_fetch = false;
         if (!url.contains("testmode=")) {
             if (url.contains("?")) {
@@ -269,14 +272,14 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
             }
         }
 
-        if (resourceLastModified != null) {
+        if (rlm != null) {
             // This resource has been fetched before.
-            if (resourceLastModified.getStatus() != null && resourceLastModified.getStatus().startsWith("incomplete:")) {
+            if (rlm.getStatus() != null && rlm.getStatus().startsWith("incomplete:")) {
                 // Continuing
                 is_continued_fetch = true;
                 try {
                     if (!url.contains("created_since")) {
-                        url += "&created_since=" + URLEncoder.encode(resourceLastModified.getStatus().substring(11), "UTF-8");
+                        url += "&created_since=" + URLEncoder.encode(rlm.getStatus().substring(11), "UTF-8");
                     }
                 } catch (UnsupportedEncodingException e) {
                     e.printStackTrace();
@@ -285,7 +288,7 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
                 // Diff to last time
                 try {
                     if (!url.contains("modified_since")) {
-                        url += "&modified_since=" + URLEncoder.encode(resourceLastModified.getLast_modified(), "UTF-8");
+                        url += "&modified_since=" + URLEncoder.encode(rlm.getLast_modified(), "UTF-8");
                     }
                 } catch (UnsupportedEncodingException e) {
                     e.printStackTrace();
