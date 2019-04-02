@@ -11,15 +11,20 @@ import java.util.concurrent.ExecutionException;
 
 import eu.pretix.libpretixsync.SentryInterface;
 import eu.pretix.libpretixsync.api.ApiException;
+import eu.pretix.libpretixsync.api.DeviceAccessRevokedException;
 import eu.pretix.libpretixsync.api.PretixApi;
 import eu.pretix.libpretixsync.check.TicketCheckProvider;
 import eu.pretix.libpretixsync.config.ConfigStore;
+import eu.pretix.libpretixsync.db.CheckIn;
 import eu.pretix.libpretixsync.db.Closing;
+import eu.pretix.libpretixsync.db.Order;
+import eu.pretix.libpretixsync.db.OrderPosition;
 import eu.pretix.libpretixsync.db.Question;
 import eu.pretix.libpretixsync.db.QueuedCheckIn;
 import eu.pretix.libpretixsync.db.QueuedOrder;
 import eu.pretix.libpretixsync.db.Receipt;
 import eu.pretix.libpretixsync.db.ReceiptLine;
+import eu.pretix.libpretixsync.db.ResourceLastModified;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
 
@@ -136,6 +141,13 @@ public class SyncManager {
                     throw e;
                 }
             }
+        } catch (DeviceAccessRevokedException e) {
+            int deleted = 0;
+            deleted += dataStore.delete(CheckIn.class).get().value();
+            deleted += dataStore.delete(OrderPosition.class).get().value();
+            deleted += dataStore.delete(Order.class).get().value();
+            deleted += dataStore.delete(ResourceLastModified.class).get().value();
+            throw new SyncException(e.getMessage());
         } catch (JSONException e) {
             e.printStackTrace();
             throw new SyncException("Unknown server response");

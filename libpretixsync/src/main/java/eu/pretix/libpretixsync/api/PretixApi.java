@@ -244,6 +244,18 @@ public class PretixApi {
             response.close();
             throw new ApiException("Server error: " + response.code() + ".");
         }
+        if (response.code() == 401) {
+            if (body.startsWith("{")) {
+                try {
+                    JSONObject err = new JSONObject(body);
+                    if (err.optString("detail", "").equals("Device access has been revoked.")) {
+                        throw new DeviceAccessRevokedException("Device access has been revoked.");
+                    }
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
         try {
             if (json) {
                 if (body.startsWith("[")) {
