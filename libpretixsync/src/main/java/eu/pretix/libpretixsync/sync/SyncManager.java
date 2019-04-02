@@ -210,20 +210,25 @@ public class SyncManager {
 
         try {
             for (QueuedOrder qo : orders) {
-                PretixApi.ApiResponse resp = api.postResource(
-                        api.eventResourceUrl("orders") + "?pdf_data=true&force=true",
-                        new JSONObject(qo.getPayload())
-                );
-                if (resp.getResponse().code() == 201) {
-                    // TODO: Ensure idempotency?
-                    Receipt r = qo.getReceipt();
-                    r.setOrder_code(resp.getData().getString("code"));
-                    dataStore.delete(qo);
-                    (new OrderSyncAdapter(dataStore, null, configStore.getEventSlug(), api, null)).standaloneRefreshFromJSON(resp.getData());
-                } else if (resp.getResponse().code() == 400) {
-                    // TODO: User feedback in some way?
-                    qo.setError(resp.getData().toString());
-                    dataStore.update(qo);
+                try {
+                    api.setEventSlug(qo.getEvent_slug());
+                    PretixApi.ApiResponse resp = api.postResource(
+                            api.eventResourceUrl("orders") + "?pdf_data=true&force=true",
+                            new JSONObject(qo.getPayload())
+                    );
+                    if (resp.getResponse().code() == 201) {
+                        // TODO: Ensure idempotency?
+                        Receipt r = qo.getReceipt();
+                        r.setOrder_code(resp.getData().getString("code"));
+                        dataStore.delete(qo);
+                        (new OrderSyncAdapter(dataStore, null, configStore.getEventSlug(), api, null)).standaloneRefreshFromJSON(resp.getData());
+                    } else if (resp.getResponse().code() == 400) {
+                        // TODO: User feedback in some way?
+                        qo.setError(resp.getData().toString());
+                        dataStore.update(qo);
+                    }
+                } finally {
+                    api.setEventSlug(configStore.getEventSlug());
                 }
             }
         } catch (JSONException e) {
@@ -272,7 +277,8 @@ public class SyncManager {
     protected void uploadTicketData() throws SyncException {
         sentry.addBreadcrumb("sync.queue", "Start check-in upload");
 
-        List<QueuedCheckIn> queued = dataStore.select(QueuedCheckIn.class).get().toList();
+        List<QueuedCheckIn> queued = dataStore.select(QueuedCheckIn.class)
+                .get().toList();
 
         try {
             for (QueuedCheckIn qci : queued) {
@@ -288,7 +294,13 @@ public class SyncManager {
                 } catch (JSONException e) {
                 }
 
-                PretixApi.ApiResponse ar = api.redeem(qci.getSecret(), qci.getDatetime(), true, qci.getNonce(), answers, qci.checkinListId, false, false);
+                PretixApi.ApiResponse ar;
+                try {
+                    api.setEventSlug(qci.getEvent_slug());
+                    ar = api.redeem(qci.getSecret(), qci.getDatetime(), true, qci.getNonce(), answers, qci.checkinListId, false, false);
+                } finally {
+                    api.setEventSlug(configStore.getEventSlug());
+                }
                 JSONObject response = ar.getData();
                 String status = response.getString("status");
                 if ("ok".equals(status)) {

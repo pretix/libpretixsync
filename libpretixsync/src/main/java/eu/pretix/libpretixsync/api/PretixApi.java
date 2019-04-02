@@ -72,6 +72,14 @@ public class PretixApi {
         this.sentry = new DummySentryImplementation();
     }
 
+    public String getEventSlug() {
+        return eventSlug;
+    }
+
+    public void setEventSlug(String eventSlug) {
+        this.eventSlug = eventSlug;
+    }
+
     public static PretixApi fromConfig(ConfigStore config, HttpClientFactory httpClientFactory) {
         return new PretixApi(config.getApiUrl(), config.getApiKey(), config.getOrganizerSlug(),
                 config.getEventSlug(), config.getApiVersion(), httpClientFactory);

@@ -13,6 +13,8 @@ public abstract class AbstractQueuedCheckIn {
     @Generated
     public Long id;
 
+    public String event_slug;
+
     public String secret;
 
     public String nonce;
