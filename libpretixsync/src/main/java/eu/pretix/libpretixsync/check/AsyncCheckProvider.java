@@ -1,20 +1,34 @@
 package eu.pretix.libpretixsync.check;
 
-import eu.pretix.libpretixsync.db.*;
-import eu.pretix.libpretixsync.db.Order;
-import io.requery.kotlin.Logical;
-import io.requery.query.*;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import eu.pretix.libpretixsync.DummySentryImplementation;
 import eu.pretix.libpretixsync.SentryInterface;
 import eu.pretix.libpretixsync.config.ConfigStore;
+import eu.pretix.libpretixsync.db.AbstractQuestion;
+import eu.pretix.libpretixsync.db.CheckIn;
+import eu.pretix.libpretixsync.db.CheckInList;
+import eu.pretix.libpretixsync.db.CheckInList_Item;
+import eu.pretix.libpretixsync.db.Item;
+import eu.pretix.libpretixsync.db.ItemVariation;
+import eu.pretix.libpretixsync.db.Order;
+import eu.pretix.libpretixsync.db.OrderPosition;
+import eu.pretix.libpretixsync.db.Question;
+import eu.pretix.libpretixsync.db.QueuedCheckIn;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
+import io.requery.query.Condition;
+import io.requery.query.Result;
+import io.requery.query.Scalar;
+import io.requery.query.WhereAndOr;
 
 public class AsyncCheckProvider implements TicketCheckProvider {
     private ConfigStore config;
@@ -82,18 +96,26 @@ public class AsyncCheckProvider implements TicketCheckProvider {
         }
 
         CheckResult res = new CheckResult(CheckResult.Type.ERROR);
-        long queuedCheckIns = dataStore.count(QueuedCheckIn.class)
+        QueuedCheckIn queuedCheckIns = dataStore.select(QueuedCheckIn.class)
                 .where(QueuedCheckIn.SECRET.eq(ticketid))
                 .and(QueuedCheckIn.CHECKIN_LIST_ID.eq(listId))
-                .get().value();
+                .orderBy(QueuedCheckIn.DATETIME)
+                .get().firstOrNull();
 
-        boolean is_checked_in = queuedCheckIns > 0;
-        for (CheckIn ci : position.getCheckins()) {
-            if (ci.getList().getServer_id().equals(listId)) {
-                is_checked_in = true;
-                break;
+        boolean is_checked_in = false;
+        if (queuedCheckIns != null) {
+            is_checked_in = true;
+            res.setFirstScanned(queuedCheckIns.getDatetime());
+        } else {
+            for (CheckIn ci : position.getCheckins()) {
+                if (ci.getList().getServer_id().equals(listId)) {
+                    is_checked_in = true;
+                    res.setFirstScanned(ci.getDatetime());
+                    break;
+                }
             }
         }
+
         JSONObject jPosition;
         try {
             jPosition = position.getJSON();
@@ -173,7 +195,9 @@ public class AsyncCheckProvider implements TicketCheckProvider {
         if (varid != null) {
             try {
                 ItemVariation var = item.getVariation(varid);
-                res.setVariation(var.getStringValue());
+                if (var != null) {
+                    res.setVariation(var.getStringValue());
+                }
             } catch (JSONException e) {
                 sentry.captureException(e);
             }
@@ -345,11 +369,11 @@ public class AsyncCheckProvider implements TicketCheckProvider {
 
         int sum_pos = 0;
         int sum_ci = 0;
-        for (Item product: products) {
+        for (Item product : products) {
             List<StatusResultItemVariation> variations = new ArrayList<>();
 
             try {
-                for (ItemVariation var: product.getVariations()) {
+                for (ItemVariation var : product.getVariations()) {
                     int position_count = basePositionQuery(list)
                             .and(OrderPosition.ITEM_ID.eq(product.id))
                             .and(OrderPosition.VARIATION_ID.eq(var.getServer_id())).get().value();

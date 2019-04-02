@@ -1,10 +1,14 @@
 package eu.pretix.libpretixsync.check;
 
 
+import eu.pretix.libpretixsync.db.CheckIn;
 import eu.pretix.libpretixsync.db.Item;
 import eu.pretix.libpretixsync.db.ItemVariation;
 import eu.pretix.libpretixsync.db.Question;
 import eu.pretix.libpretixsync.db.QuestionOption;
+
+import org.joda.time.format.DateTimeFormatter;
+import org.joda.time.format.ISODateTimeFormat;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -28,6 +32,7 @@ public class OnlineCheckProvider implements TicketCheckProvider {
     private SentryInterface sentry;
     private BlockingEntityStore<Persistable> dataStore;
     private Long listId;
+    private DateTimeFormatter parser = ISODateTimeFormat.dateTimeParser();
 
     public OnlineCheckProvider(ConfigStore config, HttpClientFactory httpClientFactory, BlockingEntityStore<Persistable> dataStore, Long listId) {
         this.config = config;
@@ -112,6 +117,14 @@ public class OnlineCheckProvider implements TicketCheckProvider {
                     }
                     res.setOrderCode(posjson.optString("order"));
                     res.setPosition(posjson);
+
+                    JSONArray checkins = posjson.getJSONArray("checkins");
+                    for (int i = 0; i < checkins.length(); i++) {
+                        JSONObject ci = checkins.getJSONObject(i);
+                        if (ci.getLong("list") == listId) {
+                            res.setFirstScanned(parser.parseDateTime(ci.getString("datetime")).toDate());
+                        }
+                    }
                 }
                 res.setRequireAttention(response.optBoolean("require_attention", false));
             }

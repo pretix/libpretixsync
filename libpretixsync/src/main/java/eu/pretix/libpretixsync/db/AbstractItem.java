@@ -137,7 +137,7 @@ public class AbstractItem implements RemoteObject {
 
     public ItemVariation getVariation(Long variation_id) throws JSONException {
         for (ItemVariation var : getVariations()) {
-            if (var.getServer_id().equals(String.valueOf(variation_id))) {
+            if (var.getServer_id().equals(variation_id)) {
                 return var;
             }
         }

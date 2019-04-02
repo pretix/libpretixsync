@@ -1,6 +1,7 @@
 package eu.pretix.libpretixsync.check;
 
 
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
@@ -61,7 +62,7 @@ public interface TicketCheckProvider {
         private String attendee_name;
         private String message;
         private String order_code;
-        private String addon_text;
+        private Date first_scanned;
         private boolean require_attention;
         private boolean checkin_allowed;
         private List<RequiredAnswer> required_answers;
@@ -154,6 +155,14 @@ public interface TicketCheckProvider {
 
         public void setCheckinAllowed(boolean checkin_allowed) {
             this.checkin_allowed = checkin_allowed;
+        }
+
+        public Date getFirstScanned() {
+            return first_scanned;
+        }
+
+        public void setFirstScanned(Date first_scanned) {
+            this.first_scanned = first_scanned;
         }
 
         public JSONObject getPosition() {
