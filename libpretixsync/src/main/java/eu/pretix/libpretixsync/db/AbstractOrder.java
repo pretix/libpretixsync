@@ -8,6 +8,7 @@ import java.util.List;
 
 import io.requery.Entity;
 import io.requery.Generated;
+import io.requery.Index;
 import io.requery.JunctionTable;
 import io.requery.Key;
 import io.requery.ManyToMany;
@@ -24,6 +25,7 @@ public class AbstractOrder implements RemoteObject {
 
     public String event_slug;
 
+    @Index
     public String code;
 
     public String status;
