@@ -21,4 +21,6 @@ public class AbstractResourceLastModified {
     public String last_modified;
 
     public String event_slug;
+
+    public String status;
 }

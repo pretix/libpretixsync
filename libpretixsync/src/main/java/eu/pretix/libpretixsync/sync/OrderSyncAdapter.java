@@ -40,27 +40,55 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
     private Map<String, List<OrderPosition>> positionCache = new HashMap<>();
     private Map<Long, List<CheckIn>> checkinCache = new HashMap<>();
     private List<CheckIn> checkinCreateCache = new ArrayList<>();
-    private PretixApi.ApiResponse firstResponse;
+    private String firstResponseTimestamp;
+    private String lastOrderTimestamp;
 
     @Override
     public void download() throws JSONException, ApiException, ExecutionException, InterruptedException {
-        super.download();
-        if (firstResponse != null) {
+        boolean completed = false;
+        try {
+            super.download();
+            completed = true;
+        } finally {
             ResourceLastModified resourceLastModified = store.select(ResourceLastModified.class)
                     .where(ResourceLastModified.RESOURCE.eq("orders"))
                     .and(ResourceLastModified.EVENT_SLUG.eq(eventSlug))
                     .limit(1)
                     .get().firstOrNull();
-            if (resourceLastModified == null) {
-                resourceLastModified = new ResourceLastModified();
-                resourceLastModified.setResource("orders");
-                resourceLastModified.setEvent_slug(eventSlug);
+
+            // We need to cache the response timestamp of the *first* page in the result set to make
+            // sure we don't miss anything between this and the next run.
+            //
+            // If the download failed, completed will be false. In case this was a full fetch
+            // (i.e. no timestamp was stored beforehand) we will still store the timestamp to be
+            // able to continue properly.
+            if (firstResponseTimestamp != null) {
+                if (resourceLastModified == null) {
+                    resourceLastModified = new ResourceLastModified();
+                    resourceLastModified.setResource("orders");
+                    resourceLastModified.setEvent_slug(eventSlug);
+                    if (completed) {
+                        resourceLastModified.setStatus("complete");
+                    } else {
+                        resourceLastModified.setStatus("incomplete:" + lastOrderTimestamp);
+                    }
+                    resourceLastModified.setLast_modified(firstResponseTimestamp);
+                    store.upsert(resourceLastModified);
+                } else {
+                    if (completed) {
+                        resourceLastModified.setLast_modified(firstResponseTimestamp);
+                        store.upsert(resourceLastModified);
+                    }
+                }
+            } else if (completed && resourceLastModified != null) {
+                resourceLastModified.setStatus("complete");
+                store.update(resourceLastModified);
+            } else if (!completed && lastOrderTimestamp != null && resourceLastModified != null) {
+                resourceLastModified.setStatus("incomplete:" + lastOrderTimestamp);
+                store.update(resourceLastModified);
             }
-            if (firstResponse.getResponse().header("X-Page-Generated") != null) {
-                resourceLastModified.setLast_modified(firstResponse.getResponse().header("X-Page-Generated"));
-                store.upsert(resourceLastModified);
-            }
-            firstResponse = null;
+            lastOrderTimestamp = null;
+            firstResponseTimestamp = null;
         }
     }
 
@@ -232,33 +260,55 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
                 .and(ResourceLastModified.EVENT_SLUG.eq(eventSlug))
                 .limit(1)
                 .get().firstOrNull();
-        if (resourceLastModified == null) {
-            if (!url.contains("testmode")) {
-                if (url.contains("?")) {
-                    url += "&pdf_data=true&testmode=false";
-                } else {
-                    url += "?pdf_data=true&testmode=false";
-                }
+        boolean is_continued_fetch = false;
+        if (!url.contains("testmode=")) {
+            if (url.contains("?")) {
+                url += "&pdf_data=true&testmode=false";
+            } else {
+                url += "?pdf_data=true&testmode=false";
             }
-        } else {
-            try {
-                if (!url.contains("modified_since")) {
-                    if (url.contains("?")) {
-                        url += "&pdf_data=true&testmode=false&modified_since=" + URLEncoder.encode(resourceLastModified.getLast_modified(), "UTF-8");
-                    } else {
-                        url += "?pdf_data=true&testmode=false&modified_since=" + URLEncoder.encode(resourceLastModified.getLast_modified(), "UTF-8");
+        }
+
+        if (resourceLastModified != null) {
+            // This resource has been fetched before.
+            if (resourceLastModified.getStatus() != null && resourceLastModified.getStatus().startsWith("incomplete:")) {
+                // Continuing
+                is_continued_fetch = true;
+                try {
+                    if (!url.contains("created_since")) {
+                        url += "&created_since=" + URLEncoder.encode(resourceLastModified.getStatus().substring(11), "UTF-8");
                     }
+                } catch (UnsupportedEncodingException e) {
+                    e.printStackTrace();
                 }
-            } catch (UnsupportedEncodingException e) {
-                e.printStackTrace();
+            } else {
+                // Diff to last time
+                try {
+                    if (!url.contains("modified_since")) {
+                        url += "&modified_since=" + URLEncoder.encode(resourceLastModified.getLast_modified(), "UTF-8");
+                    }
+                } catch (UnsupportedEncodingException e) {
+                    e.printStackTrace();
+                }
             }
         }
 
         PretixApi.ApiResponse apiResponse = api.fetchResource(url);
-        if (isFirstPage) {
-            firstResponse = apiResponse;
+        if (isFirstPage && !is_continued_fetch) {
+            firstResponseTimestamp = apiResponse.getResponse().header("X-Page-Generated");
         }
-        return apiResponse.getData();
+        JSONObject d = apiResponse.getData();
+        if (apiResponse.getResponse().code() == 200) {
+            try {
+                JSONArray res = d.getJSONArray("results");
+                if (res.length() > 0) {
+                    lastOrderTimestamp = res.getJSONObject(res.length() - 1).getString("datetime");
+                }
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+        return d;
     }
 
     @Override
@@ -340,7 +390,7 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
 
     public void standaloneRefreshFromJSON(JSONObject data) throws JSONException {
         Order order = store.select(Order.class)
-                            .where(Order.CODE.eq(data.getString("code")))
+                .where(Order.CODE.eq(data.getString("code")))
                 .get().firstOr(newEmptyObject());
         JSONObject old = null;
         if (order.getId() != null) {
