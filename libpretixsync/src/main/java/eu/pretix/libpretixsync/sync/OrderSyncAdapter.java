@@ -413,5 +413,7 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
                 store.update(order);
             }
         }
+        store.insert(checkinCreateCache);
+        checkinCreateCache.clear();
     }
 }
