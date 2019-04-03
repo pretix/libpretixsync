@@ -5,28 +5,29 @@ import eu.pretix.libpretixsync.api.PretixApi
 import eu.pretix.libpretixsync.check.TicketCheckProvider
 import org.json.JSONObject
 import java.util.*
+import kotlin.collections.ArrayList
 
 class FakePretixApi : PretixApi("http://1.1.1.1/", "a", "demo", "demo", 1, DefaultHttpClientFactory()) {
-    public var redeemResponse: ApiResponse? = null
-    public var statusResponse: ApiResponse? = null
-    public var searchResponse: ApiResponse? = null
-    public var deleteResponse: ApiResponse? = null
-    public var postResponse: ApiResponse? = null
-    public var fetchResponse: ApiResponse? = null
-    public var downloadResponse: ApiResponse? = null
-    public var redeemRequestSecret: String? = null
-    public var redeemRequestDatetime: Date? = null
-    public var redeemRequestForce = false
-    public var redeemRequestNonce: String? = null
-    public var redeemRequestAnswers: List<TicketCheckProvider.Answer>? = null
-    public var redeemRequestListId: Long? = null
-    public var redeemRequestIgnoreUnpaid = false
-    public var redeemRequestPdfData = false
-    public var statusRequestListId: Long? = null
-    public var searchRequestListId: Long? = null
-    public var searchRequestQuery: String? = null
-    public var lastRequestUrl: String? = null
-    public var lastRequestBody: JSONObject? = null
+    val redeemResponses: MutableList<(() -> ApiResponse)> = ArrayList()
+    val statusResponses: MutableList<(() -> ApiResponse)> = ArrayList()
+    val searchResponses: MutableList<(() -> ApiResponse)> = ArrayList()
+    val deleteResponses: MutableList<(() -> ApiResponse)> = ArrayList()
+    val postResponses: MutableList<(() -> ApiResponse)> = ArrayList()
+    val fetchResponses: MutableList<(() -> ApiResponse)> = ArrayList()
+    var downloadResponses: MutableList<(() -> ApiResponse)> = ArrayList()
+    var redeemRequestSecret: String? = null
+    var redeemRequestDatetime: Date? = null
+    var redeemRequestForce = false
+    var redeemRequestNonce: String? = null
+    var redeemRequestAnswers: List<TicketCheckProvider.Answer>? = null
+    var redeemRequestListId: Long? = null
+    var redeemRequestIgnoreUnpaid = false
+    var redeemRequestPdfData = false
+    var statusRequestListId: Long? = null
+    var searchRequestListId: Long? = null
+    var searchRequestQuery: String? = null
+    var lastRequestUrl: String? = null
+    var lastRequestBody: JSONObject? = null
 
     override fun redeem(secret: String?, datetime: Date?, force: Boolean, nonce: String?, answers: MutableList<TicketCheckProvider.Answer>?, listId: Long?, ignore_unpaid: Boolean, pdf_data: Boolean): ApiResponse {
         redeemRequestSecret = secret
@@ -37,47 +38,47 @@ class FakePretixApi : PretixApi("http://1.1.1.1/", "a", "demo", "demo", 1, Defau
         redeemRequestListId = listId
         redeemRequestIgnoreUnpaid = ignore_unpaid
         redeemRequestPdfData = pdf_data
-        return redeemResponse!!
+        return redeemResponses.removeAt(0)()
     }
 
     override fun status(listId: Long?): ApiResponse {
         statusRequestListId = listId
-        return statusResponse!!
+        return statusResponses.removeAt(0)()
     }
 
     override fun search(listId: Long?, query: String?, page: Int): ApiResponse {
         searchRequestListId = listId
         searchRequestQuery = query
-        return searchResponse!!
+        return searchResponses.removeAt(0)()
     }
 
     override fun deleteResource(full_url: String?): ApiResponse {
         lastRequestUrl = full_url
         lastRequestBody = null
-        return deleteResponse!!
+        return deleteResponses.removeAt(0)()
     }
 
     override fun postResource(full_url: String?, data: JSONObject?): ApiResponse {
         lastRequestUrl = full_url
         lastRequestBody = data
-        return postResponse!!
+        return postResponses.removeAt(0)()
     }
 
     override fun fetchResource(full_url: String?, if_modified_since: String?): ApiResponse {
         lastRequestUrl = full_url
         lastRequestBody = null
-        return fetchResponse!!
+        return fetchResponses.removeAt(0)()
     }
 
     override fun fetchResource(full_url: String?): ApiResponse {
         lastRequestUrl = full_url
         lastRequestBody = null
-        return fetchResponse!!
+        return fetchResponses.removeAt(0)()
     }
 
     override fun downloadFile(full_url: String?): ApiResponse {
         lastRequestUrl = full_url
         lastRequestBody = null
-        return downloadResponse!!
+        return downloadResponses.removeAt(0)()
     }
 }
