@@ -275,20 +275,35 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
         if (rlm != null) {
             // This resource has been fetched before.
             if (rlm.getStatus() != null && rlm.getStatus().startsWith("incomplete:")) {
-                // Continuing
+                // Continuing an interrupted fetch
+
+                // Ordering is crucial here: Only because the server returns the orders in the
+                // order of creation we can be sure that we don't miss orders created in between our
+                // paginated requests.
                 is_continued_fetch = true;
                 try {
                     if (!url.contains("created_since")) {
-                        url += "&created_since=" + URLEncoder.encode(rlm.getStatus().substring(11), "UTF-8");
+                        url += "&ordering=datetime&created_since=" + URLEncoder.encode(rlm.getStatus().substring(11), "UTF-8");
                     }
                 } catch (UnsupportedEncodingException e) {
                     e.printStackTrace();
                 }
             } else {
                 // Diff to last time
+
+                // Ordering is crucial here: Only because the server returns the orders in the
+                // order of modification we can be sure that we don't miss orders created in between our
+                // paginated requests. If an order were to be modified between our fetch of page 1
+                // and 2 that originally wasn't part of the result set, we won't see it (as it will
+                // be inserted on page 2), but we'll see it the next time, and we will se some
+                // duplicates on page 2, but we don't care. The important part is that nothing gets
+                // lost "between the pages". If an order of page 2 gets modified and moves to page
+                // one while we fetch page 2, again, we won't see it and we'll see some duplicates,
+                // but the next sync will fix it since we always fetch our diff compared to the time
+                // of the first page.
                 try {
                     if (!url.contains("modified_since")) {
-                        url += "&modified_since=" + URLEncoder.encode(rlm.getLast_modified(), "UTF-8");
+                        url += "&ordering=-last_modified&modified_since=" + URLEncoder.encode(rlm.getLast_modified(), "UTF-8");
                     }
                 } catch (UnsupportedEncodingException e) {
                     e.printStackTrace();
