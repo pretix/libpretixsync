@@ -67,3 +67,9 @@ dependencies {
     testCompile 'junit:junit:4.12'
     testCompile 'org.xerial:sqlite-jdbc:3.20.1'
 }
+
+task copyTestResources(type: Copy) {
+    from "${projectDir}/src/test/resources", "${projectDir}/src/main/resources"
+    into "${buildDir}/classes/test"
+}
+processTestResources.dependsOn copyTestResources

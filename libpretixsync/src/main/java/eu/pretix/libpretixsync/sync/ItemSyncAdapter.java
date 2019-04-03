@@ -8,6 +8,7 @@ import java.util.List;
 
 import eu.pretix.libpretixsync.api.PretixApi;
 import eu.pretix.libpretixsync.db.Item;
+import eu.pretix.libpretixsync.utils.JSONUtils;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
 import io.requery.query.Tuple;
@@ -61,5 +62,26 @@ public class ItemSyncAdapter extends BaseConditionalSyncAdapter<Item, Long> {
     @Override
     Item newEmptyObject() {
         return new Item();
+    }
+
+    public void standaloneRefreshFromJSON(JSONObject data) throws JSONException {
+        Item obj = store.select(Item.class)
+                .where(Item.SERVER_ID.eq(data.getLong("id")))
+                .get().firstOr(newEmptyObject());
+        JSONObject old = null;
+        if (obj.getId() != null) {
+            old = obj.getJSON();
+        }
+
+        // Store object
+        if (old == null) {
+            updateObject(obj, data);
+            store.insert(obj);
+        } else {
+            if (!JSONUtils.similar(data, old)) {
+                updateObject(obj, data);
+                store.update(obj);
+            }
+        }
     }
 }

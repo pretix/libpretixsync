@@ -11,6 +11,7 @@ import java.util.List;
 import eu.pretix.libpretixsync.api.PretixApi;
 import eu.pretix.libpretixsync.db.CheckInList;
 import eu.pretix.libpretixsync.db.Item;
+import eu.pretix.libpretixsync.utils.JSONUtils;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
 import io.requery.query.Tuple;
@@ -79,5 +80,26 @@ public class CheckInListSyncAdapter extends BaseConditionalSyncAdapter<CheckInLi
     @Override
     CheckInList newEmptyObject() {
         return new CheckInList();
+    }
+
+    public void standaloneRefreshFromJSON(JSONObject data) throws JSONException {
+        CheckInList obj = store.select(CheckInList.class)
+                .where(CheckInList.SERVER_ID.eq(data.getLong("id")))
+                .get().firstOr(newEmptyObject());
+        JSONObject old = null;
+        if (obj.getId() != null) {
+            old = obj.getJSON();
+        }
+
+        // Store object
+        if (old == null) {
+            updateObject(obj, data);
+            store.insert(obj);
+        } else {
+            if (!JSONUtils.similar(data, old)) {
+                updateObject(obj, data);
+                store.update(obj);
+            }
+        }
     }
 }

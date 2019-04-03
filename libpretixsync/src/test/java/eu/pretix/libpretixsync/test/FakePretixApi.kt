@@ -6,7 +6,7 @@ import eu.pretix.libpretixsync.check.TicketCheckProvider
 import org.json.JSONObject
 import java.util.*
 
-class FakePretixApi : PretixApi("http://1.1.1.1/", "a", "orga", "ev", 1, DefaultHttpClientFactory()) {
+class FakePretixApi : PretixApi("http://1.1.1.1/", "a", "demo", "demo", 1, DefaultHttpClientFactory()) {
     public var redeemResponse: ApiResponse? = null
     public var statusResponse: ApiResponse? = null
     public var searchResponse: ApiResponse? = null
