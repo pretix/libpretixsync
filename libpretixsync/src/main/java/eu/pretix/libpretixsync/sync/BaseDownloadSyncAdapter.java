@@ -185,20 +185,23 @@ public abstract class BaseDownloadSyncAdapter<T extends RemoteObject & Persistab
         String url = api.eventResourceUrl(getResourceName());
         boolean isFirstPage = true;
         CompletableFuture<Boolean> future = null;
-        while (true) {
-            JSONObject page = downloadPage(url, isFirstPage);
+        try {
+            while (true) {
+                JSONObject page = downloadPage(url, isFirstPage);
+                if (future != null) {
+                    future.get();
+                }
+                future = asyncProcessPage(page.getJSONArray("results"));
+                if (page.isNull("next")) {
+                    break;
+                }
+                url = page.getString("next");
+                isFirstPage = false;
+            }
+        } finally {
             if (future != null) {
                 future.get();
             }
-            future = asyncProcessPage(page.getJSONArray("results"));
-            if (page.isNull("next")) {
-                break;
-            }
-            url = page.getString("next");
-            isFirstPage = false;
-        }
-        if (future != null) {
-            future.get();
         }
     }
 
