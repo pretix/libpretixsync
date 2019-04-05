@@ -220,6 +220,7 @@ public class SyncManager {
                         // TODO: Ensure idempotency?
                         Receipt r = qo.getReceipt();
                         r.setOrder_code(resp.getData().getString("code"));
+                        dataStore.update(r, Receipt.ORDER_CODE);
                         dataStore.delete(qo);
                         (new OrderSyncAdapter(dataStore, null, configStore.getEventSlug(), api, null)).standaloneRefreshFromJSON(resp.getData());
                     } else if (resp.getResponse().code() == 400) {
