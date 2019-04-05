@@ -50,6 +50,8 @@ public class AbstractItem implements RemoteObject {
     @Nullable
     public Long ticket_layout_id;
 
+    public String picture_filename;
+
     @Override
     public JSONObject getJSON() throws JSONException {
         return new JSONObject(json_data);
