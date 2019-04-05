@@ -2,6 +2,7 @@ package eu.pretix.libpretixsync.db;
 
 import java.util.Date;
 
+import io.requery.Column;
 import io.requery.Entity;
 import io.requery.ForeignKey;
 import io.requery.Generated;
@@ -19,6 +20,9 @@ public abstract class AbstractQueuedOrder {
     public String event_slug;
 
     public String payload;
+
+    @Column(value = "false")
+    public boolean locked;
 
     @ForeignKey
     @ManyToOne

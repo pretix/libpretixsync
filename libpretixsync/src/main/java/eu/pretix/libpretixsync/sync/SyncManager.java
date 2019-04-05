@@ -7,6 +7,7 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 
 import eu.pretix.libpretixsync.SentryInterface;
@@ -210,6 +211,11 @@ public class SyncManager {
 
         try {
             for (QueuedOrder qo : orders) {
+                dataStore.runInTransaction(() -> {
+                    qo.setLocked(true);
+                    dataStore.update(qo, QueuedOrder.LOCKED);
+                    return null;
+                });
                 try {
                     api.setEventSlug(qo.getEvent_slug());
                     PretixApi.ApiResponse resp = api.postResource(
@@ -220,9 +226,12 @@ public class SyncManager {
                         // TODO: Ensure idempotency?
                         Receipt r = qo.getReceipt();
                         r.setOrder_code(resp.getData().getString("code"));
-                        dataStore.update(r, Receipt.ORDER_CODE);
-                        dataStore.delete(qo);
-                        (new OrderSyncAdapter(dataStore, null, configStore.getEventSlug(), api, null)).standaloneRefreshFromJSON(resp.getData());
+                        dataStore.runInTransaction(() -> {
+                            dataStore.update(r, Receipt.ORDER_CODE);
+                            dataStore.delete(qo);
+                            (new OrderSyncAdapter(dataStore, null, configStore.getEventSlug(), api, null)).standaloneRefreshFromJSON(resp.getData());
+                            return null;
+                        });
                     } else if (resp.getResponse().code() == 400) {
                         // TODO: User feedback in some way?
                         qo.setError(resp.getData().toString());
