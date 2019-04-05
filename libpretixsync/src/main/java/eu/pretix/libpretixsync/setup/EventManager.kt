@@ -12,7 +12,11 @@ import java.io.IOException
 import java.net.URLEncoder
 
 class EventManager(private val store: BlockingEntityStore<Persistable>, private val api: PretixApi, private val conf: ConfigStore, private val require_live: Boolean) {
+    val eventMap = HashMap<String, PretixApi.ApiResponse>()
+
     fun getAvailableEvents() : List<RemoteEvent> {
+        eventMap.clear()
+
         val eightHoursAgo = URLEncoder.encode((DateTime.now() - Hours.hours(8)).toString())
 
         val resp_events = api.fetchResource(api.organizerResourceUrl("events") +
@@ -23,7 +27,7 @@ class EventManager(private val store: BlockingEntityStore<Persistable>, private 
         var events = parseEvents(resp_events.data)
 
         val resp_subevents = api.fetchResource(api.organizerResourceUrl("subevents")
-                + "?ends_after=$eightHoursAgo" + if (require_live) "active=true&event__live=true" else "")
+                + "?ends_after=$eightHoursAgo" + if (require_live) "&active=true&event__live=true" else "")
         if (resp_subevents.response.code() != 200) {
             throw IOException()
         }
@@ -36,8 +40,6 @@ class EventManager(private val store: BlockingEntityStore<Persistable>, private 
 
     private fun parseEvents(data: JSONObject, subevents: Boolean = false): List<RemoteEvent> {
         val events = ArrayList<RemoteEvent>()
-
-        val eventMap = HashMap<String, PretixApi.ApiResponse>()
 
         val results = data.getJSONArray("results")
         for (i in 0 until results.length()) {
@@ -52,25 +54,25 @@ class EventManager(private val store: BlockingEntityStore<Persistable>, private 
                     subevent_id=if (subevents) {
                         json.getLong("id")
                     } else null,
-                    live=if (subevents) {
+                    live=if (subevents && !require_live) {
                         val eventSlug = json.getString("event")
-                        var event = eventMap[json.getString("event")]
+                        var event = eventMap[eventSlug]
                         if (event == null) {
-                            api.eventSlug = json.getString("event")
+                            api.eventSlug = eventSlug
                             try {
-                                event = api.fetchResource(api.organizerResourceUrl("events/" + api.eventSlug))
+                                event = api.fetchResource(api.organizerResourceUrl("events/" + eventSlug))
 
                                 if (event.response.code() != 200) {
                                     throw IOException()
                                 }
-                                eventMap[json.getString("event")] = event
+                                eventMap[eventSlug] = event
                             } finally {
                                 api.eventSlug = conf.eventSlug
                             }
                         }
 
                         event!!.data.getBoolean("live") && json.getBoolean("active")
-                    } else {
+                    } else if (require_live) { true } else {
                         json.getBoolean("live")
                     }))
         }
