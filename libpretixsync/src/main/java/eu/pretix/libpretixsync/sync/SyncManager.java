@@ -220,10 +220,10 @@ public class SyncManager {
                     api.setEventSlug(qo.getEvent_slug());
                     PretixApi.ApiResponse resp = api.postResource(
                             api.eventResourceUrl("orders") + "?pdf_data=true&force=true",
-                            new JSONObject(qo.getPayload())
+                            new JSONObject(qo.getPayload()),
+                            qo.getIdempotency_key()
                     );
                     if (resp.getResponse().code() == 201) {
-                        // TODO: Ensure idempotency?
                         Receipt r = qo.getReceipt();
                         r.setOrder_code(resp.getData().getString("code"));
                         dataStore.runInTransaction(() -> {
@@ -233,7 +233,7 @@ public class SyncManager {
                             return null;
                         });
                     } else if (resp.getResponse().code() == 400) {
-                        // TODO: User feedback in some way?
+                        // TODO: User feedback or log in some way?
                         qo.setError(resp.getData().toString());
                         dataStore.update(qo);
                     }

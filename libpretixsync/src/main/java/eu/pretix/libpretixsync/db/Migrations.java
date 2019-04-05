@@ -12,7 +12,7 @@ import java.sql.Statement;
 
 public class Migrations {
     private static EntityModel model = Models.DEFAULT;
-    public static int CURRENT_VERSION = 35;
+    public static int CURRENT_VERSION = 36;
 
     private static void createVersionTable(Connection c, int version) throws SQLException {
         Statement s2 = c.createStatement();
@@ -79,6 +79,16 @@ public class Migrations {
         if (db_version < 34) {
             Statement s1 = c.createStatement();
             s1.execute("ALTER TABLE QueuedCheckin ADD event_slug TEXT;");
+            s1.close();
+        }
+        if (db_version < 35) {
+            Statement s1 = c.createStatement();
+            s1.execute("ALTER TABLE QueuedOrder ADD locked NUMBER DEFAULT(0);");
+            s1.close();
+        }
+        if (db_version < 34) {
+            Statement s1 = c.createStatement();
+            s1.execute("ALTER TABLE QueuedOrder ADD idempotency_key TEXT;");
             s1.close();
         }
         // Note that the Android app currently does not use these queries!

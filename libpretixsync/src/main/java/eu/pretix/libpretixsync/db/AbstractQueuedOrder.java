@@ -30,4 +30,7 @@ public abstract class AbstractQueuedOrder {
 
     @Nullable
     public String error;
+
+    @Nullable
+    public String idempotency_key;
 }

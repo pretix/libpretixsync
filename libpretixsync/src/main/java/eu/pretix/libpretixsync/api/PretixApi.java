@@ -163,10 +163,17 @@ public class PretixApi {
     }
 
     public ApiResponse postResource(String full_url, JSONObject data) throws ApiException {
+        return postResource(full_url, data, null);
+    }
+
+    public ApiResponse postResource(String full_url, JSONObject data, String idempotency_key) throws ApiException {
         Request.Builder request = new Request.Builder()
                 .url(full_url)
                 .post(RequestBody.create(MediaType.parse("application/json"), data.toString()))
                 .header("Authorization", "Device " + key);
+        if (idempotency_key != null) {
+            request = request.header("X-Idempotency-Key", idempotency_key);
+        }
         try {
             return apiCall(request.build());
         } catch (ResourceNotModified resourceNotModified) {
