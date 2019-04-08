@@ -86,6 +86,9 @@ public class AbstractItem implements RemoteObject {
 
     public boolean isGenerateTickets() {
         try {
+            if (getJSON().isNull("generate_tickets")) {
+                return true;
+            }
             return getJSON().getBoolean("generate_tickets");
         } catch (JSONException e) {
             e.printStackTrace();
