@@ -1,5 +1,7 @@
 package eu.pretix.libpretixsync.db;
 
+import org.joda.time.DateTime;
+import org.joda.time.format.ISODateTimeFormat;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -102,6 +104,28 @@ public class AbstractItem implements RemoteObject {
         } catch (JSONException e) {
             e.printStackTrace();
             return Long.valueOf(0);
+        }
+    }
+
+    public boolean availableByTime() {
+        try {
+            JSONObject jo = getJSON();
+            if (!jo.isNull("available_from")) {
+                DateTime af = ISODateTimeFormat.dateTimeParser().parseDateTime(jo.getString("available_from"));
+                if (af.isAfterNow()) {
+                    return false;
+                }
+            }
+            if (!jo.isNull("available_until")) {
+                DateTime af = ISODateTimeFormat.dateTimeParser().parseDateTime(jo.getString("available_until"));
+                if (af.isBeforeNow()) {
+                    return false;
+                }
+            }
+            return true;
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return true;
         }
     }
 
