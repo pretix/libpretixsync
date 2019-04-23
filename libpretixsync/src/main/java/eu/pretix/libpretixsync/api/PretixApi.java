@@ -125,7 +125,7 @@ public class PretixApi {
 
     public ApiResponse search(Long listId, String query, int page) throws ApiException {
         try {
-            return fetchResource(eventResourceUrl("checkinlists/" + listId + "/positions") + "?page=" + page + "&search=" + URLEncoder.encode(query, "UTF-8"));
+            return fetchResource(eventResourceUrl("checkinlists/" + listId + "/positions") + "?ignore_status=true&page=" + page + "&search=" + URLEncoder.encode(query, "UTF-8"));
         } catch (ResourceNotModified | UnsupportedEncodingException resourceNotModified) {
             throw new ApiException("invalid error");
         }

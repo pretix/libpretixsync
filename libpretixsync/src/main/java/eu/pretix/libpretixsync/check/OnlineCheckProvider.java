@@ -180,10 +180,8 @@ public class OnlineCheckProvider implements TicketCheckProvider {
                 sr.setOrderCode(res.optString("order"));
                 sr.setSecret(res.optString("secret"));
                 sr.setRedeemed(res.getJSONArray("checkins").length() > 0);
-                // TODO: sr.setPaid(res.getBoolean("paid"));
-                sr.setPaid(true);
-                sr.setRequireAttention(res.optBoolean("attention", false));
-                sr.setAddonText(res.optString("addons_text", ""));
+                sr.setPaid(res.optString("order__status", "p").equals("p"));
+                sr.setRequireAttention(res.optBoolean("require_attention", false));
                 results.add(sr);
             }
             return results;
