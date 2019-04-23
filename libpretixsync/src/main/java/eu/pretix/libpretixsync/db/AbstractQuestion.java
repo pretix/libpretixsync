@@ -57,6 +57,15 @@ public class AbstractQuestion implements RemoteObject {
         }
     }
 
+    public boolean isAskDuringCheckin() {
+        try {
+            return getJSON().getBoolean("ask_during_checkin");
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
     public QuestionType getType() {
         try {
             return QuestionType.valueOf(getJSON().getString("type"));

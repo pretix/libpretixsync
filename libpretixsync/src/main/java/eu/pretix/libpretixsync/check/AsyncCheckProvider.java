@@ -148,6 +148,9 @@ public class AsyncCheckProvider implements TicketCheckProvider {
             List<RequiredAnswer> required_answers = new ArrayList<>();
             boolean ask_questions = false;
             for (Question q : questions) {
+                if (!q.isAskDuringCheckin()) {
+                    continue;
+                }
                 String answer = "";
                 if (answerMap.containsKey(q.getServer_id())) {
                     answer = answerMap.get(q.getServer_id());
@@ -178,6 +181,7 @@ public class AsyncCheckProvider implements TicketCheckProvider {
                 qci.setSecret(ticketid);
                 qci.setDatetime(new Date());
                 qci.setAnswers(givenAnswers.toString());
+                qci.setEvent_slug(config.getEventSlug());
                 qci.setCheckinListId(listId);
                 dataStore.insert(qci);
 
