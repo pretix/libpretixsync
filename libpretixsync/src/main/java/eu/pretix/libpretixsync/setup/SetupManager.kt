@@ -35,25 +35,27 @@ class SetupManager(private val hardware_brand: String, private val hardware_mode
         var response: Response?
         response = client.newCall(request).execute();
 
-        if (response.code() >= 500) {
-            response.close()
-            throw SetupServerErrorException(response.body()?.string())
-        } else if (response.code() == 400) {
-            response.close()
+        val body = response.body()?.string()
+        val code = response.code()
+        response.close()
+
+        if (code >= 500) {
+            throw SetupServerErrorException(body)
+        } else if (code == 400) {
             try {
-                throw SetupBadRequestException(flatJsonError(JSONObject(response?.body()?.string())))
+                throw SetupBadRequestException(flatJsonError(JSONObject(body)))
             } catch (e: JSONException) {
-                throw SetupBadResponseException(response?.body()?.string())
+                throw SetupBadResponseException(body)
             }
         } else {
             try {
-                val respo = JSONObject(response?.body()?.string())
+                val respo = JSONObject(body)
                 return SetupResult(
                         url, respo.getString("api_token"), respo.getString("organizer"), respo.getLong("device_id"), respo.getString("unique_serial")
                 )
             } catch (e: JSONException) {
                 e.printStackTrace()
-                throw SetupBadResponseException(response?.body()?.string())
+                throw SetupBadResponseException(body)
             }
         }
     }
