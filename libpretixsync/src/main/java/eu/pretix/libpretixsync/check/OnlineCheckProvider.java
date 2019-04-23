@@ -2,6 +2,7 @@ package eu.pretix.libpretixsync.check;
 
 
 import eu.pretix.libpretixsync.db.CheckIn;
+import eu.pretix.libpretixsync.db.CheckInList;
 import eu.pretix.libpretixsync.db.Item;
 import eu.pretix.libpretixsync.db.ItemVariation;
 import eu.pretix.libpretixsync.db.Question;
@@ -58,11 +59,19 @@ public class OnlineCheckProvider implements TicketCheckProvider {
     @Override
     public CheckResult check(String ticketid, List<Answer> answers, boolean ignore_unpaid, boolean with_badge_data) {
         sentry.addBreadcrumb("provider.check", "started");
+
+        CheckInList list = dataStore.select(CheckInList.class)
+                .where(CheckInList.SERVER_ID.eq(listId))
+                .and(CheckInList.EVENT_SLUG.eq(config.getEventSlug()))
+                .get().firstOrNull();
+        if (list == null) {
+            return new CheckResult(CheckResult.Type.ERROR, "Check-in list not found");
+        }
+
         try {
             CheckResult res = new CheckResult(CheckResult.Type.ERROR);
             PretixApi.ApiResponse responseObj = api.redeem(ticketid, null, false, null, answers, listId, ignore_unpaid, with_badge_data);
             if (responseObj.getResponse().code() == 404) {
-                // TODO: unpaid?
                 res.setType(CheckResult.Type.INVALID);
             } else {
                 JSONObject response = responseObj.getData();
@@ -89,8 +98,10 @@ public class OnlineCheckProvider implements TicketCheckProvider {
                     } else if ("unknown_ticket".equals(reason)) {
                         res.setType(CheckResult.Type.INVALID);
                     } else if ("unpaid".equals(reason)) {
-                        res.setCheckinAllowed(true);  // if false, we wouldn't even get the result
                         res.setType(CheckResult.Type.UNPAID);
+
+                        // Decide whether the user is allowed to "try again" with "ignore_unpaid"
+                        res.setCheckinAllowed(list.include_pending && response.has("position") && response.getJSONObject("position").optString("order__status", "n").equals("n"));
                     } else if ("product".equals(reason)) {
                         res.setType(CheckResult.Type.PRODUCT);
                     }
@@ -113,7 +124,6 @@ public class OnlineCheckProvider implements TicketCheckProvider {
                     }
                     if (!posjson.isNull("attendee_name")) {
                         res.setAttendee_name(posjson.optString("attendee_name"));
-                        // TODO: Fall back to parent position or invoice address!
                     }
                     res.setOrderCode(posjson.optString("order"));
                     res.setPosition(posjson);
@@ -175,7 +185,6 @@ public class OnlineCheckProvider implements TicketCheckProvider {
                 }
                 if (!res.isNull("attendee_name")) {
                     sr.setAttendee_name(res.optString("attendee_name"));
-                    // TODO: Fall back to parent position or invoice address!
                 }
                 sr.setOrderCode(res.optString("order"));
                 sr.setSecret(res.optString("secret"));
