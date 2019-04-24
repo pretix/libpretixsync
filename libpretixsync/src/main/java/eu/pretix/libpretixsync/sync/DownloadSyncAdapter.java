@@ -8,4 +8,5 @@ import eu.pretix.libpretixsync.api.ApiException;
 
 public interface DownloadSyncAdapter {
     public void download() throws JSONException, ApiException, ExecutionException, InterruptedException;
+    public void setCancelState(SyncManager.CanceledState state);
 }

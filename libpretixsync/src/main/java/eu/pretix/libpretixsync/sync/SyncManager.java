@@ -38,6 +38,19 @@ public class SyncManager {
     private BlockingEntityStore<Persistable> dataStore;
     private FileStorage fileStorage;
     private boolean is_pretixpos;
+    private CanceledState canceled;
+
+    public class CanceledState {
+        private boolean canceled = false;
+
+        public boolean isCanceled() {
+            return canceled;
+        }
+
+        public void setCanceled(boolean canceled) {
+            this.canceled = canceled;
+        }
+    }
 
     public interface ProgressFeedback {
         public void postFeedback(String current_action);
@@ -52,6 +65,7 @@ public class SyncManager {
         this.dataStore = dataStore;
         this.fileStorage = fileStorage;
         this.is_pretixpos = is_pretixpos;
+        this.canceled = new CanceledState();
     }
 
     public SyncResult sync(boolean force) {
@@ -76,15 +90,20 @@ public class SyncManager {
             return new SyncResult(false, false);
         }
 
+        canceled.setCanceled(false);
         boolean download = force || (System.currentTimeMillis() - configStore.getLastDownload()) > download_interval;
         try {
             if (feedback != null) {
                 feedback.postFeedback("Uploading data…");
             }
             uploadOrders();
+            if (canceled.isCanceled()) throw new SyncException("Canceled");
             uploadTicketData();
+            if (canceled.isCanceled()) throw new SyncException("Canceled");
             uploadReceipts();
+            if (canceled.isCanceled()) throw new SyncException("Canceled");
             uploadClosings();
+            if (canceled.isCanceled()) throw new SyncException("Canceled");
 
             if (download) {
                 if (feedback != null) {
@@ -106,35 +125,44 @@ public class SyncManager {
         return new SyncResult(true, download);
     }
 
+    private void download(DownloadSyncAdapter adapter) throws InterruptedException, ExecutionException, ApiException, JSONException {
+        adapter.setCancelState(canceled);
+        adapter.download();
+    }
+
+    public void cancel() {
+        canceled.setCanceled(true);
+    }
+
     protected void downloadData(SyncManager.ProgressFeedback feedback) throws SyncException {
         sentry.addBreadcrumb("sync.queue", "Start download");
 
         try {
-            (new EventSyncAdapter(dataStore, configStore.getEventSlug(), configStore.getEventSlug(), api, feedback)).download();
+            download(new EventSyncAdapter(dataStore, configStore.getEventSlug(), configStore.getEventSlug(), api, feedback));
             if (configStore.getSubEventId() != null) {
-                (new SubEventSyncAdapter(dataStore, configStore.getEventSlug(), String.valueOf(configStore.getSubEventId()), api, feedback)).download();
+                download(new SubEventSyncAdapter(dataStore, configStore.getEventSlug(), String.valueOf(configStore.getSubEventId()), api, feedback));
             }
-            (new ItemCategorySyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback)).download();
-            (new ItemSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback)).download();
-            (new QuestionSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback)).download();
+            download(new ItemCategorySyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
+            download(new ItemSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
+            download(new QuestionSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
             if (is_pretixpos) {
                 // We don't need these on pretixSCAN, so we can save some traffic
-                (new QuotaSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback)).download();
-                (new TaxRuleSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback)).download();
-                (new TicketLayoutSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback)).download();
+                download(new QuotaSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
+                download(new TaxRuleSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
+                download(new TicketLayoutSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
             }
-            (new BadgeLayoutSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback)).download();
-            (new CheckInListSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback)).download();
+            download(new BadgeLayoutSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
+            download(new CheckInListSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
 
-            (new OrderSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback)).download();
+            download(new OrderSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
 
             if (is_pretixpos) {
                 // Endpoint is only available with posbackend plugin
-                (new InvoicesettingsSyncAdapter(dataStore, configStore.getEventSlug(), configStore.getEventSlug(), api, feedback)).download();
+                download(new InvoicesettingsSyncAdapter(dataStore, configStore.getEventSlug(), configStore.getEventSlug(), api, feedback));
             }
 
             try {
-                (new BadgeLayoutItemSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback)).download();
+                download(new BadgeLayoutItemSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
             } catch (ApiException e) {
                 if (e.getMessage().toLowerCase().contains("not found")) {
                     // ignore, this is only supported from pretix 2.5. We have legacy code in BadgeLayoutSyncAdapter to fall back to

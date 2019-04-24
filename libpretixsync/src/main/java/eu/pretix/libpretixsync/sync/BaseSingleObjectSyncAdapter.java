@@ -20,6 +20,7 @@ public abstract class BaseSingleObjectSyncAdapter<T extends RemoteObject & Persi
     protected String eventSlug;
     protected String key;
     protected SyncManager.ProgressFeedback feedback;
+    protected SyncManager.CanceledState canceledState;
 
     public BaseSingleObjectSyncAdapter(BlockingEntityStore<Persistable> store, String eventSlug, String key, PretixApi api, SyncManager.ProgressFeedback feedback) {
         this.store = store;
@@ -27,6 +28,11 @@ public abstract class BaseSingleObjectSyncAdapter<T extends RemoteObject & Persi
         this.eventSlug = eventSlug;
         this.key = key;
         this.feedback = feedback;
+    }
+
+    @Override
+    public void setCancelState(SyncManager.CanceledState state) {
+        canceledState = state;
     }
 
     @Override
