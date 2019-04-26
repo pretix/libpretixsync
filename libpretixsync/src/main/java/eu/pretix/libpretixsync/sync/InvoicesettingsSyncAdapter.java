@@ -3,6 +3,8 @@ package eu.pretix.libpretixsync.sync;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.List;
+
 import eu.pretix.libpretixsync.api.PretixApi;
 import eu.pretix.libpretixsync.db.Invoicesettings;
 import io.requery.BlockingEntityStore;
@@ -15,9 +17,18 @@ public class InvoicesettingsSyncAdapter extends BaseSingleObjectSyncAdapter<Invo
 
     @Override
     Invoicesettings getKnownObject() {
-        return store.select(Invoicesettings.class)
-                .where(Invoicesettings.SLUG.eq(key))
-                .get().firstOrNull();
+        List<Invoicesettings> is = store.select(Invoicesettings.class)
+                .where(Invoicesettings.SLUG.eq(eventSlug))
+                .get().toList();
+        if (is.size() == 0) {
+            return null;
+        } else if (is.size() == 1) {
+            return is.get(0);
+        } else {
+            // What's going on here? Let's delete and re-fetch
+            store.delete(is);
+            return null;
+        }
     }
 
     @Override

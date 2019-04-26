@@ -4,6 +4,8 @@ import org.joda.time.format.ISODateTimeFormat;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.List;
+
 import eu.pretix.libpretixsync.api.PretixApi;
 import eu.pretix.libpretixsync.db.Event;
 import io.requery.BlockingEntityStore;
@@ -28,9 +30,18 @@ public class EventSyncAdapter extends BaseSingleObjectSyncAdapter<Event> {
     }
 
     Event getKnownObject() {
-        return store.select(Event.class)
+        List<Event> is = store.select(Event.class)
                 .where(Event.SLUG.eq(key))
-                .get().firstOrNull();
+                .get().toList();
+        if (is.size() == 0) {
+            return null;
+        } else if (is.size() == 1) {
+            return is.get(0);
+        } else {
+            // What's going on here? Let's delete and re-fetch
+            store.delete(is);
+            return null;
+        }
     }
 
     @Override
