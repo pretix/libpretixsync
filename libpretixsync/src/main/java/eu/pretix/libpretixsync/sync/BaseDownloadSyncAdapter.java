@@ -35,6 +35,7 @@ public abstract class BaseDownloadSyncAdapter<T extends RemoteObject & Persistab
     protected FileStorage fileStorage;
     protected Set<K> knownIDs;
     protected Set<K> seenIDs;
+    protected int sizeBefore;
     protected ExecutorService threadPool = Executors.newCachedThreadPool();
     protected SyncManager.ProgressFeedback feedback;
     protected int total;
@@ -61,6 +62,7 @@ public abstract class BaseDownloadSyncAdapter<T extends RemoteObject & Persistab
         try {
             total = 0;
             knownIDs = getKnownIDs();
+            sizeBefore = knownIDs.size();
             seenIDs = new HashSet<>();
             downloadData();
 
@@ -154,7 +156,8 @@ public abstract class BaseDownloadSyncAdapter<T extends RemoteObject & Persistab
         });
         total += l;
         if (feedback != null) {
-            feedback.postFeedback("Processed " + total + " " + getResourceName() + "…");
+
+            feedback.postFeedback("Processed " + total + " " + getResourceName() + " (total in database: ~"+(sizeBefore + total)+")…");
         }
     }
 

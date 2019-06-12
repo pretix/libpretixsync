@@ -229,7 +229,7 @@ public class PretixApi {
             throw new ApiException("Error while creating a secure connection.", e);
         } catch (IOException e) {
             e.printStackTrace();
-            throw new ApiException("Connection error.", e);
+            throw new ApiException("Connection error: " + e.getMessage(), e);
         }
 
         String safe_url = request.url().toString().replaceAll("^(.*)key=([0-9A-Za-z]+)([^0-9A-Za-z]*)", "$1key=redacted$3");
@@ -240,13 +240,13 @@ public class PretixApi {
                 body = response.body().string();
             } catch (IOException e) {
                 e.printStackTrace();
-                throw new ApiException("Connection error.", e);
+                throw new ApiException("Connection error: " + e.getMessage(), e);
             }
         }
 
         if (response.code() >= 500) {
             response.close();
-            throw new ApiException("Server error.");
+            throw new ApiException("Server error: " + response.code());
         } else if (response.code() == 404 && (!json || !body.startsWith("{"))) {
             response.close();
             throw new ApiException("Server error: Resource not found.");
@@ -289,7 +289,7 @@ public class PretixApi {
         } catch (JSONException e) {
             e.printStackTrace();
             sentry.captureException(e);
-            throw new ApiException("Invalid JSON received.", e);
+            throw new ApiException("Invalid JSON received: " + body.substring(0, 100), e);
         }
     }
 
