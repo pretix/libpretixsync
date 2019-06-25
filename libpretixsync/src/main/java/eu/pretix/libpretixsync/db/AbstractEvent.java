@@ -42,6 +42,14 @@ public class AbstractEvent implements RemoteObject {
         return new JSONObject(json_data);
     }
 
+    public boolean hasSeating() {
+        try {
+            return !getJSON().isNull("seating_plan");
+        } catch (JSONException e) {
+            return false;
+        }
+    }
+
     public String getName() {
         try {
             return I18nString.toString(getJSON().getJSONObject("name"));
