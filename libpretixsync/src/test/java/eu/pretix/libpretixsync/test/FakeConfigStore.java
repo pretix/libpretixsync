@@ -56,21 +56,6 @@ public class FakeConfigStore implements ConfigStore {
     }
 
     @Override
-    public boolean getShowInfo() {
-        return true;
-    }
-
-    @Override
-    public boolean getAllowSearch() {
-        return allow_search;
-    }
-
-    @Override
-    public String getLastStatusData() {
-        return last_status_data;
-    }
-
-    @Override
     public long getLastDownload() {
         return last_download;
     }
@@ -108,11 +93,6 @@ public class FakeConfigStore implements ConfigStore {
     @Override
     public void setLastFailedSyncMsg(String val) {
         last_failed_sync_msg = val;
-    }
-
-    @Override
-    public void setLastStatusData(String val) {
-        last_status_data = val;
     }
 
     @Override
