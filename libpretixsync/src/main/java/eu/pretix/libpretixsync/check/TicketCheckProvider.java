@@ -63,6 +63,7 @@ public interface TicketCheckProvider {
         private String message;
         private String order_code;
         private Date first_scanned;
+        private String addon_text;
         private boolean require_attention;
         private boolean checkin_allowed;
         private List<RequiredAnswer> required_answers;
