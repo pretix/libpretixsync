@@ -208,28 +208,6 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
     }
 
     @Test
-    @Throws(CheckException::class)
-    fun testSearchRestricted() {
-        configStore!!.setAllow_search(false)
-
-        // Short searches are empty
-        var srList: List<TicketCheckProvider.SearchResult> = p!!.search("foo", 1)
-        assertEquals(0, srList.size.toLong())
-
-        // Search by secret
-        srList = p!!.search("kFNDgffgyw4", 1)
-        assertEquals(1, srList.size.toLong())
-        srList = p!!.search("baaaaar", 1)
-        assertEquals(0, srList.size.toLong())
-
-        // Search by name
-        srList = p!!.search("Einstein", 1)
-        assertEquals(0, srList.size.toLong())
-        srList = p!!.search("WATSON", 1)
-        assertEquals(0, srList.size.toLong())
-    }
-
-    @Test
     @Throws(JSONException::class, CheckException::class)
     fun testStatusInfo() {
         val sr = p!!.status()
