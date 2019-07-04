@@ -18,12 +18,6 @@ public interface ConfigStore {
 
     public Long getSubEventId();
 
-    public boolean getShowInfo();
-
-    public boolean getAllowSearch();
-
-    public String getLastStatusData();
-
     public long getLastDownload();
 
     public void setLastDownload(long val);
@@ -39,8 +33,6 @@ public interface ConfigStore {
     public String getLastFailedSyncMsg();
 
     public void setLastFailedSyncMsg(String val);
-
-    public void setLastStatusData(String val);
 
     public Long getPosId();
 }

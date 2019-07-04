@@ -241,15 +241,11 @@ public class AsyncCheckProvider implements TicketCheckProvider {
         List<OrderPosition> positions;
         Condition search = null;
         query = query.toUpperCase();
-        if (config.getAllowSearch()) {
-            search = OrderPosition.SECRET.upper().like(query + "%")
-                    .or(OrderPosition.ATTENDEE_NAME.upper().like("%" + query + "%"))
-                    .or(OrderPosition.ATTENDEE_EMAIL.upper().like("%" + query + "%"))
-                    .or(Order.EMAIL.upper().like("%" + query + "%"))
-                    .or(Order.CODE.upper().like(query + "%"));
-        } else {
-            search = OrderPosition.SECRET.upper().like(query + "%");
-        }
+        search = OrderPosition.SECRET.upper().like(query + "%")
+                .or(OrderPosition.ATTENDEE_NAME.upper().like("%" + query + "%"))
+                .or(OrderPosition.ATTENDEE_EMAIL.upper().like("%" + query + "%"))
+                .or(Order.EMAIL.upper().like("%" + query + "%"))
+                .or(Order.CODE.upper().like(query + "%"));
         if (!list.all_items) {
             List<Long> itemids = new ArrayList<>();
             for (Item item : list.getItems()) {
