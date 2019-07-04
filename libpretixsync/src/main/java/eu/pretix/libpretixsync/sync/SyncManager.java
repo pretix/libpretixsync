@@ -1,20 +1,33 @@
 package eu.pretix.libpretixsync.sync;
 
-import eu.pretix.libpretixsync.SentryInterface;
-import eu.pretix.libpretixsync.api.ApiException;
-import eu.pretix.libpretixsync.api.PretixApi;
-import eu.pretix.libpretixsync.check.QuestionType;
-import eu.pretix.libpretixsync.check.TicketCheckProvider;
-import eu.pretix.libpretixsync.config.ConfigStore;
-import eu.pretix.libpretixsync.db.*;
-import io.requery.BlockingEntityStore;
-import io.requery.Persistable;
-import io.requery.util.CloseableIterator;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+
+import eu.pretix.libpretixsync.SentryInterface;
+import eu.pretix.libpretixsync.api.ApiException;
+import eu.pretix.libpretixsync.api.DeviceAccessRevokedException;
+import eu.pretix.libpretixsync.api.PretixApi;
+import eu.pretix.libpretixsync.check.TicketCheckProvider;
+import eu.pretix.libpretixsync.config.ConfigStore;
+import eu.pretix.libpretixsync.db.CheckIn;
+import eu.pretix.libpretixsync.db.Closing;
+import eu.pretix.libpretixsync.db.Order;
+import eu.pretix.libpretixsync.db.OrderPosition;
+import eu.pretix.libpretixsync.db.Question;
+import eu.pretix.libpretixsync.db.QueuedCheckIn;
+import eu.pretix.libpretixsync.db.QueuedOrder;
+import eu.pretix.libpretixsync.db.Receipt;
+import eu.pretix.libpretixsync.db.ReceiptLine;
+import eu.pretix.libpretixsync.db.ResourceLastModified;
+import io.requery.BlockingEntityStore;
+import io.requery.Persistable;
 
 public class SyncManager {
     private SentryInterface sentry;
@@ -23,48 +36,287 @@ public class SyncManager {
     private long upload_interval;
     private long download_interval;
     private BlockingEntityStore<Persistable> dataStore;
+    private FileStorage fileStorage;
+    private boolean is_pretixpos;
+    private CanceledState canceled;
 
-    public SyncManager(ConfigStore configStore, PretixApi api, SentryInterface sentry, BlockingEntityStore<Persistable> dataStore, long upload_interval, long download_interval) {
+    public class CanceledState {
+        private boolean canceled = false;
+
+        public boolean isCanceled() {
+            return canceled;
+        }
+
+        public void setCanceled(boolean canceled) {
+            this.canceled = canceled;
+        }
+    }
+
+    public interface ProgressFeedback {
+        public void postFeedback(String current_action);
+    }
+
+    public SyncManager(ConfigStore configStore, PretixApi api, SentryInterface sentry, BlockingEntityStore<Persistable> dataStore, FileStorage fileStorage, long upload_interval, long download_interval, boolean is_pretixpos) {
         this.configStore = configStore;
         this.api = api;
         this.sentry = sentry;
         this.upload_interval = upload_interval;
         this.download_interval = download_interval;
         this.dataStore = dataStore;
+        this.fileStorage = fileStorage;
+        this.is_pretixpos = is_pretixpos;
+        this.canceled = new CanceledState();
     }
 
-    public void sync() {
+    public SyncResult sync(boolean force) {
+        return sync(force, null);
+    }
+
+    /**
+     * Synchronize data with the pretix server
+     *
+     * @param force Force a new sync
+     * @return A SyncResult describing the results of the synchronization
+     */
+    public SyncResult sync(boolean force, SyncManager.ProgressFeedback feedback) {
         if (!configStore.isConfigured()) {
-            return;
+            return new SyncResult(false, false);
         }
 
-        if ((System.currentTimeMillis() - configStore.getLastSync()) < upload_interval) {
-            return;
+        if (!force && (System.currentTimeMillis() - configStore.getLastSync()) < upload_interval) {
+            return new SyncResult(false, false);
         }
-        if ((System.currentTimeMillis() - configStore.getLastFailedSync()) < 30000) {
-            return;
+        if (!force && (System.currentTimeMillis() - configStore.getLastFailedSync()) < 30000) {
+            return new SyncResult(false, false);
         }
 
+        canceled.setCanceled(false);
+        boolean download = force || (System.currentTimeMillis() - configStore.getLastDownload()) > download_interval;
         try {
+            if (feedback != null) {
+                feedback.postFeedback("Uploading data…");
+            }
+            uploadOrders();
+            if (canceled.isCanceled()) throw new SyncException("Canceled");
             uploadTicketData();
+            if (canceled.isCanceled()) throw new SyncException("Canceled");
+            uploadReceipts();
+            if (canceled.isCanceled()) throw new SyncException("Canceled");
+            uploadClosings();
+            if (canceled.isCanceled()) throw new SyncException("Canceled");
 
-            if ((System.currentTimeMillis() - configStore.getLastDownload()) > download_interval) {
-                downloadTicketAndItemData();
+            if (download) {
+                if (feedback != null) {
+                    feedback.postFeedback("Downloading data…");
+                }
+                downloadData(feedback);
                 configStore.setLastDownload(System.currentTimeMillis());
             }
 
+            if (feedback != null) {
+                feedback.postFeedback("Finishing touches…");
+            }
             configStore.setLastSync(System.currentTimeMillis());
             configStore.setLastFailedSync(0);
         } catch (SyncException e) {
             configStore.setLastFailedSync(System.currentTimeMillis());
             configStore.setLastFailedSyncMsg(e.getMessage());
         }
+        return new SyncResult(true, download);
+    }
+
+    private void download(DownloadSyncAdapter adapter) throws InterruptedException, ExecutionException, ApiException, JSONException {
+        adapter.setCancelState(canceled);
+        adapter.download();
+    }
+
+    public void cancel() {
+        canceled.setCanceled(true);
+    }
+
+    protected void downloadData(SyncManager.ProgressFeedback feedback) throws SyncException {
+        sentry.addBreadcrumb("sync.queue", "Start download");
+
+        try {
+            download(new EventSyncAdapter(dataStore, configStore.getEventSlug(), configStore.getEventSlug(), api, feedback));
+            if (configStore.getSubEventId() != null) {
+                download(new SubEventSyncAdapter(dataStore, configStore.getEventSlug(), String.valueOf(configStore.getSubEventId()), api, feedback));
+            }
+            download(new ItemCategorySyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
+            download(new ItemSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
+            download(new QuestionSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
+            if (is_pretixpos) {
+                // We don't need these on pretixSCAN, so we can save some traffic
+                download(new QuotaSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
+                download(new TaxRuleSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
+                download(new TicketLayoutSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
+            }
+            download(new BadgeLayoutSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
+            download(new CheckInListSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
+
+            download(new OrderSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
+
+            if (is_pretixpos) {
+                // Endpoint is only available with posbackend plugin
+                download(new InvoicesettingsSyncAdapter(dataStore, configStore.getEventSlug(), configStore.getEventSlug(), api, feedback));
+            }
+
+            try {
+                download(new BadgeLayoutItemSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
+            } catch (ApiException e) {
+                if (e.getMessage().toLowerCase().contains("not found")) {
+                    // ignore, this is only supported from pretix 2.5. We have legacy code in BadgeLayoutSyncAdapter to fall back to
+                } else {
+                    throw e;
+                }
+            }
+        } catch (DeviceAccessRevokedException e) {
+            int deleted = 0;
+            deleted += dataStore.delete(CheckIn.class).get().value();
+            deleted += dataStore.delete(OrderPosition.class).get().value();
+            deleted += dataStore.delete(Order.class).get().value();
+            deleted += dataStore.delete(ResourceLastModified.class).get().value();
+            throw new SyncException(e.getMessage());
+        } catch (JSONException e) {
+            e.printStackTrace();
+            throw new SyncException("Unknown server response");
+        } catch (ApiException e) {
+            sentry.addBreadcrumb("sync.tickets", "API Error: " + e.getMessage());
+            throw new SyncException(e.getMessage());
+        } catch (ExecutionException e) {
+            sentry.captureException(e);
+            throw new SyncException(e.getMessage());
+        } catch (InterruptedException e) {
+            sentry.captureException(e);
+            throw new SyncException(e.getMessage());
+        }
+    }
+
+    protected void uploadReceipts() throws SyncException {
+        sentry.addBreadcrumb("sync.queue", "Start receipt upload");
+
+        List<Receipt> receipts = dataStore.select(Receipt.class)
+                .where(Receipt.OPEN.eq(false))
+                .and(Receipt.SERVER_ID.isNull())
+                .get().toList();
+
+        try {
+            for (Receipt receipt : receipts) {
+                JSONObject data = receipt.toJSON();
+                JSONArray lines = new JSONArray();
+                for (ReceiptLine line : receipt.getLines()) {
+                    lines.put(line.toJSON());
+                }
+                data.put("lines", lines);
+                PretixApi.ApiResponse response = api.postResource(
+                        api.organizerResourceUrl("posdevices/" + configStore.getPosId() + "/receipts"),
+                        data
+                );
+                if (response.getResponse().code() == 201) {
+                    receipt.setServer_id(response.getData().getLong("receipt_id"));
+                    dataStore.update(receipt);
+                } else {
+                    throw new SyncException(response.getData().toString());
+                }
+            }
+        } catch (JSONException e) {
+            sentry.captureException(e);
+            throw new SyncException("Unknown server response");
+        } catch (ApiException e) {
+            sentry.addBreadcrumb("sync.queue", "API Error: " + e.getMessage());
+            throw new SyncException(e.getMessage());
+        }
+
+        sentry.addBreadcrumb("sync.queue", "Receipt upload complete");
+    }
+
+    protected void uploadOrders() throws SyncException {
+        sentry.addBreadcrumb("sync.queue", "Start order upload");
+
+        List<QueuedOrder> orders = dataStore.select(QueuedOrder.class)
+                .where(QueuedOrder.ERROR.isNull())
+                .get().toList();
+
+        try {
+            for (QueuedOrder qo : orders) {
+                dataStore.runInTransaction(() -> {
+                    qo.setLocked(true);
+                    dataStore.update(qo, QueuedOrder.LOCKED);
+                    return null;
+                });
+                try {
+                    api.setEventSlug(qo.getEvent_slug());
+                    PretixApi.ApiResponse resp = api.postResource(
+                            api.eventResourceUrl("orders") + "?pdf_data=true&force=true",
+                            new JSONObject(qo.getPayload()),
+                            qo.getIdempotency_key()
+                    );
+                    if (resp.getResponse().code() == 201) {
+                        Receipt r = qo.getReceipt();
+                        r.setOrder_code(resp.getData().getString("code"));
+                        dataStore.runInTransaction(() -> {
+                            dataStore.update(r, Receipt.ORDER_CODE);
+                            dataStore.delete(qo);
+                            (new OrderSyncAdapter(dataStore, null, configStore.getEventSlug(), api, null)).standaloneRefreshFromJSON(resp.getData());
+                            return null;
+                        });
+                    } else if (resp.getResponse().code() == 400) {
+                        // TODO: User feedback or log in some way?
+                        qo.setError(resp.getData().toString());
+                        dataStore.update(qo);
+                    }
+                } finally {
+                    api.setEventSlug(configStore.getEventSlug());
+                }
+            }
+        } catch (JSONException e) {
+            sentry.captureException(e);
+            throw new SyncException("Unknown server response");
+        } catch (ApiException e) {
+            sentry.addBreadcrumb("sync.queue", "API Error: " + e.getMessage());
+            throw new SyncException(e.getMessage());
+        }
+
+        sentry.addBreadcrumb("sync.queue", "Receipt upload complete");
+    }
+
+    protected void uploadClosings() throws SyncException {
+        sentry.addBreadcrumb("sync.queue", "Start closings upload");
+
+        List<Closing> closings = dataStore.select(Closing.class)
+                .where(Closing.OPEN.eq(false))
+                .and(Closing.SERVER_ID.isNull())
+                .get().toList();
+
+        try {
+            for (Closing closing : closings) {
+                PretixApi.ApiResponse response = api.postResource(
+                        api.organizerResourceUrl("posdevices/" + configStore.getPosId() + "/closings"),
+                        closing.toJSON()
+                );
+                if (response.getResponse().code() == 201) {
+                    closing.setServer_id(response.getData().getLong("closing_id"));
+                    dataStore.update(closing);
+                } else {
+                    throw new SyncException(response.getData().toString());
+                }
+            }
+        } catch (JSONException e) {
+            sentry.captureException(e);
+            throw new SyncException("Unknown server response");
+        } catch (ApiException e) {
+            sentry.addBreadcrumb("sync.queue", "API Error: " + e.getMessage());
+            throw new SyncException(e.getMessage());
+        }
+
+        sentry.addBreadcrumb("sync.queue", "Closings upload complete");
     }
 
     protected void uploadTicketData() throws SyncException {
-        sentry.addBreadcrumb("sync.queue", "Start upload");
+        sentry.addBreadcrumb("sync.queue", "Start check-in upload");
 
-        List<QueuedCheckIn> queued = dataStore.select(QueuedCheckIn.class).get().toList();
+        List<QueuedCheckIn> queued = dataStore.select(QueuedCheckIn.class)
+                .get().toList();
 
         try {
             for (QueuedCheckIn qci : queued) {
@@ -80,7 +332,14 @@ public class SyncManager {
                 } catch (JSONException e) {
                 }
 
-                JSONObject response = api.redeem(qci.getSecret(), qci.getDatetime(), true, qci.getNonce(), answers, false);
+                PretixApi.ApiResponse ar;
+                try {
+                    api.setEventSlug(qci.getEvent_slug());
+                    ar = api.redeem(qci.getSecret(), qci.getDatetime(), true, qci.getNonce(), answers, qci.checkinListId, false, false);
+                } finally {
+                    api.setEventSlug(configStore.getEventSlug());
+                }
+                JSONObject response = ar.getData();
                 String status = response.getString("status");
                 if ("ok".equals(status)) {
                     dataStore.delete(qci);
@@ -99,280 +358,24 @@ public class SyncManager {
             sentry.addBreadcrumb("sync.tickets", "API Error: " + e.getMessage());
             throw new SyncException(e.getMessage());
         }
-        sentry.addBreadcrumb("sync.queue", "Upload complete");
+        sentry.addBreadcrumb("sync.queue", "Check-in upload complete");
     }
 
-    private static boolean long_changed(Long newint, Long oldint) {
-        return (newint != null && oldint == null)
-                || (newint == null && oldint != null)
-                || (newint != null && oldint != null && !newint.equals(oldint));
-    }
+    public class SyncResult {
+        private boolean dataUploaded;
+        private boolean dataDownloaded;
 
-    private static boolean string_changed(String newstring, String oldstring) {
-        return (newstring != null && oldstring == null)
-                || (newstring == null && oldstring != null)
-                || (newstring != null && oldstring != null && !newstring.equals(oldstring));
-    }
-
-    protected void downloadTicketAndItemData() throws SyncException {
-        sentry.addBreadcrumb("sync.tickets", "Start download");
-
-        // Download metadata
-        JSONObject response;
-        try {
-            response = api.status();
-        } catch (ApiException e) {
-            sentry.addBreadcrumb("sync.tickets", "API Error: " + e.getMessage());
-            throw new SyncException(e.getMessage());
-        }
-        configStore.setLastStatusData(response.toString());
-
-        // Download objects from server
-        try {
-            response = api.download();
-        } catch (ApiException e) {
-            sentry.addBreadcrumb("sync.tickets", "API Error: " + e.getMessage());
-            throw new SyncException(e.getMessage());
+        public SyncResult(boolean dataUploaded, boolean dataDownloaded) {
+            this.dataUploaded = dataUploaded;
+            this.dataDownloaded = dataDownloaded;
         }
 
-        parseItemData(response);
-        parseTicketData(response);
-
-        sentry.addBreadcrumb("sync.tickets", "Download complete");
-    }
-
-    private void parseItemData(JSONObject response) throws SyncException {
-        if (!response.has("questions")) {
-            return;
+        public boolean isDataUploaded() {
+            return dataUploaded;
         }
 
-        // Index all known items and questions
-        Map<Long, Item> knownItems = new HashMap<>();
-        Set<Long> seenItems = new HashSet<>();  // Store items that we've seen anywhere in the operation
-        CloseableIterator<Item> items = dataStore.select(Item.class).get().iterator();
-        try {
-            while (items.hasNext()) {
-                Item i = items.next();
-                knownItems.put(i.getServer_id(), i);
-            }
-        } finally {
-            items.close();
-        }
-
-        Map<Long, Question> knownQuestions = new HashMap<>();
-        CloseableIterator<Question> questions = dataStore.select(Question.class).get().iterator();
-        try {
-            while (questions.hasNext()) {
-                Question q = questions.next();
-                knownQuestions.put(q.getServer_id(), q);
-            }
-        } finally {
-            questions.close();
-        }
-
-        try {
-            // Insert or update
-            for (int i = 0; i < response.getJSONArray("questions").length(); i++) {
-                JSONObject res = response.getJSONArray("questions").getJSONObject(i);
-                // Get or create question
-                Question question;
-                boolean created = false;
-                if (!knownQuestions.containsKey(res.getLong("id"))) {
-                    question = new Question();
-                    question.setServer_id(res.getLong("id"));
-                    created = true;
-                } else {
-                    question = knownQuestions.get(res.getLong("id"));
-                }
-
-                // Update question properties
-                if (string_changed(res.getString("type"), question.getType() != null ? question.getType().toString() : "")) {
-                    question.setType(QuestionType.valueOf(res.getString("type")));
-                }
-                if (string_changed(res.getString("question"), question.getQuestion())) {
-                    question.setQuestion(res.getString("question"));
-                }
-                if (res.optBoolean("required", false) != question.isRequired()) {
-                    question.setRequired(res.optBoolean("required", false));
-                }
-                if (long_changed(res.optLong("position"), question.getPosition())) {
-                    question.setPosition(res.optLong("position", 0));
-                }
-
-                // Save to database now, so we can use relations
-                if (created) {
-                    dataStore.insert(question);
-                }
-
-                // Items
-                Map<Long, Item> foundItems = new HashMap<>();
-                if (!created) {
-                    for (Item item : question.getItems()) {
-                        foundItems.put(item.getServer_id(), item);
-                    }
-                }
-                for (int j = 0; j < res.getJSONArray("items").length(); j++) {
-                    long item_id = res.getJSONArray("items").getLong(j);
-
-                    if (foundItems.containsKey(item_id)) {
-                        foundItems.remove(item_id);
-                    } else {
-                        if (knownItems.containsKey(item_id)) {
-                            question.getItems().add(knownItems.get(item_id));
-                        } else {
-                            Item item = new Item();
-                            item.setServer_id(item_id);
-                            dataStore.insert(item);
-                            question.getItems().add(item);
-                            knownItems.put(item_id, item);
-                        }
-                    }
-                    seenItems.add(item_id);
-                }
-                for (Long key : foundItems.keySet()) {
-                    question.getItems().remove(foundItems.get(key));
-                }
-
-                // Options
-                Map<Long, QuestionOption> foundOptions = new HashMap<>();
-                if (!created) {
-                    for (QuestionOption opt : question.getOptions()) {
-                        foundOptions.put(opt.getServer_id(), opt);
-                    }
-                }
-                for (int j = 0; j < res.getJSONArray("options").length(); j++) {
-                    JSONObject opt_res = res.getJSONArray("options").getJSONObject(j);
-                    QuestionOption option;
-                    boolean opt_created = false;
-                    long opt_id = opt_res.getLong("id");
-
-                    if (foundOptions.containsKey(opt_id)) {
-                        option = foundOptions.get(opt_id);
-                        foundOptions.remove(opt_id);
-                    } else {
-                        option = new QuestionOption();
-                        option.setQuestion(question);
-                        option.setServer_id(opt_id);
-                        opt_created = true;
-                    }
-                    if (string_changed(opt_res.getString("answer"), option.getValue())) {
-                        option.setValue(opt_res.getString("answer"));
-                    }
-                    if (opt_created) {
-                        dataStore.insert(option);
-                    } else {
-                        dataStore.update(option);
-                    }
-                }
-                for (Long key : foundOptions.keySet()) {
-                    dataStore.delete(foundOptions.get(key));
-                }
-
-                dataStore.update(question);
-                // Remove from list so it doesn't get deleted later
-                knownQuestions.remove(question.getServer_id());
-            }
-        } catch (JSONException e) {
-            sentry.captureException(e);
-            throw new SyncException("Unknown server response");
-        }
-
-        // Delete all items that we haven't seen anywhere
-        for (Long key : knownItems.keySet()) {
-            if (!seenItems.contains(key))
-                dataStore.delete(knownItems.get(key));
-        }
-        // Delete all questions that we haven't seen anywhere
-        for (Long key : knownQuestions.keySet()) {
-            dataStore.delete(knownQuestions.get(key));
-        }
-    }
-
-    private void parseTicketData(JSONObject response) throws SyncException {
-
-        // Index all known objects
-        Map<String, Ticket> known = new HashMap<>();
-        CloseableIterator<Ticket> tickets = dataStore.select(Ticket.class).get().iterator();
-        try {
-            while (tickets.hasNext()) {
-                Ticket t = tickets.next();
-                known.put(t.getSecret(), t);
-            }
-        } finally {
-            tickets.close();
-        }
-
-        try {
-            List<Ticket> inserts = new ArrayList<>();
-            // Insert or update
-            for (int i = 0; i < response.getJSONArray("results").length(); i++) {
-                JSONObject res = response.getJSONArray("results").getJSONObject(i);
-
-                Ticket ticket;
-                boolean created = false;
-                if (!known.containsKey(res.getString("secret"))) {
-                    ticket = new Ticket();
-                    created = true;
-                } else {
-                    ticket = known.get(res.getString("secret"));
-                }
-
-                if (string_changed(res.getString("attendee_name"), ticket.getAttendee_name())) {
-                    ticket.setAttendee_name(res.getString("attendee_name"));
-                }
-                if (string_changed(res.getString("item"), ticket.getItem())) {
-                    ticket.setItem(res.getString("item"));
-                }
-                if (long_changed(res.optLong("item_id"), ticket.getItem_id())) {
-                    ticket.setItem_id(res.optLong("item_id", 0));
-                }
-                if (string_changed(res.getString("variation"), ticket.getVariation())) {
-                    ticket.setVariation(res.optString("variation"));
-                }
-                if (long_changed(res.optLong("variation_id"), ticket.getVariation_id())) {
-                    ticket.setVariation_id(res.optLong("variation_id", 0));
-                }
-                if (string_changed(res.getString("order"), ticket.getOrder())) {
-                    ticket.setOrder(res.getString("order"));
-                }
-                if (string_changed(res.optString("addons_text", ""), ticket.getAddon_text())) {
-                    ticket.setAddon_text(res.optString("addons_text", ""));
-                }
-                if (string_changed(res.getString("secret"), ticket.getSecret())) {
-                    ticket.setSecret(res.getString("secret"));
-                }
-                if (res.optBoolean("attention", false) != ticket.isRequire_attention()) {
-                    ticket.setRequire_attention(res.optBoolean("attention", false));
-                }
-                if (res.getBoolean("redeemed") != ticket.isRedeemed()) {
-                    ticket.setRedeemed(res.getBoolean("redeemed"));
-                }
-                if (res.getBoolean("paid") != ticket.isPaid()) {
-                    ticket.setPaid(res.getBoolean("paid"));
-                }
-                if (!res.has("checkin_allowed")) {
-                    ticket.setCheckin_allowed(ticket.isPaid());
-                } else if (res.getBoolean("checkin_allowed") != ticket.isCheckin_allowed()) {
-                    ticket.setCheckin_allowed(res.getBoolean("checkin_allowed"));
-                }
-
-                if (created) {
-                    inserts.add(ticket);
-                } else {
-                    dataStore.update(ticket);
-                }
-                known.remove(res.getString("secret"));
-            }
-
-            dataStore.insert(inserts);
-        } catch (JSONException e) {
-            sentry.captureException(e);
-            throw new SyncException("Unknown server response");
-        }
-
-        // Those have been deleted online, delete them here as well
-        for (String key : known.keySet()) {
-            dataStore.delete(known.get(key));
+        public boolean isDataDownloaded() {
+            return dataDownloaded;
         }
     }
 }

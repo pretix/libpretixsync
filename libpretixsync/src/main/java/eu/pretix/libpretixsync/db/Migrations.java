@@ -12,7 +12,7 @@ import java.sql.Statement;
 
 public class Migrations {
     private static EntityModel model = Models.DEFAULT;
-    public static int CURRENT_VERSION = 5;
+    public static int CURRENT_VERSION = 38;
 
     private static void createVersionTable(Connection c, int version) throws SQLException {
         Statement s2 = c.createStatement();
@@ -55,46 +55,68 @@ public class Migrations {
             if (s != null) s.close();
         }
 
-        if (db_version < 2) {
-            migrate_from_1_to_2(dataSource);
+        if (db_version < 24) {
+            create_drop(dataSource);
         }
-        if (db_version < 3) {
-            migrate_from_2_to_3(dataSource);
+        if (db_version < 28) {
+            create_notexists(dataSource);
         }
-        if (db_version < 4) {
-            migrate_from_3_to_4(dataSource);
+        if (db_version < 30) {
+            Statement s1 = c.createStatement();
+            s1.execute("ALTER TABLE Receipt ADD payment_data TEXT;");
+            s1.close();
+            create_notexists(dataSource);
         }
-        if (db_version < 5) {
-            migrate_from_4_to_5(dataSource);
+        if (db_version < 32) {
+            create_notexists(dataSource);
+        }
+        if (db_version < 33) {
+            Statement s1 = c.createStatement();
+            s1.execute("ALTER TABLE ResourceLastModified ADD status TEXT;");
+            s1.close();
+            create_notexists(dataSource);
+        }
+        if (db_version < 34) {
+            Statement s1 = c.createStatement();
+            s1.execute("ALTER TABLE QueuedCheckin ADD event_slug TEXT;");
+            s1.close();
+        }
+        if (db_version < 35) {
+            Statement s1 = c.createStatement();
+            s1.execute("ALTER TABLE QueuedOrder ADD locked NUMBER DEFAULT(0);");
+            s1.close();
+        }
+        if (db_version < 36) {
+            Statement s1 = c.createStatement();
+            s1.execute("ALTER TABLE QueuedOrder ADD idempotency_key TEXT;");
+            s1.close();
+        }
+        if (db_version < 37) {
+            Statement s1 = c.createStatement();
+            s1.execute("ALTER TABLE Item ADD picture_filename TEXT;");
+            s1.close();
+        }
+        if (db_version < 38) {
+            Statement s1 = c.createStatement();
+            s1.execute("ALTER TABLE ReceiptLine ADD seat_guid TEXT, seat_name TEXT;");
+            s1.close();
         }
         // Note that the Android app currently does not use these queries!
+
+        if (db_version < CURRENT_VERSION) {
+            Statement s4 = c.createStatement();
+            s4.execute("DELETE FROM ResourceLastModified;");
+            s4.close();
+        }
 
         updateVersionTable(c, CURRENT_VERSION);
     }
 
-    private static void migrate_from_1_to_2(DataSource dataSource) {
+    private static void create_drop(DataSource dataSource) {
+        new SchemaModifier(dataSource, model).createTables(TableCreationMode.DROP_CREATE);
+    }
+
+    private static void create_notexists(DataSource dataSource) {
         new SchemaModifier(dataSource, model).createTables(TableCreationMode.CREATE_NOT_EXISTS);
-    }
-
-    private static void migrate_from_2_to_3(DataSource dataSource) throws SQLException {
-        Connection c = dataSource.getConnection();
-        Statement s = c.createStatement();
-        s.execute("ALTER TABLE QueuedCheckIn ADD COLUMN answers TEXT;");
-        s.close();
-    }
-
-    private static void migrate_from_3_to_4(DataSource dataSource) throws SQLException {
-        Connection c = dataSource.getConnection();
-        Statement s = c.createStatement();
-        s.execute("ALTER TABLE Ticket ADD COLUMN checkin_allowed INTEGER;");
-        s.execute("UPDATE Ticket SET checkin_allowed = paid;");
-        s.close();
-    }
-
-    private static void migrate_from_4_to_5(DataSource dataSource) throws SQLException {
-        Connection c = dataSource.getConnection();
-        Statement s = c.createStatement();
-        s.execute("ALTER TABLE Ticket ADD COLUMN addon_text TEXT;");
-        s.close();
     }
 }

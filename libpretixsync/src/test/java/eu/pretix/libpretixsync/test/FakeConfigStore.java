@@ -41,18 +41,18 @@ public class FakeConfigStore implements ConfigStore {
     }
 
     @Override
-    public boolean getShowInfo() {
-        return true;
+    public String getOrganizerSlug() {
+        return "demo";
     }
 
     @Override
-    public boolean getAllowSearch() {
-        return allow_search;
+    public String getEventSlug() {
+        return "demo";
     }
 
     @Override
-    public String getLastStatusData() {
-        return last_status_data;
+    public Long getSubEventId() {
+        return null;
     }
 
     @Override
@@ -96,7 +96,7 @@ public class FakeConfigStore implements ConfigStore {
     }
 
     @Override
-    public void setLastStatusData(String val) {
-        last_status_data = val;
+    public Long getPosId() {
+        return null;
     }
 }

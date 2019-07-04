@@ -13,6 +13,8 @@ public abstract class AbstractQueuedCheckIn {
     @Generated
     public Long id;
 
+    public String event_slug;
+
     public String secret;
 
     public String nonce;
@@ -20,6 +22,8 @@ public abstract class AbstractQueuedCheckIn {
     public Date datetime;
 
     public String answers;
+
+    public Long checkinListId;
 
     public void generateNonce() {
         this.nonce = NonceGenerator.nextNonce();

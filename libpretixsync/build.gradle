@@ -4,11 +4,14 @@ version '1.0'
 apply plugin: 'java-library'
 apply plugin: 'net.ltgt.apt-idea'
 apply plugin: 'jacoco'
+apply plugin: 'kotlin'
 
-sourceCompatibility = 1.7
-targetCompatibility = 1.7
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
 
 buildscript {
+    ext.kotlin_version = '1.3.20'
+
     repositories {
         jcenter()
         maven {
@@ -16,13 +19,25 @@ buildscript {
         }
     }
     dependencies {
-        classpath "net.ltgt.gradle:gradle-apt-plugin:0.17"
+        classpath "net.ltgt.gradle:gradle-apt-plugin:0.21"
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }
 
 repositories {
     mavenCentral()
     jcenter()
+}
+
+compileKotlin {
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+}
+compileTestKotlin {
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
 }
 
 jacocoTestReport {
@@ -35,15 +50,26 @@ jacocoTestReport {
 check.dependsOn jacocoTestReport
 
 dependencies {
-    compile 'com.squareup.okhttp3:okhttp:3.9.0'
-    compile 'io.requery:requery:1.4.1'
+    compile 'com.squareup.okhttp3:okhttp:3.12.1'
+    compile 'io.requery:requery:1.5.1'
+    compile 'io.requery:requery-kotlin:1.5.1'
+    compile 'joda-time:joda-time:2.9.9'
 
     // Use older org.json version to have an environment equivalent to the android platform
     compile 'org.json:json:20090211'
 
-    apt 'io.requery:requery-processor:1.4.1'
-    apt 'javax.annotation:jsr250-api:1.0'
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    implementation 'net.sourceforge.streamsupport:streamsupport-cfuture:1.7.0'
+
+    annotationProcessor 'io.requery:requery-processor:1.5.1'
+    annotationProcessor 'javax.annotation:jsr250-api:1.0'
 
     testCompile 'junit:junit:4.12'
     testCompile 'org.xerial:sqlite-jdbc:3.20.1'
 }
+
+task copyTestResources(type: Copy) {
+    from "${projectDir}/src/test/resources", "${projectDir}/src/main/resources"
+    into "${buildDir}/classes/test"
+}
+processTestResources.dependsOn copyTestResources

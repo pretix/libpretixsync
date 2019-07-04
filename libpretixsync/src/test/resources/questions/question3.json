@@ -1,0 +1,17 @@
+{
+  "id": 1,
+  "question": {
+    "en": "Test"
+  },
+  "type": "B",
+  "required": true,
+  "items": [
+    1
+  ],
+  "options": [],
+  "position": 0,
+  "ask_during_checkin": false,
+  "identifier": "ABTBAB8S",
+  "dependency_question": null,
+  "dependency_value": null
+}

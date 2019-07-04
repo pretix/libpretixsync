@@ -1,0 +1,24 @@
+{
+  "name": {
+    "en": "Large Testevent 0"
+  },
+  "slug": "largetest0",
+  "live": true,
+  "testmode": false,
+  "currency": "EUR",
+  "date_from": "2019-04-05T14:24:58Z",
+  "date_to": null,
+  "date_admission": null,
+  "is_public": true,
+  "presale_start": null,
+  "presale_end": null,
+  "location": {},
+  "has_subevents": false,
+  "meta_data": {},
+  "plugins": [
+    "pretix.plugins.banktransfer",
+    "pretix.plugins.stripe",
+    "pretix.plugins.badges",
+    "pretix.plugins.ticketoutputpdf"
+  ]
+}

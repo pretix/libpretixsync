@@ -12,11 +12,11 @@ public interface ConfigStore {
 
     public String getApiKey();
 
-    public boolean getShowInfo();
+    public String getOrganizerSlug();
 
-    public boolean getAllowSearch();
+    public String getEventSlug();
 
-    public String getLastStatusData();
+    public Long getSubEventId();
 
     public long getLastDownload();
 
@@ -34,5 +34,5 @@ public interface ConfigStore {
 
     public void setLastFailedSyncMsg(String val);
 
-    public void setLastStatusData(String val);
+    public Long getPosId();
 }
