@@ -7,7 +7,7 @@ libpretixsync
 .. image:: https://codecov.io/gh/pretix/libpretixsync/branch/master/graph/badge.svg
    :target: https://codecov.io/gh/pretix/libpretixsync
 
-This is a shared library between `pretixdroid`_ and `pretixdesk`_. It handles all core
+This is a shared library between `pretixSCAN`_ and `pretixPOS`_. It handles all core
 business logic of the two applications and the synchronization primitives with the pretix server.
 
 Release cycle
@@ -39,7 +39,7 @@ This project is 100 percent free and open source software. If you are interested
 commercial support, hosting services or supporting this project financially, please 
 go to `pretix.eu`_ or contact Raphael directly.
 
-.. _pretixdroid: https://github.com/pretix/pretixdroid
-.. _pretixdesk: https://github.com/pretix/pretixdesk
+.. _pretixSCAN: https://pretix.eu/about/en/scan
+.. _pretixPOS: https://pretix.eu/about/en/pos
 .. _pretix.eu: https://pretix.eu
 .. _Code of Conduct: https://docs.pretix.eu/en/latest/development/contribution/codeofconduct.html
