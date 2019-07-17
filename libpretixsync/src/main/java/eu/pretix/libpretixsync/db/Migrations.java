@@ -98,8 +98,11 @@ public class Migrations {
         }
         if (db_version < 38) {
             Statement s1 = c.createStatement();
-            s1.execute("ALTER TABLE ReceiptLine ADD seat_guid TEXT, seat_name TEXT;");
+            s1.execute("ALTER TABLE ReceiptLine ADD seat_guid TEXT;");
             s1.close();
+            Statement s2 = c.createStatement();
+            s2.execute("ALTER TABLE ReceiptLine ADD seat_name TEXT;");
+            s2.close();
         }
         // Note that the Android app currently does not use these queries!
 
