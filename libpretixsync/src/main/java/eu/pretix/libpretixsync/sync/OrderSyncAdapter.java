@@ -120,8 +120,8 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
     private void updatePositionObject(OrderPosition obj, JSONObject jsonobj, JSONObject jsonorder, JSONObject parent) throws JSONException {
         obj.setServer_id(jsonobj.getLong("id"));
         obj.setPositionid(jsonobj.getLong("positionid"));
-        obj.setAttendee_name(jsonobj.optString("attendee_name"));
-        obj.setAttendee_email(jsonobj.optString("attendee_email"));
+        obj.setAttendee_name(jsonobj.isNull("attendee_name") ? "" : jsonobj.optString("attendee_name"));
+        obj.setAttendee_email(jsonobj.isNull("attendee_email") ? "" : jsonobj.optString("attendee_email"));
         obj.setSecret(jsonobj.optString("secret"));
         obj.setJson_data(jsonobj.toString());
         obj.setItem(getItem(jsonobj.getLong("item")));
