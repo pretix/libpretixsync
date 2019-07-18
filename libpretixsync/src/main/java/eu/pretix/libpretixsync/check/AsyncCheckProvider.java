@@ -124,19 +124,17 @@ public class AsyncCheckProvider implements TicketCheckProvider {
             return new CheckResult(CheckResult.Type.ERROR);
         }
 
-        if (order.getStatus().equals("p")) {
-            res.setCheckinAllowed(true);
-        } else if (order.getStatus().equals("n")) {
-            res.setCheckinAllowed(list.include_pending);
-        } else {
+        if (!order.getStatus().equals("p") && !order.getStatus().equals("n")) {
+            res.setType(CheckResult.Type.CANCELED);
             res.setCheckinAllowed(false);
-        }
-
-        if ((!order.getStatus().equals("p") && !ignore_unpaid)) {
+        } else if ((!order.getStatus().equals("p") && !ignore_unpaid)) {
             res.setType(CheckResult.Type.UNPAID);
+            res.setCheckinAllowed(list.include_pending);
         } else if (is_checked_in) {
             res.setType(CheckResult.Type.USED);
+            res.setCheckinAllowed(true);
         } else {
+            res.setCheckinAllowed(true);
             List<Question> questions = item.getQuestions();
             Map<Long, String> answerMap = new HashMap<>();
             if (answers != null) {
@@ -295,7 +293,13 @@ public class AsyncCheckProvider implements TicketCheckProvider {
                 }
             }
             sr.setRedeemed(is_checked_in);
-            sr.setPaid(order.getStatus().equals("p"));
+            if (order.getStatus().equals("p")) {
+                sr.setStatus(SearchResult.Status.PAID);
+            } else if (order.getStatus().equals("n")) {
+                sr.setStatus(SearchResult.Status.PENDING);
+            } else {
+                sr.setStatus(SearchResult.Status.CANCELED);
+            }
             boolean require_attention = position.getOrder().isCheckin_attention();
             try {
                 require_attention = require_attention || item.getJSON().optBoolean("checkin_attention", false);

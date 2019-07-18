@@ -53,7 +53,7 @@ public interface TicketCheckProvider {
 
     class CheckResult {
         public enum Type {
-            INVALID, VALID, USED, ERROR, UNPAID, PRODUCT, ANSWERS_REQUIRED
+            INVALID, VALID, USED, ERROR, UNPAID, CANCELED, PRODUCT, ANSWERS_REQUIRED
         }
 
         private Type type;
@@ -176,6 +176,9 @@ public interface TicketCheckProvider {
     }
 
     class SearchResult {
+        public enum Status {
+            PAID, CANCELED, PENDING
+        }
 
         private String secret;
         private String ticket;
@@ -183,7 +186,7 @@ public interface TicketCheckProvider {
         private String attendee_name;
         private String order_code;
         private String addon_text;
-        private boolean paid;
+        private Status status;
         private boolean redeemed;
         private boolean require_attention;
 
@@ -196,7 +199,7 @@ public interface TicketCheckProvider {
             variation = r.variation;
             attendee_name = r.attendee_name;
             order_code = r.order_code;
-            paid = r.paid;
+            status = r.status;
             redeemed = r.redeemed;
             require_attention = r.require_attention;
             addon_text = r.addon_text;
@@ -210,12 +213,12 @@ public interface TicketCheckProvider {
             this.secret = secret;
         }
 
-        public boolean isPaid() {
-            return paid;
+        public Status getStatus() {
+            return status;
         }
 
-        public void setPaid(boolean paid) {
-            this.paid = paid;
+        public void setStatus(Status status) {
+            this.status = status;
         }
 
         public boolean isRedeemed() {

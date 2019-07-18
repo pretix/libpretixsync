@@ -97,6 +97,8 @@ public class OnlineCheckProvider implements TicketCheckProvider {
                         res.setType(CheckResult.Type.USED);
                     } else if ("unknown_ticket".equals(reason)) {
                         res.setType(CheckResult.Type.INVALID);
+                    } else if ("canceled".equals(reason)) {
+                        res.setType(CheckResult.Type.CANCELED);
                     } else if ("unpaid".equals(reason)) {
                         res.setType(CheckResult.Type.UNPAID);
 
@@ -189,7 +191,14 @@ public class OnlineCheckProvider implements TicketCheckProvider {
                 sr.setOrderCode(res.optString("order"));
                 sr.setSecret(res.optString("secret"));
                 sr.setRedeemed(res.getJSONArray("checkins").length() > 0);
-                sr.setPaid(res.optString("order__status", "p").equals("p"));
+                String status = res.optString("order__status", "p");
+                if (status.equals("p")) {
+                    sr.setStatus(SearchResult.Status.PAID);
+                } else if (status.equals("n")) {
+                    sr.setStatus(SearchResult.Status.PENDING);
+                } else {
+                    sr.setStatus(SearchResult.Status.CANCELED);
+                }
                 sr.setRequireAttention(res.optBoolean("require_attention", false));
                 results.add(sr);
             }

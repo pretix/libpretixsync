@@ -108,6 +108,7 @@ public class PretixApi {
         }
         body.put("answers", answerbody);
         body.put("questions_supported", true);
+        body.put("canceled_supported", true);
         String pd = "";
         if (pdf_data) {
             pd = "?pdf_data=true";
