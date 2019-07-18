@@ -200,7 +200,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         assertEquals("Casey Flores", r.attendee_name)
         assertEquals("kfndgffgyw4tdgcacx6bb3bgemq69cxj", r.secret)
         assertEquals(false, r.isRedeemed)
-        assertEquals(true, r.isPaid)
+        assertEquals(true, r.status == TicketCheckProvider.SearchResult.Status.PAID)
         assertEquals(true, r.isRequireAttention)
         assertEquals("Merch", srList[1].ticket)
         assertEquals(true, srList[1].isRedeemed)
