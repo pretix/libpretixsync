@@ -40,6 +40,7 @@ public class AbstractOrderPosition implements RemoteObject {
 
     public String secret;
 
+    @Column(definition = "TEXT")
     public String json_data;
 
     @OneToMany

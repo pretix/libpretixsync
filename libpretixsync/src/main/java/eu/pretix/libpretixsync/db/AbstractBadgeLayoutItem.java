@@ -1,15 +1,8 @@
 package eu.pretix.libpretixsync.db;
 
+import io.requery.*;
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import io.requery.Entity;
-import io.requery.ForeignKey;
-import io.requery.Generated;
-import io.requery.Key;
-import io.requery.ManyToOne;
-import io.requery.Nullable;
-import io.requery.ReferentialAction;
 
 @Entity(cacheable = false)
 public class AbstractBadgeLayoutItem implements RemoteObject {
@@ -28,6 +21,7 @@ public class AbstractBadgeLayoutItem implements RemoteObject {
     @ManyToOne
     public Item item;
 
+    @Column(definition = "TEXT")
     public String json_data;
 
     @Override

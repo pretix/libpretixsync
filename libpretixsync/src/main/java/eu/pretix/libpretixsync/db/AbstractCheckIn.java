@@ -27,6 +27,7 @@ public class AbstractCheckIn implements RemoteObject {
     @ManyToOne
     public OrderPosition position;
 
+    @Column(definition = "TEXT")
     public String json_data;
 
     @Override

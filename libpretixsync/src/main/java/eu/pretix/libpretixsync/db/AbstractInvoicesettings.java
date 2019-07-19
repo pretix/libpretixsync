@@ -1,5 +1,6 @@
 package eu.pretix.libpretixsync.db;
 
+import io.requery.Column;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -17,6 +18,7 @@ public abstract class AbstractInvoicesettings implements RemoteObject {
 
     public String name;
 
+    @Column(definition = "TEXT")
     public String address;
 
     public String zipcode;
@@ -29,6 +31,7 @@ public abstract class AbstractInvoicesettings implements RemoteObject {
 
     public String vat_id;
 
+    @Column(definition = "TEXT")
     public String json_data;
 
     @Override

@@ -1,5 +1,6 @@
 package eu.pretix.libpretixsync.db;
 
+import io.requery.*;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -8,10 +9,6 @@ import java.math.BigDecimal;
 import java.util.Date;
 
 import eu.pretix.libpretixsync.utils.I18nString;
-import io.requery.Entity;
-import io.requery.Generated;
-import io.requery.Key;
-import io.requery.Nullable;
 
 @Entity(cacheable = false)
 public class AbstractSubEvent implements RemoteObject {
@@ -30,6 +27,7 @@ public class AbstractSubEvent implements RemoteObject {
 
     public boolean active;
 
+    @Column(definition = "TEXT")
     public String json_data;
 
     @Override

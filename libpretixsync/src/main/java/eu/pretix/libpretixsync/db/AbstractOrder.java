@@ -1,19 +1,11 @@
 package eu.pretix.libpretixsync.db;
 
+import io.requery.*;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.math.BigDecimal;
 import java.util.List;
-
-import io.requery.Entity;
-import io.requery.Generated;
-import io.requery.Index;
-import io.requery.JunctionTable;
-import io.requery.Key;
-import io.requery.ManyToMany;
-import io.requery.OneToMany;
-import io.requery.Table;
 
 @Table(name = "orders")
 @Entity(cacheable = false)
@@ -34,6 +26,7 @@ public class AbstractOrder implements RemoteObject {
 
     public boolean checkin_attention;
 
+    @Column(definition = "TEXT")
     public String json_data;
 
     @OneToMany

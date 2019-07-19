@@ -1,5 +1,6 @@
 package eu.pretix.libpretixsync.db;
 
+import io.requery.*;
 import org.joda.time.DateTime;
 import org.joda.time.format.ISODateTimeFormat;
 import org.json.JSONArray;
@@ -13,11 +14,6 @@ import java.util.List;
 import java.util.Set;
 
 import eu.pretix.libpretixsync.utils.I18nString;
-import io.requery.Entity;
-import io.requery.Generated;
-import io.requery.Key;
-import io.requery.ManyToMany;
-import io.requery.Nullable;
 
 @Entity(cacheable = false)
 public class AbstractItem implements RemoteObject {
@@ -38,6 +34,7 @@ public class AbstractItem implements RemoteObject {
 
     public boolean active;
 
+    @Column(definition = "TEXT")
     public String json_data;
 
     @ManyToMany
