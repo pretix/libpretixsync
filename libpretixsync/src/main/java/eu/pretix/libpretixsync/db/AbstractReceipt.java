@@ -26,7 +26,7 @@ public class AbstractReceipt implements LocalObject {
 
     public String event_slug;
 
-    @Column(nullable = false, value = "\"EUR\"")
+    @Column(nullable = false, value = "'EUR'")
     public String currency;
 
     public String order_code;
