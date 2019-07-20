@@ -12,7 +12,6 @@ import java.util.Map;
 
 import eu.pretix.libpretixsync.DummySentryImplementation;
 import eu.pretix.libpretixsync.SentryInterface;
-import eu.pretix.libpretixsync.config.ConfigStore;
 import eu.pretix.libpretixsync.db.AbstractQuestion;
 import eu.pretix.libpretixsync.db.CheckIn;
 import eu.pretix.libpretixsync.db.CheckInList;
@@ -31,13 +30,13 @@ import io.requery.query.Scalar;
 import io.requery.query.WhereAndOr;
 
 public class AsyncCheckProvider implements TicketCheckProvider {
-    private ConfigStore config;
+    private String eventSlug;
     private BlockingEntityStore<Persistable> dataStore;
     private SentryInterface sentry;
     private Long listId;
 
-    public AsyncCheckProvider(ConfigStore config, BlockingEntityStore<Persistable> dataStore, Long listId) {
-        this.config = config;
+    public AsyncCheckProvider(String eventSlug, BlockingEntityStore<Persistable> dataStore, Long listId) {
+        this.eventSlug = eventSlug;
         this.dataStore = dataStore;
         this.sentry = new DummySentryImplementation();
         this.listId = listId;
@@ -63,7 +62,7 @@ public class AsyncCheckProvider implements TicketCheckProvider {
         List<OrderPosition> tickets = dataStore.select(OrderPosition.class)
                 .leftJoin(Order.class).on(Order.ID.eq(OrderPosition.ORDER_ID))
                 .where(OrderPosition.SECRET.eq(ticketid))
-                .and(Order.EVENT_SLUG.eq(config.getEventSlug()))
+                .and(Order.EVENT_SLUG.eq(eventSlug))
                 .get().toList();
 
         if (tickets.size() == 0) {
@@ -77,7 +76,7 @@ public class AsyncCheckProvider implements TicketCheckProvider {
 
         CheckInList list = dataStore.select(CheckInList.class)
                 .where(CheckInList.SERVER_ID.eq(listId))
-                .and(CheckInList.EVENT_SLUG.eq(config.getEventSlug()))
+                .and(CheckInList.EVENT_SLUG.eq(eventSlug))
                 .get().firstOrNull();
         if (list == null) {
             return new CheckResult(CheckResult.Type.ERROR, "Check-in list not found");
@@ -179,7 +178,7 @@ public class AsyncCheckProvider implements TicketCheckProvider {
                 qci.setSecret(ticketid);
                 qci.setDatetime(new Date());
                 qci.setAnswers(givenAnswers.toString());
-                qci.setEvent_slug(config.getEventSlug());
+                qci.setEvent_slug(eventSlug);
                 qci.setCheckinListId(listId);
                 dataStore.insert(qci);
 
@@ -230,7 +229,7 @@ public class AsyncCheckProvider implements TicketCheckProvider {
 
         CheckInList list = dataStore.select(CheckInList.class)
                 .where(CheckInList.SERVER_ID.eq(listId))
-                .and(CheckInList.EVENT_SLUG.eq(config.getEventSlug()))
+                .and(CheckInList.EVENT_SLUG.eq(eventSlug))
                 .get().firstOrNull();
         if (list == null) {
             throw new CheckException("Check-in list not found");
@@ -251,7 +250,7 @@ public class AsyncCheckProvider implements TicketCheckProvider {
             }
             search = Item.ID.in(itemids).and(search);
         }
-        search = Order.EVENT_SLUG.eq(config.getEventSlug()).and(search);
+        search = Order.EVENT_SLUG.eq(eventSlug).and(search);
         if (list.getSubevent_id() != null && list.getSubevent_id() > 0) {
             search = OrderPosition.SUBEVENT_ID.eq(list.getSubevent_id()).and(search);
         }
@@ -321,7 +320,7 @@ public class AsyncCheckProvider implements TicketCheckProvider {
 
         WhereAndOr<? extends Scalar<Integer>> q = dataStore.count(OrderPosition.class).distinct()
                 .leftJoin(Order.class).on(OrderPosition.ORDER_ID.eq(Order.ID))
-                .where(Order.EVENT_SLUG.eq(config.getEventSlug()))
+                .where(Order.EVENT_SLUG.eq(eventSlug))
                 .and(Order.STATUS.in(status));
         if (list.getSubevent_id() != null && list.getSubevent_id() > 0) {
             q = q.and(OrderPosition.SUBEVENT_ID.eq(list.getSubevent_id()));
@@ -339,7 +338,7 @@ public class AsyncCheckProvider implements TicketCheckProvider {
         WhereAndOr<? extends Scalar<Integer>> q = dataStore.count(CheckIn.class).distinct()
                 .leftJoin(OrderPosition.class).on(CheckIn.POSITION_ID.eq(OrderPosition.ID))
                 .leftJoin(Order.class).on(OrderPosition.ORDER_ID.eq(Order.ID))
-                .where(Order.EVENT_SLUG.eq(config.getEventSlug()))
+                .where(Order.EVENT_SLUG.eq(eventSlug))
                 .and(CheckIn.LIST_ID.eq(list.getId()))
                 .and(Order.STATUS.in(status));
         if (list.getSubevent_id() != null && list.getSubevent_id() > 0) {
@@ -356,7 +355,7 @@ public class AsyncCheckProvider implements TicketCheckProvider {
 
         CheckInList list = dataStore.select(CheckInList.class)
                 .where(CheckInList.SERVER_ID.eq(listId))
-                .and(CheckInList.EVENT_SLUG.eq(config.getEventSlug()))
+                .and(CheckInList.EVENT_SLUG.eq(eventSlug))
                 .get().firstOrNull();
         if (list == null) {
             throw new CheckException("Check-in list not found");
@@ -365,7 +364,7 @@ public class AsyncCheckProvider implements TicketCheckProvider {
         List<Item> products;
         if (list.all_items) {
             products = dataStore.select(Item.class)
-                    .where(Item.EVENT_SLUG.eq(config.getEventSlug()))
+                    .where(Item.EVENT_SLUG.eq(eventSlug))
                     .get().toList();
         } else {
             products = list.getItems();
