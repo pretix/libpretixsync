@@ -118,6 +118,9 @@ public class SyncManager {
             }
             configStore.setLastSync(System.currentTimeMillis());
             configStore.setLastFailedSync(0);
+            if (feedback != null) {
+                feedback.postFeedback("Sync completed.");
+            }
         } catch (SyncException e) {
             configStore.setLastFailedSync(System.currentTimeMillis());
             configStore.setLastFailedSyncMsg(e.getMessage());
