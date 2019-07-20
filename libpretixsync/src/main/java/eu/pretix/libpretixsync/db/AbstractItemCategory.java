@@ -1,5 +1,6 @@
 package eu.pretix.libpretixsync.db;
 
+import io.requery.Column;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -21,6 +22,7 @@ public class AbstractItemCategory implements RemoteObject {
 
     public boolean is_addon;
 
+    @Column(definition = "TEXT")
     public String json_data;
 
     @Override

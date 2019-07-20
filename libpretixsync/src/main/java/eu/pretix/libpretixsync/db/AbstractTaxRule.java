@@ -1,5 +1,6 @@
 package eu.pretix.libpretixsync.db;
 
+import io.requery.Column;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -21,6 +22,7 @@ public class AbstractTaxRule implements RemoteObject {
 
     public String event_slug;
 
+    @Column(definition = "TEXT")
     public String json_data;
 
     public boolean includesTax() {

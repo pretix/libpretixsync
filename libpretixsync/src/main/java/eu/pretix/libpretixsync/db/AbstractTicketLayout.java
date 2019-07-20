@@ -1,5 +1,6 @@
 package eu.pretix.libpretixsync.db;
 
+import io.requery.Column;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -25,6 +26,7 @@ public class AbstractTicketLayout implements RemoteObject {
 
     public boolean is_default;
 
+    @Column(definition = "TEXT")
     public String json_data;
 
     @Override

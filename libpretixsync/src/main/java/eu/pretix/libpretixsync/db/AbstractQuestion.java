@@ -37,6 +37,7 @@ public class AbstractQuestion implements RemoteObject {
 
     public Long position;
 
+    @Column(definition = "TEXT")
     public String json_data;
 
     @ManyToMany(cascade = CascadeAction.NONE)

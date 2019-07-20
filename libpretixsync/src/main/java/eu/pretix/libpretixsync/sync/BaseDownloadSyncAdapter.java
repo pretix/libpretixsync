@@ -94,6 +94,9 @@ public abstract class BaseDownloadSyncAdapter<T extends RemoteObject & Persistab
     }
 
     protected Map<K, T> getKnownObjects(Set<K> ids) {
+        if (ids.isEmpty()) {
+            return new HashMap<K, T>();
+        }
         Iterator<T> it = getKnownObjectsIterator(ids);
         Map<K, T> known = new HashMap<>();
         while (it.hasNext()) {
@@ -183,8 +186,13 @@ public abstract class BaseDownloadSyncAdapter<T extends RemoteObject & Persistab
         CompletableFuture<Boolean> completableFuture = new CompletableFuture<>();
 
         threadPool.submit(() -> {
-            processPage(data);
-            completableFuture.complete(true);
+            try {
+                processPage(data);
+            } catch (Exception e) {
+                completableFuture.completeExceptionally(e);
+            } finally {
+                completableFuture.complete(true);
+            }
         });
 
         return completableFuture;
