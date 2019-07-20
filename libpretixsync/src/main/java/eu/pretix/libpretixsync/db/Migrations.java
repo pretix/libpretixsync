@@ -1,14 +1,16 @@
 package eu.pretix.libpretixsync.db;
 
-import io.requery.meta.EntityModel;
-import io.requery.sql.TableCreationMode;
-import io.requery.sql.SchemaModifier;
-
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+
+import javax.sql.DataSource;
+
+import eu.pretix.libpretixsync.Models;
+import io.requery.meta.EntityModel;
+import io.requery.sql.SchemaModifier;
+import io.requery.sql.TableCreationMode;
 
 public class Migrations {
     private static EntityModel model = Models.DEFAULT;

@@ -51,8 +51,8 @@ check.dependsOn jacocoTestReport
 
 dependencies {
     compile 'com.squareup.okhttp3:okhttp:3.12.1'
-    compile 'io.requery:requery:1.5.1'
-    compile 'io.requery:requery-kotlin:1.5.1'
+    compile 'io.requery:requery:1.6.0'
+    compile 'io.requery:requery-kotlin:1.6.0'
     compile 'joda-time:joda-time:2.9.9'
 
     // Use older org.json version to have an environment equivalent to the android platform
@@ -63,7 +63,7 @@ dependencies {
     implementation "com.fasterxml.jackson.core:jackson-databind:2.9.9"
     implementation "com.fasterxml.jackson.module:jackson-module-kotlin:2.9.9"
 
-    annotationProcessor 'io.requery:requery-processor:1.5.1'
+    annotationProcessor 'io.requery:requery-processor:1.6.0'
     annotationProcessor 'javax.annotation:jsr250-api:1.0'
 
     testCompile 'junit:junit:4.12'
