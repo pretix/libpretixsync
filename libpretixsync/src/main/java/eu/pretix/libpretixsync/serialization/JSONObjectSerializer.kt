@@ -9,7 +9,7 @@ import org.json.JSONObject
 class JSONObjectSerializer(t: Class<JSONObject>? = null) : StdSerializer<JSONObject>(t) {
     override fun serialize(value: JSONObject, gen: JsonGenerator, provider: SerializerProvider) {
         gen.writeStartObject()
-        for (key in value.sortedKeys()) {
+        for (key in value.keys()) {
             val k = key as String
             if (value.isNull(key)) {
                 gen.writeNullField(key)
