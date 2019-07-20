@@ -22,7 +22,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
     fun setUpFakes() {
         configStore = FakeConfigStore()
         fakeApi = FakePretixApi()
-        p = AsyncCheckProvider(configStore, dataStore, 1L)
+        p = AsyncCheckProvider("demo", dataStore, 1L)
 
         ItemSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, null).standaloneRefreshFromJSON(jsonResource("items/item1.json"))
         ItemSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, null).standaloneRefreshFromJSON(jsonResource("items/item2.json"))
