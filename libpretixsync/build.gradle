@@ -60,6 +60,8 @@ dependencies {
 
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation 'net.sourceforge.streamsupport:streamsupport-cfuture:1.7.0'
+    implementation "com.fasterxml.jackson.core:jackson-databind:2.9.9"
+    implementation "com.fasterxml.jackson.module:jackson-module-kotlin:2.9.9"
 
     annotationProcessor 'io.requery:requery-processor:1.5.1'
     annotationProcessor 'javax.annotation:jsr250-api:1.0'
