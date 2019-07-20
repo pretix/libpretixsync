@@ -94,6 +94,9 @@ public abstract class BaseDownloadSyncAdapter<T extends RemoteObject & Persistab
     }
 
     protected Map<K, T> getKnownObjects(Set<K> ids) {
+        if (ids.isEmpty()) {
+            return new HashMap<K, T>();
+        }
         Iterator<T> it = getKnownObjectsIterator(ids);
         Map<K, T> known = new HashMap<>();
         while (it.hasNext()) {

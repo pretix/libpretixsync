@@ -72,41 +72,54 @@ public class TicketLayoutSyncAdapter extends BaseDownloadSyncAdapter<TicketLayou
             }
         }
 
-        // Get all items that we *might* want to assign this to
-        List<Item> items = store.select(Item.class).where(
-                Item.SERVER_ID.in(itemids)
-        ).get().toList();
-        for (Item item : items) {
-            if (item.getTicket_layout_id() != null) {
-                if (item.getTicket_layout_id().equals(obj.getServer_id())) {
-                    // This item is already assigned to this layout, we can leave it as it is
-                    continue;
-                }
-
-                // This item is currently assigned to a different layout, let's look at that layout
-                TicketLayout previous = store.select(TicketLayout.class).where(
-                        TicketLayout.SERVER_ID.eq(item.getTicket_layout_id())
-                ).get().firstOrNull();
-                if (previous != null && !pretixpos_assigned.contains(item.getServer_id())) {
-                    continue;
-                }
-                // EITHER the layout this was previously assigned to does not exist any more
-                // OR we looked at this just for the default case but we only have it assigned on the "web" channel
+        List<Item> items = null;
+        if (!itemids.isEmpty()) {
+            // Get all items that we *might* want to assign this to
+            for (Item item : items) {
+                item.setBadge_layout_id(null);
+                store.update(item, Item.BADGE_LAYOUT_ID);
             }
-            // else { This item currently is not assignedto anything, so assign it with this in any case }
+            items = store.select(Item.class).where(
+                    Item.SERVER_ID.in(itemids)
+            ).get().toList();
+            for (Item item : items) {
+                if (item.getTicket_layout_id() != null) {
+                    if (item.getTicket_layout_id().equals(obj.getServer_id())) {
+                        // This item is already assigned to this layout, we can leave it as it is
+                        continue;
+                    }
 
-            // Assign this item to this layout
-            item.setTicket_layout_id(obj.getServer_id());
-            store.update(item, Item.TICKET_LAYOUT_ID);
+                    // This item is currently assigned to a different layout, let's look at that layout
+                    TicketLayout previous = store.select(TicketLayout.class).where(
+                            TicketLayout.SERVER_ID.eq(item.getTicket_layout_id())
+                    ).get().firstOrNull();
+                    if (previous != null && !pretixpos_assigned.contains(item.getServer_id())) {
+                        continue;
+                    }
+                    // EITHER the layout this was previously assigned to does not exist any more
+                    // OR we looked at this just for the default case but we only have it assigned on the "web" channel
+                }
+                // else { This item currently is not assignedto anything, so assign it with this in any case }
+
+                // Assign this item to this layout
+                item.setTicket_layout_id(obj.getServer_id());
+                store.update(item, Item.TICKET_LAYOUT_ID);
+            }
+
+            // Look if there are any items in the local database assigned to this layout even though
+            // they should not be any more.
+            items = store.select(Item.class).where(
+                    Item.SERVER_ID.notIn(itemids).and(
+                            Item.TICKET_LAYOUT_ID.eq(obj.getServer_id())
+                    )
+            ).get().toList();
+        } else {
+            // Look if there are any items in the local database assigned to this layout even though
+            // they should not be any more.
+            items = store.select(Item.class).where(
+                    Item.TICKET_LAYOUT_ID.eq(obj.getServer_id())
+            ).get().toList();
         }
-
-        // Look if there are any items in the local database assigned to this layout even though
-        // they should not be any more.
-        items = store.select(Item.class).where(
-                Item.SERVER_ID.notIn(itemids).and(
-                        Item.TICKET_LAYOUT_ID.eq(obj.getServer_id())
-                )
-        ).get().toList();
         for (Item item : items) {
             item.setTicket_layout_id(null);
             store.update(item, Item.TICKET_LAYOUT_ID);

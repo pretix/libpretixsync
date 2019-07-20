@@ -334,6 +334,9 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
         positionCache.clear();
         checkinCache.clear();
 
+        if (ids.isEmpty()) {
+            return new HashMap<>();
+        }
         List<OrderPosition> allPos = store.select(OrderPosition.class)
                 .leftJoin(Order.class).on(Order.ID.eq(OrderPosition.ORDER_ID))
                 .where(Order.CODE.in(ids)).get().toList();
