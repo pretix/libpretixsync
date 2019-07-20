@@ -1,5 +1,6 @@
 package eu.pretix.libpretixsync.db;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.requery.*;
 import org.joda.time.DateTime;
 import org.joda.time.format.ISODateTimeFormat;
@@ -38,9 +39,11 @@ public class AbstractItem implements RemoteObject {
     public String json_data;
 
     @ManyToMany
+    @JsonIgnore
     List<Question> questions;
 
     @ManyToMany
+    @JsonIgnore
     List<Quota> quotas;
 
     @Nullable
@@ -56,6 +59,7 @@ public class AbstractItem implements RemoteObject {
         return new JSONObject(json_data);
     }
 
+    @JsonIgnore
     public String getName() {
         try {
             return I18nString.toString(getJSON().getJSONObject("name"));
@@ -65,6 +69,7 @@ public class AbstractItem implements RemoteObject {
         }
     }
 
+    @JsonIgnore
     public boolean hasVariations() {
         try {
             return getJSON().getBoolean("has_variations");
@@ -74,6 +79,7 @@ public class AbstractItem implements RemoteObject {
         }
     }
 
+    @JsonIgnore
     public BigDecimal getDefaultPrice() {
         try {
             return new BigDecimal(getJSON().getString("default_price"));
@@ -83,6 +89,7 @@ public class AbstractItem implements RemoteObject {
         }
     }
 
+    @JsonIgnore
     public boolean isGenerateTickets() {
         try {
             if (getJSON().isNull("generate_tickets")) {
@@ -95,6 +102,7 @@ public class AbstractItem implements RemoteObject {
         }
     }
 
+    @JsonIgnore
     public Long getTaxRuleId() {
         try {
             return getJSON().optLong("tax_rule");
