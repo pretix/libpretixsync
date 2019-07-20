@@ -7,6 +7,7 @@ import java.util.Objects;
 
 import eu.pretix.libpretixsync.SentryInterface;
 import eu.pretix.libpretixsync.db.Question;
+
 import org.json.JSONObject;
 
 public interface TicketCheckProvider {
@@ -14,6 +15,8 @@ public interface TicketCheckProvider {
     class RequiredAnswer {
         private Question question;
         private String current_value;
+
+        public RequiredAnswer() {}
 
         public RequiredAnswer(Question question, String current_value) {
             this.question = question;
@@ -27,11 +30,23 @@ public interface TicketCheckProvider {
         public String getCurrentValue() {
             return current_value;
         }
+
+        public void setQuestion(Question question) {
+            this.question = question;
+        }
+
+        public void setCurrent_value(String current_value) {
+            this.current_value = current_value;
+        }
     }
 
     class Answer {
         private Question question;
         private String value;
+
+        public Answer() {
+
+        }
 
         public Answer(Question question, String value) {
             this.question = question;
@@ -48,6 +63,10 @@ public interface TicketCheckProvider {
 
         public Question getQuestion() {
             return question;
+        }
+
+        public void setQuestion(Question question) {
+            this.question = question;
         }
     }
 
@@ -73,6 +92,8 @@ public interface TicketCheckProvider {
             this.type = type;
             this.message = message;
         }
+
+        public CheckResult() {}
 
         public CheckResult(Type type) {
             this.type = type;
@@ -173,6 +194,8 @@ public interface TicketCheckProvider {
         public void setPosition(JSONObject position) {
             this.position = position;
         }
+
+
     }
 
     class SearchResult {
@@ -284,6 +307,9 @@ public interface TicketCheckProvider {
         private int checkins;
         private int total;
 
+        public StatusResultItemVariation() {
+        }
+
         public StatusResultItemVariation(long id, String name, int total, int checkins) {
             this.name = name;
             this.checkins = checkins;
@@ -314,6 +340,14 @@ public interface TicketCheckProvider {
         public void setTotal(int total) {
             this.total = total;
         }
+
+        public void setId(long id) {
+            this.id = id;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
     }
 
     class StatusResultItem {
@@ -323,6 +357,9 @@ public interface TicketCheckProvider {
         private int total;
         private List<StatusResultItemVariation> variations;
         private boolean admission;
+
+        public StatusResultItem() {
+        }
 
         public StatusResultItem(long id, String name, int total, int checkins, List<StatusResultItemVariation> variations, boolean admission) {
             this.name = name;
@@ -368,6 +405,18 @@ public interface TicketCheckProvider {
         public void setTotal(int total) {
             this.total = total;
         }
+
+        public void setId(long id) {
+            this.id = id;
+        }
+
+        public void setVariations(List<StatusResultItemVariation> variations) {
+            this.variations = variations;
+        }
+
+        public void setAdmission(boolean admission) {
+            this.admission = admission;
+        }
     }
 
     class StatusResult {
@@ -375,6 +424,9 @@ public interface TicketCheckProvider {
         private int totalTickets;
         private int alreadyScanned;
         private List<StatusResultItem> items;
+
+        public StatusResult() {
+        }
 
         public StatusResult(String eventName, int totalTickets, int alreadyScanned, List<StatusResultItem> items) {
             this.eventName = eventName;
@@ -405,6 +457,14 @@ public interface TicketCheckProvider {
 
         public void setAlreadyScanned(int alreadyScanned) {
             this.alreadyScanned = alreadyScanned;
+        }
+
+        public void setEventName(String eventName) {
+            this.eventName = eventName;
+        }
+
+        public void setItems(List<StatusResultItem> items) {
+            this.items = items;
         }
     }
 
