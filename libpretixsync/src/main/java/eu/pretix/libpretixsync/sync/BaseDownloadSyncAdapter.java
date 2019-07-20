@@ -183,8 +183,13 @@ public abstract class BaseDownloadSyncAdapter<T extends RemoteObject & Persistab
         CompletableFuture<Boolean> completableFuture = new CompletableFuture<>();
 
         threadPool.submit(() -> {
-            processPage(data);
-            completableFuture.complete(true);
+            try {
+                processPage(data);
+            } catch (Exception e) {
+                completableFuture.completeExceptionally(e);
+            } finally {
+                completableFuture.complete(true);
+            }
         });
 
         return completableFuture;
