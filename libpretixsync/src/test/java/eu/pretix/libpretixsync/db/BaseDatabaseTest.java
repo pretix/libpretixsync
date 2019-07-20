@@ -1,6 +1,7 @@
 package eu.pretix.libpretixsync.db;
 
 import eu.pretix.libpretixsync.db.*;
+import eu.pretix.libpretixsync.Models;
 import io.requery.Persistable;
 import io.requery.cache.EntityCacheBuilder;
 import io.requery.sql.Configuration;
