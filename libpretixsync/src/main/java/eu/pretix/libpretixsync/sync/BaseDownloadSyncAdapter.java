@@ -198,9 +198,13 @@ public abstract class BaseDownloadSyncAdapter<T extends RemoteObject & Persistab
         return completableFuture;
     }
 
+    protected String getUrl() {
+        return api.eventResourceUrl(getResourceName());
+    }
+
     protected void downloadData() throws JSONException, ApiException, ResourceNotModified, ExecutionException, InterruptedException {
 
-        String url = api.eventResourceUrl(getResourceName());
+        String url = getUrl();
         boolean isFirstPage = true;
         CompletableFuture<Boolean> future = null;
         try {

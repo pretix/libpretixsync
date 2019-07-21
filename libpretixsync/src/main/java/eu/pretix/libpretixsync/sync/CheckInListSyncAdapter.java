@@ -35,15 +35,19 @@ public class CheckInListSyncAdapter extends BaseConditionalSyncAdapter<CheckInLi
         for (int i = 0; i < itemsarr.length(); i++) {
             itemids.add(itemsarr.getLong(i));
         }
-        List<Item> items = store.select(Item.class).where(
-                Item.SERVER_ID.in(itemids)
-        ).get().toList();
-        for (Item item : items) {
-            if (!obj.getItems().contains(item)) {
-                obj.getItems().add(item);
+        if (!itemids.isEmpty()) {
+            List<Item> items = store.select(Item.class).where(
+                    Item.SERVER_ID.in(itemids)
+            ).get().toList();
+            for (Item item : items) {
+                if (!obj.getItems().contains(item)) {
+                    obj.getItems().add(item);
+                }
             }
+            obj.getItems().retainAll(items);
+        } else {
+            obj.getItems().clear();
         }
-        obj.getItems().retainAll(items);
     }
 
 
