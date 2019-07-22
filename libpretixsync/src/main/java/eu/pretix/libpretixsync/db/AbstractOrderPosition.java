@@ -38,6 +38,7 @@ public class AbstractOrderPosition implements RemoteObject {
     @ManyToOne
     public Item item;
 
+    @Index
     public String secret;
 
     @Column(definition = "TEXT")
