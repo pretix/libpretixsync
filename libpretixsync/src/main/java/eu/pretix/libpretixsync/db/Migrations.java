@@ -106,6 +106,11 @@ public class Migrations {
             s2.execute("ALTER TABLE ReceiptLine ADD seat_name TEXT;");
             s2.close();
         }
+        if (db_version < 39) {
+            Statement s4 = c.createStatement();
+            s4.execute("CREATE INDEX orderposition_secret ON orderposition (secret);");
+            s4.close();
+        }
         // Note that the Android app currently does not use these queries!
 
         if (db_version < CURRENT_VERSION) {
