@@ -60,6 +60,20 @@ public class AbstractItem implements RemoteObject {
     }
 
     @JsonIgnore
+    public String getInternalName() {
+        try {
+            String internal = getJSON().optString("internal_name");
+            if (internal != null && !internal.isEmpty() && !"null".equals(internal)) {
+                return internal;
+            }
+            return I18nString.toString(getJSON().getJSONObject("name"));
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return "";
+        }
+    }
+
+    @JsonIgnore
     public String getName() {
         try {
             return I18nString.toString(getJSON().getJSONObject("name"));
