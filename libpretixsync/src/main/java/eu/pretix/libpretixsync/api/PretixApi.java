@@ -132,6 +132,15 @@ public class PretixApi {
         }
     }
 
+    public String apiURL(String suffix) {
+        try {
+            return new URL(new URL(url), "/api/v1/" + suffix).toString();
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
     public String organizerResourceUrl(String resource) {
         try {
             return new URL(new URL(url), "/api/v1/organizers/" + orgaSlug + "/" + resource + "/").toString();

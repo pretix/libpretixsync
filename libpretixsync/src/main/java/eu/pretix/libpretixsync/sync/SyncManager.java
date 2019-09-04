@@ -39,6 +39,11 @@ public class SyncManager {
     private FileStorage fileStorage;
     private boolean is_pretixpos;
     private CanceledState canceled;
+    private int app_version;
+    private String hardware_brand;
+    private String hardware_model;
+    private String software_brand;
+    private String software_version;
 
     public class CanceledState {
         private boolean canceled = false;
@@ -56,7 +61,7 @@ public class SyncManager {
         public void postFeedback(String current_action);
     }
 
-    public SyncManager(ConfigStore configStore, PretixApi api, SentryInterface sentry, BlockingEntityStore<Persistable> dataStore, FileStorage fileStorage, long upload_interval, long download_interval, boolean is_pretixpos) {
+    public SyncManager(ConfigStore configStore, PretixApi api, SentryInterface sentry, BlockingEntityStore<Persistable> dataStore, FileStorage fileStorage, long upload_interval, long download_interval, boolean is_pretixpos, int app_version, String hardware_brand, String hardware_model, String software_brand, String software_version) {
         this.configStore = configStore;
         this.api = api;
         this.sentry = sentry;
@@ -66,6 +71,11 @@ public class SyncManager {
         this.fileStorage = fileStorage;
         this.is_pretixpos = is_pretixpos;
         this.canceled = new CanceledState();
+        this.app_version = app_version;
+        this.hardware_brand = hardware_brand;
+        this.hardware_model = hardware_model;
+        this.software_brand = software_brand;
+        this.software_version = software_version;
     }
 
     public SyncResult sync(boolean force) {
@@ -88,6 +98,27 @@ public class SyncManager {
         }
         if (!force && (System.currentTimeMillis() - configStore.getLastFailedSync()) < 30000) {
             return new SyncResult(false, false);
+        }
+
+        try {
+            if (app_version != configStore.getDeviceKnownVersion()) {
+                JSONObject apiBody = new JSONObject();
+                apiBody.put("hardware_brand", hardware_brand);
+                apiBody.put("hardware_model", hardware_model);
+                apiBody.put("software_brand", software_brand);
+                apiBody.put("software_version", software_version);
+                api.postResource(
+                        api.apiURL("device/update"),
+                        apiBody
+                );
+                configStore.setDeviceKnownVersion(app_version);
+            }
+        } catch (ApiException e) {
+            configStore.setLastFailedSync(System.currentTimeMillis());
+            configStore.setLastFailedSyncMsg(e.getMessage());
+        } catch (JSONException e) {
+            configStore.setLastFailedSync(System.currentTimeMillis());
+            configStore.setLastFailedSyncMsg(e.getMessage());
         }
 
         canceled.setCanceled(false);
