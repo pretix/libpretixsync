@@ -191,7 +191,7 @@ public class AsyncCheckProvider implements TicketCheckProvider {
             }
         }
 
-        res.setTicket(position.getItem().getName());
+        res.setTicket(position.getItem().getInternalName());
         Long varid = position.getVariationId();
         if (varid != null) {
             try {
@@ -267,7 +267,7 @@ public class AsyncCheckProvider implements TicketCheckProvider {
             Order order = position.getOrder();
 
             SearchResult sr = new SearchResult();
-            sr.setTicket(item.getName());
+            sr.setTicket(item.getInternalName());
             try {
                 if (position.getVariationId() != null && position.getVariationId() > 0) {
                     sr.setVariation(item.getVariation(position.getVariationId()).getStringValue());
@@ -396,7 +396,7 @@ public class AsyncCheckProvider implements TicketCheckProvider {
                         .and(OrderPosition.ITEM_ID.eq(product.id)).get().value();
                 items.add(new StatusResultItem(
                         product.getServer_id(),
-                        product.getName(),
+                        product.getInternalName(),
                         position_count,
                         ci_count,
                         variations,

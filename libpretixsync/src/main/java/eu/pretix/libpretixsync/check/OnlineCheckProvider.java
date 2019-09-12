@@ -116,7 +116,7 @@ public class OnlineCheckProvider implements TicketCheckProvider {
                             .where(Item.SERVER_ID.eq(posjson.getLong("item")))
                             .get().firstOrNull();
                     if (item != null) {
-                        res.setTicket(item.getName());
+                        res.setTicket(item.getInternalName());
                         if (posjson.optLong("variation", 0) > 0) {
                             ItemVariation iv = item.getVariation(posjson.getLong("variation"));
                             if (iv != null) {
@@ -177,7 +177,7 @@ public class OnlineCheckProvider implements TicketCheckProvider {
                         .where(Item.SERVER_ID.eq(res.getLong("item")))
                         .get().firstOrNull();
                 if (item != null) {
-                    sr.setTicket(item.getName());
+                    sr.setTicket(item.getInternalName());
                     if (res.optLong("variation", 0) > 0) {
                         ItemVariation iv = item.getVariation(res.getLong("variation"));
                         if (iv != null) {
