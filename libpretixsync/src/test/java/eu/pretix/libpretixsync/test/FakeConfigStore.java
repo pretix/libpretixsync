@@ -36,6 +36,15 @@ public class FakeConfigStore implements ConfigStore {
     }
 
     @Override
+    public int getDeviceKnownVersion() {
+        return 0;
+    }
+
+    @Override
+    public void setDeviceKnownVersion(int value) {
+    }
+
+    @Override
     public String getApiKey() {
         return "12345";
     }
