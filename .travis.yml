@@ -2,8 +2,10 @@ language: java
 jdk:
   - oraclejdk8
   - oraclejdk9
+  - oraclejdk11
   - openjdk8
 sudo: false
+dist: trusty
 script:
     - cd libpretixsync
     - TERM=dumb ./gradlew clean check test build jar jacocoTestReport
