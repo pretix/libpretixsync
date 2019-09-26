@@ -1,5 +1,6 @@
 package eu.pretix.libpretixsync.api;
 
+import java.util.concurrent.TimeUnit;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 
@@ -52,6 +53,9 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
             }
         }
         return new OkHttpClient.Builder()
+                .connectTimeout(30, TimeUnit.SECONDS)
+                .writeTimeout(30, TimeUnit.SECONDS)
+                .readTimeout(30, TimeUnit.SECONDS)
                 .build();
     }
 }
