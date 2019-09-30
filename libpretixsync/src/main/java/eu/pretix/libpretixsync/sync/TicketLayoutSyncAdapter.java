@@ -72,13 +72,13 @@ public class TicketLayoutSyncAdapter extends BaseDownloadSyncAdapter<TicketLayou
             }
         }
 
-        List<Item> items;
+        List<Item> items_to_remove;
         if (!itemids.isEmpty()) {
             // Get all items that we *might* want to assign this to
-            items = store.select(Item.class).where(
+            List<Item> items_to_check = store.select(Item.class).where(
                     Item.SERVER_ID.in(itemids)
             ).get().toList();
-            for (Item item : items) {
+            for (Item item : items_to_check) {
                 if (item.getTicket_layout_id() != null) {
                     if (item.getTicket_layout_id().equals(obj.getServer_id())) {
                         // This item is already assigned to this layout, we can leave it as it is
@@ -104,7 +104,7 @@ public class TicketLayoutSyncAdapter extends BaseDownloadSyncAdapter<TicketLayou
 
             // Look if there are any items in the local database assigned to this layout even though
             // they should not be any more.
-            items = store.select(Item.class).where(
+            items_to_remove = store.select(Item.class).where(
                     Item.SERVER_ID.notIn(itemids).and(
                             Item.TICKET_LAYOUT_ID.eq(obj.getServer_id())
                     )
@@ -112,11 +112,11 @@ public class TicketLayoutSyncAdapter extends BaseDownloadSyncAdapter<TicketLayou
         } else {
             // Look if there are any items in the local database assigned to this layout even though
             // they should not be any more.
-            items = store.select(Item.class).where(
+            items_to_remove = store.select(Item.class).where(
                     Item.TICKET_LAYOUT_ID.eq(obj.getServer_id())
             ).get().toList();
         }
-        for (Item item : items) {
+        for (Item item : items_to_remove) {
             item.setTicket_layout_id(null);
             store.update(item, Item.TICKET_LAYOUT_ID);
         }

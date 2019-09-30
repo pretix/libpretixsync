@@ -38,26 +38,26 @@ public class BadgeLayoutSyncAdapter extends BaseDownloadSyncAdapter<BadgeLayout,
         for (int i = 0; i < assignmentarr.length(); i++) {
             itemids.add(assignmentarr.getJSONObject(i).getLong("item"));
         }
-        List<Item> items = null;
+        List<Item> items_to_remove;
         if (!itemids.isEmpty()) {
-            items = store.select(Item.class).where(
+            List<Item> items = store.select(Item.class).where(
                     Item.SERVER_ID.in(itemids)
             ).get().toList();
             for (Item item : items) {
                 item.setBadge_layout_id(obj.getServer_id());
                 store.update(item, Item.BADGE_LAYOUT_ID);
             }
-            items = store.select(Item.class).where(
+            items_to_remove = store.select(Item.class).where(
                     Item.SERVER_ID.notIn(itemids).and(
                             Item.BADGE_LAYOUT_ID.eq(obj.getServer_id())
                     )
             ).get().toList();
         } else {
-            items = store.select(Item.class).where(
+            items_to_remove = store.select(Item.class).where(
                     Item.BADGE_LAYOUT_ID.eq(obj.getServer_id())
             ).get().toList();
         }
-        for (Item item : items) {
+        for (Item item : items_to_remove) {
             item.setBadge_layout_id(null);
             store.update(item, Item.BADGE_LAYOUT_ID);
         }
