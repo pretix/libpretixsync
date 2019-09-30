@@ -72,13 +72,9 @@ public class TicketLayoutSyncAdapter extends BaseDownloadSyncAdapter<TicketLayou
             }
         }
 
-        List<Item> items = null;
+        List<Item> items;
         if (!itemids.isEmpty()) {
             // Get all items that we *might* want to assign this to
-            for (Item item : items) {
-                item.setBadge_layout_id(null);
-                store.update(item, Item.BADGE_LAYOUT_ID);
-            }
             items = store.select(Item.class).where(
                     Item.SERVER_ID.in(itemids)
             ).get().toList();
