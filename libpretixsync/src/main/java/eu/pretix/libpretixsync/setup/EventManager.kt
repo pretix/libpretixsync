@@ -84,7 +84,7 @@ class EventManager(private val store: BlockingEntityStore<Persistable>, private 
             if (resp.response.code() != 200) {
                 throw IOException()
             }
-            return events + parseEvents(resp.data, true)
+            return events + parseEvents(resp.data, subevents)
         } else {
             return events
         }
