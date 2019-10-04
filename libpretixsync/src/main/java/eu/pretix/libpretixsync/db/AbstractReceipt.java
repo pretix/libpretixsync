@@ -52,7 +52,6 @@ public class AbstractReceipt implements LocalObject {
     @ManyToOne
     public Closing closing;
 
-    @Column(value = "false")
     public boolean canceled;
 
     public String payment_data;
