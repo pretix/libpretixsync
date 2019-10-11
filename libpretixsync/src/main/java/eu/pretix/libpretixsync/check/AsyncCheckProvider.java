@@ -126,7 +126,7 @@ public class AsyncCheckProvider implements TicketCheckProvider {
         if (!order.getStatus().equals("p") && !order.getStatus().equals("n")) {
             res.setType(CheckResult.Type.CANCELED);
             res.setCheckinAllowed(false);
-        } else if ((!order.getStatus().equals("p") && !ignore_unpaid)) {
+        } else if ((!order.getStatus().equals("p") && !(ignore_unpaid && list.include_pending))) {
             res.setType(CheckResult.Type.UNPAID);
             res.setCheckinAllowed(list.include_pending);
         } else if (is_checked_in) {
