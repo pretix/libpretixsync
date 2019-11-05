@@ -47,6 +47,14 @@ public class AbstractEvent implements RemoteObject {
         }
     }
 
+    public boolean isInTestmode() {
+        try {
+            return getJSON().optBoolean("testmode", false);
+        } catch (JSONException e) {
+            return false;
+        }
+    }
+
     public String getName() {
         try {
             return I18nString.toString(getJSON().getJSONObject("name"));
