@@ -38,6 +38,10 @@ public class AbstractReceiptLine implements LocalObject {
 
     public BigDecimal tax_rate;
 
+    public boolean price_calculated_from_net;
+
+    public boolean canceled_because_of_receipt;
+
     public Long tax_rule;
 
     public BigDecimal tax_value;
@@ -92,6 +96,8 @@ public class AbstractReceiptLine implements LocalObject {
         jo.put("type", type);
         jo.put("position_id", positionid);
         jo.put("canceled", canceled);
+        jo.put("canceled_because_of_receipt", canceled_because_of_receipt);
+        jo.put("price_calculated_from_net", price_calculated_from_net);
         jo.put("price", price);
         jo.put("tax_rate", tax_rate != null ? tax_rate : "0.00");
         jo.put("tax_value", tax_value != null ? tax_value : "0.00");
