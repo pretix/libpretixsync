@@ -34,13 +34,13 @@ public class InvoicesettingsSyncAdapter extends BaseSingleObjectSyncAdapter<Invo
     @Override
     public void updateObject(Invoicesettings obj, JSONObject jsonobj) throws JSONException {
         obj.setSlug(eventSlug);
-        obj.setName(jsonobj.getString("invoice_address_from_name"));
-        obj.setAddress(jsonobj.getString("invoice_address_from"));
-        obj.setZipcode(jsonobj.getString("invoice_address_from_zipcode"));
-        obj.setCity(jsonobj.getString("invoice_address_from_city"));
-        obj.setCountry(jsonobj.getString("invoice_address_from_country"));
-        obj.setTax_id(jsonobj.getString("invoice_address_from_tax_id"));
-        obj.setVat_id(jsonobj.getString("invoice_address_from_vat_id"));
+        obj.setName(jsonobj.optString("invoice_address_from_name"));
+        obj.setAddress(jsonobj.optString("invoice_address_from"));
+        obj.setZipcode(jsonobj.optString("invoice_address_from_zipcode"));
+        obj.setCity(jsonobj.optString("invoice_address_from_city"));
+        obj.setCountry(jsonobj.optString("invoice_address_from_country"));
+        obj.setTax_id(jsonobj.optString("invoice_address_from_tax_id"));
+        obj.setVat_id(jsonobj.optString("invoice_address_from_vat_id"));
         obj.setJson_data(jsonobj.toString());
     }
 
