@@ -53,6 +53,14 @@ public class AbstractClosing implements LocalObject {
     @Nullable
     public String invoice_settings;
 
+    public JSONObject getInvoiceSettings() throws JSONException {
+        try {
+            return new JSONObject(invoice_settings);
+        } catch (JSONException e) {
+            return new JSONObject();
+        }
+    }
+
     @Override
     public JSONObject toJSON() throws JSONException {
         TimeZone tz = TimeZone.getTimeZone("UTC");
