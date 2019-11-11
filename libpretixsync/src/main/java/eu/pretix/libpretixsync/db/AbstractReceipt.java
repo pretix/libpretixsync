@@ -47,6 +47,10 @@ public class AbstractReceipt implements LocalObject {
 
     public String fiscalisation_data;
 
+    public String fiscalisation_text;
+
+    public String fiscalisation_qr;
+
     @OneToMany
     public List<ReceiptLine> lines;
 
@@ -88,6 +92,8 @@ public class AbstractReceipt implements LocalObject {
         jo.put("printed", printed);
         jo.put("payment_data", payment_data == null || payment_data.equals("null") || payment_data.isEmpty() ? new JSONObject() : new JSONObject(payment_data));
         jo.put("fiscalisation_data", fiscalisation_data == null || fiscalisation_data.equals("null") || fiscalisation_data.isEmpty() ? new JSONObject() : new JSONObject(fiscalisation_data));
+        jo.put("fiscalisation_text", fiscalisation_text == null || fiscalisation_text.equals("null") || fiscalisation_text.isEmpty() ? JSONObject.NULL : fiscalisation_text);
+        jo.put("fiscalisation_qr", fiscalisation_qr == null || fiscalisation_qr.equals("null") || fiscalisation_qr.isEmpty() ? JSONObject.NULL : fiscalisation_qr);
         return jo;
     }
 }
