@@ -55,7 +55,7 @@ public class AbstractClosing implements LocalObject {
 
     public JSONObject getInvoiceSettings() throws JSONException {
         try {
-            return new JSONObject(invoice_settings);
+            return new JSONObject(invoice_settings != null ? invoice_settings : "{}");
         } catch (JSONException e) {
             return new JSONObject();
         }
