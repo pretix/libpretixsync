@@ -84,6 +84,16 @@ public class AbstractItem implements RemoteObject {
     }
 
     @JsonIgnore
+    public boolean isGiftcard() {
+        try {
+            return getJSON().getBoolean("issue_giftcard");
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    @JsonIgnore
     public boolean hasVariations() {
         try {
             return getJSON().getBoolean("has_variations");
