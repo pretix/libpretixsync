@@ -21,14 +21,14 @@ class EventManager(private val store: BlockingEntityStore<Persistable>, private 
 
         val resp_events = api.fetchResource(api.organizerResourceUrl("events") +
                 "?ends_after=$eightHoursAgo" + if (require_live) "&live=true" else "")
-        if (resp_events.response.code() != 200) {
+        if (resp_events.response.code != 200) {
             throw IOException()
         }
         var events = parseEvents(resp_events.data)
 
         val resp_subevents = api.fetchResource(api.organizerResourceUrl("subevents")
                 + "?ends_after=$eightHoursAgo" + if (require_live) "&active=true&event__live=true" else "")
-        if (resp_subevents.response.code() != 200) {
+        if (resp_subevents.response.code != 200) {
             throw IOException()
         }
         events += parseEvents(resp_subevents.data, subevents=true)
@@ -62,7 +62,7 @@ class EventManager(private val store: BlockingEntityStore<Persistable>, private 
                             try {
                                 event = api.fetchResource(api.organizerResourceUrl("events/" + eventSlug))
 
-                                if (event.response.code() != 200) {
+                                if (event.response.code != 200) {
                                     throw IOException()
                                 }
                                 eventMap[eventSlug] = event
@@ -81,7 +81,7 @@ class EventManager(private val store: BlockingEntityStore<Persistable>, private 
         if (!data.isNull("next")) {
             val next = data.getString("next")
             val resp = api.fetchResource(next)
-            if (resp.response.code() != 200) {
+            if (resp.response.code != 200) {
                 throw IOException()
             }
             return events + parseEvents(resp.data, subevents)

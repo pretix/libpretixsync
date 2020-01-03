@@ -4,6 +4,7 @@ import eu.pretix.libpretixsync.api.HttpClientFactory
 import eu.pretix.libpretixsync.utils.NetUtils
 import eu.pretix.libpretixsync.utils.flatJsonError
 import okhttp3.MediaType
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.Request
 import okhttp3.RequestBody
 import okhttp3.Response
@@ -30,13 +31,13 @@ class SetupManager(private val hardware_brand: String, private val hardware_mode
 
         val request = Request.Builder()
                 .url(url + "/api/v1/device/initialize")
-                .post(RequestBody.create(MediaType.parse("application/json"), apiBody.toString()))
+                .post(RequestBody.create("application/json".toMediaTypeOrNull(), apiBody.toString()))
                 .build()
         var response: Response?
         response = client.newCall(request).execute();
 
-        val body = response.body()?.string()
-        val code = response.code()
+        val body = response.body?.string()
+        val code = response.code
         response.close()
 
         if (code >= 500) {
