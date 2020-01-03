@@ -120,7 +120,7 @@ public class PretixApi {
         try {
             return fetchResource(eventResourceUrl("checkinlists/" + listId + "/status"));
         } catch (ResourceNotModified resourceNotModified) {
-            throw new ApiException("invalid error");
+            throw new FinalApiException("invalid error");
         }
     }
 
@@ -128,7 +128,7 @@ public class PretixApi {
         try {
             return fetchResource(eventResourceUrl("checkinlists/" + listId + "/positions") + "?ignore_status=true&page=" + page + "&search=" + URLEncoder.encode(query, "UTF-8"));
         } catch (ResourceNotModified | UnsupportedEncodingException resourceNotModified) {
-            throw new ApiException("invalid error");
+            throw new FinalApiException("invalid error");
         }
     }
 
@@ -168,7 +168,7 @@ public class PretixApi {
             return apiCall(request.build(), false);
         } catch (ResourceNotModified resourceNotModified) {
             resourceNotModified.printStackTrace();
-            throw new ApiException("Resource not modified");
+            throw new FinalApiException("Resource not modified");
         }
     }
 
@@ -188,7 +188,7 @@ public class PretixApi {
             return apiCall(request.build());
         } catch (ResourceNotModified resourceNotModified) {
             resourceNotModified.printStackTrace();
-            throw new ApiException("Resource not modified");
+            throw new FinalApiException("Resource not modified");
         }
     }
 
@@ -214,7 +214,7 @@ public class PretixApi {
             return apiCall(request.build(), false);
         } catch (ResourceNotModified resourceNotModified) {
             resourceNotModified.printStackTrace();
-            throw new ApiException("Resource not modified");
+            throw new FinalApiException("Resource not modified");
         }
     }
 
@@ -259,15 +259,18 @@ public class PretixApi {
             throw new ApiException("Server error: " + response.code());
         } else if (response.code() == 404 && (!json || !body.startsWith("{"))) {
             response.close();
-            throw new ApiException("Server error: Resource not found.");
+            throw new FinalApiException("Server error: Resource not found.");
         } else if (response.code() == 304) {
             throw new ResourceNotModified();
         } else if (response.code() == 403) {
             response.close();
-            throw new ApiException("Server error: Permission denied.");
-        } else if (response.code() >= 405) {
+            throw new FinalApiException("Server error: Permission denied.");
+        } else if (response.code() == 409) {
             response.close();
             throw new ApiException("Server error: " + response.code() + ".");
+        } else if (response.code() >= 405) {
+            response.close();
+            throw new FinalApiException("Server error: " + response.code() + ".");
         }
         if (response.code() == 401) {
             if (body.startsWith("{")) {
