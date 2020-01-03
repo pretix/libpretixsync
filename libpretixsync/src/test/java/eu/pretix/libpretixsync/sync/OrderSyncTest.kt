@@ -6,6 +6,7 @@ import eu.pretix.libpretixsync.db.*
 import eu.pretix.libpretixsync.sync.*
 import eu.pretix.libpretixsync.test.*
 import okhttp3.*
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
@@ -39,7 +40,7 @@ class OrderSyncTest : BaseDatabaseTest() {
                 .message("OK")
                 .protocol(Protocol.HTTP_1_1)
                 .addHeader("X-Page-Generated", generated)
-                .body(ResponseBody.create(MediaType.parse("application/json"), data.toString()))
+                .body(ResponseBody.create("application/json".toMediaTypeOrNull(), data.toString()))
                 .build()
     }
 
