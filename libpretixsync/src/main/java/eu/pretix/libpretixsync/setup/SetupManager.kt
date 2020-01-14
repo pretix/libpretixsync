@@ -3,10 +3,9 @@ package eu.pretix.libpretixsync.setup
 import eu.pretix.libpretixsync.api.HttpClientFactory
 import eu.pretix.libpretixsync.utils.NetUtils
 import eu.pretix.libpretixsync.utils.flatJsonError
-import okhttp3.MediaType
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.Request
-import okhttp3.RequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import org.json.JSONException
 import org.json.JSONObject
@@ -31,7 +30,7 @@ class SetupManager(private val hardware_brand: String, private val hardware_mode
 
         val request = Request.Builder()
                 .url(url + "/api/v1/device/initialize")
-                .post(RequestBody.create("application/json".toMediaTypeOrNull(), apiBody.toString()))
+                .post(apiBody.toString().toByteArray().toRequestBody("application/json".toMediaTypeOrNull()))
                 .build()
         var response: Response?
         response = client.newCall(request).execute();

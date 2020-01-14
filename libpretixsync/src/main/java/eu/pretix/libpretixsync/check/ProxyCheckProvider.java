@@ -140,7 +140,7 @@ public class ProxyCheckProvider implements TicketCheckProvider {
         try {
             Request request = new Request.Builder()
                     .url(config.getApiUrl() + "/proxyapi/v1/rpc/" + config.getEventSlug() + "/" + listId + "/check/")
-                    .post(RequestBody.create(MediaType.parse("application/json"), mapper.writeValueAsString(data)))
+                    .post(RequestBody.create(mapper.writeValueAsString(data), MediaType.parse("application/json")))
                     .header("Authorization", "Device " + config.getApiKey())
                     .build();
             String body = execute(request);
@@ -172,7 +172,7 @@ public class ProxyCheckProvider implements TicketCheckProvider {
         try {
             Request request = new Request.Builder()
                     .url(config.getApiUrl() + "/proxyapi/v1/rpc/" + config.getEventSlug() + "/" + listId + "/search/")
-                    .post(RequestBody.create(MediaType.parse("application/json"), mapper.writeValueAsString(data)))
+                    .post(RequestBody.create(mapper.writeValueAsString(data), MediaType.parse("application/json")))
                     .header("Authorization", "Device " + config.getApiKey())
                     .build();
             String body = execute(request);
