@@ -19,6 +19,7 @@ import eu.pretix.libpretixsync.utils.HashUtils;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
 import io.requery.query.Tuple;
+import io.requery.util.CloseableIterator;
 
 public class BadgeLayoutSyncAdapter extends BaseDownloadSyncAdapter<BadgeLayout, Long> {
     public BadgeLayoutSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, PretixApi api, SyncManager.ProgressFeedback feedback) {
@@ -112,7 +113,7 @@ public class BadgeLayoutSyncAdapter extends BaseDownloadSyncAdapter<BadgeLayout,
     }
 
     @Override
-    public Iterator<BadgeLayout> runBatch(List<Long> ids) {
+    public CloseableIterator<BadgeLayout> runBatch(List<Long> ids) {
         return store.select(BadgeLayout.class)
                 .where(BadgeLayout.EVENT_SLUG.eq(eventSlug))
                 .and(BadgeLayout.SERVER_ID.in(ids))
@@ -120,7 +121,7 @@ public class BadgeLayoutSyncAdapter extends BaseDownloadSyncAdapter<BadgeLayout,
     }
 
     @Override
-    Iterator<Tuple> getKnownIDsIterator() {
+    CloseableIterator<Tuple> getKnownIDsIterator() {
         return store.select(BadgeLayout.SERVER_ID)
                 .where(BadgeLayout.EVENT_SLUG.eq(eventSlug))
                 .get().iterator();

@@ -29,6 +29,7 @@ import eu.pretix.libpretixsync.utils.JSONUtils;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
 import io.requery.query.Tuple;
+import io.requery.util.CloseableIterator;
 
 public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
     public OrderSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, PretixApi api, SyncManager.ProgressFeedback feedback) {
@@ -370,7 +371,7 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
     }
 
     @Override
-    public Iterator<Order> runBatch(List<String> ids) {
+    public CloseableIterator<Order> runBatch(List<String> ids) {
         return store.select(Order.class)
                 .where(Order.EVENT_SLUG.eq(eventSlug))
                 .and(Order.CODE.in(ids))
@@ -378,7 +379,7 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
     }
 
     @Override
-    Iterator<Tuple> getKnownIDsIterator() {
+    CloseableIterator<Tuple> getKnownIDsIterator() {
         return store.select(Order.CODE)
                 .where(Item.EVENT_SLUG.eq(eventSlug))
                 .get().iterator();

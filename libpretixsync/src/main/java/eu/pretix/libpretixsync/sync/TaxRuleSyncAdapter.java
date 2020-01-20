@@ -11,6 +11,7 @@ import eu.pretix.libpretixsync.db.TaxRule;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
 import io.requery.query.Tuple;
+import io.requery.util.CloseableIterator;
 
 public class TaxRuleSyncAdapter extends BaseConditionalSyncAdapter<TaxRule, Long> {
     public TaxRuleSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, PretixApi api, SyncManager.ProgressFeedback feedback) {
@@ -25,7 +26,7 @@ public class TaxRuleSyncAdapter extends BaseConditionalSyncAdapter<TaxRule, Long
     }
 
     @Override
-    public Iterator<TaxRule> runBatch(List<Long> ids) {
+    public CloseableIterator<TaxRule> runBatch(List<Long> ids) {
         return store.select(TaxRule.class)
                 .where(TaxRule.EVENT_SLUG.eq(eventSlug))
                 .and(TaxRule.SERVER_ID.in(ids))
@@ -33,7 +34,7 @@ public class TaxRuleSyncAdapter extends BaseConditionalSyncAdapter<TaxRule, Long
     }
 
     @Override
-    Iterator<Tuple> getKnownIDsIterator() {
+    CloseableIterator<Tuple> getKnownIDsIterator() {
         return store.select(TaxRule.SERVER_ID)
                 .where(TaxRule.EVENT_SLUG.eq(eventSlug))
                 .get().iterator();

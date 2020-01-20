@@ -14,6 +14,7 @@ import eu.pretix.libpretixsync.db.Quota;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
 import io.requery.query.Tuple;
+import io.requery.util.CloseableIterator;
 
 public class QuotaSyncAdapter extends BaseConditionalSyncAdapter<Quota, Long> {
     public QuotaSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, PretixApi api, SyncManager.ProgressFeedback feedback) {
@@ -43,7 +44,7 @@ public class QuotaSyncAdapter extends BaseConditionalSyncAdapter<Quota, Long> {
     }
 
     @Override
-    public Iterator<Quota> runBatch(List<Long> ids) {
+    public CloseableIterator<Quota> runBatch(List<Long> ids) {
         return store.select(Quota.class)
                 .where(Quota.EVENT_SLUG.eq(eventSlug))
                 .and(Quota.SERVER_ID.in(ids))
@@ -51,7 +52,7 @@ public class QuotaSyncAdapter extends BaseConditionalSyncAdapter<Quota, Long> {
     }
 
     @Override
-    Iterator<Tuple> getKnownIDsIterator() {
+    CloseableIterator<Tuple> getKnownIDsIterator() {
         return store.select(Quota.SERVER_ID)
                 .where(Quota.EVENT_SLUG.eq(eventSlug))
                 .get().iterator();

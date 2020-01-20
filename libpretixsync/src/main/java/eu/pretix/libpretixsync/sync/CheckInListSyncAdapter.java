@@ -15,6 +15,7 @@ import eu.pretix.libpretixsync.utils.JSONUtils;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
 import io.requery.query.Tuple;
+import io.requery.util.CloseableIterator;
 
 public class CheckInListSyncAdapter extends BaseConditionalSyncAdapter<CheckInList, Long> {
     public CheckInListSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, PretixApi api, SyncManager.ProgressFeedback feedback) {
@@ -52,7 +53,7 @@ public class CheckInListSyncAdapter extends BaseConditionalSyncAdapter<CheckInLi
 
 
     @Override
-    public Iterator<CheckInList> runBatch(List<Long> ids) {
+    public CloseableIterator<CheckInList> runBatch(List<Long> ids) {
         return store.select(CheckInList.class)
                 .where(CheckInList.EVENT_SLUG.eq(eventSlug))
                 .and(CheckInList.SERVER_ID.in(ids))
@@ -60,7 +61,7 @@ public class CheckInListSyncAdapter extends BaseConditionalSyncAdapter<CheckInLi
     }
 
     @Override
-    Iterator<Tuple> getKnownIDsIterator() {
+    CloseableIterator<Tuple> getKnownIDsIterator() {
         return store.select(CheckInList.SERVER_ID)
                 .where(CheckInList.EVENT_SLUG.eq(eventSlug))
                 .get().iterator();

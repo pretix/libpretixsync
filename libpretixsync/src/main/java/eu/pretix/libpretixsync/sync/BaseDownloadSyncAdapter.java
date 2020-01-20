@@ -16,6 +16,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import io.requery.util.CloseableIterator;
 import java8.util.concurrent.CompletableFuture;
 
 import eu.pretix.libpretixsync.api.ApiException;
@@ -81,15 +82,16 @@ public abstract class BaseDownloadSyncAdapter<T extends RemoteObject & Persistab
         return new BatchedQueryIterator<K, T>(ids.iterator(), this);
     }
 
-    abstract Iterator<Tuple> getKnownIDsIterator();
+    abstract CloseableIterator<Tuple> getKnownIDsIterator();
 
     protected Set<K> getKnownIDs() {
-        Iterator<Tuple> it = getKnownIDsIterator();
+        CloseableIterator<Tuple> it = getKnownIDsIterator();
         Set<K> known = new HashSet<>();
         while (it.hasNext()) {
             Tuple obj = it.next();
             known.add(obj.get(0));
         }
+        it.close();
         return known;
     }
 

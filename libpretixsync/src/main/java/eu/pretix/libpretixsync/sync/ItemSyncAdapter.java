@@ -17,6 +17,7 @@ import eu.pretix.libpretixsync.utils.JSONUtils;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
 import io.requery.query.Tuple;
+import io.requery.util.CloseableIterator;
 
 public class ItemSyncAdapter extends BaseConditionalSyncAdapter<Item, Long> {
     public ItemSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, PretixApi api, SyncManager.ProgressFeedback feedback) {
@@ -74,7 +75,7 @@ public class ItemSyncAdapter extends BaseConditionalSyncAdapter<Item, Long> {
     }
 
     @Override
-    public Iterator<Item> runBatch(List<Long> ids) {
+    public CloseableIterator<Item> runBatch(List<Long> ids) {
         return store.select(Item.class)
                 .where(Item.EVENT_SLUG.eq(eventSlug))
                 .and(Item.SERVER_ID.in(ids))
@@ -82,7 +83,7 @@ public class ItemSyncAdapter extends BaseConditionalSyncAdapter<Item, Long> {
     }
 
     @Override
-    Iterator<Tuple> getKnownIDsIterator() {
+    CloseableIterator<Tuple> getKnownIDsIterator() {
         return store.select(Item.SERVER_ID)
                 .where(Item.EVENT_SLUG.eq(eventSlug))
                 .get().iterator();

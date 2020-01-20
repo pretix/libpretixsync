@@ -15,6 +15,7 @@ import eu.pretix.libpretixsync.utils.JSONUtils;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
 import io.requery.query.Tuple;
+import io.requery.util.CloseableIterator;
 
 public class QuestionSyncAdapter extends BaseConditionalSyncAdapter<Question, Long> {
     public QuestionSyncAdapter(BlockingEntityStore<Persistable> store,FileStorage fileStorage, String eventSlug, PretixApi api, SyncManager.ProgressFeedback feedback) {
@@ -45,7 +46,7 @@ public class QuestionSyncAdapter extends BaseConditionalSyncAdapter<Question, Lo
     }
 
     @Override
-    public Iterator<Question> runBatch(List<Long> ids) {
+    public CloseableIterator<Question> runBatch(List<Long> ids) {
         return store.select(Question.class)
                 .where(Question.EVENT_SLUG.eq(eventSlug))
                 .and(Question.SERVER_ID.in(ids))
@@ -53,7 +54,7 @@ public class QuestionSyncAdapter extends BaseConditionalSyncAdapter<Question, Lo
     }
 
     @Override
-    Iterator<Tuple> getKnownIDsIterator() {
+    CloseableIterator<Tuple> getKnownIDsIterator() {
         return store.select(Question.SERVER_ID)
                 .where(Question.EVENT_SLUG.eq(eventSlug))
                 .get().iterator();

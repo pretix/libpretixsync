@@ -21,6 +21,7 @@ import eu.pretix.libpretixsync.utils.HashUtils;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
 import io.requery.query.Tuple;
+import io.requery.util.CloseableIterator;
 
 public class TicketLayoutSyncAdapter extends BaseDownloadSyncAdapter<TicketLayout, Long> {
     public TicketLayoutSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, PretixApi api, SyncManager.ProgressFeedback feedback) {
@@ -170,7 +171,7 @@ public class TicketLayoutSyncAdapter extends BaseDownloadSyncAdapter<TicketLayou
     }
 
     @Override
-    public Iterator<TicketLayout> runBatch(List<Long> ids) {
+    public CloseableIterator<TicketLayout> runBatch(List<Long> ids) {
         return store.select(TicketLayout.class)
                 .where(TicketLayout.EVENT_SLUG.eq(eventSlug))
                 .and(TicketLayout.SERVER_ID.in(ids))
@@ -178,7 +179,7 @@ public class TicketLayoutSyncAdapter extends BaseDownloadSyncAdapter<TicketLayou
     }
 
     @Override
-    Iterator<Tuple> getKnownIDsIterator() {
+    CloseableIterator<Tuple> getKnownIDsIterator() {
         return store.select(TicketLayout.SERVER_ID)
                 .where(TicketLayout.EVENT_SLUG.eq(eventSlug))
                 .get().iterator();

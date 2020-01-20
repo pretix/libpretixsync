@@ -6,6 +6,8 @@ import eu.pretix.libpretixsync.db.SubEvent;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
 import io.requery.query.Tuple;
+import io.requery.util.CloseableIterator;
+
 import org.joda.time.format.ISODateTimeFormat;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -19,7 +21,7 @@ public class AllSubEventsSyncAdapter extends BaseDownloadSyncAdapter<SubEvent, L
     }
 
     @Override
-    Iterator<Tuple> getKnownIDsIterator() {
+    CloseableIterator<Tuple> getKnownIDsIterator() {
         return store.select(SubEvent.SERVER_ID)
                 .get().iterator();
     }
@@ -62,7 +64,7 @@ public class AllSubEventsSyncAdapter extends BaseDownloadSyncAdapter<SubEvent, L
     }
 
     @Override
-    public Iterator<SubEvent> runBatch(List<Long> parameterBatch) {
+    public CloseableIterator<SubEvent> runBatch(List<Long> parameterBatch) {
         return store.select(SubEvent.class)
                 .where(SubEvent.SERVER_ID.in(parameterBatch))
                 .get().iterator();
