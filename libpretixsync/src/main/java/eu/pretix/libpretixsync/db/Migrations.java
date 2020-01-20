@@ -14,7 +14,7 @@ import io.requery.sql.TableCreationMode;
 
 public class Migrations {
     private static EntityModel model = Models.DEFAULT;
-    public static int CURRENT_VERSION = 45;
+    public static int CURRENT_VERSION = 48;
 
     private static void createVersionTable(Connection c, int version) throws SQLException {
         Statement s2 = c.createStatement();
@@ -111,11 +111,41 @@ public class Migrations {
             s4.execute("CREATE INDEX orderposition_secret ON orderposition (secret);");
             s4.close();
         }
+        if (db_version < 46) {
+            Statement s4 = c.createStatement();
+            s4.execute("ALTER TABLE Receipt ADD email_to TEXT;");
+            s4.close();
+        }
+        if (db_version < 47) {
+            Statement s2 = c.createStatement();
+            s2.execute("ALTER TABLE ReceiptLine ADD price_calculated_from_net INT;");
+            s2.close();
+            Statement s3 = c.createStatement();
+            s3.execute("ALTER TABLE ReceiptLine ADD canceled_because_of_receipt INT;");
+            s3.close();
+            Statement s4 = c.createStatement();
+            s4.execute("ALTER TABLE Receipt ADD fiscalisation_data TEXT;");
+            s4.close();
+            Statement s5 = c.createStatement();
+            s5.execute("ALTER TABLE Receipt ADD fiscalisation_text TEXT;");
+            s5.close();
+            Statement s6 = c.createStatement();
+            s6.execute("ALTER TABLE Receipt ADD fiscalisation_qr TEXT;");
+            s6.close();
+            Statement s7 = c.createStatement();
+            s7.execute("ALTER TABLE Receipt ADD started DATE;");
+            s7.close();
+        }
         // Note that the Android app currently does not use these queries!
 
         if (db_version < CURRENT_VERSION) {
             Statement s4 = c.createStatement();
             s4.execute("DELETE FROM ResourceLastModified;");
+            s4.close();
+        }
+        if (db_version < 48) {
+            Statement s4 = c.createStatement();
+            s4.execute("ALTER TABLE Closing ADD invoice_settings TEXT;");
             s4.close();
         }
 
