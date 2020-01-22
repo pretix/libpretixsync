@@ -107,7 +107,7 @@ public class AbstractReceiptLine implements LocalObject {
         jo.put("secret", secret);
         jo.put("seat", seat_guid != null ? seat_guid : JSONObject.NULL);
         jo.put("subevent", subevent_id);
-        jo.put("item", item_id);
+        jo.put("item", item_id != 0L ? item_id : JSONObject.NULL);
         jo.put("variation", variation_id);
         jo.put("sale_text", sale_text);
         jo.put("addon_to", JSONObject.NULL);
