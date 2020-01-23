@@ -18,6 +18,7 @@ import eu.pretix.libpretixsync.check.TicketCheckProvider;
 import eu.pretix.libpretixsync.config.ConfigStore;
 import eu.pretix.libpretixsync.db.CheckIn;
 import eu.pretix.libpretixsync.db.Closing;
+import eu.pretix.libpretixsync.db.Migrations;
 import eu.pretix.libpretixsync.db.Order;
 import eu.pretix.libpretixsync.db.OrderPosition;
 import eu.pretix.libpretixsync.db.Question;

@@ -14,7 +14,7 @@ import io.requery.sql.TableCreationMode;
 
 public class Migrations {
     private static EntityModel model = Models.DEFAULT;
-    public static int CURRENT_VERSION = 48;
+    public static int CURRENT_VERSION = 49;
 
     private static void createVersionTable(Connection c, int version) throws SQLException {
         Statement s2 = c.createStatement();
@@ -136,6 +136,17 @@ public class Migrations {
             s7.execute("ALTER TABLE Receipt ADD started DATE;");
             s7.close();
         }
+        if (db_version < 48) {
+            Statement s4 = c.createStatement();
+            s4.execute("ALTER TABLE Closing ADD invoice_settings TEXT;");
+            s4.close();
+        }
+        if (db_version < 49) {
+            Statement s3 = c.createStatement();
+            s3.execute("ALTER TABLE Item ADD ticket_layout_pretixpos_id INT;");
+            s3.close();
+        }
+
         // Note that the Android app currently does not use these queries!
 
         if (db_version < CURRENT_VERSION) {
@@ -143,12 +154,6 @@ public class Migrations {
             s4.execute("DELETE FROM ResourceLastModified;");
             s4.close();
         }
-        if (db_version < 48) {
-            Statement s4 = c.createStatement();
-            s4.execute("ALTER TABLE Closing ADD invoice_settings TEXT;");
-            s4.close();
-        }
-
         updateVersionTable(c, CURRENT_VERSION);
     }
 

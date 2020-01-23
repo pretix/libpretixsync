@@ -52,6 +52,9 @@ public class AbstractItem implements RemoteObject {
     @Nullable
     public Long ticket_layout_id;
 
+    @Nullable
+    public Long ticket_layout_pretixpos_id;
+
     public String picture_filename;
 
     @Override
