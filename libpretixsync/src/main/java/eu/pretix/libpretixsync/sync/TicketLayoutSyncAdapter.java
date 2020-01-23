@@ -8,10 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 
 import eu.pretix.libpretixsync.api.ApiException;
 import eu.pretix.libpretixsync.api.PretixApi;
@@ -180,6 +177,15 @@ public class TicketLayoutSyncAdapter extends BaseDownloadSyncAdapter<TicketLayou
     @Override
     String getResourceName() {
         return "ticketlayouts";
+    }
+
+    protected JSONObject preprocessObject(JSONObject obj) {
+        try {
+            obj.put("_written_after_20200123", true);  // Trigger full resyncronisation after a bugfix
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return obj;
     }
 
     @Override

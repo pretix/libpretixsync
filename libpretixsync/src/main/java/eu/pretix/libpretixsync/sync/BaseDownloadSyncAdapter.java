@@ -112,6 +112,10 @@ public abstract class BaseDownloadSyncAdapter<T extends RemoteObject & Persistab
         return known;
     }
 
+    protected JSONObject preprocessObject(JSONObject obj) {
+        return obj;
+    }
+
     protected void processPage(final JSONArray data) {
         int l = data.length();
         store.runInTransaction(new Callable<Void>() {
@@ -127,7 +131,7 @@ public abstract class BaseDownloadSyncAdapter<T extends RemoteObject & Persistab
                 List<T> inserts = new ArrayList<>();
 
                 for (int i = 0; i < l; i++) {
-                    JSONObject jsonobj = data.getJSONObject(i);
+                    JSONObject jsonobj = preprocessObject(data.getJSONObject(i));
                     K jsonid = getId(jsonobj);
                     T obj;
                     JSONObject old = null;
