@@ -108,4 +108,13 @@ public class FakeConfigStore implements ConfigStore {
     public Long getPosId() {
         return null;
     }
+
+    @Override
+    public void setKnownPretixVersion(Long val) {
+    }
+
+    @Override
+    public Long getKnownPretixVersion() {
+        return 0L;
+    }
 }
