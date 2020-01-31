@@ -7,6 +7,7 @@ import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -168,14 +169,14 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
             }
             if (known.containsKey(listid)) {
                 CheckIn ciobj = known.remove(listid);
-                ciobj.setDatetime(ISODateTimeFormat.dateTimeParser().parseDateTime(ci.getString("datetime")).toDate());
+                ciobj.setDatetime(new Timestamp(ISODateTimeFormat.dateTimeParser().parseDateTime(ci.getString("datetime")).toDate().getTime()));
                 ciobj.setJson_data(ci.toString());
                 store.update(ciobj);
             } else {
                 CheckIn ciobj = new CheckIn();
                 ciobj.setPosition(obj);
                 ciobj.setList(getList(listid));
-                ciobj.setDatetime(ISODateTimeFormat.dateTimeParser().parseDateTime(ci.getString("datetime")).toDate());
+                ciobj.setDatetime(new Timestamp(ISODateTimeFormat.dateTimeParser().parseDateTime(ci.getString("datetime")).toDate().getTime()));
                 ciobj.setJson_data(ci.toString());
                 checkinCreateCache.add(ciobj);
             }

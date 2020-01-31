@@ -4,8 +4,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -176,7 +176,7 @@ public class AsyncCheckProvider implements TicketCheckProvider {
                 QueuedCheckIn qci = new QueuedCheckIn();
                 qci.generateNonce();
                 qci.setSecret(ticketid);
-                qci.setDatetime(new Date());
+                qci.setDatetime(new Timestamp(System.currentTimeMillis()));
                 qci.setAnswers(givenAnswers.toString());
                 qci.setEvent_slug(eventSlug);
                 qci.setCheckinListId(listId);
@@ -185,7 +185,7 @@ public class AsyncCheckProvider implements TicketCheckProvider {
                 CheckIn ci = new CheckIn();
                 ci.setList(list);
                 ci.setPosition(position);
-                ci.setDatetime(new Date());
+                ci.setDatetime(new Timestamp(System.currentTimeMillis()));
                 ci.setJson_data("{\"local\": true}");
                 dataStore.insert(ci);
             }

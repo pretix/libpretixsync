@@ -12,6 +12,8 @@ import org.joda.time.format.ISODateTimeFormat;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.util.Iterator;
 import java.util.List;
 
@@ -30,9 +32,9 @@ public class AllSubEventsSyncAdapter extends BaseDownloadSyncAdapter<SubEvent, L
     public void updateObject(SubEvent obj, JSONObject jsonobj) throws JSONException {
         obj.setServer_id(jsonobj.getLong("id"));
         obj.setEvent_slug(jsonobj.getString("event"));
-        obj.setDate_from(ISODateTimeFormat.dateTimeParser().parseDateTime(jsonobj.getString("date_from")).toDate());
+        obj.setDate_from(new Timestamp(ISODateTimeFormat.dateTimeParser().parseDateTime(jsonobj.getString("date_from")).toDate().getTime()));
         if (!jsonobj.isNull("date_to")) {
-            obj.setDate_to(ISODateTimeFormat.dateTimeParser().parseDateTime(jsonobj.getString("date_to")).toDate());
+            obj.setDate_to(new Timestamp(ISODateTimeFormat.dateTimeParser().parseDateTime(jsonobj.getString("date_to")).toDate().getTime()));
         }
         obj.setActive(jsonobj.getBoolean("active"));
         obj.setJson_data(jsonobj.toString());

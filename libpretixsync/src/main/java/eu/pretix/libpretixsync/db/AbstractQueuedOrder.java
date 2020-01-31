@@ -1,7 +1,5 @@
 package eu.pretix.libpretixsync.db;
 
-import java.util.Date;
-
 import io.requery.Column;
 import io.requery.Entity;
 import io.requery.ForeignKey;

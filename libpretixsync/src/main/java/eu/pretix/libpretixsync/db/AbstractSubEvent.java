@@ -1,14 +1,18 @@
 package eu.pretix.libpretixsync.db;
 
-import io.requery.*;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.math.BigDecimal;
-import java.util.Date;
+import java.sql.Timestamp;
 
 import eu.pretix.libpretixsync.utils.I18nString;
+import io.requery.Column;
+import io.requery.Entity;
+import io.requery.Generated;
+import io.requery.Key;
+import io.requery.Nullable;
 
 @Entity(cacheable = false)
 public class AbstractSubEvent implements RemoteObject {
@@ -20,10 +24,10 @@ public class AbstractSubEvent implements RemoteObject {
 
     public String event_slug;
 
-    public Date date_from;
+    public Timestamp date_from;
 
     @Nullable
-    public Date date_to;
+    public Timestamp date_to;
 
     public boolean active;
 

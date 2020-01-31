@@ -3,9 +3,9 @@ package eu.pretix.libpretixsync.db;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
 
@@ -38,10 +38,10 @@ public class AbstractReceipt implements LocalObject {
     public boolean open;
 
     @Nullable
-    public Date datetime_opened;
+    public Timestamp datetime_opened;
 
     @Nullable
-    public Date datetime_closed;
+    public Timestamp datetime_closed;
 
     public String payment_type;
 

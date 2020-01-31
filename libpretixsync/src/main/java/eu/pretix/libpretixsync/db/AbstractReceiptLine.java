@@ -4,10 +4,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.math.BigDecimal;
-import java.util.Date;
+import java.sql.Timestamp;
 import java.util.List;
 
-import eu.pretix.libpretixsync.utils.I18nString;
 import io.requery.Column;
 import io.requery.Entity;
 import io.requery.ForeignKey;
@@ -16,7 +15,6 @@ import io.requery.Key;
 import io.requery.ManyToOne;
 import io.requery.Nullable;
 import io.requery.OneToMany;
-import io.requery.OneToOne;
 
 @Entity(cacheable = false)
 public class AbstractReceiptLine implements LocalObject {
@@ -72,7 +70,7 @@ public class AbstractReceiptLine implements LocalObject {
     public Long cart_position_id;
 
     @Nullable
-    public Date created;
+    public Timestamp created;
 
     @Nullable
     public String cart_id;
@@ -81,7 +79,7 @@ public class AbstractReceiptLine implements LocalObject {
     public String remote_error;
 
     @Nullable
-    public Date cart_expires;
+    public Timestamp cart_expires;
 
     @ForeignKey
     @ManyToOne

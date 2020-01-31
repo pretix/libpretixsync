@@ -1,13 +1,12 @@
 package eu.pretix.libpretixsync.db;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.math.BigDecimal;
+import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
 
@@ -25,7 +24,7 @@ public class AbstractClosing implements LocalObject {
 
     public Long server_id;
 
-    public Date datetime;
+    public Timestamp datetime;
 
     public boolean open;
 

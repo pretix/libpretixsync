@@ -1,16 +1,21 @@
 package eu.pretix.libpretixsync.check
 
-import eu.pretix.libpretixsync.db.*
-import eu.pretix.libpretixsync.sync.*
-import eu.pretix.libpretixsync.test.*
+import eu.pretix.libpretixsync.db.BaseDatabaseTest
+import eu.pretix.libpretixsync.db.Item
+import eu.pretix.libpretixsync.db.QueuedCheckIn
+import eu.pretix.libpretixsync.sync.CheckInListSyncAdapter
+import eu.pretix.libpretixsync.sync.ItemSyncAdapter
+import eu.pretix.libpretixsync.sync.OrderSyncAdapter
+import eu.pretix.libpretixsync.sync.QuestionSyncAdapter
+import eu.pretix.libpretixsync.test.FakeConfigStore
+import eu.pretix.libpretixsync.test.FakeFileStorage
+import eu.pretix.libpretixsync.test.FakePretixApi
+import eu.pretix.libpretixsync.test.jsonResource
 import org.json.JSONException
+import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
-
-import java.util.ArrayList
-import java.util.Date
-
-import org.junit.Assert.assertEquals
+import java.util.*
 
 class AsyncCheckProviderTest : BaseDatabaseTest() {
     private var configStore: FakeConfigStore? = null

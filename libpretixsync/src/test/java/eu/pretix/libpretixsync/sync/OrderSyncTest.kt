@@ -1,23 +1,22 @@
 package eu.pretix.libpretixsync.sync
 
 import eu.pretix.libpretixsync.api.ApiException
-import eu.pretix.libpretixsync.api.PretixApi
 import eu.pretix.libpretixsync.db.*
-import eu.pretix.libpretixsync.sync.*
-import eu.pretix.libpretixsync.test.*
-import okhttp3.*
+import eu.pretix.libpretixsync.test.FakeConfigStore
+import eu.pretix.libpretixsync.test.FakeFileStorage
+import eu.pretix.libpretixsync.test.FakePretixApi
+import eu.pretix.libpretixsync.test.jsonResource
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.Protocol
+import okhttp3.Request
+import okhttp3.Response
+import okhttp3.ResponseBody
 import org.json.JSONArray
-import org.json.JSONException
 import org.json.JSONObject
-import org.junit.Before
-import org.junit.Test
-
-import java.util.ArrayList
-import java.util.Date
-
 import org.junit.Assert.assertEquals
 import org.junit.Assert.fail
+import org.junit.Before
+import org.junit.Test
 
 class OrderSyncTest : BaseDatabaseTest() {
     private lateinit var configStore: FakeConfigStore

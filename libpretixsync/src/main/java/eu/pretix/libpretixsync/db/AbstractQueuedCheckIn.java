@@ -1,6 +1,6 @@
 package eu.pretix.libpretixsync.db;
 
-import java.util.Date;
+import java.sql.Timestamp;
 
 import io.requery.Entity;
 import io.requery.Generated;
@@ -19,7 +19,7 @@ public abstract class AbstractQueuedCheckIn {
 
     public String nonce;
 
-    public Date datetime;
+    public Timestamp datetime;
 
     public String answers;
 

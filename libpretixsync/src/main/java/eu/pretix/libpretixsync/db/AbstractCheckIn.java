@@ -1,12 +1,17 @@
 package eu.pretix.libpretixsync.db;
 
-import io.requery.*;
-import org.joda.time.format.ISODateTimeFormat;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.math.BigDecimal;
-import java.util.Date;
+import java.sql.Timestamp;
+
+import io.requery.Column;
+import io.requery.Entity;
+import io.requery.ForeignKey;
+import io.requery.Generated;
+import io.requery.Key;
+import io.requery.ManyToOne;
+import io.requery.ReferentialAction;
 
 @Entity(cacheable = false)
 public class AbstractCheckIn implements RemoteObject {
@@ -20,7 +25,7 @@ public class AbstractCheckIn implements RemoteObject {
     @ManyToOne
     public CheckInList list;
 
-    public Date datetime;
+    public Timestamp datetime;
 
     @Column
     @ForeignKey(update = ReferentialAction.CASCADE)
