@@ -39,4 +39,8 @@ public interface ConfigStore {
     public void setLastFailedSyncMsg(String val);
 
     public Long getPosId();
+
+    public void setKnownPretixVersion(Long val);
+
+    public Long getKnownPretixVersion();
 }

@@ -14,6 +14,7 @@ import eu.pretix.libpretixsync.SentryInterface;
 import eu.pretix.libpretixsync.api.ApiException;
 import eu.pretix.libpretixsync.api.DeviceAccessRevokedException;
 import eu.pretix.libpretixsync.api.PretixApi;
+import eu.pretix.libpretixsync.api.ResourceNotModified;
 import eu.pretix.libpretixsync.check.TicketCheckProvider;
 import eu.pretix.libpretixsync.config.ConfigStore;
 import eu.pretix.libpretixsync.db.CheckIn;
@@ -173,6 +174,15 @@ public class SyncManager {
         sentry.addBreadcrumb("sync.queue", "Start download");
 
         try {
+            try {
+                PretixApi.ApiResponse vresp = api.fetchResource(api.apiURL("version"));
+                configStore.setKnownPretixVersion(vresp.getData().getLong("pretix_numeric"));
+            } catch (ApiException | JSONException | ResourceNotModified e) {
+                // ignore
+                e.printStackTrace();
+            }
+
+
             download(new EventSyncAdapter(dataStore, configStore.getEventSlug(), configStore.getEventSlug(), api, feedback));
             if (configStore.getSubEventId() != null) {
                 download(new SubEventSyncAdapter(dataStore, configStore.getEventSlug(), String.valueOf(configStore.getSubEventId()), api, feedback));
