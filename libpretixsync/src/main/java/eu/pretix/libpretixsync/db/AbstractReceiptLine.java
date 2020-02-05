@@ -38,10 +38,10 @@ public class AbstractReceiptLine implements LocalObject {
 
     public BigDecimal tax_rate;
 
-    @Column(value = "0")
+    @Column(value = "false")
     public boolean price_calculated_from_net;
 
-    @Column(value = "0")
+    @Column(value = "false")
     public boolean canceled_because_of_receipt;
 
     public Long tax_rule;

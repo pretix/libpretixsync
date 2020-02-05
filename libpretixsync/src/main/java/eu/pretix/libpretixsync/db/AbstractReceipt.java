@@ -34,7 +34,7 @@ public class AbstractReceipt implements LocalObject {
     @Nullable
     public Long server_id;
 
-    @Column(value = "0")
+    @Column(value = "false")
     public boolean open;
 
     @Nullable
@@ -63,12 +63,12 @@ public class AbstractReceipt implements LocalObject {
 
     public boolean canceled;
 
-    @Column(value = "0")
+    @Column(value = "false")
     public boolean started;
 
     public String payment_data;
 
-    @Column(nullable = false, value = "0")
+    @Column(nullable = false, value = "false")
     public boolean printed;
 
     @OneToMany
