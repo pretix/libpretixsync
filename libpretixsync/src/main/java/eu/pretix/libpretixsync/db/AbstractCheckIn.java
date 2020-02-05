@@ -35,4 +35,12 @@ public class AbstractCheckIn implements RemoteObject {
         return new JSONObject(json_data);
     }
 
+    public Date getFullDatetime() {
+        try {
+            return ISODateTimeFormat.dateTimeParser().parseDateTime(getJSON().getString("datetime")).toDate();
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return datetime;
+        }
+    }
 }

@@ -27,6 +27,13 @@ questions in the process, please do not hesitate to ask us.
 Please note that we have a `Code of Conduct`_
 in place that applies to all project contributions, including issues, pull requests, etc.
 
+Warning
+-------
+
+This library is currently **unsafe to use on other database backends than SQLite**, execept for very
+specific parts of the library. Read https://github.com/pretix/pretixscan-proxy/issues/1 for more
+information.
+
 License
 -------
 The code in this repository is published under the terms of the Apache License. 

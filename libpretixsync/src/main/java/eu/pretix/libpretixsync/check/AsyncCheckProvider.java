@@ -98,18 +98,18 @@ public class AsyncCheckProvider implements TicketCheckProvider {
         QueuedCheckIn queuedCheckIns = dataStore.select(QueuedCheckIn.class)
                 .where(QueuedCheckIn.SECRET.eq(ticketid))
                 .and(QueuedCheckIn.CHECKIN_LIST_ID.eq(listId))
-                .orderBy(QueuedCheckIn.DATETIME)
+                .orderBy(QueuedCheckIn.DATETIME_STRING)
                 .get().firstOrNull();
 
         boolean is_checked_in = false;
         if (queuedCheckIns != null) {
             is_checked_in = true;
-            res.setFirstScanned(queuedCheckIns.getDatetime());
+            res.setFirstScanned(queuedCheckIns.getFullDatetime());
         } else {
             for (CheckIn ci : position.getCheckins()) {
                 if (ci.getList().getServer_id().equals(listId)) {
                     is_checked_in = true;
-                    res.setFirstScanned(ci.getDatetime());
+                    res.setFirstScanned(ci.getFullDatetime());
                     break;
                 }
             }
@@ -177,6 +177,7 @@ public class AsyncCheckProvider implements TicketCheckProvider {
                 qci.generateNonce();
                 qci.setSecret(ticketid);
                 qci.setDatetime(new Date());
+                qci.setDatetime_string(QueuedCheckIn.formatDatetime(new Date()));
                 qci.setAnswers(givenAnswers.toString());
                 qci.setEvent_slug(eventSlug);
                 qci.setCheckinListId(listId);

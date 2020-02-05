@@ -380,7 +380,12 @@ public class SyncManager {
                 PretixApi.ApiResponse ar;
                 try {
                     api.setEventSlug(qci.getEvent_slug());
-                    ar = api.redeem(qci.getSecret(), qci.getDatetime(), true, qci.getNonce(), answers, qci.checkinListId, false, false);
+                    if (qci.getDatetime_string() == null || qci.getDatetime_string().equals("")) {
+                        // Backwards compatibility
+                        ar = api.redeem(qci.getSecret(), qci.getDatetime(), true, qci.getNonce(), answers, qci.checkinListId, false, false);
+                    } else {
+                        ar = api.redeem(qci.getSecret(), qci.getDatetime_string(), true, qci.getNonce(), answers, qci.checkinListId, false, false);
+                    }
                 } finally {
                     api.setEventSlug(configStore.getEventSlug());
                 }

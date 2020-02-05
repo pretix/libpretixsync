@@ -70,7 +70,7 @@ public class OnlineCheckProvider implements TicketCheckProvider {
 
         try {
             CheckResult res = new CheckResult(CheckResult.Type.ERROR);
-            PretixApi.ApiResponse responseObj = api.redeem(ticketid, null, false, null, answers, listId, ignore_unpaid, with_badge_data);
+            PretixApi.ApiResponse responseObj = api.redeem(ticketid, (String) null, false, null, answers, listId, ignore_unpaid, with_badge_data);
             if (responseObj.getResponse().code() == 404) {
                 res.setType(CheckResult.Type.INVALID);
             } else {

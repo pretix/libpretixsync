@@ -4,6 +4,7 @@ import eu.pretix.libpretixsync.DummySentryImplementation;
 import eu.pretix.libpretixsync.SentryInterface;
 import eu.pretix.libpretixsync.check.TicketCheckProvider;
 import eu.pretix.libpretixsync.config.ConfigStore;
+import eu.pretix.libpretixsync.db.QueuedCheckIn;
 import eu.pretix.libpretixsync.utils.NetUtils;
 import okhttp3.*;
 
@@ -90,12 +91,17 @@ public class PretixApi {
     }
 
     public ApiResponse redeem(String secret, Date datetime, boolean force, String nonce, List<TicketCheckProvider.Answer> answers, Long listId, boolean ignore_unpaid, boolean pdf_data) throws ApiException, JSONException {
+        String dt = null;
+        if (datetime != null) {
+            dt = QueuedCheckIn.formatDatetime(datetime);
+        }
+        return redeem(secret, dt, force, nonce, answers, listId, ignore_unpaid, pdf_data);
+    }
+
+    public ApiResponse redeem(String secret, String datetime, boolean force, String nonce, List<TicketCheckProvider.Answer> answers, Long listId, boolean ignore_unpaid, boolean pdf_data) throws ApiException, JSONException {
         JSONObject body = new JSONObject();
         if (datetime != null) {
-            TimeZone tz = TimeZone.getTimeZone("UTC");
-            DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'", Locale.ENGLISH); // Quoted "Z" to indicate UTC, no timezone offset
-            df.setTimeZone(tz);
-            body.put("datetime", df.format(datetime));
+            body.put("datetime", datetime);
         }
         body.put("force", force);
         body.put("ignore_unpaid", ignore_unpaid);
