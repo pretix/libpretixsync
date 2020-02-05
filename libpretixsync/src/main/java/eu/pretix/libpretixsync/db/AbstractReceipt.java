@@ -1,5 +1,6 @@
 package eu.pretix.libpretixsync.db;
 
+import eu.pretix.libpretixsync.BuildConfig;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -34,7 +35,7 @@ public class AbstractReceipt implements LocalObject {
     @Nullable
     public Long server_id;
 
-    @Column(value = "false")
+    @Column(value = BuildConfig.BOOLEAN_FALSE)
     public boolean open;
 
     @Nullable
@@ -63,12 +64,12 @@ public class AbstractReceipt implements LocalObject {
 
     public boolean canceled;
 
-    @Column(value = "false")
+    @Column(value = BuildConfig.BOOLEAN_FALSE)
     public boolean started;
 
     public String payment_data;
 
-    @Column(nullable = false, value = "false")
+    @Column(nullable = false, value = BuildConfig.BOOLEAN_FALSE)
     public boolean printed;
 
     @OneToMany

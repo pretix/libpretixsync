@@ -31,7 +31,7 @@ buildConfig {
     clsName = 'BuildConfig'
     packageName = "eu.pretix.libpretixsync"
     charset = 'UTF-8'
-    buildConfigField 'String', 'BOOLEAN_FALSE', '0'
+    buildConfigField 'String', 'BOOLEAN_FALSE', 'false'
 }
 
 sourceCompatibility = 1.8

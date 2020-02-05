@@ -7,7 +7,7 @@ import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 
-import eu.pretix.libpretixsync.utils.I18nString;
+import eu.pretix.libpretixsync.BuildConfig;
 import io.requery.Column;
 import io.requery.Entity;
 import io.requery.ForeignKey;
@@ -38,10 +38,10 @@ public class AbstractReceiptLine implements LocalObject {
 
     public BigDecimal tax_rate;
 
-    @Column(value = "false")
+    @Column(value = BuildConfig.BOOLEAN_FALSE)
     public boolean price_calculated_from_net;
 
-    @Column(value = "false")
+    @Column(value = BuildConfig.BOOLEAN_FALSE)
     public boolean canceled_because_of_receipt;
 
     public Long tax_rule;
