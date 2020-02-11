@@ -187,7 +187,7 @@ public class AsyncCheckProvider implements TicketCheckProvider {
                 ci.setList(list);
                 ci.setPosition(position);
                 ci.setDatetime(new Date());
-                ci.setJson_data("{\"local\": true}");
+                ci.setJson_data("{\"local\": true, \"datetime\": \"" + QueuedCheckIn.formatDatetime(new Date()) + "\"}");
                 dataStore.insert(ci);
             }
         }
