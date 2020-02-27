@@ -17,17 +17,17 @@ class EventManager(private val store: BlockingEntityStore<Persistable>, private 
     fun getAvailableEvents() : List<RemoteEvent> {
         eventMap.clear()
 
-        val eightHoursAgo = URLEncoder.encode((DateTime.now() - Hours.hours(8)).toString())
+        val oneDayAgo = URLEncoder.encode((DateTime.now() - Hours.hours(24)).toString())
 
         val resp_events = api.fetchResource(api.organizerResourceUrl("events") +
-                "?ends_after=$eightHoursAgo" + if (require_live) "&live=true" else "")
+                "?ends_after=$oneDayAgo" + if (require_live) "&live=true" else "")
         if (resp_events.response.code != 200) {
             throw IOException()
         }
         var events = parseEvents(resp_events.data)
 
         val resp_subevents = api.fetchResource(api.organizerResourceUrl("subevents")
-                + "?ends_after=$eightHoursAgo" + if (require_live) "&active=true&event__live=true" else "")
+                + "?ends_after=$oneDayAgo" + if (require_live) "&active=true&event__live=true" else "")
         if (resp_subevents.response.code != 200) {
             throw IOException()
         }
