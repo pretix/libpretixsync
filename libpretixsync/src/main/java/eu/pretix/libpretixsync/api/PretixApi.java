@@ -273,7 +273,7 @@ public class PretixApi {
             throw new FinalApiException("Server error: Permission denied.");
         } else if (response.code() == 409) {
             response.close();
-            throw new ApiException("Server error: " + response.code() + ".");
+            throw new ConflictApiException("Server error: " + response.code() + ": " + body);
         } else if (response.code() >= 405) {
             response.close();
             throw new FinalApiException("Server error: " + response.code() + ".");
