@@ -17,14 +17,12 @@ import org.json.JSONException
 import org.json.JSONObject
 import java.util.*
 
-class OnlineCheckProvider(private val config: ConfigStore, httpClientFactory: HttpClientFactory?, dataStore: BlockingEntityStore<Persistable?>, listId: Long) : TicketCheckProvider {
+class OnlineCheckProvider(private val config: ConfigStore, httpClientFactory: HttpClientFactory?, dataStore: BlockingEntityStore<Persistable>, listId: Long) : TicketCheckProvider {
     protected var api: PretixApi
     private var sentry: SentryInterface
-    private val dataStore: BlockingEntityStore<Persistable?>
+    private val dataStore: BlockingEntityStore<Persistable>
     private val listId: Long
     private val parser = ISODateTimeFormat.dateTimeParser()
-
-    constructor(config: ConfigStore, dataStore: BlockingEntityStore<Persistable?>, listId: Long) : this(config, DefaultHttpClientFactory(), dataStore, listId) {}
 
     fun getSentry(): SentryInterface {
         return sentry
@@ -35,7 +33,7 @@ class OnlineCheckProvider(private val config: ConfigStore, httpClientFactory: Ht
         api.sentry = sentry
     }
 
-    override fun check(ticketid: String, answers: List<TicketCheckProvider.Answer>?, ignore_unpaid: Boolean, with_badge_data: Boolean): TicketCheckProvider.CheckResult {
+    override fun check(ticketid: String, answers: List<TicketCheckProvider.Answer>?, ignore_unpaid: Boolean, with_badge_data: Boolean, type: TicketCheckProvider.CheckInType): TicketCheckProvider.CheckResult {
         sentry.addBreadcrumb("provider.check", "started")
         val list = dataStore.select(CheckInList::class.java)
                 .where(CheckInList.SERVER_ID.eq(listId))
@@ -44,7 +42,7 @@ class OnlineCheckProvider(private val config: ConfigStore, httpClientFactory: Ht
                 ?: return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.ERROR, "Check-in list not found")
         return try {
             val res = TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.ERROR)
-            val responseObj = api.redeem(ticketid, null as String?, false, null, answers, listId, ignore_unpaid, with_badge_data)
+            val responseObj = api.redeem(ticketid, null as String?, false, null, answers, listId, ignore_unpaid, with_badge_data, type.toString().toLowerCase())
             if (responseObj.response.code == 404) {
                 res.type = TicketCheckProvider.CheckResult.Type.INVALID
             } else {
@@ -125,7 +123,7 @@ class OnlineCheckProvider(private val config: ConfigStore, httpClientFactory: Ht
     }
 
     override fun check(ticketid: String): TicketCheckProvider.CheckResult {
-        return check(ticketid, ArrayList(), false, true)
+        return check(ticketid, ArrayList(), false, true, TicketCheckProvider.CheckInType.ENTRY)
     }
 
     @Throws(CheckException::class)

@@ -26,10 +26,10 @@ class AsyncCheckProvider(private val eventSlug: String, private val dataStore: B
     }
 
     override fun check(ticketid: String): TicketCheckProvider.CheckResult {
-        return check(ticketid, ArrayList(), false, true)
+        return check(ticketid, ArrayList(), false, true, TicketCheckProvider.CheckInType.ENTRY)
     }
 
-    override fun check(ticketid: String, answers: List<TicketCheckProvider.Answer>?, ignore_unpaid: Boolean, with_badge_data: Boolean): TicketCheckProvider.CheckResult {
+    override fun check(ticketid: String, answers: List<TicketCheckProvider.Answer>?, ignore_unpaid: Boolean, with_badge_data: Boolean, type: TicketCheckProvider.CheckInType): TicketCheckProvider.CheckResult {
         sentry.addBreadcrumb("provider.check", "offline check started")
         val tickets = dataStore.select(OrderPosition::class.java)
                 .leftJoin(Order::class.java).on(Order.ID.eq(OrderPosition.ORDER_ID))
@@ -59,25 +59,7 @@ class AsyncCheckProvider(private val eventSlug: String, private val dataStore: B
                 return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.PRODUCT)
             }
         }
-        val res = TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.ERROR)
-        val queuedCheckIns = dataStore.select(QueuedCheckIn::class.java)
-                .where(QueuedCheckIn.SECRET.eq(ticketid))
-                .and(QueuedCheckIn.CHECKIN_LIST_ID.eq(listId))
-                .orderBy(QueuedCheckIn.DATETIME_STRING)
-                .get().firstOrNull()
-        var is_checked_in = false
-        if (queuedCheckIns != null) {
-            is_checked_in = true
-            res.firstScanned = queuedCheckIns.fullDatetime
-        } else {
-            for (ci in position.getCheckins()) {
-                if (ci.getList().getServer_id() == listId) {
-                    is_checked_in = true
-                    res.firstScanned = ci.fullDatetime
-                    break
-                }
-            }
-        }
+
         val jPosition: JSONObject
         jPosition = try {
             position.json
@@ -85,74 +67,8 @@ class AsyncCheckProvider(private val eventSlug: String, private val dataStore: B
             sentry.captureException(e)
             return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.ERROR)
         }
-        if (order.getStatus() != "p" && order.getStatus() != "n") {
-            res.type = TicketCheckProvider.CheckResult.Type.CANCELED
-            res.isCheckinAllowed = false
-        } else if (order.getStatus() != "p" && !(ignore_unpaid && list.include_pending)) {
-            res.type = TicketCheckProvider.CheckResult.Type.UNPAID
-            res.isCheckinAllowed = list.include_pending
-        } else if (is_checked_in) {
-            res.type = TicketCheckProvider.CheckResult.Type.USED
-            res.isCheckinAllowed = true
-        } else {
-            res.isCheckinAllowed = true
-            val questions = item.questions
-            val answerMap = position.answers
-            if (answers != null) {
-                for (a in answers) {
-                    answerMap[a.question!!.getServer_id()] = a.value
-                }
-            }
-            val givenAnswers = JSONArray()
-            val required_answers: MutableList<TicketCheckProvider.RequiredAnswer> = ArrayList()
-            var ask_questions = false
-            for (q in questions) {
-                if (!q.isAskDuringCheckin) {
-                    continue
-                }
-                var answer: String? = ""
-                if (answerMap.containsKey(q.getServer_id())) {
-                    answer = answerMap[q.getServer_id()]
-                    try {
-                        answer = q.clean_answer(answer, q.options)
-                        val jo = JSONObject()
-                        jo.put("answer", answer)
-                        jo.put("question", q.getServer_id())
-                        givenAnswers.put(jo)
-                    } catch (e: AbstractQuestion.ValidationException) {
-                        answer = ""
-                        ask_questions = true
-                    } catch (e: JSONException) {
-                        answer = ""
-                        ask_questions = true
-                    }
-                } else {
-                    ask_questions = true
-                }
-                required_answers.add(TicketCheckProvider.RequiredAnswer(q, answer))
-            }
-            if (ask_questions && required_answers.size > 0) {
-                res.type = TicketCheckProvider.CheckResult.Type.ANSWERS_REQUIRED
-                res.requiredAnswers = required_answers
-            } else {
-                res.type = TicketCheckProvider.CheckResult.Type.VALID
-                val qci = QueuedCheckIn()
-                qci.generateNonce()
-                qci.setSecret(ticketid)
-                qci.setDatetime(Date())
-                qci.setDatetime_string(QueuedCheckIn.formatDatetime(Date()))
-                qci.setAnswers(givenAnswers.toString())
-                qci.setEvent_slug(eventSlug)
-                qci.setCheckinListId(listId)
-                dataStore.insert(qci)
-                val ci = CheckIn()
-                ci.setList(list)
-                ci.setPosition(position)
-                ci.setDatetime(Date())
-                ci.setJson_data("{\"local\": true, \"datetime\": \"" + QueuedCheckIn.formatDatetime(Date()) + "\"}")
-                dataStore.insert(ci)
-            }
-        }
+
+        val res = TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.ERROR)
         res.ticket = position.getItem().internalName
         val varid = position.variationId
         if (varid != null) {
@@ -175,6 +91,97 @@ class AsyncCheckProvider(private val eventSlug: String, private val dataStore: B
             sentry.captureException(e)
         }
         res.isRequireAttention = require_attention
+
+        val storedCheckIns = dataStore.select(CheckIn::class.java)
+                .where(CheckIn.POSITION_ID.eq(position.getId()))
+                .get().toList()
+        val checkIns = storedCheckIns.filter {
+            it.getList().getServer_id() == listId
+        }
+        checkIns.sortedWith(compareBy({ it.fullDatetime }, { it.id }))
+
+        if (order.getStatus() != "p" && order.getStatus() != "n") {
+            res.type = TicketCheckProvider.CheckResult.Type.CANCELED
+            res.isCheckinAllowed = false
+            return res
+        }
+        if (order.getStatus() != "p" && !(ignore_unpaid && list.include_pending)) {
+            res.type = TicketCheckProvider.CheckResult.Type.UNPAID
+            res.isCheckinAllowed = list.include_pending
+            return res;
+        }
+        val questions = item.questions
+        val answerMap = position.answers
+        if (answers != null) {
+            for (a in answers) {
+                answerMap[a.question.getServer_id()] = a.value
+            }
+        }
+        val givenAnswers = JSONArray()
+        val required_answers: MutableList<TicketCheckProvider.RequiredAnswer> = ArrayList()
+        var ask_questions = false
+        for (q in questions) {
+            if (!q.isAskDuringCheckin) {
+                continue
+            }
+            var answer: String? = ""
+            if (answerMap.containsKey(q.getServer_id())) {
+                answer = answerMap[q.getServer_id()]
+                try {
+                    answer = q.clean_answer(answer, q.options)
+                    val jo = JSONObject()
+                    jo.put("answer", answer)
+                    jo.put("question", q.getServer_id())
+                    givenAnswers.put(jo)
+                } catch (e: AbstractQuestion.ValidationException) {
+                    answer = ""
+                    ask_questions = true
+                } catch (e: JSONException) {
+                    answer = ""
+                    ask_questions = true
+                }
+            } else {
+                ask_questions = true
+            }
+            required_answers.add(TicketCheckProvider.RequiredAnswer(q, answer))
+        }
+        if (ask_questions && required_answers.size > 0) {
+            res.isCheckinAllowed = true
+            res.type = TicketCheckProvider.CheckResult.Type.ANSWERS_REQUIRED
+            res.requiredAnswers = required_answers
+        } else {
+            val entry_allowed = (
+                    type == TicketCheckProvider.CheckInType.EXIT ||
+                            list.isAllowMultipleEntries ||
+                            checkIns.size == 0 ||
+                            (list.isAllowEntryAfterExit && checkIns.last().type == "exit")
+                    )
+            if (!entry_allowed) {
+                res.isCheckinAllowed = false
+                res.firstScanned = checkIns.first().fullDatetime
+                res.type = TicketCheckProvider.CheckResult.Type.USED
+            } else {
+                res.isCheckinAllowed = true
+                res.type = TicketCheckProvider.CheckResult.Type.VALID
+                val qci = QueuedCheckIn()
+                qci.generateNonce()
+                qci.setSecret(ticketid)
+                qci.setDatetime(Date())
+                qci.setDatetime_string(QueuedCheckIn.formatDatetime(Date()))
+                qci.setAnswers(givenAnswers.toString())
+                qci.setEvent_slug(eventSlug)
+                qci.setType(type.toString().toLowerCase())
+                qci.setCheckinListId(listId)
+                dataStore.insert(qci)
+                val ci = CheckIn()
+                ci.setList(list)
+                ci.setPosition(position)
+                ci.setType(type.toString().toLowerCase())
+                ci.setDatetime(Date())
+                ci.setJson_data("{\"local\": true, \"type\": \"${type.toString().toLowerCase()}\", \"datetime\": \"${QueuedCheckIn.formatDatetime(Date())}\"}")
+                dataStore.insert(ci)
+            }
+        }
         return res
     }
 

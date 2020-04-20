@@ -2,7 +2,6 @@ package eu.pretix.libpretixsync.check
 
 import com.fasterxml.jackson.core.JsonParseException
 import com.fasterxml.jackson.core.JsonProcessingException
-import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.JsonMappingException
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -11,7 +10,6 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import eu.pretix.libpretixsync.DummySentryImplementation
 import eu.pretix.libpretixsync.SentryInterface
 import eu.pretix.libpretixsync.api.ApiException
-import eu.pretix.libpretixsync.api.DefaultHttpClientFactory
 import eu.pretix.libpretixsync.api.HttpClientFactory
 import eu.pretix.libpretixsync.config.ConfigStore
 import eu.pretix.libpretixsync.serialization.JSONArrayDeserializer
@@ -33,13 +31,11 @@ import java.io.IOException
 import java.util.*
 import javax.net.ssl.SSLException
 
-class ProxyCheckProvider(private val config: ConfigStore, httpClientFactory: HttpClientFactory, dataStore: BlockingEntityStore<Persistable?>?, listId: Long) : TicketCheckProvider {
+class ProxyCheckProvider(private val config: ConfigStore, httpClientFactory: HttpClientFactory, dataStore: BlockingEntityStore<Persistable>, listId: Long) : TicketCheckProvider {
     private var sentry: SentryInterface
     private val listId: Long
     private val client: OkHttpClient
     private val mapper: ObjectMapper
-
-    constructor(config: ConfigStore, dataStore: BlockingEntityStore<Persistable?>?, listId: Long) : this(config, DefaultHttpClientFactory(), dataStore, listId) {}
 
     fun getSentry(): SentryInterface {
         return sentry
@@ -92,12 +88,13 @@ class ProxyCheckProvider(private val config: ConfigStore, httpClientFactory: Htt
         return body
     }
 
-    override fun check(ticketid: String, answers: List<TicketCheckProvider.Answer>?, ignore_unpaid: Boolean, with_badge_data: Boolean): TicketCheckProvider.CheckResult {
+    override fun check(ticketid: String, answers: List<TicketCheckProvider.Answer>?, ignore_unpaid: Boolean, with_badge_data: Boolean, type: TicketCheckProvider.CheckInType): TicketCheckProvider.CheckResult {
         val data: MutableMap<String, Any> = HashMap()
         data["ticketid"] = ticketid
         data["answers"] = answers ?: emptyList<TicketCheckProvider.Answer>()
         data["ignore_unpaid"] = ignore_unpaid
         data["with_badge_data"] = with_badge_data
+        data["type"] = type
         return try {
             val request = Request.Builder()
                     .url(config.apiUrl + "/proxyapi/v1/rpc/" + config.eventSlug + "/" + listId + "/check/")
@@ -121,7 +118,7 @@ class ProxyCheckProvider(private val config: ConfigStore, httpClientFactory: Htt
     }
 
     override fun check(ticketid: String): TicketCheckProvider.CheckResult {
-        return check(ticketid, ArrayList(), false, true)
+        return check(ticketid, ArrayList(), false, true, TicketCheckProvider.CheckInType.ENTRY)
     }
 
     @Throws(CheckException::class)

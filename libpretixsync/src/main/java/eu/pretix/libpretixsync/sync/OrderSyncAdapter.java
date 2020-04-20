@@ -169,11 +169,13 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
             if (known.containsKey(listid)) {
                 CheckIn ciobj = known.remove(listid);
                 ciobj.setDatetime(ISODateTimeFormat.dateTimeParser().parseDateTime(ci.getString("datetime")).toDate());
+                ciobj.setType(ci.optString("type", "entry"));
                 ciobj.setJson_data(ci.toString());
                 store.update(ciobj);
             } else {
                 CheckIn ciobj = new CheckIn();
                 ciobj.setPosition(obj);
+                ciobj.setType(ci.optString("type", "entry"));
                 ciobj.setList(getList(listid));
                 ciobj.setDatetime(ISODateTimeFormat.dateTimeParser().parseDateTime(ci.getString("datetime")).toDate());
                 ciobj.setJson_data(ci.toString());

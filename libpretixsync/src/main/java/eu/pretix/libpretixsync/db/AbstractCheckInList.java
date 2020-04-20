@@ -36,4 +36,20 @@ public class AbstractCheckInList implements RemoteObject {
     public JSONObject getJSON() throws JSONException {
         return new JSONObject(json_data);
     }
+
+    public boolean isAllowMultipleEntries() {
+        try {
+            return getJSON().getBoolean("allow_multiple_entries");
+        } catch (JSONException e) {
+            return false;
+        }
+    }
+
+    public boolean isAllowEntryAfterExit() {
+        try {
+            return getJSON().getBoolean("allow_entry_after_exit");
+        } catch (JSONException e) {
+            return false;
+        }
+    }
 }

@@ -14,7 +14,7 @@ import io.requery.sql.TableCreationMode;
 
 public class Migrations {
     private static EntityModel model = Models.DEFAULT;
-    public static int CURRENT_VERSION = 50;
+    public static int CURRENT_VERSION = 51;
 
     private static void createVersionTable(Connection c, int version) throws SQLException {
         Statement s2 = c.createStatement();
@@ -149,6 +149,14 @@ public class Migrations {
         if (db_version < 50) {
             Statement s1 = c.createStatement();
             s1.execute("ALTER TABLE QueuedCheckin ADD datetime_string TEXT;");
+            s1.close();
+        }
+        if (db_version < 51) {
+            Statement s1 = c.createStatement();
+            s1.execute("ALTER TABLE QueuedCheckin ADD type TEXT;");
+            s1.close();
+            s1 = c.createStatement();
+            s1.execute("ALTER TABLE CheckIn ADD type TEXT;");
             s1.close();
         }
 

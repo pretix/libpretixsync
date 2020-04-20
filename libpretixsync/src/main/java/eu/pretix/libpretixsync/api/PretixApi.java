@@ -90,15 +90,15 @@ public class PretixApi {
         return PretixApi.fromConfig(config, new DefaultHttpClientFactory());
     }
 
-    public ApiResponse redeem(String secret, Date datetime, boolean force, String nonce, List<TicketCheckProvider.Answer> answers, Long listId, boolean ignore_unpaid, boolean pdf_data) throws ApiException, JSONException {
+    public ApiResponse redeem(String secret, Date datetime, boolean force, String nonce, List<TicketCheckProvider.Answer> answers, Long listId, boolean ignore_unpaid, boolean pdf_data, String type) throws ApiException, JSONException {
         String dt = null;
         if (datetime != null) {
             dt = QueuedCheckIn.formatDatetime(datetime);
         }
-        return redeem(secret, dt, force, nonce, answers, listId, ignore_unpaid, pdf_data);
+        return redeem(secret, dt, force, nonce, answers, listId, ignore_unpaid, pdf_data, type);
     }
 
-    public ApiResponse redeem(String secret, String datetime, boolean force, String nonce, List<TicketCheckProvider.Answer> answers, Long listId, boolean ignore_unpaid, boolean pdf_data) throws ApiException, JSONException {
+    public ApiResponse redeem(String secret, String datetime, boolean force, String nonce, List<TicketCheckProvider.Answer> answers, Long listId, boolean ignore_unpaid, boolean pdf_data, String type) throws ApiException, JSONException {
         JSONObject body = new JSONObject();
         if (datetime != null) {
             body.put("datetime", datetime);
@@ -106,6 +106,7 @@ public class PretixApi {
         body.put("force", force);
         body.put("ignore_unpaid", ignore_unpaid);
         body.put("nonce", nonce);
+        body.put("type", type);
         JSONObject answerbody = new JSONObject();
         if (answers != null) {
             for (TicketCheckProvider.Answer a : answers) {

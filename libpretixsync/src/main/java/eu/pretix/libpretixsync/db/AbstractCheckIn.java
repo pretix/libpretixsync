@@ -30,9 +30,20 @@ public class AbstractCheckIn implements RemoteObject {
     @Column(definition = "TEXT")
     public String json_data;
 
+    @Column
+    public String type;
+
     @Override
     public JSONObject getJSON() throws JSONException {
         return new JSONObject(json_data);
+    }
+
+    public String getType() {
+        try {
+            return getJSON().getString("type");
+        } catch (JSONException e) {
+            return "entry";
+        }
     }
 
     public Date getFullDatetime() {

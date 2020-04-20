@@ -382,9 +382,9 @@ public class SyncManager {
                     api.setEventSlug(qci.getEvent_slug());
                     if (qci.getDatetime_string() == null || qci.getDatetime_string().equals("")) {
                         // Backwards compatibility
-                        ar = api.redeem(qci.getSecret(), qci.getDatetime(), true, qci.getNonce(), answers, qci.checkinListId, false, false);
+                        ar = api.redeem(qci.getSecret(), qci.getDatetime(), true, qci.getNonce(), answers, qci.checkinListId, false, false, qci.getType());
                     } else {
-                        ar = api.redeem(qci.getSecret(), qci.getDatetime_string(), true, qci.getNonce(), answers, qci.checkinListId, false, false);
+                        ar = api.redeem(qci.getSecret(), qci.getDatetime_string(), true, qci.getNonce(), answers, qci.checkinListId, false, false, qci.getType());
                     }
                 } finally {
                     api.setEventSlug(configStore.getEventSlug());

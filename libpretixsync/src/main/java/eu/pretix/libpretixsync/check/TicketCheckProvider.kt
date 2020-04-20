@@ -6,6 +6,10 @@ import org.json.JSONObject
 import java.util.*
 
 interface TicketCheckProvider {
+    enum class CheckInType {
+        ENTRY, EXIT
+    }
+
     class RequiredAnswer(var question: Question, current_value: String?) {
         var currentValue: String? = current_value
             private set
@@ -20,7 +24,7 @@ interface TicketCheckProvider {
 
     class CheckResult {
         enum class Type {
-            INVALID, VALID, USED, ERROR, UNPAID, CANCELED, PRODUCT, ANSWERS_REQUIRED
+            INVALID, VALID, USED, ERROR, UNPAID, CANCELED, PRODUCT, RULES, ANSWERS_REQUIRED
         }
 
         var type: Type? = null
@@ -87,7 +91,7 @@ interface TicketCheckProvider {
     class StatusResult(var eventName: String?, var totalTickets: Int, var alreadyScanned: Int, var items: List<StatusResultItem>?) {
     }
 
-    fun check(ticketid: String, answers: List<Answer>?, ignore_unpaid: Boolean, with_badge_data: Boolean): CheckResult
+    fun check(ticketid: String, answers: List<Answer>?, ignore_unpaid: Boolean, with_badge_data: Boolean, type: CheckInType): CheckResult
     fun check(ticketid: String): CheckResult
     @Throws(CheckException::class)
     fun search(query: String, page: Int): List<SearchResult>

@@ -34,6 +34,8 @@ public abstract class AbstractQueuedCheckIn {
 
     public String answers;
 
+    public String type;
+
     public Long checkinListId;
 
     public void generateNonce() {

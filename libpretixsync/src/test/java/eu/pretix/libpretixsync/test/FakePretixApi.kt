@@ -29,7 +29,7 @@ class FakePretixApi : PretixApi("http://1.1.1.1/", "a", "demo", "demo", 1, Defau
     var lastRequestUrl: String? = null
     var lastRequestBody: JSONObject? = null
 
-    override fun redeem(secret: String?, datetime: Date?, force: Boolean, nonce: String?, answers: MutableList<TicketCheckProvider.Answer>?, listId: Long?, ignore_unpaid: Boolean, pdf_data: Boolean): ApiResponse {
+    override fun redeem(secret: String?, datetime: Date?, force: Boolean, nonce: String?, answers: MutableList<TicketCheckProvider.Answer>?, listId: Long?, ignore_unpaid: Boolean, pdf_data: Boolean, type: String): ApiResponse {
         redeemRequestSecret = secret
         redeemRequestDatetime = datetime
         redeemRequestForce = force

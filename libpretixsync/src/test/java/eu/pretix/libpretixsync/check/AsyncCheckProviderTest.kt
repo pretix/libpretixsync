@@ -83,7 +83,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         assertEquals("Emily Scott", r.attendee_name)
         assertEquals(true, r.isRequireAttention)
 
-        r = p!!.check("h4t6w9ykuea4n5zaapy648y2dcfg8weq", null, true, false)
+        r = p!!.check("h4t6w9ykuea4n5zaapy648y2dcfg8weq", null, true, false, TicketCheckProvider.CheckInType.ENTRY)
         assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
         assertEquals("Regular ticket", r.ticket)
         assertEquals(null, r.variation)
@@ -97,7 +97,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         var r = p2.check("h4t6w9ykuea4n5zaapy648y2dcfg8weq")
         assertEquals(TicketCheckProvider.CheckResult.Type.UNPAID, r.type)
 
-        r = p2.check("h4t6w9ykuea4n5zaapy648y2dcfg8weq", null, true, false)
+        r = p2.check("h4t6w9ykuea4n5zaapy648y2dcfg8weq", null, true, false, TicketCheckProvider.CheckInType.ENTRY)
         assertEquals(TicketCheckProvider.CheckResult.Type.UNPAID, r.type)
     }
 
@@ -131,6 +131,64 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         assertEquals(null, r.variation)
         assertEquals("Casey Flores", r.attendee_name)
         assertEquals(true, r.isRequireAttention)
+    }
+
+    @Test
+    fun testSimpleRedeemedOnOtherList() {
+        val p2 = AsyncCheckProvider("demo", dataStore, 2L)
+        var r = p2.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+        r = p!!.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+    }
+
+    @Test
+    fun testAllowMultiEntry() {
+        val p2 = AsyncCheckProvider("demo", dataStore, 2L)
+        var r = p2.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+        r = p2.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+        assertEquals(dataStore.count(QueuedCheckIn::class.java).get().value(), 2)
+        assertEquals(dataStore.count(CheckIn::class.java).join(OrderPosition::class.java).on(OrderPosition.ID.eq(CheckIn.POSITION_ID)).where(OrderPosition.SECRET.eq("kfndgffgyw4tdgcacx6bb3bgemq69cxj")).get().value(), 2)
+    }
+
+    @Test
+    fun testAllowMultiExit() {
+        var r = p!!.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+        r = p!!.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj", null, false, false, TicketCheckProvider.CheckInType.EXIT)
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+        r = p!!.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj", null, false, false, TicketCheckProvider.CheckInType.EXIT)
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+        assertEquals(dataStore.count(QueuedCheckIn::class.java).get().value(), 3)
+        assertEquals(dataStore.select(QueuedCheckIn::class.java).get().toList().last().getType(), "exit")
+    }
+
+    @Test
+    fun testAllowSingleEntryAfterExit() {
+        var r = p!!.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+        Thread.sleep(1000)
+        r = p!!.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj", null, false, false, TicketCheckProvider.CheckInType.EXIT)
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+        r = p!!.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj", null, false, false, TicketCheckProvider.CheckInType.ENTRY)
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+        r = p!!.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj", null, false, false, TicketCheckProvider.CheckInType.ENTRY)
+        assertEquals(TicketCheckProvider.CheckResult.Type.USED, r.type)
+        assertEquals(dataStore.count(QueuedCheckIn::class.java).get().value(), 3)
+    }
+
+    @Test
+    fun testSingleEntryAfterExitForbidden() {
+        val p3 = AsyncCheckProvider("demo", dataStore, 3L)
+        var r = p3.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+        r = p3.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj", null, false, false, TicketCheckProvider.CheckInType.EXIT)
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+        r = p3.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj", null, false, false, TicketCheckProvider.CheckInType.ENTRY)
+        assertEquals(TicketCheckProvider.CheckResult.Type.USED, r.type)
+        assertEquals(dataStore.count(QueuedCheckIn::class.java).get().value(), 2)
     }
 
     @Test
@@ -170,7 +228,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         val answers = ArrayList<TicketCheckProvider.Answer>()
         answers.add(TicketCheckProvider.Answer(ra.question, "True"))
 
-        r = p!!.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj", answers, false, false)
+        r = p!!.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj", answers, false, false, TicketCheckProvider.CheckInType.ENTRY)
         assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
 
         val qciList = dataStore.select(QueuedCheckIn::class.java).get().toList()
@@ -191,7 +249,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         val answers = ArrayList<TicketCheckProvider.Answer>()
         answers.add(TicketCheckProvider.Answer(ra.question, "True"))
 
-        r = p!!.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj", answers, false, false)
+        r = p!!.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj", answers, false, false, TicketCheckProvider.CheckInType.ENTRY)
         assertEquals(TicketCheckProvider.CheckResult.Type.ANSWERS_REQUIRED, r.type)
 
         val qciList = dataStore.select(QueuedCheckIn::class.java).get().toList()
