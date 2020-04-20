@@ -135,7 +135,7 @@ public class AsyncCheckProvider implements TicketCheckProvider {
         } else {
             res.setCheckinAllowed(true);
             List<Question> questions = item.getQuestions();
-            Map<Long, String> answerMap = new HashMap<>();
+            Map<Long, String> answerMap = position.getAnswers();
             if (answers != null) {
                 for (Answer a : answers) {
                     answerMap.put(a.getQuestion().getServer_id(), a.getValue());

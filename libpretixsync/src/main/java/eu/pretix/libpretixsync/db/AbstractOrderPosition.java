@@ -1,12 +1,17 @@
 package eu.pretix.libpretixsync.db;
 
+import eu.pretix.libpretixsync.check.TicketCheckProvider;
 import io.requery.*;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Entity(cacheable = false)
 public class AbstractOrderPosition implements RemoteObject {
@@ -81,6 +86,20 @@ public class AbstractOrderPosition implements RemoteObject {
                 return null;
             }
             return var;
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public Map<Long, String> getAnswers() {
+        try {
+            JSONArray arr = getJSON().getJSONArray("answers");
+            Map<Long, String> res = new HashMap<>();
+            for (int i = 0; i < arr.length(); i ++) {
+                res.put(arr.getJSONObject(i).getLong("question"), arr.getJSONObject(i).getString("answer"));
+            }
+            return res;
         } catch (JSONException e) {
             e.printStackTrace();
             return null;
