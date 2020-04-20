@@ -163,8 +163,8 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
         var r = p!!.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
         assertEquals(TicketCheckProvider.CheckResult.Type.ANSWERS_REQUIRED, r.type)
-        assertEquals(1, r.requiredAnswers.size.toLong())
-        val ra = r.requiredAnswers[0]
+        assertEquals(1, r.requiredAnswers?.size)
+        val ra = r.requiredAnswers!![0]
         assertEquals(1, ra.question.getServer_id())
 
         val answers = ArrayList<TicketCheckProvider.Answer>()
@@ -185,8 +185,8 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
         var r = p!!.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
         assertEquals(TicketCheckProvider.CheckResult.Type.ANSWERS_REQUIRED, r.type)
-        assertEquals(1, r.requiredAnswers.size.toLong())
-        val ra = r.requiredAnswers[0]
+        assertEquals(1, r.requiredAnswers?.size)
+        val ra = r.requiredAnswers!![0]
 
         val answers = ArrayList<TicketCheckProvider.Answer>()
         answers.add(TicketCheckProvider.Answer(ra.question, "True"))
@@ -249,14 +249,14 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
     fun testStatusInfo() {
         val sr = p!!.status()
         assertEquals("All", sr.eventName)
-        assertEquals(7.toLong(), sr.totalTickets.toLong())
-        assertEquals(2.toLong(), sr.alreadyScanned.toLong())
-        assertEquals(2, sr.items.size.toLong())
-        val i = sr.items[0]
-        assertEquals(1.toLong(), i.id)
-        assertEquals(3.toLong(), i.total.toLong())
-        assertEquals(1.toLong(), i.checkins.toLong())
+        assertEquals(9, sr.totalTickets)
+        assertEquals(2, sr.alreadyScanned)
+        assertEquals(2, sr.items!!.size)
+        val i = sr.items!![0]
+        assertEquals(1, i.id)
+        assertEquals(4, i.total)
+        assertEquals(1, i.checkins)
         assertEquals(true, i.isAdmission)
-        assertEquals(0, i.variations.size.toLong())
+        assertEquals(0, i.variations!!.size)
     }
 }
