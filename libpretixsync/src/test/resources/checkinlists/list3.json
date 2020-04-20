@@ -1,6 +1,6 @@
 {
-  "id": 1,
-  "name": "All",
+  "id": 3,
+  "name": "All without re-entry",
   "all_products": true,
   "limit_products": [],
   "subevent": null,
@@ -8,6 +8,6 @@
   "position_count": 49180,
   "include_pending": true,
   "allow_multiple_entries": false,
-  "allow_entry_after_exit": true,
+  "allow_entry_after_exit": false,
   "rules": {}
 }

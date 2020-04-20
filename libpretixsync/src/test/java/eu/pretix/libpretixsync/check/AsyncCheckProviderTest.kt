@@ -27,11 +27,15 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         ItemSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, null).standaloneRefreshFromJSON(jsonResource("items/item1.json"))
         ItemSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, null).standaloneRefreshFromJSON(jsonResource("items/item2.json"))
         CheckInListSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, null).standaloneRefreshFromJSON(jsonResource("checkinlists/list1.json"))
+        CheckInListSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, null).standaloneRefreshFromJSON(jsonResource("checkinlists/list2.json"))
+        CheckInListSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, null).standaloneRefreshFromJSON(jsonResource("checkinlists/list3.json"))
 
         val osa = OrderSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, null)
         osa.standaloneRefreshFromJSON(jsonResource("orders/order1.json"))
         osa.standaloneRefreshFromJSON(jsonResource("orders/order2.json"))
         osa.standaloneRefreshFromJSON(jsonResource("orders/order3.json"))
+        osa.standaloneRefreshFromJSON(jsonResource("orders/order4.json"))
+        osa.standaloneRefreshFromJSON(jsonResource("orders/order6.json"))
     }
 
     @Test
@@ -52,6 +56,12 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
     fun testSimpleInvalid() {
         val r = p!!.check("abc")
         assertEquals(TicketCheckProvider.CheckResult.Type.INVALID, r.type)
+    }
+
+    @Test
+    fun testSimpleCanceled() {
+        val r = p!!.check("uqonmlRPMOpP9O0NUC0W4yB63R3lZgCt")
+        assertEquals(TicketCheckProvider.CheckResult.Type.CANCELED, r.type)
     }
 
     @Test
@@ -80,6 +90,25 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         assertEquals("Emily Scott", r.attendee_name)
         assertEquals(true, r.isRequireAttention)
     }
+
+    @Test
+    fun testSimpleUnpaidIgnoreWithoutIncludePending() {
+        val p2 = AsyncCheckProvider("demo", dataStore, 2L)
+        var r = p2.check("h4t6w9ykuea4n5zaapy648y2dcfg8weq")
+        assertEquals(TicketCheckProvider.CheckResult.Type.UNPAID, r.type)
+
+        r = p2.check("h4t6w9ykuea4n5zaapy648y2dcfg8weq", null, true, false)
+        assertEquals(TicketCheckProvider.CheckResult.Type.UNPAID, r.type)
+    }
+
+    @Test
+    fun testInvalidProduct() {
+        val p2 = AsyncCheckProvider("demo", dataStore, 2L)
+        val r = p2.check("g2sc5ym78h5q5y5sbswses2b5h8pp6kt")
+        assertEquals(TicketCheckProvider.CheckResult.Type.PRODUCT, r.type)
+    }
+
+    // TODO: invalid subevent
 
     @Test
     fun testSimpleRedeemed() {
@@ -117,6 +146,14 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         QuestionSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, null).standaloneRefreshFromJSON(jsonResource("questions/question3.json"))
 
         val r = p!!.check("fem3hggggag8q38qkx35c2panqr5xjq8")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+    }
+
+    @Test
+    fun testQuestionsFilled() {
+        QuestionSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, null).standaloneRefreshFromJSON(jsonResource("questions/question1.json"))
+
+        val r = p!!.check("kc855mh2e4cp6ye7xvpg3b4ye7n7xyma")
         assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
     }
 
