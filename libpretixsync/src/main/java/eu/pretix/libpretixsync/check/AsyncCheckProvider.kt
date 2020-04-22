@@ -3,6 +3,8 @@ package eu.pretix.libpretixsync.check
 import eu.pretix.libpretixsync.DummySentryImplementation
 import eu.pretix.libpretixsync.SentryInterface
 import eu.pretix.libpretixsync.db.*
+import eu.pretix.libpretixsync.utils.logic.JsonLogic
+import eu.pretix.libpretixsync.utils.logic.truthy
 import io.requery.BlockingEntityStore
 import io.requery.Persistable
 import io.requery.query.Condition
@@ -110,6 +112,32 @@ class AsyncCheckProvider(private val eventSlug: String, private val dataStore: B
             res.isCheckinAllowed = list.include_pending
             return res;
         }
+        val rules = list.rules
+        if (rules != null && rules.length() > 0) {
+            val jsonLogic = JsonLogic()
+            val data = JSONObject()
+            data.put("product", position.getItem().getServer_id().toString())
+            data.put("variation", position.getVariation_id().toString())
+            data.put("scans_number", checkIns.filter { it.type == "entry" }.size)
+            jsonLogic.addOperation("objectList") { l, _ -> l }
+            jsonLogic.addOperation("lookup") { l, d -> l?.getOrNull(1) }
+            jsonLogic.addOperation("inList") { l, d ->
+                (l?.getOrNull(1) as List<*>).contains(
+                        l.getOrNull(0)
+                )
+            }
+
+            //    logic.add_operation('buildTime', build_time)
+            //  logic.add_operation('isBefore', is_before)
+            //logic.add_operation('isAfter', lambda t1, t2, tol=None: is_before(t2, t1, tol))
+
+            if (!jsonLogic.apply(rules.toString(), data.toString(), safe = false).truthy) {
+                res.type = TicketCheckProvider.CheckResult.Type.RULES
+                res.isCheckinAllowed = false
+                return res
+            }
+        }
+
         val questions = item.questions
         val answerMap = position.answers
         if (answers != null) {

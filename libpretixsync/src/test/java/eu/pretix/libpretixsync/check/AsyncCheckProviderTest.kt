@@ -4,6 +4,7 @@ import eu.pretix.libpretixsync.db.*
 import eu.pretix.libpretixsync.sync.*
 import eu.pretix.libpretixsync.test.*
 import org.json.JSONException
+import org.json.JSONObject
 import org.junit.Before
 import org.junit.Test
 
@@ -189,6 +190,87 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         r = p3.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj", null, false, false, TicketCheckProvider.CheckInType.ENTRY)
         assertEquals(TicketCheckProvider.CheckResult.Type.USED, r.type)
         assertEquals(dataStore.count(QueuedCheckIn::class.java).get().value(), 2)
+    }
+
+    private fun setRuleOnList3(r: String) {
+        val cl = dataStore.select(CheckInList::class.java).where(CheckInList.SERVER_ID.eq(3)).get().first()
+        val j = cl.json
+        j.put("rules", JSONObject(r))
+        cl.setJson_data(j.toString())
+        dataStore.update(cl)
+    }
+
+    @Test
+    fun testRulesSimple() {
+        val p3 = AsyncCheckProvider("demo", dataStore, 3L)
+
+        setRuleOnList3("{\"and\": [false, true]}")
+        var r = p3.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.RULES, r.type)
+
+        setRuleOnList3("{\"and\": [true, true]}")
+        r = p3.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+    }
+
+    @Test
+    fun testRulesVariation() {
+        val p3 = AsyncCheckProvider("demo", dataStore, 3L)
+
+        setRuleOnList3("{\n" +
+                "        \"inList\": [\n" +
+                "            {\"var\": \"variation\"}, {\n" +
+                "                \"objectList\": [\n" +
+                "                    {\"lookup\": [\"variation\", \"3\", \"Ticket\"]}\n" +
+                "                ]\n" +
+                "            }\n" +
+                "        ]\n" +
+                "    }")
+        var r = p3.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.RULES, r.type)
+
+        setRuleOnList3("{\n" +
+                "        \"inList\": [\n" +
+                "            {\"var\": \"variation\"}, {\n" +
+                "                \"objectList\": [\n" +
+                "                    {\"lookup\": [\"variation\", \"3\", \"Ticket\"]},\n" +
+                "                    {\"lookup\": [\"variation\", \"2\", \"Ticket\"]}\n" +
+                "                ]\n" +
+                "            }\n" +
+                "        ]\n" +
+                "    }")
+        r = p3.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+    }
+
+    @Test
+    fun testRulesProduct() {
+        val p3 = AsyncCheckProvider("demo", dataStore, 3L)
+
+        setRuleOnList3("{\n" +
+                "        \"inList\": [\n" +
+                "            {\"var\": \"product\"}, {\n" +
+                "                \"objectList\": [\n" +
+                "                    {\"lookup\": [\"product\", \"2\", \"Ticket\"]}\n" +
+                "                ]\n" +
+                "            }\n" +
+                "        ]\n" +
+                "    }")
+        var r = p3.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.RULES, r.type)
+
+        setRuleOnList3("{\n" +
+                "        \"inList\": [\n" +
+                "            {\"var\": \"product\"}, {\n" +
+                "                \"objectList\": [\n" +
+                "                    {\"lookup\": [\"product\", \"1\", \"Ticket\"]},\n" +
+                "                    {\"lookup\": [\"product\", \"2\", \"Ticket\"]}\n" +
+                "                ]\n" +
+                "            }\n" +
+                "        ]\n" +
+                "    }")
+        r = p3.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
     }
 
     @Test

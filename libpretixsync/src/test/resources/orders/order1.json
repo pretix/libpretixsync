@@ -19,7 +19,7 @@
       "order": "VH3D3",
       "positionid": 1,
       "item": 1,
-      "variation": null,
+      "variation": 2,
       "price": "23.00",
       "attendee_name": "Casey Flores",
       "attendee_name_parts": {
@@ -49,7 +49,7 @@
       "order": "VH3D3",
       "positionid": 1,
       "item": 2,
-      "variation": null,
+      "variation": 3,
       "price": "12.00",
       "attendee_name": null,
       "attendee_name_parts": {},
