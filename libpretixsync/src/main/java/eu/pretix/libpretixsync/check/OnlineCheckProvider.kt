@@ -71,6 +71,8 @@ class OnlineCheckProvider(private val config: ConfigStore, httpClientFactory: Ht
                         res.type = TicketCheckProvider.CheckResult.Type.INVALID
                     } else if ("canceled" == reason) {
                         res.type = TicketCheckProvider.CheckResult.Type.CANCELED
+                    } else if ("rules" == reason) {
+                        res.type = TicketCheckProvider.CheckResult.Type.RULES
                     } else if ("unpaid" == reason) {
                         res.type = TicketCheckProvider.CheckResult.Type.UNPAID
                         // Decide whether the user is allowed to "try again" with "ignore_unpaid"
