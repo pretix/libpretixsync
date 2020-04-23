@@ -2,7 +2,7 @@
   "name": {
     "en": "Large Testevent 0"
   },
-  "slug": "largetest0",
+  "slug": "demo",
   "live": true,
   "testmode": false,
   "currency": "EUR",
@@ -15,6 +15,7 @@
   "location": {},
   "has_subevents": false,
   "meta_data": {},
+  "timezone": "Asia/Tokyo",
   "plugins": [
     "pretix.plugins.banktransfer",
     "pretix.plugins.stripe",

@@ -8,6 +8,8 @@ import java.util.List;
 
 import eu.pretix.libpretixsync.api.PretixApi;
 import eu.pretix.libpretixsync.db.Event;
+import eu.pretix.libpretixsync.db.Item;
+import eu.pretix.libpretixsync.utils.JSONUtils;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
 
@@ -57,5 +59,26 @@ public class EventSyncAdapter extends BaseSingleObjectSyncAdapter<Event> {
     @Override
     Event newEmptyObject() {
         return new Event();
+    }
+
+    public void standaloneRefreshFromJSON(JSONObject data) throws JSONException {
+        Event obj = store.select(Event.class)
+                .where(Event.SLUG.eq(data.getString("slug")))
+                .get().firstOr(newEmptyObject());
+        JSONObject old = null;
+        if (obj.getId() != null) {
+            old = obj.getJSON();
+        }
+
+        // Store object
+        if (old == null) {
+            updateObject(obj, data);
+            store.insert(obj);
+        } else {
+            if (!JSONUtils.similar(data, old)) {
+                updateObject(obj, data);
+                store.update(obj);
+            }
+        }
     }
 }

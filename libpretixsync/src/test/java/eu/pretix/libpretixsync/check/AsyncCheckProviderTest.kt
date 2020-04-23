@@ -3,13 +3,15 @@ package eu.pretix.libpretixsync.check
 import eu.pretix.libpretixsync.db.*
 import eu.pretix.libpretixsync.sync.*
 import eu.pretix.libpretixsync.test.*
+import org.joda.time.DateTime
+import org.joda.time.DateTimeZone
+import org.joda.time.format.ISODateTimeFormat
 import org.json.JSONException
 import org.json.JSONObject
 import org.junit.Before
 import org.junit.Test
 
 import java.util.ArrayList
-import java.util.Date
 
 import org.junit.Assert.assertEquals
 
@@ -25,6 +27,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         fakeApi = FakePretixApi()
         p = AsyncCheckProvider("demo", dataStore, 1L)
 
+        EventSyncAdapter(dataStore, "demo", "demo", fakeApi, null).standaloneRefreshFromJSON(jsonResource("events/event1.json"))
         ItemSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, null).standaloneRefreshFromJSON(jsonResource("items/item1.json"))
         ItemSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, null).standaloneRefreshFromJSON(jsonResource("items/item2.json"))
         CheckInListSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, null).standaloneRefreshFromJSON(jsonResource("checkinlists/list1.json"))
@@ -192,8 +195,8 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         assertEquals(dataStore.count(QueuedCheckIn::class.java).get().value(), 2)
     }
 
-    private fun setRuleOnList3(r: String) {
-        val cl = dataStore.select(CheckInList::class.java).where(CheckInList.SERVER_ID.eq(3)).get().first()
+    private fun setRuleOnList2(r: String) {
+        val cl = dataStore.select(CheckInList::class.java).where(CheckInList.SERVER_ID.eq(2)).get().first()
         val j = cl.json
         j.put("rules", JSONObject(r))
         cl.setJson_data(j.toString())
@@ -202,52 +205,22 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testRulesSimple() {
-        val p3 = AsyncCheckProvider("demo", dataStore, 3L)
+        val p2 = AsyncCheckProvider("demo", dataStore, 2L)
 
-        setRuleOnList3("{\"and\": [false, true]}")
-        var r = p3.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        setRuleOnList2("{\"and\": [false, true]}")
+        var r = p2.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
         assertEquals(TicketCheckProvider.CheckResult.Type.RULES, r.type)
 
-        setRuleOnList3("{\"and\": [true, true]}")
-        r = p3.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
-        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
-    }
-
-    @Test
-    fun testRulesVariation() {
-        val p3 = AsyncCheckProvider("demo", dataStore, 3L)
-
-        setRuleOnList3("{\n" +
-                "        \"inList\": [\n" +
-                "            {\"var\": \"variation\"}, {\n" +
-                "                \"objectList\": [\n" +
-                "                    {\"lookup\": [\"variation\", \"3\", \"Ticket\"]}\n" +
-                "                ]\n" +
-                "            }\n" +
-                "        ]\n" +
-                "    }")
-        var r = p3.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
-        assertEquals(TicketCheckProvider.CheckResult.Type.RULES, r.type)
-
-        setRuleOnList3("{\n" +
-                "        \"inList\": [\n" +
-                "            {\"var\": \"variation\"}, {\n" +
-                "                \"objectList\": [\n" +
-                "                    {\"lookup\": [\"variation\", \"3\", \"Ticket\"]},\n" +
-                "                    {\"lookup\": [\"variation\", \"2\", \"Ticket\"]}\n" +
-                "                ]\n" +
-                "            }\n" +
-                "        ]\n" +
-                "    }")
-        r = p3.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        setRuleOnList2("{\"and\": [true, true]}")
+        r = p2.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
         assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
     }
 
     @Test
     fun testRulesProduct() {
-        val p3 = AsyncCheckProvider("demo", dataStore, 3L)
+        val p2 = AsyncCheckProvider("demo", dataStore, 2L)
 
-        setRuleOnList3("{\n" +
+        setRuleOnList2("{\n" +
                 "        \"inList\": [\n" +
                 "            {\"var\": \"product\"}, {\n" +
                 "                \"objectList\": [\n" +
@@ -256,10 +229,10 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
                 "            }\n" +
                 "        ]\n" +
                 "    }")
-        var r = p3.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        var r = p2.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
         assertEquals(TicketCheckProvider.CheckResult.Type.RULES, r.type)
 
-        setRuleOnList3("{\n" +
+        setRuleOnList2("{\n" +
                 "        \"inList\": [\n" +
                 "            {\"var\": \"product\"}, {\n" +
                 "                \"objectList\": [\n" +
@@ -269,8 +242,125 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
                 "            }\n" +
                 "        ]\n" +
                 "    }")
-        r = p3.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        r = p2.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
         assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+    }
+
+    @Test
+    fun testRulesVariation() {
+        val p2 = AsyncCheckProvider("demo", dataStore, 2L)
+
+        setRuleOnList2("{\n" +
+                "        \"inList\": [\n" +
+                "            {\"var\": \"variation\"}, {\n" +
+                "                \"objectList\": [\n" +
+                "                    {\"lookup\": [\"variation\", \"3\", \"Ticket\"]}\n" +
+                "                ]\n" +
+                "            }\n" +
+                "        ]\n" +
+                "    }")
+        var r = p2.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.RULES, r.type)
+
+        setRuleOnList2("{\n" +
+                "        \"inList\": [\n" +
+                "            {\"var\": \"variation\"}, {\n" +
+                "                \"objectList\": [\n" +
+                "                    {\"lookup\": [\"variation\", \"3\", \"Ticket\"]},\n" +
+                "                    {\"lookup\": [\"variation\", \"2\", \"Ticket\"]}\n" +
+                "                ]\n" +
+                "            }\n" +
+                "        ]\n" +
+                "    }")
+        r = p2.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+    }
+
+    @Test
+    fun testRulesEntriesNumber() {
+        val p2 = AsyncCheckProvider("demo", dataStore, 2L)
+
+        setRuleOnList2("{\"<\": [{\"var\": \"entries_number\"}, 3]}")
+        var r = p2.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+        r = p2.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+        r = p2.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj", null, false, false, TicketCheckProvider.CheckInType.EXIT)
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+        r = p2.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+        r = p2.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.RULES, r.type)
+    }
+
+    @Test
+    fun testRulesEntriesToday() {
+        val p2 = AsyncCheckProvider("demo", dataStore, 2L)
+
+        p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2020-01-01T10:00:00.000Z"))
+        setRuleOnList2("{\"<\": [{\"var\": \"entries_today\"}, 3]}")
+        var r = p2.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+        r = p2.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+        r = p2.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj", null, false, false, TicketCheckProvider.CheckInType.EXIT)
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+        r = p2.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+        r = p2.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.RULES, r.type)
+
+        p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2020-01-01T14:50:00.000Z"))
+        r = p2.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.RULES, r.type)
+
+        p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2020-01-01T15:10:00.000Z"))
+        r = p2.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+        r = p2.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+        r = p2.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj", null, false, false, TicketCheckProvider.CheckInType.EXIT)
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+        r = p2.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+        r = p2.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.RULES, r.type)
+    }
+
+    @Test
+    fun testRulesEntriesDays() {
+        val p2 = AsyncCheckProvider("demo", dataStore, 2L)
+
+        // Ticket is valid unlimited times, but only on two arbitrary days
+        setRuleOnList2("{\"or\": [{\">\": [{\"var\": \"entries_today\"}, 0]}, {\"<\": [{\"var\": \"entries_days\"}, 2]}]}")
+
+        p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2020-01-01T10:00:00.000Z"))
+        var r = p2.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+        r = p2.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+        r = p2.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+
+        p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2020-01-03T10:00:00.000Z"))
+        r = p2.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+        r = p2.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+        r = p2.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+        r = p2.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+
+        p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2020-01-03T14:50:00.000Z"))
+        r = p2.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+
+        p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2020-01-03T15:10:00.000Z"))
+        r = p2.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.RULES, r.type)
+        r = p2.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.RULES, r.type)
     }
 
     @Test
