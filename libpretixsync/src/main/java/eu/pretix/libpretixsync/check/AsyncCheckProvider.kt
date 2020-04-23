@@ -81,6 +81,7 @@ class AsyncCheckProvider(private val eventSlug: String, private val dataStore: B
         }
 
         val res = TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.ERROR)
+        res.scanType = type
         res.ticket = position.getItem().internalName
         val varid = position.variationId
         if (varid != null) {
@@ -123,7 +124,7 @@ class AsyncCheckProvider(private val eventSlug: String, private val dataStore: B
             return res;
         }
         val rules = list.rules
-        if (rules != null && rules.length() > 0) {
+        if (type == TicketCheckProvider.CheckInType.ENTRY && rules != null && rules.length() > 0) {
             val jsonLogic = JsonLogic()
             val data = mutableMapOf<String, Any>()
             val tz = DateTimeZone.forID(event.getTimezone())

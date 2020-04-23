@@ -28,6 +28,7 @@ interface TicketCheckProvider {
         }
 
         var type: Type? = null
+        var scanType: CheckInType = CheckInType.ENTRY
         var ticket: String? = null
         var variation: String? = null
         var attendee_name: String? = null

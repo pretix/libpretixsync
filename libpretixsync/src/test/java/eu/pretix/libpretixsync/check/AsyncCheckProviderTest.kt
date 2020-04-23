@@ -212,6 +212,8 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         setRuleOnList2("{\"and\": [false, true]}")
         var r = p2.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
         assertEquals(TicketCheckProvider.CheckResult.Type.RULES, r.type)
+        r = p2.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj", null, false, false, TicketCheckProvider.CheckInType.EXIT)
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
 
         setRuleOnList2("{\"and\": [true, true]}")
         r = p2.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
