@@ -40,6 +40,16 @@ class JsonLogic {
     fun apply(logic: Any?, data: Any? = null, safe: Boolean = true) = evaluateSafe(logic, data, safe)
 
     /**
+     * Apply logic on data and get a result
+     *
+     * @param logic the logic
+     * @param data the data
+     * @param safe if true an exception is returned as false else exceptions are thrown
+     * @return evaluation result
+     */
+    fun applyString(logic: String?, data: Any? = null, safe: Boolean = true) = evaluateSafe(logic.parse, data, safe)
+
+    /**
      * Add new operations http://jsonlogic.com/add_operation.html
      *
      * @param operator the operator to be added

@@ -13,6 +13,7 @@ import io.requery.query.Scalar
 import io.requery.query.WhereAndOr
 import org.joda.time.DateTime
 import org.joda.time.DateTimeZone
+import org.joda.time.format.ISODateTimeFormat
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
@@ -124,10 +125,11 @@ class AsyncCheckProvider(private val eventSlug: String, private val dataStore: B
         val rules = list.rules
         if (rules != null && rules.length() > 0) {
             val jsonLogic = JsonLogic()
-            val data = JSONObject()
+            val data = mutableMapOf<String, Any>()
             val tz = DateTimeZone.forID(event.getTimezone())
             data.put("product", position.getItem().getServer_id().toString())
             data.put("variation", position.getVariation_id().toString())
+            data.put("now", dt)
             data.put("entries_number", checkIns.filter { it.type == "entry" }.size)
             data.put("entries_today", checkIns.filter {
                 DateTime(it.fullDatetime).withZone(tz).toLocalDate() == dt.withZone(tz).toLocalDate() && it.type == "entry"
@@ -143,12 +145,49 @@ class AsyncCheckProvider(private val eventSlug: String, private val dataStore: B
                         l.getOrNull(0)
                 )
             }
+            jsonLogic.addOperation("isAfter") { l, d ->
+                if (l?.size == 2 || (l?.size == 3 && l.getOrNull(2) == null)) {
+                    (l.getOrNull(0) as DateTime).isAfter(l.getOrNull(1) as DateTime)
+                } else if (l?.size == 3) {
+                    (l.getOrNull(0) as DateTime).plusMinutes(l.getOrNull(2) as Int).isAfter(l.getOrNull(1) as DateTime)
+                } else {
+                    false
+                }
+            }
+            jsonLogic.addOperation("isBefore") { l, d ->
+                if (l?.size == 2 || (l?.size == 3 && l.getOrNull(2) == null)) {
+                    (l.getOrNull(0) as DateTime).isBefore(l.getOrNull(1) as DateTime)
+                } else if (l?.size == 3) {
+                    (l.getOrNull(0) as DateTime).minusMinutes(l.getOrNull(2) as Int).isBefore(l.getOrNull(1) as DateTime)
+                } else {
+                    false
+                }
+            }
+            jsonLogic.addOperation("buildTime") { l, d ->
+                val t = l?.getOrNull(0)
+                var evjson = event.json
+                if (position.getSubevent_id() != 0L) {
+                    val subevent = dataStore.select(SubEvent::class.java)
+                            .where(SubEvent.EVENT_SLUG.eq(eventSlug))
+                            .and(SubEvent.SERVER_ID.eq(position.getSubevent_id()))
+                            .get().first()
+                    evjson = subevent.json
+                }
+                if (t == "custom") {
+                    ISODateTimeFormat.dateTimeParser().parseDateTime(l.getOrNull(1) as String?)
+                } else if (t == "date_from") {
+                    // TODO: respect subevent
+                    ISODateTimeFormat.dateTimeParser().parseDateTime(evjson.getString("date_from"))
+                } else if (t == "date_to") {
+                    ISODateTimeFormat.dateTimeParser().parseDateTime(evjson.optString("date_to"))
+                } else if (t == "date_admission") {
+                    ISODateTimeFormat.dateTimeParser().parseDateTime(evjson.optString("date_admission") ?: evjson.getString("date_from"))
+                } else {
+                    null
+                }
+            }
 
-            //    logic.add_operation('buildTime', build_time)
-            //  logic.add_operation('isBefore', is_before)
-            //logic.add_operation('isAfter', lambda t1, t2, tol=None: is_before(t2, t1, tol))
-
-            if (!jsonLogic.apply(rules.toString(), data.toString(), safe = false).truthy) {
+            if (!jsonLogic.applyString(rules.toString(), data, safe = true).truthy) {
                 res.type = TicketCheckProvider.CheckResult.Type.RULES
                 res.isCheckinAllowed = false
                 return res
@@ -276,7 +315,7 @@ class AsyncCheckProvider(private val eventSlug: String, private val dataStore: B
             sr.ticket = item.internalName
             try {
                 if (position.variationId != null && position.variationId > 0) {
-                    sr.variation = item.getVariation(position.variationId).stringValue
+                    sr.variation = item.getVariation(position.variationId)?.stringValue
                 }
             } catch (e: JSONException) {
                 sentry.captureException(e)

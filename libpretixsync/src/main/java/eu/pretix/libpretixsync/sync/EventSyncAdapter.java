@@ -8,7 +8,6 @@ import java.util.List;
 
 import eu.pretix.libpretixsync.api.PretixApi;
 import eu.pretix.libpretixsync.db.Event;
-import eu.pretix.libpretixsync.db.Item;
 import eu.pretix.libpretixsync.utils.JSONUtils;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
