@@ -38,7 +38,7 @@ class EventManager(private val store: BlockingEntityStore<Persistable>, private 
         }
     }
 
-    private fun parseEvents(data: JSONObject, subevents: Boolean = false): List<RemoteEvent> {
+    private fun parseEvents(data: JSONObject, subevents: Boolean = false, depth: Int=1): List<RemoteEvent> {
         val events = ArrayList<RemoteEvent>()
 
         val results = data.getJSONArray("results")
@@ -78,13 +78,13 @@ class EventManager(private val store: BlockingEntityStore<Persistable>, private 
         }
 
 
-        if (!data.isNull("next")) {
+        if (!data.isNull("next") && depth < 5) {
             val next = data.getString("next")
             val resp = api.fetchResource(next)
             if (resp.response.code != 200) {
                 throw IOException()
             }
-            return events + parseEvents(resp.data, subevents)
+            return events + parseEvents(resp.data, subevents, depth + 1)
         } else {
             return events
         }
