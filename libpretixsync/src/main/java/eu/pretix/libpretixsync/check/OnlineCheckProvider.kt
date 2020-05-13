@@ -42,6 +42,7 @@ class OnlineCheckProvider(private val config: ConfigStore, httpClientFactory: Ht
                 ?: return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.ERROR, "Check-in list not found")
         return try {
             val res = TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.ERROR)
+            res.scanType = type
             val responseObj = api.redeem(ticketid, null as String?, false, null, answers, listId, ignore_unpaid, with_badge_data, type.toString().toLowerCase())
             if (responseObj.response.code == 404) {
                 res.type = TicketCheckProvider.CheckResult.Type.INVALID
@@ -71,6 +72,8 @@ class OnlineCheckProvider(private val config: ConfigStore, httpClientFactory: Ht
                         res.type = TicketCheckProvider.CheckResult.Type.INVALID
                     } else if ("canceled" == reason) {
                         res.type = TicketCheckProvider.CheckResult.Type.CANCELED
+                    } else if ("rules" == reason) {
+                        res.type = TicketCheckProvider.CheckResult.Type.RULES
                     } else if ("unpaid" == reason) {
                         res.type = TicketCheckProvider.CheckResult.Type.UNPAID
                         // Decide whether the user is allowed to "try again" with "ignore_unpaid"

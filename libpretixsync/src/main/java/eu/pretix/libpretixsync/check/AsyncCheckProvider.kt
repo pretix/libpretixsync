@@ -3,12 +3,17 @@ package eu.pretix.libpretixsync.check
 import eu.pretix.libpretixsync.DummySentryImplementation
 import eu.pretix.libpretixsync.SentryInterface
 import eu.pretix.libpretixsync.db.*
+import eu.pretix.libpretixsync.utils.logic.JsonLogic
+import eu.pretix.libpretixsync.utils.logic.truthy
 import io.requery.BlockingEntityStore
 import io.requery.Persistable
 import io.requery.query.Condition
 import io.requery.query.Result
 import io.requery.query.Scalar
 import io.requery.query.WhereAndOr
+import org.joda.time.DateTime
+import org.joda.time.DateTimeZone
+import org.joda.time.format.ISODateTimeFormat
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
@@ -21,6 +26,12 @@ class AsyncCheckProvider(private val eventSlug: String, private val dataStore: B
         return sentry
     }
 
+    val event: Event by lazy {
+        dataStore.select(Event::class.java)
+                .where(Event.SLUG.eq(eventSlug))
+                .get().first()
+    }
+
     override fun setSentry(sentry: SentryInterface) {
         this.sentry = sentry
     }
@@ -31,6 +42,7 @@ class AsyncCheckProvider(private val eventSlug: String, private val dataStore: B
 
     override fun check(ticketid: String, answers: List<TicketCheckProvider.Answer>?, ignore_unpaid: Boolean, with_badge_data: Boolean, type: TicketCheckProvider.CheckInType): TicketCheckProvider.CheckResult {
         sentry.addBreadcrumb("provider.check", "offline check started")
+        val dt = now()
         val tickets = dataStore.select(OrderPosition::class.java)
                 .leftJoin(Order::class.java).on(Order.ID.eq(OrderPosition.ORDER_ID))
                 .where(OrderPosition.SECRET.eq(ticketid))
@@ -69,6 +81,7 @@ class AsyncCheckProvider(private val eventSlug: String, private val dataStore: B
         }
 
         val res = TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.ERROR)
+        res.scanType = type
         res.ticket = position.getItem().internalName
         val varid = position.variationId
         if (varid != null) {
@@ -110,6 +123,78 @@ class AsyncCheckProvider(private val eventSlug: String, private val dataStore: B
             res.isCheckinAllowed = list.include_pending
             return res;
         }
+        val rules = list.rules
+        if (type == TicketCheckProvider.CheckInType.ENTRY && rules != null && rules.length() > 0) {
+            val jsonLogic = JsonLogic()
+            val data = mutableMapOf<String, Any>()
+            val tz = DateTimeZone.forID(event.getTimezone())
+            data.put("product", position.getItem().getServer_id().toString())
+            data.put("variation", position.getVariation_id().toString())
+            data.put("now", dt)
+            data.put("entries_number", checkIns.filter { it.type == "entry" }.size)
+            data.put("entries_today", checkIns.filter {
+                DateTime(it.fullDatetime).withZone(tz).toLocalDate() == dt.withZone(tz).toLocalDate() && it.type == "entry"
+            }.size)
+            data.put("entries_days", checkIns.map {
+                DateTime(it.fullDatetime).withZone(tz).toLocalDate()
+            }.toHashSet().size)
+
+            jsonLogic.addOperation("objectList") { l, _ -> l }
+            jsonLogic.addOperation("lookup") { l, d -> l?.getOrNull(1) }
+            jsonLogic.addOperation("inList") { l, d ->
+                (l?.getOrNull(1) as List<*>).contains(
+                        l.getOrNull(0)
+                )
+            }
+            jsonLogic.addOperation("isAfter") { l, d ->
+                if (l?.size == 2 || (l?.size == 3 && l.getOrNull(2) == null)) {
+                    (l.getOrNull(0) as DateTime).isAfter(l.getOrNull(1) as DateTime)
+                } else if (l?.size == 3) {
+                    (l.getOrNull(0) as DateTime).plusMinutes(l.getOrNull(2) as Int).isAfter(l.getOrNull(1) as DateTime)
+                } else {
+                    false
+                }
+            }
+            jsonLogic.addOperation("isBefore") { l, d ->
+                if (l?.size == 2 || (l?.size == 3 && l.getOrNull(2) == null)) {
+                    (l.getOrNull(0) as DateTime).isBefore(l.getOrNull(1) as DateTime)
+                } else if (l?.size == 3) {
+                    (l.getOrNull(0) as DateTime).minusMinutes(l.getOrNull(2) as Int).isBefore(l.getOrNull(1) as DateTime)
+                } else {
+                    false
+                }
+            }
+            jsonLogic.addOperation("buildTime") { l, d ->
+                val t = l?.getOrNull(0)
+                var evjson = event.json
+                if (position.getSubevent_id() != 0L) {
+                    val subevent = dataStore.select(SubEvent::class.java)
+                            .where(SubEvent.EVENT_SLUG.eq(eventSlug))
+                            .and(SubEvent.SERVER_ID.eq(position.getSubevent_id()))
+                            .get().first()
+                    evjson = subevent.json
+                }
+                if (t == "custom") {
+                    ISODateTimeFormat.dateTimeParser().parseDateTime(l.getOrNull(1) as String?)
+                } else if (t == "date_from") {
+                    // TODO: respect subevent
+                    ISODateTimeFormat.dateTimeParser().parseDateTime(evjson.getString("date_from"))
+                } else if (t == "date_to") {
+                    ISODateTimeFormat.dateTimeParser().parseDateTime(evjson.optString("date_to"))
+                } else if (t == "date_admission") {
+                    ISODateTimeFormat.dateTimeParser().parseDateTime(evjson.optString("date_admission") ?: evjson.getString("date_from"))
+                } else {
+                    null
+                }
+            }
+
+            if (!jsonLogic.applyString(rules.toString(), data, safe = true).truthy) {
+                res.type = TicketCheckProvider.CheckResult.Type.RULES
+                res.isCheckinAllowed = false
+                return res
+            }
+        }
+
         val questions = item.questions
         val answerMap = position.answers
         if (answers != null) {
@@ -166,8 +251,8 @@ class AsyncCheckProvider(private val eventSlug: String, private val dataStore: B
                 val qci = QueuedCheckIn()
                 qci.generateNonce()
                 qci.setSecret(ticketid)
-                qci.setDatetime(Date())
-                qci.setDatetime_string(QueuedCheckIn.formatDatetime(Date()))
+                qci.setDatetime(dt.toDate())
+                qci.setDatetime_string(QueuedCheckIn.formatDatetime(dt.toDate()))
                 qci.setAnswers(givenAnswers.toString())
                 qci.setEvent_slug(eventSlug)
                 qci.setType(type.toString().toLowerCase())
@@ -177,8 +262,8 @@ class AsyncCheckProvider(private val eventSlug: String, private val dataStore: B
                 ci.setList(list)
                 ci.setPosition(position)
                 ci.setType(type.toString().toLowerCase())
-                ci.setDatetime(Date())
-                ci.setJson_data("{\"local\": true, \"type\": \"${type.toString().toLowerCase()}\", \"datetime\": \"${QueuedCheckIn.formatDatetime(Date())}\"}")
+                ci.setDatetime(dt.toDate())
+                ci.setJson_data("{\"local\": true, \"type\": \"${type.toString().toLowerCase()}\", \"datetime\": \"${QueuedCheckIn.formatDatetime(dt.toDate())}\"}")
                 dataStore.insert(ci)
             }
         }
@@ -231,7 +316,7 @@ class AsyncCheckProvider(private val eventSlug: String, private val dataStore: B
             sr.ticket = item.internalName
             try {
                 if (position.variationId != null && position.variationId > 0) {
-                    sr.variation = item.getVariation(position.variationId).stringValue
+                    sr.variation = item.getVariation(position.variationId)?.stringValue
                 }
             } catch (e: JSONException) {
                 sentry.captureException(e)
@@ -359,6 +444,16 @@ class AsyncCheckProvider(private val eventSlug: String, private val dataStore: B
             }
         }
         return TicketCheckProvider.StatusResult(list.name, sum_pos, sum_ci, items)
+    }
+
+    private var overrideNow: DateTime? = null
+
+    fun setNow(d: DateTime) {
+        overrideNow = d
+    }
+
+    private fun now(): DateTime {
+        return overrideNow ?: DateTime()
     }
 
     init {

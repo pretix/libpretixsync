@@ -52,4 +52,12 @@ public class AbstractCheckInList implements RemoteObject {
             return false;
         }
     }
+
+    public JSONObject getRules() {
+        try {
+            return getJSON().optJSONObject("rules");
+        } catch (JSONException e) {
+            return null;
+        }
+    }
 }

@@ -8,6 +8,7 @@ import java.util.List;
 
 import eu.pretix.libpretixsync.api.PretixApi;
 import eu.pretix.libpretixsync.db.SubEvent;
+import eu.pretix.libpretixsync.utils.JSONUtils;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
 
@@ -51,5 +52,27 @@ public class SubEventSyncAdapter extends BaseSingleObjectSyncAdapter<SubEvent> {
     @Override
     SubEvent newEmptyObject() {
         return new SubEvent();
+    }
+
+
+    public void standaloneRefreshFromJSON(JSONObject data) throws JSONException {
+        SubEvent obj = store.select(SubEvent.class)
+                .where(SubEvent.SERVER_ID.eq(data.getLong("id")))
+                .get().firstOr(newEmptyObject());
+        JSONObject old = null;
+        if (obj.getId() != null) {
+            old = obj.getJSON();
+        }
+
+        // Store object
+        if (old == null) {
+            updateObject(obj, data);
+            store.insert(obj);
+        } else {
+            if (!JSONUtils.similar(data, old)) {
+                updateObject(obj, data);
+                store.update(obj);
+            }
+        }
     }
 }

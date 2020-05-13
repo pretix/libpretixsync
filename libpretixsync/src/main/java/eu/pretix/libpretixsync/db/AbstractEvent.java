@@ -63,4 +63,12 @@ public class AbstractEvent implements RemoteObject {
             return "";
         }
     }
+
+    public String getTimezone() {
+        try {
+            return getJSON().optString("timezone", "UTC");
+        } catch (JSONException e) {
+            return "UTC";
+        }
+    }
 }
