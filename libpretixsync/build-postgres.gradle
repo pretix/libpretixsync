@@ -20,6 +20,7 @@ apply plugin: 'java-library'
 apply plugin: 'net.ltgt.apt-idea'
 apply plugin: 'jacoco'
 apply plugin: 'kotlin'
+apply plugin: 'kotlin-kapt'
 apply plugin: 'idea'
 
 group 'eu.pretix.pretixdesk'
@@ -77,6 +78,7 @@ dependencies {
     implementation 'com.fasterxml.jackson.module:jackson-module-kotlin:2.10.1'
 
     annotationProcessor 'io.requery:requery-processor:1.6.0'
+    kapt 'io.requery:requery-processor:1.6.0'
     annotationProcessor 'javax.annotation:jsr250-api:1.0'
 
     testCompile 'junit:junit:4.12'
