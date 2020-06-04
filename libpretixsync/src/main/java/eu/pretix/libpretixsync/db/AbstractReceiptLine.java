@@ -91,6 +91,9 @@ public class AbstractReceiptLine implements LocalObject {
     @OneToMany
     public List<ReceiptLine> addons;
 
+    @Nullable
+    public String answers;
+
     @Override
     public JSONObject toJSON() throws JSONException {
         JSONObject jo = new JSONObject();
@@ -109,6 +112,7 @@ public class AbstractReceiptLine implements LocalObject {
         jo.put("subevent", subevent_id);
         jo.put("item", item_id != null && item_id != 0L ? item_id : JSONObject.NULL);
         jo.put("variation", variation_id);
+        jo.put("answers", answers);
         jo.put("sale_text", sale_text);
         jo.put("addon_to", JSONObject.NULL);
         return jo;
