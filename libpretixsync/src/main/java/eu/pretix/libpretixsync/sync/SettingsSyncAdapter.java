@@ -6,19 +6,19 @@ import org.json.JSONObject;
 import java.util.List;
 
 import eu.pretix.libpretixsync.api.PretixApi;
-import eu.pretix.libpretixsync.db.Invoicesettings;
+import eu.pretix.libpretixsync.db.Settings;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
 
-public class InvoicesettingsSyncAdapter extends BaseSingleObjectSyncAdapter<Invoicesettings> {
-    public InvoicesettingsSyncAdapter(BlockingEntityStore<Persistable> store, String eventSlug, String key, PretixApi api, SyncManager.ProgressFeedback feedback) {
+public class SettingsSyncAdapter extends BaseSingleObjectSyncAdapter<Settings> {
+    public SettingsSyncAdapter(BlockingEntityStore<Persistable> store, String eventSlug, String key, PretixApi api, SyncManager.ProgressFeedback feedback) {
         super(store, eventSlug, key, api, feedback);
     }
 
     @Override
-    Invoicesettings getKnownObject() {
-        List<Invoicesettings> is = store.select(Invoicesettings.class)
-                .where(Invoicesettings.SLUG.eq(eventSlug))
+    Settings getKnownObject() {
+        List<Settings> is = store.select(Settings.class)
+                .where(Settings.SLUG.eq(eventSlug))
                 .get().toList();
         if (is.size() == 0) {
             return null;
@@ -32,7 +32,7 @@ public class InvoicesettingsSyncAdapter extends BaseSingleObjectSyncAdapter<Invo
     }
 
     @Override
-    public void updateObject(Invoicesettings obj, JSONObject jsonobj) throws JSONException {
+    public void updateObject(Settings obj, JSONObject jsonobj) throws JSONException {
         obj.setSlug(eventSlug);
         obj.setName(jsonobj.optString("invoice_address_from_name"));
         obj.setAddress(jsonobj.optString("invoice_address_from"));
@@ -46,16 +46,16 @@ public class InvoicesettingsSyncAdapter extends BaseSingleObjectSyncAdapter<Invo
 
     @Override
     protected String getUrl() {
-        return api.eventResourceUrl("invoicesettings");
+        return api.eventResourceUrl("settings");
     }
 
     @Override
     String getResourceName() {
-        return "invoicesettings";
+        return "settings";
     }
 
     @Override
-    Invoicesettings newEmptyObject() {
-        return new Invoicesettings();
+    Settings newEmptyObject() {
+        return new Settings();
     }
 }

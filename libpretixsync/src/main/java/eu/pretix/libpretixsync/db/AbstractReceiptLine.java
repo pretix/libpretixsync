@@ -94,6 +94,27 @@ public class AbstractReceiptLine implements LocalObject {
     @Nullable
     public String answers;
 
+    @Nullable
+    public String attendee_name;
+
+    @Nullable
+    public String attendee_email;
+
+    @Nullable
+    public String attendee_company;
+
+    @Nullable
+    public String attendee_street;
+
+    @Nullable
+    public String attendee_zipcode;
+
+    @Nullable
+    public String attendee_city;
+
+    @Nullable
+    public String attendee_country;
+
     @Override
     public JSONObject toJSON() throws JSONException {
         JSONObject jo = new JSONObject();
@@ -115,6 +136,13 @@ public class AbstractReceiptLine implements LocalObject {
         jo.put("answers", answers);
         jo.put("sale_text", sale_text);
         jo.put("addon_to", JSONObject.NULL);
+        jo.put("attendee_name", attendee_name);
+        jo.put("attendee_email", attendee_email);
+        jo.put("attendee_company", attendee_company);
+        jo.put("attendee_street", attendee_street);
+        jo.put("attendee_zipcode", attendee_zipcode);
+        jo.put("attendee_city", attendee_city);
+        jo.put("attendee_country", attendee_country);
         return jo;
     }
 }

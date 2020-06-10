@@ -6,8 +6,6 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Queue;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 
 import eu.pretix.libpretixsync.SentryInterface;
@@ -19,7 +17,6 @@ import eu.pretix.libpretixsync.check.TicketCheckProvider;
 import eu.pretix.libpretixsync.config.ConfigStore;
 import eu.pretix.libpretixsync.db.CheckIn;
 import eu.pretix.libpretixsync.db.Closing;
-import eu.pretix.libpretixsync.db.Migrations;
 import eu.pretix.libpretixsync.db.Order;
 import eu.pretix.libpretixsync.db.OrderPosition;
 import eu.pretix.libpretixsync.db.Question;
@@ -196,25 +193,34 @@ public class SyncManager {
                 download(new TaxRuleSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
                 download(new TicketLayoutSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
             }
-            download(new BadgeLayoutSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
-            download(new CheckInListSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
+            if (!is_pretixpos) {
+                // We don't need these on pretixPOS, so we can save some traffic
+                download(new BadgeLayoutSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
+                download(new CheckInListSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
+
+                try {
+                    download(new BadgeLayoutItemSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
+                } catch (ApiException e) {
+                    if (e.getMessage().toLowerCase().contains("not found")) {
+                        // ignore, this is only supported from pretix 2.5. We have legacy code in BadgeLayoutSyncAdapter to fall back to
+                    } else {
+                        throw e;
+                    }
+                }
+            }
 
             download(new OrderSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
 
             if (is_pretixpos) {
-                // Endpoint is only available with posbackend plugin
-                download(new InvoicesettingsSyncAdapter(dataStore, configStore.getEventSlug(), configStore.getEventSlug(), api, feedback));
-            }
-
-            try {
-                download(new BadgeLayoutItemSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
-            } catch (ApiException e) {
-                if (e.getMessage().toLowerCase().contains("not found")) {
-                    // ignore, this is only supported from pretix 2.5. We have legacy code in BadgeLayoutSyncAdapter to fall back to
-                } else {
-                    throw e;
+                // We don't need these on pretixSCAN, so we can save some traffic
+                try {
+                    download(new SettingsSyncAdapter(dataStore, configStore.getEventSlug(), configStore.getEventSlug(), api, feedback));
+                } catch (ApiException e) {
+                    // Older pretix installations
+                    download(new InvoiceSettingsSyncAdapter(dataStore, configStore.getEventSlug(), configStore.getEventSlug(), api, feedback));
                 }
             }
+
         } catch (DeviceAccessRevokedException e) {
             int deleted = 0;
             deleted += dataStore.delete(CheckIn.class).get().value();

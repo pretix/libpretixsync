@@ -14,7 +14,7 @@ import io.requery.sql.TableCreationMode;
 
 public class Migrations {
     private static EntityModel model = Models.DEFAULT;
-    public static int CURRENT_VERSION = 52;
+    public static int CURRENT_VERSION = 55;
 
     private static void createVersionTable(Connection c, int version) throws SQLException {
         Statement s2 = c.createStatement();
@@ -163,6 +163,34 @@ public class Migrations {
             Statement s2 = c.createStatement();
             s2.execute("ALTER TABLE ReceiptLine ADD answers TEXT;");
             s2.close();
+        }
+        if (db_version < 53) {
+            Statement s2 = c.createStatement();
+            s2.execute("CREATE TABLE Settings (id integer primary key autoincrement, address TEXT, city varchar(255), country varchar(255), json_data TEXT, name varchar(255), slug varchar(255), tax_id varchar(255), vat_id varchar(255), zipcode varchar(255));");
+            s2.close();
+        }
+        if (db_version < 54) {
+            Statement s2 = c.createStatement();
+            s2.execute("ALTER TABLE ReceiptLine ADD attendee_name INT;");
+            s2.close();
+            Statement s3 = c.createStatement();
+            s3.execute("ALTER TABLE ReceiptLine ADD attendee_email INT;");
+            s3.close();
+            Statement s4 = c.createStatement();
+            s4.execute("ALTER TABLE ReceiptLine ADD attendee_company TEXT;");
+            s4.close();
+            Statement s5 = c.createStatement();
+            s5.execute("ALTER TABLE ReceiptLine ADD attendee_street TEXT;");
+            s5.close();
+            Statement s6 = c.createStatement();
+            s6.execute("ALTER TABLE ReceiptLine ADD attendee_zipcode TEXT;");
+            s6.close();
+            Statement s7 = c.createStatement();
+            s7.execute("ALTER TABLE ReceiptLine ADD attendee_city DATE;");
+            s7.close();
+            Statement s8 = c.createStatement();
+            s8.execute("ALTER TABLE ReceiptLine ADD attendee_country DATE;");
+            s8.close();
         }
 
         // Note that the Android app currently does not use these queries!

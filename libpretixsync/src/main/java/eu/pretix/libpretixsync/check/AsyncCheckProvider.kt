@@ -218,7 +218,7 @@ class AsyncCheckProvider(private val eventSlug: String, private val dataStore: B
                     jo.put("answer", answer)
                     jo.put("question", q.getServer_id())
                     givenAnswers.put(jo)
-                } catch (e: AbstractQuestion.ValidationException) {
+                } catch (e: QuestionLike.ValidationException) {
                     answer = ""
                     ask_questions = true
                 } catch (e: JSONException) {
