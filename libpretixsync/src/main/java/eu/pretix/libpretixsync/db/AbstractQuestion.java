@@ -70,7 +70,7 @@ public class AbstractQuestion implements RemoteObject {
     public QuestionType getType() {
         try {
             return QuestionType.valueOf(getJSON().getString("type"));
-        } catch (JSONException e) {
+        } catch (JSONException | IllegalArgumentException e) {
             return QuestionType.T;
         }
     }
