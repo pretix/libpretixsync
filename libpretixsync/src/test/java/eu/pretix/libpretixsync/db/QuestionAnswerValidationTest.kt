@@ -20,13 +20,13 @@ class QuestionAnswerValidationTest(private val questionType: QuestionType, priva
             try {
                 q.clean_answer(input, q.options)
                 fail("Expected an ValidationException to be thrown")
-            } catch (e: AbstractQuestion.ValidationException) {
+            } catch (e: QuestionLike.ValidationException) {
             }
 
         } else {
             try {
                 assertEquals(q.clean_answer(input, q.options), expected)
-            } catch (e: AbstractQuestion.ValidationException) {
+            } catch (e: QuestionLike.ValidationException) {
                 fail(e.message)
             }
 

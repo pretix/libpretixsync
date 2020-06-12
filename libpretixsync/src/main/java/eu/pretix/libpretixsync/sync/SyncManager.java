@@ -207,9 +207,8 @@ public class SyncManager {
                         throw e;
                     }
                 }
+                download(new OrderSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
             }
-
-            download(new OrderSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
 
             if (is_pretixpos) {
                 // We don't need these on pretixSCAN, so we can save some traffic
