@@ -196,7 +196,7 @@ public class SyncManager {
             if (!is_pretixpos) {
                 // We don't need these on pretixPOS, so we can save some traffic
                 download(new BadgeLayoutSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
-                download(new CheckInListSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
+                download(new CheckInListSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), configStore.getSubEventId(), api, feedback));
 
                 try {
                     download(new BadgeLayoutItemSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));

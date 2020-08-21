@@ -18,8 +18,19 @@ import io.requery.query.Tuple;
 import io.requery.util.CloseableIterator;
 
 public class CheckInListSyncAdapter extends BaseConditionalSyncAdapter<CheckInList, Long> {
-    public CheckInListSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, PretixApi api, SyncManager.ProgressFeedback feedback) {
+    private Long subeventId;
+
+    public CheckInListSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, Long subeventId, PretixApi api, SyncManager.ProgressFeedback feedback) {
         super(store, fileStorage, eventSlug, api, feedback);
+        this.subeventId = subeventId;
+    }
+
+    protected String getUrl() {
+        String url = api.eventResourceUrl(getResourceName());
+        if (this.subeventId != null && this.subeventId > 0L) {
+            url += "?subevent_match=" + this.subeventId;
+        }
+        return url;
     }
 
     @Override
