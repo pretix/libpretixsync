@@ -37,6 +37,7 @@ public class SyncManager {
     private BlockingEntityStore<Persistable> dataStore;
     private FileStorage fileStorage;
     private boolean is_pretixpos;
+    private boolean with_pdf_data;
     private CanceledState canceled;
     private int app_version;
     private String hardware_brand;
@@ -60,7 +61,7 @@ public class SyncManager {
         public void postFeedback(String current_action);
     }
 
-    public SyncManager(ConfigStore configStore, PretixApi api, SentryInterface sentry, BlockingEntityStore<Persistable> dataStore, FileStorage fileStorage, long upload_interval, long download_interval, boolean is_pretixpos, int app_version, String hardware_brand, String hardware_model, String software_brand, String software_version) {
+    public SyncManager(ConfigStore configStore, PretixApi api, SentryInterface sentry, BlockingEntityStore<Persistable> dataStore, FileStorage fileStorage, long upload_interval, long download_interval, boolean is_pretixpos, boolean with_pdf_data, int app_version, String hardware_brand, String hardware_model, String software_brand, String software_version) {
         this.configStore = configStore;
         this.api = api;
         this.sentry = sentry;
@@ -69,6 +70,7 @@ public class SyncManager {
         this.dataStore = dataStore;
         this.fileStorage = fileStorage;
         this.is_pretixpos = is_pretixpos;
+        this.with_pdf_data = with_pdf_data;
         this.canceled = new CanceledState();
         this.app_version = app_version;
         this.hardware_brand = hardware_brand;
@@ -207,7 +209,7 @@ public class SyncManager {
                         throw e;
                     }
                 }
-                download(new OrderSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
+                download(new OrderSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), with_pdf_data, api, feedback));
             }
 
             if (is_pretixpos) {
@@ -307,7 +309,7 @@ public class SyncManager {
                         dataStore.runInTransaction(() -> {
                             dataStore.update(r, Receipt.ORDER_CODE);
                             dataStore.delete(qo);
-                            (new OrderSyncAdapter(dataStore, null, configStore.getEventSlug(), api, null)).standaloneRefreshFromJSON(resp.getData());
+                            (new OrderSyncAdapter(dataStore, null, configStore.getEventSlug(), true, api, null)).standaloneRefreshFromJSON(resp.getData());
                             return null;
                         });
                     } else if (resp.getResponse().code() == 400) {

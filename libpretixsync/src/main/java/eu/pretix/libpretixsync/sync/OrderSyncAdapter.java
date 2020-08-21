@@ -32,8 +32,9 @@ import io.requery.query.Tuple;
 import io.requery.util.CloseableIterator;
 
 public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
-    public OrderSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, PretixApi api, SyncManager.ProgressFeedback feedback) {
+    public OrderSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, boolean withPdfData, PretixApi api, SyncManager.ProgressFeedback feedback) {
         super(store, fileStorage, eventSlug, api, feedback);
+        this.withPdfData = withPdfData;
     }
 
     private Map<Long, Item> itemCache = new HashMap<>();
@@ -44,6 +45,15 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
     private String firstResponseTimestamp;
     private String lastOrderTimestamp;
     private ResourceLastModified rlm;
+    private boolean withPdfData;
+
+    private String rlmName() {
+        if (withPdfData) {
+            return "orders_withpdfdata";
+        } else {
+            return "orders";
+        }
+    }
 
     @Override
     public void download() throws JSONException, ApiException, ExecutionException, InterruptedException {
@@ -53,7 +63,7 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
             completed = true;
         } finally {
             ResourceLastModified resourceLastModified = store.select(ResourceLastModified.class)
-                    .where(ResourceLastModified.RESOURCE.eq("orders"))
+                    .where(ResourceLastModified.RESOURCE.eq(rlmName()))
                     .and(ResourceLastModified.EVENT_SLUG.eq(eventSlug))
                     .limit(1)
                     .get().firstOrNull();
@@ -67,7 +77,7 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
             if (firstResponseTimestamp != null) {
                 if (resourceLastModified == null) {
                     resourceLastModified = new ResourceLastModified();
-                    resourceLastModified.setResource("orders");
+                    resourceLastModified.setResource(rlmName());
                     resourceLastModified.setEvent_slug(eventSlug);
                     if (completed) {
                         resourceLastModified.setStatus("complete");
@@ -261,7 +271,7 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
     protected JSONObject downloadPage(String url, boolean isFirstPage) throws ApiException, ResourceNotModified {
         if (isFirstPage) {
             rlm = store.select(ResourceLastModified.class)
-                    .where(ResourceLastModified.RESOURCE.eq("orders"))
+                    .where(ResourceLastModified.RESOURCE.eq(rlmName()))
                     .and(ResourceLastModified.EVENT_SLUG.eq(eventSlug))
                     .limit(1)
                     .get().firstOrNull();
@@ -269,9 +279,12 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
         boolean is_continued_fetch = false;
         if (!url.contains("testmode=")) {
             if (url.contains("?")) {
-                url += "&pdf_data=true&testmode=false";
+                url += "&testmode=false";
             } else {
-                url += "?pdf_data=true&testmode=false";
+                url += "?testmode=false";
+            }
+            if (withPdfData) {
+                url += "&pdf_data=true";
             }
         }
 
