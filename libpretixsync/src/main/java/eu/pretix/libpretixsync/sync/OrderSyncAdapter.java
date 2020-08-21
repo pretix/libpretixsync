@@ -32,9 +32,10 @@ import io.requery.query.Tuple;
 import io.requery.util.CloseableIterator;
 
 public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
-    public OrderSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, boolean withPdfData, PretixApi api, SyncManager.ProgressFeedback feedback) {
+    public OrderSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, boolean withPdfData, boolean is_pretixpos, PretixApi api, SyncManager.ProgressFeedback feedback) {
         super(store, fileStorage, eventSlug, api, feedback);
         this.withPdfData = withPdfData;
+        this.is_pretixpos = is_pretixpos;
     }
 
     private Map<Long, Item> itemCache = new HashMap<>();
@@ -46,6 +47,7 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
     private String lastOrderTimestamp;
     private ResourceLastModified rlm;
     private boolean withPdfData;
+    private boolean is_pretixpos;
 
     private String rlmName() {
         if (withPdfData) {
@@ -279,9 +281,13 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
         boolean is_continued_fetch = false;
         if (!url.contains("testmode=")) {
             if (url.contains("?")) {
-                url += "&testmode=false";
+                url += "&";
             } else {
-                url += "?testmode=false";
+                url += "?";
+            }
+            url += "testmode=false&exclude=downloads&exclude=payment_date&exclude=payment_provider&exclude=fees&exclude=positions.downloads";
+            if (!is_pretixpos) {
+                url += "&exclude=payments&exclude=refunds";
             }
             if (withPdfData) {
                 url += "&pdf_data=true";

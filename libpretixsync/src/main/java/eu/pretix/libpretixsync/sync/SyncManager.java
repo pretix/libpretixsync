@@ -209,7 +209,7 @@ public class SyncManager {
                         throw e;
                     }
                 }
-                download(new OrderSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), with_pdf_data, api, feedback));
+                download(new OrderSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), with_pdf_data, is_pretixpos, api, feedback));
             }
 
             if (is_pretixpos) {
@@ -309,7 +309,7 @@ public class SyncManager {
                         dataStore.runInTransaction(() -> {
                             dataStore.update(r, Receipt.ORDER_CODE);
                             dataStore.delete(qo);
-                            (new OrderSyncAdapter(dataStore, null, configStore.getEventSlug(), true, api, null)).standaloneRefreshFromJSON(resp.getData());
+                            (new OrderSyncAdapter(dataStore, null, configStore.getEventSlug(), true, true, api, null)).standaloneRefreshFromJSON(resp.getData());
                             return null;
                         });
                     } else if (resp.getResponse().code() == 400) {
