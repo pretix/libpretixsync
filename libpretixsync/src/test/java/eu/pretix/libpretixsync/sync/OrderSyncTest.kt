@@ -28,9 +28,9 @@ class OrderSyncTest : BaseDatabaseTest() {
     fun setUpFakes() {
         configStore = FakeConfigStore()
         fakeApi = FakePretixApi()
-        osa = OrderSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, null)
+        osa = OrderSyncAdapter(dataStore, FakeFileStorage(), "demo", true, false, fakeApi, null)
 
-        CheckInListSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, null).standaloneRefreshFromJSON(jsonResource("checkinlists/list1.json"))
+        CheckInListSyncAdapter(dataStore, FakeFileStorage(), "demo", 0L, fakeApi, null).standaloneRefreshFromJSON(jsonResource("checkinlists/list1.json"))
     }
 
     private fun response(data: JSONObject, generated: String): Response {
