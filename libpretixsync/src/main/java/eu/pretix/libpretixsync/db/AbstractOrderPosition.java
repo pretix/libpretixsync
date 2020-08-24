@@ -92,6 +92,17 @@ public class AbstractOrderPosition implements RemoteObject {
         }
     }
 
+    public String getSeatName() {
+        try {
+            JSONObject seat = getJSON().optJSONObject("seat");
+            if (seat != null) {
+                return seat.getString("name");
+            }
+        } catch (JSONException e) {
+        }
+        return null;
+    }
+
     public Map<Long, String> getAnswers() {
         try {
             JSONArray arr = getJSON().getJSONArray("answers");

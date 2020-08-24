@@ -95,6 +95,7 @@ class AsyncCheckProvider(private val eventSlug: String, private val dataStore: B
             }
         }
         res.attendee_name = position.attendee_name
+        res.seat = position.seatName
         res.orderCode = position.getOrder().getCode()
         res.position = jPosition
         var require_attention = position.getOrder().isCheckin_attention
@@ -322,6 +323,7 @@ class AsyncCheckProvider(private val eventSlug: String, private val dataStore: B
                 sentry.captureException(e)
             }
             sr.attendee_name = position.attendee_name
+            sr.seat = position.seatName
             sr.orderCode = order.getCode()
             sr.secret = position.getSecret()
             val queuedCheckIns = dataStore.count(QueuedCheckIn::class.java)

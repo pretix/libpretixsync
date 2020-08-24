@@ -32,6 +32,7 @@ interface TicketCheckProvider {
         var ticket: String? = null
         var variation: String? = null
         var attendee_name: String? = null
+        var seat: String? = null
         var message: String? = null
         var orderCode: String? = null
         var firstScanned: Date? = null
@@ -61,6 +62,7 @@ interface TicketCheckProvider {
         var ticket: String? = null
         var variation: String? = null
         var attendee_name: String? = null
+        var seat: String? = null
         var orderCode: String? = null
         var addonText: String? = null
         var status: Status? = null
@@ -73,6 +75,7 @@ interface TicketCheckProvider {
             ticket = r.ticket
             variation = r.variation
             attendee_name = r.attendee_name
+            seat = r.seat
             orderCode = r.orderCode
             status = r.status
             isRedeemed = r.isRedeemed

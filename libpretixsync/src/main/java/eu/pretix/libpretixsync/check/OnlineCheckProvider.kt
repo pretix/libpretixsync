@@ -99,6 +99,9 @@ class OnlineCheckProvider(private val config: ConfigStore, httpClientFactory: Ht
                     if (!posjson.isNull("attendee_name")) {
                         res.attendee_name = posjson.optString("attendee_name")
                     }
+                    if (!posjson.isNull("seat")) {
+                        res.seat = posjson.getJSONObject("seat").getString("name")
+                    }
                     res.orderCode = posjson.optString("order")
                     res.position = posjson
                     val checkins = posjson.getJSONArray("checkins")
@@ -153,6 +156,9 @@ class OnlineCheckProvider(private val config: ConfigStore, httpClientFactory: Ht
                 }
                 if (!res.isNull("attendee_name")) {
                     sr.attendee_name = res.optString("attendee_name")
+                }
+                if (!res.isNull("seat")) {
+                    sr.seat = res.getJSONObject("seat").getString("name")
                 }
                 sr.orderCode = res.optString("order")
                 sr.secret = res.optString("secret")
