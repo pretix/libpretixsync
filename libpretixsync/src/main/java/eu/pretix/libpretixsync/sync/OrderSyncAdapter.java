@@ -27,6 +27,7 @@ import eu.pretix.libpretixsync.api.PretixApi;
 import eu.pretix.libpretixsync.api.ResourceNotModified;
 import eu.pretix.libpretixsync.db.CheckIn;
 import eu.pretix.libpretixsync.db.CheckInList;
+import eu.pretix.libpretixsync.db.Event;
 import eu.pretix.libpretixsync.db.Item;
 import eu.pretix.libpretixsync.db.Order;
 import eu.pretix.libpretixsync.db.OrderPosition;
@@ -488,7 +489,6 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
 
     Map<Long, Long> subeventsDeletionDate = new HashMap<>();
 
-
     private Long deletionTimeForSubevent(long sid) {
         if (subeventsDeletionDate.containsKey(sid)) {
             return subeventsDeletionDate.get(sid);
@@ -579,5 +579,40 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
         }
         int deleted = store.delete(OrderPosition.class).where(OrderPosition.ORDER_ID.in(idsToDelete)).get().value();
         deleted = store.delete(Order.class).where(Order.ID.in(idsToDelete)).get().value();
+    }
+
+    Map<String, Long> eventsDeletionDate = new HashMap<>();
+
+    private Long deletionTimeForEvent(String slug) {
+        if (eventsDeletionDate.containsKey(slug)) {
+            return eventsDeletionDate.get(slug);
+        }
+
+        Event e = store.select(Event.class).where(Event.SLUG.eq(slug)).get().firstOrNull();
+
+        DateTime d = new DateTime(e.getDate_to() != null ? e.getDate_to() : e.getDate_from());
+        long v = d.plus(Duration.standardDays(14)).getMillis();
+        eventsDeletionDate.put(slug, v);
+        return v;
+    }
+
+    public void deleteOldEvents() {
+        feedback.postFeedback("Deleting old " + getResourceName() + "…");
+
+        List<Tuple> tuples = store.select(Order.EVENT_SLUG)
+                .from(Order.class)
+                .where(Order.EVENT_SLUG.ne(eventSlug))
+                .groupBy(Order.EVENT_SLUG)
+                .orderBy(Order.EVENT_SLUG)
+                .get().toList();
+        for (Tuple t : tuples) {
+            String slug = t.get(0);
+            Long deletionDate = deletionTimeForEvent(slug);
+            if (deletionDate < System.currentTimeMillis()) {
+                store.delete(ResourceLastModified.class).where(ResourceLastModified.RESOURCE.like("order%")).and(ResourceLastModified.EVENT_SLUG.eq(slug));
+                int deleted = store.delete(OrderPosition.class).where(OrderPosition.ORDER_ID.in(store.select(Order.ID).where(Order.EVENT_SLUG.eq(slug)))).get().value();
+                deleted = store.delete(Order.class).where(Order.EVENT_SLUG.eq(slug)).get().value();
+            }
+        }
     }
 }

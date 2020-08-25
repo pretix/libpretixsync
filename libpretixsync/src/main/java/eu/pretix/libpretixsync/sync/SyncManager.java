@@ -212,6 +212,7 @@ public class SyncManager {
                 OrderSyncAdapter osa = new OrderSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), configStore.getSubEventId(), with_pdf_data, is_pretixpos, api, feedback);
                 download(osa);
                 osa.deleteOldSubevents();
+                osa.deleteOldEvents();
             }
 
             if (is_pretixpos) {
