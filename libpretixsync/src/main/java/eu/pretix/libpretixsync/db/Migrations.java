@@ -14,7 +14,7 @@ import io.requery.sql.TableCreationMode;
 
 public class Migrations {
     private static EntityModel model = Models.DEFAULT;
-    public static int CURRENT_VERSION = 55;
+    public static int CURRENT_VERSION = 56;
 
     private static void createVersionTable(Connection c, int version) throws SQLException {
         Statement s2 = c.createStatement();
@@ -191,6 +191,11 @@ public class Migrations {
             Statement s8 = c.createStatement();
             s8.execute("ALTER TABLE ReceiptLine ADD attendee_country DATE;");
             s8.close();
+        }
+        if (db_version < 56) {
+            Statement s2 = c.createStatement();
+            s2.execute("ALTER TABLE Order ADD deleteAfterTimestamp NUMERIC;");
+            s2.close();
         }
 
         // Note that the Android app currently does not use these queries!

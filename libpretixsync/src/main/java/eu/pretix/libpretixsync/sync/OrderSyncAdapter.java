@@ -1,5 +1,10 @@
 package eu.pretix.libpretixsync.sync;
 
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
+import org.joda.time.Duration;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -8,6 +13,7 @@ import org.json.JSONObject;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -25,16 +31,19 @@ import eu.pretix.libpretixsync.db.Item;
 import eu.pretix.libpretixsync.db.Order;
 import eu.pretix.libpretixsync.db.OrderPosition;
 import eu.pretix.libpretixsync.db.ResourceLastModified;
+import eu.pretix.libpretixsync.db.SubEvent;
 import eu.pretix.libpretixsync.utils.JSONUtils;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
+import io.requery.query.Scalar;
 import io.requery.query.Tuple;
 import io.requery.util.CloseableIterator;
 
 public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
-    public OrderSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, boolean withPdfData, boolean is_pretixpos, PretixApi api, SyncManager.ProgressFeedback feedback) {
+    public OrderSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, Long subeventId, boolean withPdfData, boolean is_pretixpos, PretixApi api, SyncManager.ProgressFeedback feedback) {
         super(store, fileStorage, eventSlug, api, feedback);
         this.withPdfData = withPdfData;
+        this.subeventId = subeventId;
         this.is_pretixpos = is_pretixpos;
     }
 
@@ -48,6 +57,7 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
     private ResourceLastModified rlm;
     private boolean withPdfData;
     private boolean is_pretixpos;
+    private Long subeventId;
 
     private String rlmName() {
         if (withPdfData) {
@@ -214,6 +224,7 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
         obj.setEmail(jsonobj.optString("email"));
         obj.setCheckin_attention(jsonobj.optBoolean("checkin_attention"));
         obj.setJson_data(jsonobj.toString());
+        obj.setDeleteAfterTimestamp(0L);
 
         if (obj.getId() == null) {
             store.insert(obj);
@@ -294,6 +305,20 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
             }
         }
 
+        DateTimeFormatter formatter = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ssZ");
+        DateTime cutoff = new DateTime().withZone(DateTimeZone.UTC).minus(Duration.standardDays(14));
+        String firstrun_params = "";
+        try {
+            if (subeventId != null && subeventId > 0) {
+                firstrun_params = "&subevent_after=" + URLEncoder.encode(formatter.print(cutoff), "UTF-8");
+            }
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+        // On event series, we ignore orders that only affect subevents more than 14 days old.
+        // However, we can only do that on the first run, since we'd otherwise miss if e.g. an order
+        // that we have in our current database is changed to a date outside that time frame.
+
         if (rlm != null) {
             // This resource has been fetched before.
             if (rlm.getStatus() != null && rlm.getStatus().startsWith("incomplete:")) {
@@ -305,7 +330,7 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
                 is_continued_fetch = true;
                 try {
                     if (!url.contains("created_since")) {
-                        url += "&ordering=datetime&created_since=" + URLEncoder.encode(rlm.getStatus().substring(11), "UTF-8");
+                        url += "&ordering=datetime&created_since=" + URLEncoder.encode(rlm.getStatus().substring(11), "UTF-8") + firstrun_params;
                     }
                 } catch (UnsupportedEncodingException e) {
                     e.printStackTrace();
@@ -330,6 +355,10 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
                 } catch (UnsupportedEncodingException e) {
                     e.printStackTrace();
                 }
+            }
+        } else {
+            if (!url.contains("subevent_after")) {
+                url += firstrun_params;
             }
         }
 
@@ -455,5 +484,100 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
         }
         store.insert(checkinCreateCache);
         checkinCreateCache.clear();
+    }
+
+    Map<Long, Long> subeventsDeletionDate = new HashMap<>();
+
+
+    private Long deletionTimeForSubevent(long sid) {
+        if (subeventsDeletionDate.containsKey(sid)) {
+            return subeventsDeletionDate.get(sid);
+        }
+
+        try {
+            new SubEventSyncAdapter(store, eventSlug, String.valueOf(sid), api, current_action -> {
+            }).download();
+        } catch (JSONException | ApiException e) {
+            subeventsDeletionDate.put(sid, null);
+            return null;
+        }
+
+        SubEvent se = store.select(SubEvent.class).where(SubEvent.SERVER_ID.eq(sid)).get().firstOrNull();
+        if (se == null) {
+            subeventsDeletionDate.put(sid, null);
+            return null;
+        }
+
+        DateTime d = new DateTime(se.getDate_to() != null ? se.getDate_to() : se.getDate_from());
+        long v = d.plus(Duration.standardDays(14)).getMillis();
+        subeventsDeletionDate.put(sid, v);
+        return v;
+    }
+
+    public void deleteOldSubevents() {
+        if (this.subeventId == null || this.subeventId < 1) {
+            return;
+        }
+
+        // To keep the local database small in large event series, we clean out orders that only
+        // affect subevents more than 14 days in the past. However, doing so is not quite simple since
+        // we need to take care of orders changing what subevents they effect. Therefore, we only
+        // filter this server-side on an initial sync (see above). For every subsequent sync,
+        // we still get a full diff of all orders.
+        // After the diff fetch, we iterate over all orders and assign them a deletion date if they
+        // currently do not have one.
+        // Since we don't sync all subevents routinely, we fetch all subevents that we see for current
+        // information and cache it in the subeventsDeletionDate map.
+        // We then delete everything that is past its deletion date.
+        // Further above, in updateObject(), we *always* reset the deletion date to 0 for anything
+        // that's in the diff. This way, we can be sure to "un-delete" orders when they are changed
+        // -- or when the subevent date is changed, which triggers all orders to be in the diff.
+
+        feedback.postFeedback("Deleting old " + getResourceName() + "…");
+
+        CloseableIterator<Order> orders = store.select(Order.class)
+                .where(Order.EVENT_SLUG.eq(eventSlug))
+                .and(Order.DELETE_AFTER_TIMESTAMP.isNull().or(Order.DELETE_AFTER_TIMESTAMP.lt(1L)))
+                .get().iterator();
+
+        for (CloseableIterator<Order> it = orders; it.hasNext(); ) {
+            Order o = it.next();
+
+            Long deltime = null;
+            try {
+                JSONArray pos = o.getJSON().getJSONArray("positions");
+                for (int i = 0; i < pos.length(); i++) {
+                    JSONObject p = pos.getJSONObject(i);
+                    if (p.isNull("subevent")) {
+                        deltime = null;
+                        break;
+                    }
+                    Long thisDeltime = deletionTimeForSubevent(p.getLong("subevent"));
+                    if (thisDeltime != null) {
+                        if (deltime == null) {
+                            deltime = thisDeltime;
+                        } else {
+                            deltime = Math.max(deltime, thisDeltime);
+                        }
+                    }
+                }
+            } catch (JSONException e) {
+                continue;
+            }
+            if (deltime == null) {
+                continue;
+            }
+            o.setDeleteAfterTimestamp(deltime);
+            store.update(o);
+        }
+        orders.close();
+
+        List<Tuple> ordersToDelete = store.select(Order.ID).where(Order.DELETE_AFTER_TIMESTAMP.lt(System.currentTimeMillis()).and(Order.DELETE_AFTER_TIMESTAMP.gt(1L))).and(Order.ID.notIn(store.select(Order.ID).from(OrderPosition.class).where(OrderPosition.SUBEVENT_ID.eq(this.subeventId)))).get().toList();
+        List<Long> idsToDelete = new ArrayList<>();
+        for (Tuple t: ordersToDelete) {
+            idsToDelete.add(t.get(0));
+        }
+        int deleted = store.delete(OrderPosition.class).where(OrderPosition.ORDER_ID.in(idsToDelete)).get().value();
+        deleted = store.delete(Order.class).where(Order.ID.in(idsToDelete)).get().value();
     }
 }

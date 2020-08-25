@@ -35,7 +35,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         CheckInListSyncAdapter(dataStore, FakeFileStorage(), "demo", 0, fakeApi, null).standaloneRefreshFromJSON(jsonResource("checkinlists/list3.json"))
         SubEventSyncAdapter(dataStore, "demo", "14", fakeApi, null).standaloneRefreshFromJSON(jsonResource("subevents/subevent1.json"))
 
-        val osa = OrderSyncAdapter(dataStore, FakeFileStorage(), "demo", true, false, fakeApi, null)
+        val osa = OrderSyncAdapter(dataStore, FakeFileStorage(), "demo", 0, true, false, fakeApi, null)
         osa.standaloneRefreshFromJSON(jsonResource("orders/order1.json"))
         osa.standaloneRefreshFromJSON(jsonResource("orders/order2.json"))
         osa.standaloneRefreshFromJSON(jsonResource("orders/order3.json"))

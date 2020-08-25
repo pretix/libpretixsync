@@ -26,6 +26,8 @@ public class AbstractOrder implements RemoteObject {
 
     public String email;
 
+    public Long deleteAfterTimestamp;
+
     public boolean checkin_attention;
 
     @Column(definition = "TEXT")
