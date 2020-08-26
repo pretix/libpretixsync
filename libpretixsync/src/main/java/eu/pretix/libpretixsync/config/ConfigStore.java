@@ -30,6 +30,10 @@ public interface ConfigStore {
 
     public void setLastSync(long val);
 
+    public long getLastCleanup();
+
+    public void setLastCleanup(long val);
+
     public long getLastFailedSync();
 
     public void setLastFailedSync(long val);

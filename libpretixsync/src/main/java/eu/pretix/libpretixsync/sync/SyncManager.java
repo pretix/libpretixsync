@@ -211,8 +211,11 @@ public class SyncManager {
                 }
                 OrderSyncAdapter osa = new OrderSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), configStore.getSubEventId(), with_pdf_data, is_pretixpos, api, feedback);
                 download(osa);
-                osa.deleteOldSubevents();
-                osa.deleteOldEvents();
+                if ((System.currentTimeMillis() - configStore.getLastCleanup()) > 3600 * 1000 * 12) {
+                    osa.deleteOldSubevents();
+                    osa.deleteOldEvents();
+                    configStore.setLastCleanup(System.currentTimeMillis());
+                }
             }
 
             if (is_pretixpos) {
