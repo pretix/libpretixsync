@@ -6,6 +6,7 @@ import eu.pretix.libpretixsync.config.ConfigStore;
 public class FakeConfigStore implements ConfigStore {
     private long last_download;
     private long last_sync;
+    private long last_cleanup;
     private long last_failed_sync;
     private String last_failed_sync_msg;
     private String last_status_data;
@@ -82,6 +83,16 @@ public class FakeConfigStore implements ConfigStore {
     @Override
     public void setLastSync(long val) {
         last_sync = val;
+    }
+
+    @Override
+    public long getLastCleanup() {
+        return last_cleanup;
+    }
+
+    @Override
+    public void setLastCleanup(long val) {
+        last_cleanup = val;
     }
 
     @Override
