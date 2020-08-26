@@ -25,6 +25,7 @@ public class AbstractCheckIn implements RemoteObject {
     @Column
     @ForeignKey(update = ReferentialAction.CASCADE)
     @ManyToOne
+    @Index
     public OrderPosition position;
 
     @Column(definition = "TEXT")

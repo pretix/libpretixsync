@@ -24,6 +24,7 @@ public class AbstractOrderPosition implements RemoteObject {
 
     @Column(name = "order_ref")
     @ForeignKey(update = ReferentialAction.CASCADE)
+    @Index
     @ManyToOne
     public Order order;
 
