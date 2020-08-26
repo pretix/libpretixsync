@@ -40,6 +40,7 @@ public abstract class BaseDownloadSyncAdapter<T extends RemoteObject & Persistab
     protected ExecutorService threadPool = Executors.newCachedThreadPool();
     protected SyncManager.ProgressFeedback feedback;
     protected int total;
+    protected int totalOnline;
     protected SyncManager.CanceledState canceledState;
 
     public BaseDownloadSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, PretixApi api, SyncManager.ProgressFeedback feedback) {
@@ -166,7 +167,7 @@ public abstract class BaseDownloadSyncAdapter<T extends RemoteObject & Persistab
         total += l;
         if (feedback != null) {
 
-            feedback.postFeedback("Processed " + total + " " + getResourceName() + " (total in database: ~"+(sizeBefore + total)+")…");
+            feedback.postFeedback("Processed " + total + "/" + totalOnline + " " + getResourceName() + " (total in database: ~" + (sizeBefore + total) + ")…");
         }
     }
 
@@ -188,7 +189,7 @@ public abstract class BaseDownloadSyncAdapter<T extends RemoteObject & Persistab
 
     public abstract void updateObject(T obj, JSONObject jsonobj) throws JSONException;
 
-    protected CompletableFuture<Boolean> asyncProcessPage(JSONArray data)  {
+    protected CompletableFuture<Boolean> asyncProcessPage(JSONArray data) {
         CompletableFuture<Boolean> completableFuture = new CompletableFuture<>();
 
         threadPool.submit(() -> {
@@ -215,11 +216,13 @@ public abstract class BaseDownloadSyncAdapter<T extends RemoteObject & Persistab
         CompletableFuture<Boolean> future = null;
         try {
             while (true) {
-                if (canceledState != null && canceledState.isCanceled()) throw new InterruptedException();
+                if (canceledState != null && canceledState.isCanceled())
+                    throw new InterruptedException();
                 JSONObject page = downloadPage(url, isFirstPage);
                 if (future != null) {
                     future.get();
                 }
+                totalOnline = page.getInt("count");
                 future = asyncProcessPage(page.getJSONArray("results"));
                 if (page.isNull("next")) {
                     break;
