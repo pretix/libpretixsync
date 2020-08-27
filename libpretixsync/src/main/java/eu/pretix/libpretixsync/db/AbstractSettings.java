@@ -38,13 +38,13 @@ public abstract class AbstractSettings implements RemoteObject {
         JSONObject jsonobj = getJSON();
         JSONObject j = new JSONObject();
         j.put("slug", slug);
-        j.put("name", jsonobj.optString("invoice_address_from_name"));
-        j.put("address", jsonobj.optString("invoice_address_from"));
-        j.put("zipcode", jsonobj.optString("invoice_address_from_zipcode"));
-        j.put("city", jsonobj.optString("invoice_address_from_city"));
-        j.put("country", jsonobj.optString("invoice_address_from_country"));
-        j.put("tax_id", jsonobj.optString("invoice_address_from_tax_id"));
-        j.put("vat_id", jsonobj.optString("invoice_address_from_vat_id"));
+        j.put("invoice_address_from_name", jsonobj.optString("invoice_address_from_name"));
+        j.put("invoice_address_from", jsonobj.optString("invoice_address_from"));
+        j.put("invoice_address_from_zipcode", jsonobj.optString("invoice_address_from_zipcode"));
+        j.put("invoice_address_from_city", jsonobj.optString("invoice_address_from_city"));
+        j.put("invoice_address_from_country", jsonobj.optString("invoice_address_from_country"));
+        j.put("invoice_address_from_tax_id", jsonobj.optString("invoice_address_from_tax_id"));
+        j.put("invoice_address_from_vat_id", jsonobj.optString("invoice_address_from_vat_id"));
         return j;
     }
 
