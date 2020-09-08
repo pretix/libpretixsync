@@ -557,10 +557,13 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
                 Long deltime = null;
                 try {
                     JSONArray pos = o.getJSON().getJSONArray("positions");
+                    if (pos.length() == 0) {
+                        deltime = System.currentTimeMillis();
+                    }
                     for (int i = 0; i < pos.length(); i++) {
                         JSONObject p = pos.getJSONObject(i);
                         if (p.isNull("subevent")) {
-                            deltime = null;
+                            deltime = System.currentTimeMillis() + 1000 * 3600 * 24 * 365 * 20;  // should never happen, if it does, don't delete this any time soon
                             break;
                         }
                         Long thisDeltime = deletionTimeForSubevent(p.getLong("subevent"));
@@ -573,7 +576,7 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
                         }
                     }
                 } catch (JSONException e) {
-                    continue;
+                    break;
                 }
                 if (deltime == null) {
                     continue;
