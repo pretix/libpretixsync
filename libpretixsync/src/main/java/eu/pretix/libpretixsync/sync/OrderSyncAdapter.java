@@ -130,18 +130,6 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
         return itemCache.get(id);
     }
 
-    private CheckInList getList(long id) {
-        if (listCache.size() == 0) {
-            List<CheckInList> items = store
-                    .select(CheckInList.class)
-                    .get().toList();
-            for (CheckInList item : items) {
-                listCache.put(item.getServer_id(), item);
-            }
-        }
-        return listCache.get(id);
-    }
-
     private void updatePositionObject(OrderPosition obj, JSONObject jsonobj, JSONObject jsonorder, JSONObject parent) throws JSONException {
         obj.setServer_id(jsonobj.getLong("id"));
         obj.setPositionid(jsonobj.getLong("positionid"));
@@ -179,30 +167,33 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
         List<CheckIn> checkincache = checkinCache.get(obj.getId());
         if (checkincache != null) {
             for (CheckIn op : checkincache) {
-                known.put(op.getList().getServer_id(), op);
+                if (op.getServer_id() != null && op.getServer_id() > 0) {
+                    known.put(op.getServer_id(), op);
+                } else {
+                    store.delete(op);
+                }
             }
         }
         JSONArray checkins = jsonobj.getJSONArray("checkins");
         for (int i = 0; i < checkins.length(); i++) {
             JSONObject ci = checkins.getJSONObject(i);
             Long listid = ci.getLong("list");
-            CheckInList list = getList(listid);
-            if (list == null) {
-                continue;
-            }
             if (known.containsKey(listid)) {
                 CheckIn ciobj = known.remove(listid);
-                ciobj.setDatetime(ISODateTimeFormat.dateTimeParser().parseDateTime(ci.getString("datetime")).toDate());
+                ciobj.setPosition(obj);
                 ciobj.setType(ci.optString("type", "entry"));
+                ciobj.setListId(listid);
+                ciobj.setDatetime(ISODateTimeFormat.dateTimeParser().parseDateTime(ci.getString("datetime")).toDate());
                 ciobj.setJson_data(ci.toString());
                 store.update(ciobj);
             } else {
                 CheckIn ciobj = new CheckIn();
                 ciobj.setPosition(obj);
                 ciobj.setType(ci.optString("type", "entry"));
-                ciobj.setList(getList(listid));
+                ciobj.setListId(listid);
                 ciobj.setDatetime(ISODateTimeFormat.dateTimeParser().parseDateTime(ci.getString("datetime")).toDate());
                 ciobj.setJson_data(ci.toString());
+                ciobj.setServer_id(ci.optLong("id"));
                 checkinCreateCache.add(ciobj);
             }
         }

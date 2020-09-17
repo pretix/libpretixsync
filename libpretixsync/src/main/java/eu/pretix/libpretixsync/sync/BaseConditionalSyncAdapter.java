@@ -29,12 +29,21 @@ abstract public class BaseConditionalSyncAdapter<T extends RemoteObject & Persis
                 .get().firstOrNull();
         if (resourceLastModified == null) {
             resourceLastModified = new ResourceLastModified();
+        } else {
+            if (!getMeta().equals(resourceLastModified.getMeta()) && !(getMeta().equals("") && resourceLastModified.getMeta() == null)) {
+                store.delete(resourceLastModified);
+                resourceLastModified = new ResourceLastModified();
+            }
         }
         PretixApi.ApiResponse apiResponse = api.fetchResource(url, resourceLastModified.getLast_modified());
         if (isFirstPage) {
             firstResponse = apiResponse;
         }
         return apiResponse.getData();
+    }
+
+    public String getMeta() {
+        return "";
     }
 
     @Override
@@ -51,9 +60,11 @@ abstract public class BaseConditionalSyncAdapter<T extends RemoteObject & Persis
                 resourceLastModified = new ResourceLastModified();
                 resourceLastModified.setResource(getResourceName());
                 resourceLastModified.setEvent_slug(eventSlug);
+                resourceLastModified.setMeta(getMeta());
             }
             if (firstResponse.getResponse().header("Last-Modified") != null) {
                 resourceLastModified.setLast_modified(firstResponse.getResponse().header("Last-Modified"));
+                resourceLastModified.setMeta(getMeta());
                 store.upsert(resourceLastModified);
             }
             firstResponse = null;

@@ -14,7 +14,7 @@ import io.requery.sql.TableCreationMode;
 
 public class Migrations {
     private static EntityModel model = Models.DEFAULT;
-    public static int CURRENT_VERSION = 57;
+    public static int CURRENT_VERSION = 60;
 
     private static void createVersionTable(Connection c, int version) throws SQLException {
         Statement s2 = c.createStatement();
@@ -194,7 +194,7 @@ public class Migrations {
         }
         if (db_version < 56) {
             Statement s2 = c.createStatement();
-            s2.execute("ALTER TABLE Order ADD deleteAfterTimestamp NUMERIC;");
+            s2.execute("ALTER TABLE orders ADD deleteAfterTimestamp NUMERIC;");
             s2.close();
         }
         if (db_version < 57) {
@@ -203,6 +203,30 @@ public class Migrations {
             s3.close();
             Statement s4 = c.createStatement();
             s4.execute("CREATE INDEX checkin_position ON CheckIn (position);");
+            s4.close();
+        }
+        if (db_version < 58) {
+            Statement s3 = c.createStatement();
+            s3.execute("ALTER TABLE CheckIn ADD listId INT;");
+            s3.close();
+            Statement s5 = c.createStatement();
+            s5.execute("UPDATE CheckIn SET listId = list;");
+            s5.close();
+            Statement s4 = c.createStatement();
+            s4.execute("CREATE INDEX checkin_listid ON CheckIn (listId);");
+            s4.close();
+        }
+        if (db_version < 59) {
+            Statement s3 = c.createStatement();
+            s3.execute("ALTER TABLE ResourceLastModified ADD meta TEXT;");
+            s3.close();
+        }
+        if (db_version < 60) {
+            Statement s3 = c.createStatement();
+            s3.execute("ALTERT TABLE CheckIn ADD server_id NUMERIC NULLABLE;");
+            s3.close();
+            Statement s4 = c.createStatement();
+            s4.execute("CREATE INDEX checkin_server_id ON CheckIn (server_id);");
             s4.close();
         }
 

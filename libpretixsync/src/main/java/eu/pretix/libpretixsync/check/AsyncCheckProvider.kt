@@ -110,7 +110,7 @@ class AsyncCheckProvider(private val eventSlug: String, private val dataStore: B
                 .where(CheckIn.POSITION_ID.eq(position.getId()))
                 .get().toList()
         val checkIns = storedCheckIns.filter {
-            it.getList().getServer_id() == listId
+            it.getListId() == listId
         }
         checkIns.sortedWith(compareBy({ it.fullDatetime }, { it.id }))
 
@@ -260,7 +260,7 @@ class AsyncCheckProvider(private val eventSlug: String, private val dataStore: B
                 qci.setCheckinListId(listId)
                 dataStore.insert(qci)
                 val ci = CheckIn()
-                ci.setList(list)
+                ci.setListId(listId)
                 ci.setPosition(position)
                 ci.setType(type.toString().toLowerCase())
                 ci.setDatetime(dt.toDate())
@@ -332,7 +332,7 @@ class AsyncCheckProvider(private val eventSlug: String, private val dataStore: B
                     .get().value().toLong()
             var is_checked_in = queuedCheckIns > 0
             for (ci in position.getCheckins()) {
-                if (ci.getList().getServer_id() == listId) {
+                if (ci.getListId() == listId) {
                     is_checked_in = true
                     break
                 }

@@ -23,4 +23,6 @@ public class AbstractResourceLastModified {
     public String event_slug;
 
     public String status;
+
+    public String meta;
 }

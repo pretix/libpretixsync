@@ -16,9 +16,12 @@ public class AbstractCheckIn implements RemoteObject {
     public Long id;
 
     @Column
-    @ForeignKey(update = ReferentialAction.CASCADE)
-    @ManyToOne
-    public CheckInList list;
+    @Index
+    public Long listId;
+
+    @Nullable
+    @Index
+    public Long server_id;
 
     public Date datetime;
 

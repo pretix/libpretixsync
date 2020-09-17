@@ -90,6 +90,15 @@ public class CheckInListSyncAdapter extends BaseConditionalSyncAdapter<CheckInLi
     }
 
     @Override
+    public String getMeta() {
+        if (this.subeventId != null && this.subeventId > 0L) {
+            return "subevent=" + this.subeventId;
+        } else {
+            return super.getMeta();
+        }
+    }
+
+    @Override
     Long getId(CheckInList obj) {
         return obj.getServer_id();
     }

@@ -35,6 +35,7 @@
       "subevent": null,
       "checkins": [
         {
+          "id": 1,
           "datetime": "2019-03-04T17:34:38.221090Z",
           "list": 9
         }
@@ -62,6 +63,7 @@
       "subevent": null,
       "checkins": [
         {
+          "id": 2,
           "datetime": "2019-03-04T17:34:38.221090Z",
           "list": 1
         }
