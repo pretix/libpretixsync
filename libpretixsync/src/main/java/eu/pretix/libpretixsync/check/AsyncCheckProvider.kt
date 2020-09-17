@@ -111,8 +111,7 @@ class AsyncCheckProvider(private val eventSlug: String, private val dataStore: B
                 .get().toList()
         val checkIns = storedCheckIns.filter {
             it.getListId() == listId
-        }
-        checkIns.sortedWith(compareBy({ it.fullDatetime }, { it.id }))
+        }.sortedWith(compareBy({ it.fullDatetime }, { it.id }))
 
         if (order.getStatus() != "p" && order.getStatus() != "n") {
             res.type = TicketCheckProvider.CheckResult.Type.CANCELED
