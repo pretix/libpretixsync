@@ -218,12 +218,12 @@ public class Migrations {
         }
         if (db_version < 59) {
             Statement s3 = c.createStatement();
-            s3.execute("ALTER TABLE ResourceLastModified ADD meta TEXT;");
+            s3.execute("ALTER TABLE ResourceLastModified ADD \"meta\" TEXT;");
             s3.close();
         }
         if (db_version < 60) {
             Statement s3 = c.createStatement();
-            s3.execute("ALTERT TABLE CheckIn ADD server_id NUMERIC NULLABLE;");
+            s3.execute("ALTER TABLE CheckIn ADD server_id NUMERIC NULLABLE;");
             s3.close();
             Statement s4 = c.createStatement();
             s4.execute("CREATE INDEX checkin_server_id ON CheckIn (server_id);");
