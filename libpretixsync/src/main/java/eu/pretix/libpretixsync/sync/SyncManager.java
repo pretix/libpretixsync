@@ -101,26 +101,7 @@ public class SyncManager {
             return new SyncResult(false, false);
         }
 
-        try {
-            if (app_version != configStore.getDeviceKnownVersion()) {
-                JSONObject apiBody = new JSONObject();
-                apiBody.put("hardware_brand", hardware_brand);
-                apiBody.put("hardware_model", hardware_model);
-                apiBody.put("software_brand", software_brand);
-                apiBody.put("software_version", software_version);
-                api.postResource(
-                        api.apiURL("device/update"),
-                        apiBody
-                );
-                configStore.setDeviceKnownVersion(app_version);
-            }
-        } catch (ApiException e) {
-            configStore.setLastFailedSync(System.currentTimeMillis());
-            configStore.setLastFailedSyncMsg(e.getMessage());
-        } catch (JSONException e) {
-            configStore.setLastFailedSync(System.currentTimeMillis());
-            configStore.setLastFailedSyncMsg(e.getMessage());
-        }
+        bumpKnownVersion();
 
         canceled.setCanceled(false);
         boolean download = force || (System.currentTimeMillis() - configStore.getLastDownload()) > download_interval;
@@ -128,20 +109,13 @@ public class SyncManager {
             if (feedback != null) {
                 feedback.postFeedback("Uploading data…");
             }
-            uploadOrders();
-            if (canceled.isCanceled()) throw new SyncException("Canceled");
-            uploadTicketData();
-            if (canceled.isCanceled()) throw new SyncException("Canceled");
-            uploadReceipts();
-            if (canceled.isCanceled()) throw new SyncException("Canceled");
-            uploadClosings();
-            if (canceled.isCanceled()) throw new SyncException("Canceled");
+            upload();
 
             if (download) {
                 if (feedback != null) {
                     feedback.postFeedback("Downloading data…");
                 }
-                downloadData(feedback);
+                downloadData(feedback, false);
                 configStore.setLastDownload(System.currentTimeMillis());
             }
 
@@ -160,6 +134,54 @@ public class SyncManager {
         return new SyncResult(true, download);
     }
 
+    /**
+     * Like sync(), but without order data and with setting the sync state to "unsynced"
+     */
+    public SyncResult syncMinimalEventSet(SyncManager.ProgressFeedback feedback) {
+        bumpKnownVersion();
+        try {
+            upload();
+            downloadData(feedback, true);
+            configStore.setLastDownload(0);
+            configStore.setLastSync(0);
+        } catch (SyncException e) {
+            configStore.setLastFailedSync(System.currentTimeMillis());
+            configStore.setLastFailedSyncMsg(e.getMessage());
+        }
+        return new SyncResult(true, true);
+    }
+
+    private void bumpKnownVersion() {
+        try {
+            if (app_version != configStore.getDeviceKnownVersion()) {
+                JSONObject apiBody = new JSONObject();
+                apiBody.put("hardware_brand", hardware_brand);
+                apiBody.put("hardware_model", hardware_model);
+                apiBody.put("software_brand", software_brand);
+                apiBody.put("software_version", software_version);
+                api.postResource(
+                        api.apiURL("device/update"),
+                        apiBody
+                );
+                configStore.setDeviceKnownVersion(app_version);
+            }
+        } catch (ApiException | JSONException e) {
+            configStore.setLastFailedSync(System.currentTimeMillis());
+            configStore.setLastFailedSyncMsg(e.getMessage());
+        }
+    }
+
+    private void upload() throws SyncException {
+        uploadOrders();
+        if (canceled.isCanceled()) throw new SyncException("Canceled");
+        uploadTicketData();
+        if (canceled.isCanceled()) throw new SyncException("Canceled");
+        uploadReceipts();
+        if (canceled.isCanceled()) throw new SyncException("Canceled");
+        uploadClosings();
+        if (canceled.isCanceled()) throw new SyncException("Canceled");
+    }
+
     private void download(DownloadSyncAdapter adapter) throws InterruptedException, ExecutionException, ApiException, JSONException {
         adapter.setCancelState(canceled);
         adapter.download();
@@ -169,7 +191,7 @@ public class SyncManager {
         canceled.setCanceled(true);
     }
 
-    protected void downloadData(SyncManager.ProgressFeedback feedback) throws SyncException {
+    protected void downloadData(SyncManager.ProgressFeedback feedback, Boolean skip_orders) throws SyncException {
         sentry.addBreadcrumb("sync.queue", "Start download");
 
         try {
@@ -209,12 +231,14 @@ public class SyncManager {
                         throw e;
                     }
                 }
-                OrderSyncAdapter osa = new OrderSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), configStore.getSubEventId(), with_pdf_data, is_pretixpos, api, feedback);
-                download(osa);
-                if ((System.currentTimeMillis() - configStore.getLastCleanup()) > 3600 * 1000 * 12) {
-                    osa.deleteOldSubevents();
-                    osa.deleteOldEvents();
-                    configStore.setLastCleanup(System.currentTimeMillis());
+                if (!skip_orders) {
+                    OrderSyncAdapter osa = new OrderSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), configStore.getSubEventId(), with_pdf_data, is_pretixpos, api, feedback);
+                    download(osa);
+                    if ((System.currentTimeMillis() - configStore.getLastCleanup()) > 3600 * 1000 * 12) {
+                        osa.deleteOldSubevents();
+                        osa.deleteOldEvents();
+                        configStore.setLastCleanup(System.currentTimeMillis());
+                    }
                 }
             }
 
