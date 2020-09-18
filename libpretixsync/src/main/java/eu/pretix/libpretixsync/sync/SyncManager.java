@@ -169,6 +169,13 @@ public class SyncManager {
             configStore.setLastFailedSync(System.currentTimeMillis());
             configStore.setLastFailedSyncMsg(e.getMessage());
         }
+
+        // This is kind of a manual migration, added in 2020-19. Remove at some late point in time
+        try {
+            dataStore.raw("UPDATE checkin SET listId = list WHERE (listId IS NULL OR listID = 0) AND list IS NOT NULL AND list > 0");
+        } catch (Exception e) {
+            // old column doesn't exist? ignore!
+        }
     }
 
     private void upload() throws SyncException {
