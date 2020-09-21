@@ -531,7 +531,9 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
 
         int done = 0;
 
-        feedback.postFeedback("Checking for old " + getResourceName() + " (" + done + "/" + ordercount + ") …");
+        if (feedback != null) {
+            feedback.postFeedback("Checking for old " + getResourceName() + " (" + done + "/" + ordercount + ") …");
+        }
 
         while (true) {
             List<Order> orders = store.select(Order.class)
@@ -576,12 +578,16 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
                 store.update(o);
                 done++;
                 if (done % 50 == 0) {
-                    feedback.postFeedback("Checking for old " + getResourceName() + " (" + done + "/" + ordercount + ") …");
+                    if (feedback != null) {
+                        feedback.postFeedback("Checking for old " + getResourceName() + " (" + done + "/" + ordercount + ") …");
+                    }
                 }
             }
         }
 
-        feedback.postFeedback("Deleting old " + getResourceName() + "…");
+        if (feedback != null) {
+            feedback.postFeedback("Deleting old " + getResourceName() + "…");
+        }
         int deleted = 0;
         while (true) {
             List<Tuple> ordersToDelete = store.select(Order.ID).where(Order.DELETE_AFTER_TIMESTAMP.lt(System.currentTimeMillis()).and(Order.DELETE_AFTER_TIMESTAMP.gt(1L))).and(Order.ID.notIn(store.select(OrderPosition.ORDER_ID).from(OrderPosition.class).where(OrderPosition.SUBEVENT_ID.eq(this.subeventId)))).limit(200).get().toList();
@@ -594,7 +600,9 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
             }
             // sqlite foreign keys are created with `on delete cascade`, so order positions and checkins are handled automatically
             deleted += store.delete(Order.class).where(Order.ID.in(idsToDelete)).get().value();
-            feedback.postFeedback("Deleting old " + getResourceName() + " (" + deleted + ")…");
+            if (feedback != null) {
+                feedback.postFeedback("Deleting old " + getResourceName() + " (" + deleted + ")…");
+            }
         }
     }
 
@@ -614,7 +622,9 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
     }
 
     public void deleteOldEvents() {
-        feedback.postFeedback("Deleting " + getResourceName() + " of old events…");
+        if (feedback != null) {
+            feedback.postFeedback("Deleting " + getResourceName() + " of old events…");
+        }
 
         List<Tuple> tuples = store.select(Order.EVENT_SLUG)
                 .from(Order.class)
@@ -639,7 +649,9 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
                     }
                     // sqlite foreign keys are created with `on delete cascade`, so order positions and checkins are handled automatically
                     deleted += store.delete(Order.class).where(Order.ID.in(idsToDelete)).get().value();
-                    feedback.postFeedback("Deleting " + getResourceName() + " of old events (" + deleted + ")…");
+                    if (feedback != null) {
+                        feedback.postFeedback("Deleting " + getResourceName() + " of old events (" + deleted + ")…");
+                    }
                 }
             }
         }
