@@ -58,6 +58,9 @@ public class AbstractReceipt implements LocalObject {
     @OneToMany
     public List<ReceiptLine> lines;
 
+    @OneToMany
+    public List<ReceiptPayment> payments;
+
     @ForeignKey
     @ManyToOne
     public Closing closing;

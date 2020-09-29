@@ -24,6 +24,7 @@ import eu.pretix.libpretixsync.db.QueuedCheckIn;
 import eu.pretix.libpretixsync.db.QueuedOrder;
 import eu.pretix.libpretixsync.db.Receipt;
 import eu.pretix.libpretixsync.db.ReceiptLine;
+import eu.pretix.libpretixsync.db.ReceiptPayment;
 import eu.pretix.libpretixsync.db.ResourceLastModified;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
@@ -293,10 +294,15 @@ public class SyncManager {
             for (Receipt receipt : receipts) {
                 JSONObject data = receipt.toJSON();
                 JSONArray lines = new JSONArray();
+                JSONArray payments = new JSONArray();
                 for (ReceiptLine line : receipt.getLines()) {
                     lines.put(line.toJSON());
                 }
+                for (ReceiptPayment payment : receipt.getPayments()) {
+                    payments.put(payment.toJSON());
+                }
                 data.put("lines", lines);
+                data.put("payments", payments);
                 PretixApi.ApiResponse response = api.postResource(
                         api.organizerResourceUrl("posdevices/" + configStore.getPosId() + "/receipts"),
                         data
