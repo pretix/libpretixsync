@@ -107,6 +107,28 @@ public class AbstractItem implements RemoteObject {
     }
 
     @JsonIgnore
+    public Integer getMinPerOrder() {
+        try {
+            if (getJSON().isNull("min_per_order")) return null;
+            return getJSON().optInt("min_per_order");
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    @JsonIgnore
+    public Integer getMaxPerOrder() {
+        try {
+            if (getJSON().isNull("max_per_order")) return null;
+            return getJSON().optInt("max_per_order");
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    @JsonIgnore
     public BigDecimal getDefaultPrice() {
         try {
             return new BigDecimal(getJSON().getString("default_price"));
