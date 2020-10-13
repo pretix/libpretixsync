@@ -16,7 +16,7 @@ class SetupServerErrorException(override var message: String?) : SetupException(
 class SetupBadRequestException(override var message: String?) : SetupException(message)
 class SetupBadResponseException(override var message: String?) : SetupException(message)
 
-data class SetupResult(val url: String, val api_token: String, val organizer: String, val device_id: Long, val unique_serial: String)
+data class SetupResult(val url: String, val api_token: String, val organizer: String, val device_id: Long, val unique_serial: String, val security_profile: String)
 
 class SetupManager(private val hardware_brand: String, private val hardware_model: String, private val software_brand: String, private val software_version: String, private val http_factory: HttpClientFactory) {
     fun initialize(url: String, token: String): SetupResult {
@@ -51,7 +51,8 @@ class SetupManager(private val hardware_brand: String, private val hardware_mode
             try {
                 val respo = JSONObject(body)
                 return SetupResult(
-                        url, respo.getString("api_token"), respo.getString("organizer"), respo.getLong("device_id"), respo.getString("unique_serial")
+                        url, respo.getString("api_token"), respo.getString("organizer"), respo.getLong("device_id"), respo.getString("unique_serial"),
+                        respo.optString("security_profile", "full")
                 )
             } catch (e: JSONException) {
                 e.printStackTrace()

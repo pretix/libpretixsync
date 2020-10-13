@@ -30,6 +30,10 @@ import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
 
 public class SyncManager {
+    public enum Profile {
+        PRETIXPOS, PRETIXSCAN, PRETIXSCAN_ONLINE
+    }
+
     private SentryInterface sentry;
     private PretixApi api;
     private ConfigStore configStore;
@@ -37,7 +41,7 @@ public class SyncManager {
     private long download_interval;
     private BlockingEntityStore<Persistable> dataStore;
     private FileStorage fileStorage;
-    private boolean is_pretixpos;
+    private Profile profile;
     private boolean with_pdf_data;
     private CanceledState canceled;
     private int app_version;
@@ -62,7 +66,22 @@ public class SyncManager {
         public void postFeedback(String current_action);
     }
 
-    public SyncManager(ConfigStore configStore, PretixApi api, SentryInterface sentry, BlockingEntityStore<Persistable> dataStore, FileStorage fileStorage, long upload_interval, long download_interval, boolean is_pretixpos, boolean with_pdf_data, int app_version, String hardware_brand, String hardware_model, String software_brand, String software_version) {
+    public SyncManager(
+            ConfigStore configStore,
+            PretixApi api,
+            SentryInterface sentry,
+            BlockingEntityStore<Persistable> dataStore,
+            FileStorage fileStorage,
+            long upload_interval,
+            long download_interval,
+            Profile profile,
+            boolean with_pdf_data,
+            int app_version,
+            String hardware_brand,
+            String hardware_model,
+            String software_brand,
+            String software_version
+    ) {
         this.configStore = configStore;
         this.api = api;
         this.sentry = sentry;
@@ -70,7 +89,7 @@ public class SyncManager {
         this.download_interval = download_interval;
         this.dataStore = dataStore;
         this.fileStorage = fileStorage;
-        this.is_pretixpos = is_pretixpos;
+        this.profile = profile;
         this.with_pdf_data = with_pdf_data;
         this.canceled = new CanceledState();
         this.app_version = app_version;
@@ -219,13 +238,12 @@ public class SyncManager {
             download(new ItemCategorySyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
             download(new ItemSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
             download(new QuestionSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
-            if (is_pretixpos) {
-                // We don't need these on pretixSCAN, so we can save some traffic
+            if (profile == Profile.PRETIXPOS) {
                 download(new QuotaSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
                 download(new TaxRuleSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
                 download(new TicketLayoutSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
             }
-            if (!is_pretixpos) {
+            if (profile == Profile.PRETIXSCAN || profile == Profile.PRETIXSCAN_ONLINE) {
                 // We don't need these on pretixPOS, so we can save some traffic
                 download(new BadgeLayoutSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
                 download(new CheckInListSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), configStore.getSubEventId(), api, feedback));
@@ -239,18 +257,22 @@ public class SyncManager {
                         throw e;
                     }
                 }
-                if (!skip_orders) {
-                    OrderSyncAdapter osa = new OrderSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), configStore.getSubEventId(), with_pdf_data, is_pretixpos, api, feedback);
-                    download(osa);
-                    if ((System.currentTimeMillis() - configStore.getLastCleanup()) > 3600 * 1000 * 12) {
-                        osa.deleteOldSubevents();
-                        osa.deleteOldEvents();
-                        configStore.setLastCleanup(System.currentTimeMillis());
-                    }
-                }
             }
-
-            if (is_pretixpos) {
+            if (profile == Profile.PRETIXSCAN && !skip_orders) {
+                OrderSyncAdapter osa = new OrderSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), configStore.getSubEventId(), with_pdf_data, false, api, feedback);
+                download(osa);
+                if ((System.currentTimeMillis() - configStore.getLastCleanup()) > 3600 * 1000 * 12) {
+                    osa.deleteOldSubevents();
+                    osa.deleteOldEvents();
+                    configStore.setLastCleanup(System.currentTimeMillis());
+                }
+            } else if (profile == Profile.PRETIXSCAN_ONLINE) {
+                dataStore.delete(CheckIn.class).get().value();
+                dataStore.delete(OrderPosition.class).get().value();
+                dataStore.delete(Order.class).get().value();
+                dataStore.delete(ResourceLastModified.class).where(ResourceLastModified.RESOURCE.like("order%")).get().value();
+            }
+            if (profile == Profile.PRETIXPOS) {
                 // We don't need these on pretixSCAN, so we can save some traffic
                 try {
                     download(new SettingsSyncAdapter(dataStore, configStore.getEventSlug(), configStore.getEventSlug(), api, feedback));
