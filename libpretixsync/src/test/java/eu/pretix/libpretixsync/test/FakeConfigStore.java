@@ -46,6 +46,16 @@ public class FakeConfigStore implements ConfigStore {
     }
 
     @Override
+    public String getDeviceKnownName() {
+        return last_failed_sync_msg;
+    }
+
+    @Override
+    public void setDeviceKnownName(String val) {
+        last_failed_sync_msg = val;
+    }
+
+    @Override
     public String getApiKey() {
         return "12345";
     }
