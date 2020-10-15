@@ -78,6 +78,9 @@ public class AllSubEventsSyncAdapter extends BaseDownloadSyncAdapter<SubEvent, L
         }
     }
 
+    protected boolean deleteUnseen() {
+        return false;
+    }
 
     @Override
     CloseableIterator<Tuple> getKnownIDsIterator() {
