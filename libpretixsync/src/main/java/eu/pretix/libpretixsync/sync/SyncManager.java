@@ -233,9 +233,7 @@ public class SyncManager {
 
 
             download(new EventSyncAdapter(dataStore, configStore.getEventSlug(), configStore.getEventSlug(), api, feedback));
-            if (configStore.getSubEventId() != null) {
-                download(new AllSubEventsSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
-            }
+            download(new AllSubEventsSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
             download(new ItemCategorySyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
             download(new ItemSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
             download(new QuestionSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
