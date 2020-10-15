@@ -172,7 +172,7 @@ public class Migrations {
             updateVersionTable(c, 52);
         }
         if (db_version < 53) {
-            exec(c, "CREATE TABLE IF NOT EXISTS Settings (id integer primary key autoincrement, address TEXT, city varchar(255), country varchar(255), json_data TEXT, name varchar(255), slug varchar(255), tax_id varchar(255), vat_id varchar(255), zipcode varchar(255));");
+            exec(c, "CREATE TABLE IF NOT EXISTS Settings (id integer primary key, address TEXT, city varchar(255), country varchar(255), json_data TEXT, name varchar(255), slug varchar(255), tax_id varchar(255), vat_id varchar(255), zipcode varchar(255));");
             updateVersionTable(c, 53);
         }
         if (db_version < 54) {
@@ -205,7 +205,7 @@ public class Migrations {
             updateVersionTable(c, 59);
         }
         if (db_version < 60) {
-            execIgnore(c, "ALTER TABLE CheckIn ADD server_id NUMERIC NULLABLE;", "duplicate column name");
+            execIgnore(c, "ALTER TABLE CheckIn ADD server_id NUMERIC NULL;", "duplicate column name");
             execIgnore(c, "CREATE INDEX checkin_server_id ON CheckIn (server_id);", "already exists");
             updateVersionTable(c, 60);
         }
