@@ -335,7 +335,7 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
                 // order of modification we can be sure that we don't miss orders created in between our
                 // paginated requests. If an order were to be modified between our fetch of page 1
                 // and 2 that originally wasn't part of the result set, we won't see it (as it will
-                // be inserted on page 2), but we'll see it the next time, and we will se some
+                // be inserted on page 1), but we'll see it the next time, and we will se some
                 // duplicates on page 2, but we don't care. The important part is that nothing gets
                 // lost "between the pages". If an order of page 2 gets modified and moves to page
                 // one while we fetch page 2, again, we won't see it and we'll see some duplicates,
