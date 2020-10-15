@@ -10,6 +10,10 @@ public interface ConfigStore {
 
     public String getApiUrl();
 
+    public String getDeviceKnownName();
+
+    public void setDeviceKnownName(String value);
+
     public int getDeviceKnownVersion();
 
     public void setDeviceKnownVersion(int value);

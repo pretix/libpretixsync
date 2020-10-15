@@ -179,11 +179,12 @@ public class SyncManager {
                 apiBody.put("hardware_model", hardware_model);
                 apiBody.put("software_brand", software_brand);
                 apiBody.put("software_version", software_version);
-                api.postResource(
+                PretixApi.ApiResponse resp = api.postResource(
                         api.apiURL("device/update"),
                         apiBody
                 );
                 configStore.setDeviceKnownVersion(app_version);
+                configStore.setDeviceKnownName(resp.getData().getString("name"));
             }
         } catch (ApiException | JSONException e) {
             configStore.setLastFailedSync(System.currentTimeMillis());
