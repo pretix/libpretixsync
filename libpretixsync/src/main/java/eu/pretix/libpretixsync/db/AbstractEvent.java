@@ -1,6 +1,8 @@
 package eu.pretix.libpretixsync.db;
 
 import io.requery.*;
+
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -69,6 +71,15 @@ public class AbstractEvent implements RemoteObject {
             return getJSON().optString("timezone", "UTC");
         } catch (JSONException e) {
             return "UTC";
+        }
+    }
+
+    @org.jetbrains.annotations.Nullable
+    public JSONObject getValidKeys() {
+        try {
+            return getJSON().optJSONObject("valid_keys");
+        } catch (JSONException e) {
+            return null;
         }
     }
 }
