@@ -2,6 +2,8 @@ package eu.pretix.libpretixsync.check
 
 import eu.pretix.libpretixsync.DummySentryImplementation
 import eu.pretix.libpretixsync.SentryInterface
+import eu.pretix.libpretixsync.crypto.isValidSignature
+import eu.pretix.libpretixsync.crypto.readPubkeyFromPem
 import eu.pretix.libpretixsync.db.*
 import eu.pretix.libpretixsync.utils.logic.JsonLogic
 import eu.pretix.libpretixsync.utils.logic.truthy
@@ -11,12 +13,14 @@ import io.requery.query.Condition
 import io.requery.query.Result
 import io.requery.query.Scalar
 import io.requery.query.WhereAndOr
+import org.apache.commons.codec.binary.Base64
 import org.joda.time.DateTime
 import org.joda.time.DateTimeZone
 import org.joda.time.format.ISODateTimeFormat
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
+import java.lang.Exception
 import java.util.*
 
 class AsyncCheckProvider(private val eventSlug: String, private val dataStore: BlockingEntityStore<Persistable>, listId: Long) : TicketCheckProvider {
@@ -36,6 +40,34 @@ class AsyncCheckProvider(private val eventSlug: String, private val dataStore: B
         this.sentry = sentry
     }
 
+    data class PretixSig1(val seed: String, val item: Long, val variation: Long?, val subevent: Long?)
+
+    private fun decodePretixSig1(qrcode: String): PretixSig1? {
+        val rawbytes: ByteArray
+        try {
+            rawbytes = Base64.decodeBase64(qrcode.reversed())
+        } catch (e: Exception) {
+            return null
+        }
+        val version = rawbytes[0].toUByte().toInt()
+        if (version != 0x01)  {
+            return null
+        }
+        val payloadLength = rawbytes[1].toUByte().toInt().shl(2) + rawbytes[2].toUByte().toInt()
+        val signatureLength = rawbytes[3].toUByte().toInt().shl(2) + rawbytes[4].toUByte().toInt()
+        val payload = rawbytes.copyOfRange(5, 5 + payloadLength)
+        val signature = rawbytes.copyOfRange(5 + payloadLength, 5 + payloadLength + signatureLength)
+
+        val validKeys = event.validKeys?.optJSONArray("pretix_sig1") ?: return null
+        for (vki in 0 until validKeys.length()) {
+            val vk = validKeys.getString(vki)
+            if (isValidSignature(payload, signature, readPubkeyFromPem(vk))) {
+                TicketProtos.Ticket.parseFrom(payload)
+            }
+        }
+        return null
+    }
+
     override fun check(ticketid: String): TicketCheckProvider.CheckResult {
         return check(ticketid, ArrayList(), false, true, TicketCheckProvider.CheckInType.ENTRY)
     }
@@ -49,6 +81,9 @@ class AsyncCheckProvider(private val eventSlug: String, private val dataStore: B
                 .and(Order.EVENT_SLUG.eq(eventSlug))
                 .get().toList()
         if (tickets.size == 0) {
+
+
+
             return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.INVALID)
         }
         val position = tickets[0]
