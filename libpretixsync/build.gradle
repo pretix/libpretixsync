@@ -46,7 +46,7 @@ configurations {
     // https://github.com/google/protobuf-gradle-plugin/issues/391
     compileProtoPath {
         attributes {
-            attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(Usage, Usagee.JAVA_API))
+            attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(Usage, Usage.JAVA_API))
         }
     }
 }
