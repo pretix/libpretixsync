@@ -1,31 +1,23 @@
 package eu.pretix.libpretixsync.sync;
 
+import org.joda.time.format.ISODateTimeFormat;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+
 import eu.pretix.libpretixsync.api.ApiException;
 import eu.pretix.libpretixsync.api.PretixApi;
 import eu.pretix.libpretixsync.api.ResourceNotModified;
-import eu.pretix.libpretixsync.db.Event;
 import eu.pretix.libpretixsync.db.ResourceLastModified;
 import eu.pretix.libpretixsync.db.SubEvent;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
 import io.requery.query.Tuple;
 import io.requery.util.CloseableIterator;
-
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
-import org.joda.time.Duration;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
-import org.joda.time.format.ISODateTimeFormat;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.util.Iterator;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 public class AllSubEventsSyncAdapter extends BaseDownloadSyncAdapter<SubEvent, Long> {
     private String firstResponseTimestamp;
@@ -79,12 +71,13 @@ public class AllSubEventsSyncAdapter extends BaseDownloadSyncAdapter<SubEvent, L
     }
 
     protected boolean deleteUnseen() {
-        return false;
+        return rlm == null;
     }
 
     @Override
     CloseableIterator<Tuple> getKnownIDsIterator() {
         return store.select(SubEvent.SERVER_ID)
+                .where(SubEvent.EVENT_SLUG.eq(eventSlug))
                 .get().iterator();
     }
 
@@ -102,7 +95,7 @@ public class AllSubEventsSyncAdapter extends BaseDownloadSyncAdapter<SubEvent, L
 
     @Override
     protected String getUrl() {
-        return api.organizerResourceUrl(getResourceName());
+        return api.eventResourceUrl(getResourceName());
     }
 
     @Override
@@ -117,7 +110,7 @@ public class AllSubEventsSyncAdapter extends BaseDownloadSyncAdapter<SubEvent, L
 
     @Override
     Long getId(SubEvent obj) {
-        return obj.getId();
+        return obj.getServer_id();
     }
 
     @Override
@@ -129,6 +122,7 @@ public class AllSubEventsSyncAdapter extends BaseDownloadSyncAdapter<SubEvent, L
     public CloseableIterator<SubEvent> runBatch(List<Long> parameterBatch) {
         return store.select(SubEvent.class)
                 .where(SubEvent.SERVER_ID.in(parameterBatch))
+                .and(SubEvent.EVENT_SLUG.eq(eventSlug))
                 .get().iterator();
     }
 
@@ -174,14 +168,6 @@ public class AllSubEventsSyncAdapter extends BaseDownloadSyncAdapter<SubEvent, L
         if (isFirstPage) {
             firstResponseTimestamp = apiResponse.getResponse().header("X-Page-Generated");
         }
-        JSONObject d = apiResponse.getData();
-        if (apiResponse.getResponse().code() == 200) {
-            try {
-                JSONArray res = d.getJSONArray("results");
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-        }
-        return d;
+        return apiResponse.getData();
     }
 }

@@ -266,7 +266,7 @@ public class PretixApi {
             throw new ApiException("Server error: " + response.code());
         } else if (response.code() == 404 && (!json || !body.startsWith("{"))) {
             response.close();
-            throw new FinalApiException("Server error: Resource not found.");
+            throw new NotFoundApiException("Server error: Resource not found.");
         } else if (response.code() == 304) {
             throw new ResourceNotModified();
         } else if (response.code() == 403) {

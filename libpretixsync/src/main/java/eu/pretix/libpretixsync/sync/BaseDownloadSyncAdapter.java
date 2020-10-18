@@ -16,9 +16,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import io.requery.util.CloseableIterator;
-import java8.util.concurrent.CompletableFuture;
-
 import eu.pretix.libpretixsync.api.ApiException;
 import eu.pretix.libpretixsync.api.PretixApi;
 import eu.pretix.libpretixsync.api.ResourceNotModified;
@@ -27,6 +24,8 @@ import eu.pretix.libpretixsync.utils.JSONUtils;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
 import io.requery.query.Tuple;
+import io.requery.util.CloseableIterator;
+import java8.util.concurrent.CompletableFuture;
 
 public abstract class BaseDownloadSyncAdapter<T extends RemoteObject & Persistable, K> implements DownloadSyncAdapter, BatchedQueryIterator.BatchedQueryCall<K, T> {
 
@@ -40,6 +39,7 @@ public abstract class BaseDownloadSyncAdapter<T extends RemoteObject & Persistab
     protected ExecutorService threadPool = Executors.newCachedThreadPool();
     protected SyncManager.ProgressFeedback feedback;
     protected int total;
+    protected int inserted;
     protected int totalOnline;
     protected SyncManager.CanceledState canceledState;
 
@@ -63,6 +63,7 @@ public abstract class BaseDownloadSyncAdapter<T extends RemoteObject & Persistab
         }
         try {
             total = 0;
+            inserted = 0;
             knownIDs = getKnownIDs();
             sizeBefore = knownIDs.size();
             seenIDs = new HashSet<>();
@@ -159,6 +160,7 @@ public abstract class BaseDownloadSyncAdapter<T extends RemoteObject & Persistab
                     }
                     seenIDs.add(jsonid);
                 }
+                inserted += inserts.size();
                 store.insert(inserts);
                 afterPage();
                 return null;
@@ -166,8 +168,7 @@ public abstract class BaseDownloadSyncAdapter<T extends RemoteObject & Persistab
         });
         total += l;
         if (feedback != null) {
-
-            feedback.postFeedback("Processed " + total + "/" + totalOnline + " " + getResourceName() + " (total in database: ~" + (sizeBefore + total) + ")…");
+            feedback.postFeedback("Processed " + total + "/" + totalOnline + " " + getResourceName() + " (total in database: ~" + (sizeBefore + inserted) + ")…");
         }
     }
 

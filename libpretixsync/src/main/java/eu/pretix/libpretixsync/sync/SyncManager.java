@@ -475,6 +475,8 @@ public class SyncManager {
         } catch (JSONException e) {
             sentry.captureException(e);
             throw new SyncException("Unknown server response");
+        } catch (NotFoundApiException e) {
+            // Ticket secret no longer exists, too bad :\
         } catch (ApiException e) {
             sentry.addBreadcrumb("sync.tickets", "API Error: " + e.getMessage());
             throw new SyncException(e.getMessage());
