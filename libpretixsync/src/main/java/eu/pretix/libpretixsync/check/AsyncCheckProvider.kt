@@ -138,6 +138,13 @@ class AsyncCheckProvider(private val eventSlug: String, private val dataStore: B
             return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.INVALID)
         }
 
+        val is_revoked = dataStore.count(RevokedTicketSecret::class.java)
+                .where(RevokedTicketSecret.SECRET.eq(ticketid))
+                .get().value()
+        if (is_revoked > 0) {
+            return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.REVOKED)
+        }
+
         if (!list.all_items) {
             val is_in_list = dataStore.count(CheckInList_Item::class.java)
                     .where(CheckInList_Item.ITEM_ID.eq(decoded.item))
