@@ -41,6 +41,16 @@ buildConfig {
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
+configurations {
+    // https://github.com/gradle/gradle/issues/12126
+    // https://github.com/google/protobuf-gradle-plugin/issues/391
+    compileProtoPath {
+        attributes {
+            attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(Usage, Usagee.JAVA_API))
+        }
+    }
+}
+
 repositories {
     mavenCentral()
     jcenter()
