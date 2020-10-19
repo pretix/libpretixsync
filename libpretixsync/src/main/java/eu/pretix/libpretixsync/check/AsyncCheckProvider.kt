@@ -548,7 +548,7 @@ class AsyncCheckProvider(private val eventSlug: String, private val dataStore: B
         return results
     }
 
-    private fun basePositionQuery(list: CheckInList): WhereAndOr<out Scalar<Int?>?> {
+    private fun basePositionQuery(list: CheckInList, onlyCheckedIn: Boolean): WhereAndOr<out Scalar<Int?>?> {
         val status: MutableList<String> = ArrayList()
         status.add("p")
         if (list.include_pending) {
@@ -561,24 +561,22 @@ class AsyncCheckProvider(private val eventSlug: String, private val dataStore: B
         if (list.getSubevent_id() != null && list.getSubevent_id() > 0) {
             q = q.and(OrderPosition.SUBEVENT_ID.eq(list.getSubevent_id()))
         }
-        return q
-    }
 
-    private fun baseCheckInQuery(list: CheckInList): WhereAndOr<out Scalar<Int?>?> {
-        val status: MutableList<String> = ArrayList()
-        status.add("p")
-        if (list.include_pending) {
-            status.add("n")
+        if (!list.isAll_items) {
+            val product_ids = dataStore.select(CheckInList_Item.ITEM_ID)
+                    .where(CheckInList_Item.CHECK_IN_LIST_ID.eq(list.getId()))
+                    .get().toList().map { it.get<Long>(0) }
+            q = q.and(OrderPosition.ITEM_ID.`in`(product_ids))
         }
-        var q = dataStore.count(CheckIn::class.java).distinct()
-                .leftJoin(OrderPosition::class.java).on(CheckIn.POSITION_ID.eq(OrderPosition.ID))
-                .leftJoin(Order::class.java).on(OrderPosition.ORDER_ID.eq(Order.ID))
-                .where(Order.EVENT_SLUG.eq(eventSlug))
-                .and(CheckIn.LIST_ID.eq(list.getId()))
-                .and(Order.STATUS.`in`(status))
-        if (list.getSubevent_id() != null && list.getSubevent_id() > 0) {
-            q = q.and(OrderPosition.SUBEVENT_ID.eq(list.getSubevent_id()))
+
+        if (onlyCheckedIn) {
+            q = q.and(OrderPosition.ID.`in`(
+                    dataStore.select(CheckIn.POSITION_ID)
+                            .where(CheckIn.LIST_ID.eq(list.getServer_id()))
+                            .and(CheckIn.TYPE.eq("entry"))
+            ))
         }
+
         return q
     }
 
@@ -605,10 +603,10 @@ class AsyncCheckProvider(private val eventSlug: String, private val dataStore: B
             val variations: MutableList<TicketCheckProvider.StatusResultItemVariation> = ArrayList()
             try {
                 for (`var` in product.variations) {
-                    val position_count = basePositionQuery(list)
+                    val position_count = basePositionQuery(list, false)
                             .and(OrderPosition.ITEM_ID.eq(product.id))
                             .and(OrderPosition.VARIATION_ID.eq(`var`.server_id)).get()!!.value()!!
-                    val ci_count = baseCheckInQuery(list)
+                    val ci_count = basePositionQuery(list, true)
                             .and(OrderPosition.ITEM_ID.eq(product.id))
                             .and(OrderPosition.VARIATION_ID.eq(`var`.server_id)).get()!!.value()!!
                     variations.add(TicketCheckProvider.StatusResultItemVariation(
@@ -618,9 +616,9 @@ class AsyncCheckProvider(private val eventSlug: String, private val dataStore: B
                             ci_count
                     ))
                 }
-                val position_count = basePositionQuery(list)
+                val position_count = basePositionQuery(list, false)
                         .and(OrderPosition.ITEM_ID.eq(product.id)).get()!!.value()!!
-                val ci_count = baseCheckInQuery(list)
+                val ci_count = basePositionQuery(list, true)
                         .and(OrderPosition.ITEM_ID.eq(product.id)).get()!!.value()!!
                 items.add(TicketCheckProvider.StatusResultItem(
                         product.getServer_id(),
