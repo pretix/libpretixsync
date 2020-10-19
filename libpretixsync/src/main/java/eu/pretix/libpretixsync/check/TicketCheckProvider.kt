@@ -92,7 +92,7 @@ interface TicketCheckProvider {
         var isAdmission = admission
     }
 
-    class StatusResult(var eventName: String?, var totalTickets: Int, var alreadyScanned: Int, var items: List<StatusResultItem>?) {
+    class StatusResult(var eventName: String?, var totalTickets: Int, var alreadyScanned: Int, var currentlyInside: Int?, var items: List<StatusResultItem>?) {
     }
 
     fun check(ticketid: String, answers: List<Answer>?, ignore_unpaid: Boolean, with_badge_data: Boolean, type: CheckInType): CheckResult

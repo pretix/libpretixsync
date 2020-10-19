@@ -189,7 +189,17 @@ class OnlineCheckProvider(private val config: ConfigStore, httpClientFactory: Ht
         sentry.addBreadcrumb("provider.status", "started")
         return try {
             val response = api.status(listId)
-            parseStatusResponse(response.data)
+            val r = parseStatusResponse(response.data)
+
+            val list = dataStore.select(CheckInList::class.java)
+                    .where(CheckInList.SERVER_ID.eq(listId))
+                    .and(CheckInList.EVENT_SLUG.eq(config.eventSlug))
+                    .get().firstOrNull()
+            if (list != null) {
+                r.eventName += " – " + list.name
+            }
+
+            r
         } catch (e: JSONException) {
             sentry.captureException(e)
             throw CheckException("Unknown server response")
@@ -230,6 +240,7 @@ class OnlineCheckProvider(private val config: ConfigStore, httpClientFactory: Ht
                     response.getJSONObject("event").getString("name"),
                     response.getInt("position_count"),
                     response.getInt("checkin_count"),
+                    if (response.has("inside_count")) response.optInt("inside_count") else null,
                     items
             )
         }

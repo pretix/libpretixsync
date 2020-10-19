@@ -636,7 +636,7 @@ class AsyncCheckProvider(private val eventSlug: String, private val dataStore: B
                 e.printStackTrace()
             }
         }
-        return TicketCheckProvider.StatusResult(list.name, sum_pos, sum_ci, items)
+        return TicketCheckProvider.StatusResult(list.name, sum_pos, sum_ci, null, items)
     }
 
     private var overrideNow: DateTime? = null
