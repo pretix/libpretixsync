@@ -11,6 +11,7 @@ import java.util.concurrent.ExecutionException;
 import eu.pretix.libpretixsync.SentryInterface;
 import eu.pretix.libpretixsync.api.ApiException;
 import eu.pretix.libpretixsync.api.DeviceAccessRevokedException;
+import eu.pretix.libpretixsync.api.NotFoundApiException;
 import eu.pretix.libpretixsync.api.PretixApi;
 import eu.pretix.libpretixsync.api.ResourceNotModified;
 import eu.pretix.libpretixsync.check.TicketCheckProvider;
@@ -246,15 +247,15 @@ public class SyncManager {
                 // We don't need these on pretixPOS, so we can save some traffic
                 download(new BadgeLayoutSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
                 download(new CheckInListSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), configStore.getSubEventId(), api, feedback));
-
+                try {
+                    download(new RevokedTicketSecretSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
+                } catch (NotFoundApiException e) {
+                    // ignore, this is only supported from pretix 3.12.
+                }
                 try {
                     download(new BadgeLayoutItemSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
                 } catch (ApiException e) {
-                    if (e.getMessage().toLowerCase().contains("not found")) {
-                        // ignore, this is only supported from pretix 2.5. We have legacy code in BadgeLayoutSyncAdapter to fall back to
-                    } else {
-                        throw e;
-                    }
+                    // ignore, this is only supported from pretix 2.5. We have legacy code in BadgeLayoutSyncAdapter to fall back to
                 }
             }
             if (profile == Profile.PRETIXSCAN && !skip_orders) {

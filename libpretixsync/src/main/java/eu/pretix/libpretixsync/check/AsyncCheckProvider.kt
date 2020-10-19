@@ -2,6 +2,9 @@ package eu.pretix.libpretixsync.check
 
 import eu.pretix.libpretixsync.DummySentryImplementation
 import eu.pretix.libpretixsync.SentryInterface
+import eu.pretix.libpretixsync.crypto.isValidSignature
+import eu.pretix.libpretixsync.crypto.readPubkeyFromPem
+import eu.pretix.libpretixsync.crypto.sig1.TicketProtos
 import eu.pretix.libpretixsync.db.*
 import eu.pretix.libpretixsync.utils.logic.JsonLogic
 import eu.pretix.libpretixsync.utils.logic.truthy
@@ -11,12 +14,15 @@ import io.requery.query.Condition
 import io.requery.query.Result
 import io.requery.query.Scalar
 import io.requery.query.WhereAndOr
+import org.apache.commons.codec.binary.Base64
 import org.joda.time.DateTime
 import org.joda.time.DateTimeZone
 import org.joda.time.format.ISODateTimeFormat
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
+import java.lang.Exception
+import java.nio.charset.Charset
 import java.util.*
 
 class AsyncCheckProvider(private val eventSlug: String, private val dataStore: BlockingEntityStore<Persistable>, listId: Long) : TicketCheckProvider {
@@ -36,6 +42,226 @@ class AsyncCheckProvider(private val eventSlug: String, private val dataStore: B
         this.sentry = sentry
     }
 
+    private fun initJsonLogic(subeventId: Long): JsonLogic {
+        val jsonLogic = JsonLogic()
+        jsonLogic.addOperation("objectList") { l, _ -> l }
+        jsonLogic.addOperation("lookup") { l, d -> l?.getOrNull(1) }
+        jsonLogic.addOperation("inList") { l, d ->
+            (l?.getOrNull(1) as List<*>).contains(
+                    l.getOrNull(0)
+            )
+        }
+        jsonLogic.addOperation("isAfter") { l, d ->
+            if (l?.size == 2 || (l?.size == 3 && l.getOrNull(2) == null)) {
+                (l.getOrNull(0) as DateTime).isAfter(l.getOrNull(1) as DateTime)
+            } else if (l?.size == 3) {
+                (l.getOrNull(0) as DateTime).plusMinutes(l.getOrNull(2) as Int).isAfter(l.getOrNull(1) as DateTime)
+            } else {
+                false
+            }
+        }
+        jsonLogic.addOperation("isBefore") { l, d ->
+            if (l?.size == 2 || (l?.size == 3 && l.getOrNull(2) == null)) {
+                (l.getOrNull(0) as DateTime).isBefore(l.getOrNull(1) as DateTime)
+            } else if (l?.size == 3) {
+                (l.getOrNull(0) as DateTime).minusMinutes(l.getOrNull(2) as Int).isBefore(l.getOrNull(1) as DateTime)
+            } else {
+                false
+            }
+        }
+        jsonLogic.addOperation("buildTime") { l, d ->
+            val t = l?.getOrNull(0)
+            var evjson = event.json
+            if (subeventId != 0L) {
+                val subevent = dataStore.select(SubEvent::class.java)
+                        .where(SubEvent.EVENT_SLUG.eq(eventSlug))
+                        .and(SubEvent.SERVER_ID.eq(subeventId))
+                        .get().first()
+                evjson = subevent.json
+            }
+            if (t == "custom") {
+                ISODateTimeFormat.dateTimeParser().parseDateTime(l.getOrNull(1) as String?)
+            } else if (t == "date_from") {
+                ISODateTimeFormat.dateTimeParser().parseDateTime(evjson.getString("date_from"))
+            } else if (t == "date_to") {
+                ISODateTimeFormat.dateTimeParser().parseDateTime(evjson.optString("date_to"))
+            } else if (t == "date_admission") {
+                ISODateTimeFormat.dateTimeParser().parseDateTime(evjson.optString("date_admission")
+                        ?: evjson.getString("date_from"))
+            } else {
+                null
+            }
+        }
+        return jsonLogic
+    }
+
+    data class SignedTicketData(val seed: String, val item: Long, val variation: Long?, val subevent: Long?)
+
+    private fun decodePretixSig1(qrcode: String): SignedTicketData? {
+        val rawbytes: ByteArray
+        try {
+            rawbytes = Base64.decodeBase64(qrcode.reversed())
+        } catch (e: Exception) {
+            return null
+        }
+        val version = rawbytes[0].toUByte().toInt()
+        if (version != 0x01) {
+            return null
+        }
+        val payloadLength = rawbytes[1].toUByte().toInt().shl(2) + rawbytes[2].toUByte().toInt()
+        val signatureLength = rawbytes[3].toUByte().toInt().shl(2) + rawbytes[4].toUByte().toInt()
+        val payload = rawbytes.copyOfRange(5, 5 + payloadLength)
+        val signature = rawbytes.copyOfRange(5 + payloadLength, 5 + payloadLength + signatureLength)
+
+        val validKeys = event.validKeys?.optJSONArray("pretix_sig1") ?: return null
+        for (vki in 0 until validKeys.length()) {
+            val vk = validKeys.getString(vki)
+            if (isValidSignature(payload, signature, readPubkeyFromPem(Base64.decodeBase64(vk).toString(Charset.defaultCharset())))) {
+                val ticket = TicketProtos.Ticket.parseFrom(payload)
+                return SignedTicketData(
+                        ticket.seed,
+                        ticket.item,
+                        ticket.variation,
+                        ticket.subevent
+                )
+            }
+        }
+        return null
+    }
+
+    private fun checkOfflineWithoutData(list: CheckInList, ticketid: String, type: TicketCheckProvider.CheckInType): TicketCheckProvider.CheckResult {
+        val dt = now()
+        val decoded = decodePretixSig1(ticketid)
+                ?: return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.INVALID)
+
+        if (list.getSubevent_id() != null && list.getSubevent_id() > 0 && list.getSubevent_id() != decoded.subevent) {
+            return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.INVALID)
+        }
+
+        val is_revoked = dataStore.count(RevokedTicketSecret::class.java)
+                .where(RevokedTicketSecret.SECRET.eq(ticketid))
+                .get().value()
+        if (is_revoked > 0) {
+            return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.REVOKED)
+        }
+
+        if (!list.all_items) {
+            val is_in_list = dataStore.count(CheckInList_Item::class.java)
+                    .where(CheckInList_Item.ITEM_ID.eq(decoded.item))
+                    .and(CheckInList_Item.CHECK_IN_LIST_ID.eq(list.getId()))
+                    .get().value()
+            if (is_in_list == 0) {
+                return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.PRODUCT)
+            }
+        }
+
+        val item = dataStore.select(Item::class.java)
+                .where(Item.SERVER_ID.eq(decoded.item))
+                .and(Item.EVENT_SLUG.eq(eventSlug))
+                .get().firstOrNull()
+                ?: return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.ERROR, "Item not found")
+
+        val res = TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.ERROR)
+        res.scanType = type
+        res.ticket = item.internalName
+        if (decoded.variation != null && decoded.variation > 0L) {
+            try {
+                val `var` = item.getVariation(decoded.variation)
+                if (`var` != null) {
+                    res.variation = `var`.stringValue
+                }
+            } catch (e: JSONException) {
+                sentry.captureException(e)
+            }
+        }
+        var require_attention = false
+        try {
+            require_attention = item.json.optBoolean("checkin_attention", false)
+        } catch (e: JSONException) {
+            sentry.captureException(e)
+        }
+        res.isRequireAttention = require_attention
+
+        val queuedCheckIns = dataStore.select(QueuedCheckIn::class.java)
+                .where(QueuedCheckIn.SECRET.eq(ticketid))
+                .get().toList().filter {
+                    it.getCheckinListId() == listId
+                }.sortedWith(compareBy({ it.fullDatetime }, { it.id }))
+
+        // TODO: check revoke list
+
+        val rules = list.rules
+        if (type == TicketCheckProvider.CheckInType.ENTRY && rules != null && rules.length() > 0) {
+            val jsonLogic = initJsonLogic(decoded.subevent ?: 0)
+            val data = mutableMapOf<String, Any>()
+            val tz = DateTimeZone.forID(event.getTimezone())
+            data.put("product", item.getServer_id().toString())
+            data.put("variation", if (decoded.variation != null && decoded.variation > 0) {
+                decoded.variation.toString()
+            } else {
+                ""
+            })
+            data.put("now", dt)
+            data.put("entries_number", queuedCheckIns.filter { it.type == "entry" }.size)
+            data.put("entries_today", queuedCheckIns.filter {
+                DateTime(it.fullDatetime).withZone(tz).toLocalDate() == dt.withZone(tz).toLocalDate() && it.type == "entry"
+            }.size)
+            data.put("entries_days", queuedCheckIns.map {
+                DateTime(it.fullDatetime).withZone(tz).toLocalDate()
+            }.toHashSet().size)
+
+            if (!jsonLogic.applyString(rules.toString(), data, safe = true).truthy) {
+                res.type = TicketCheckProvider.CheckResult.Type.RULES
+                res.isCheckinAllowed = false
+                return res
+            }
+        }
+
+        val questions = item.questions
+        val givenAnswers = JSONArray()
+        val required_answers: MutableList<TicketCheckProvider.RequiredAnswer> = ArrayList()
+        var ask_questions = false
+        for (q in questions) {
+            if (!q.isAskDuringCheckin) {
+                continue
+            }
+            ask_questions = true
+            required_answers.add(TicketCheckProvider.RequiredAnswer(q, ""))
+        }
+        if (ask_questions && required_answers.size > 0) {
+            res.isCheckinAllowed = true
+            res.type = TicketCheckProvider.CheckResult.Type.ANSWERS_REQUIRED
+            res.requiredAnswers = required_answers
+        } else {
+            val entry_allowed = (
+                    type == TicketCheckProvider.CheckInType.EXIT ||
+                            list.isAllowMultipleEntries ||
+                            queuedCheckIns.isEmpty() ||
+                            (list.isAllowEntryAfterExit && queuedCheckIns.last().type == "exit")
+                    )
+            if (!entry_allowed) {
+                res.isCheckinAllowed = false
+                res.firstScanned = queuedCheckIns.first().fullDatetime
+                res.type = TicketCheckProvider.CheckResult.Type.USED
+            } else {
+                res.isCheckinAllowed = true
+                res.type = TicketCheckProvider.CheckResult.Type.VALID
+                val qci = QueuedCheckIn()
+                qci.generateNonce()
+                qci.setSecret(ticketid)
+                qci.setDatetime(dt.toDate())
+                qci.setDatetime_string(QueuedCheckIn.formatDatetime(dt.toDate()))
+                qci.setAnswers(givenAnswers.toString())
+                qci.setEvent_slug(eventSlug)
+                qci.setType(type.toString().toLowerCase())
+                qci.setCheckinListId(listId)
+                dataStore.insert(qci)
+            }
+        }
+        return res
+        // todo document missing stuff: rules, badge printing, questions
+    }
+
     override fun check(ticketid: String): TicketCheckProvider.CheckResult {
         return check(ticketid, ArrayList(), false, true, TicketCheckProvider.CheckInType.ENTRY)
     }
@@ -43,25 +269,28 @@ class AsyncCheckProvider(private val eventSlug: String, private val dataStore: B
     override fun check(ticketid: String, answers: List<TicketCheckProvider.Answer>?, ignore_unpaid: Boolean, with_badge_data: Boolean, type: TicketCheckProvider.CheckInType): TicketCheckProvider.CheckResult {
         sentry.addBreadcrumb("provider.check", "offline check started")
         val dt = now()
+        val list = dataStore.select(CheckInList::class.java)
+                .where(CheckInList.SERVER_ID.eq(listId))
+                .and(CheckInList.EVENT_SLUG.eq(eventSlug))
+                .get().firstOrNull()
+                ?: return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.ERROR, "Check-in list not found")
+
+        // !!! When extending this, also extend checkOfflineWithoutData !!!
+
         val tickets = dataStore.select(OrderPosition::class.java)
                 .leftJoin(Order::class.java).on(Order.ID.eq(OrderPosition.ORDER_ID))
                 .where(OrderPosition.SECRET.eq(ticketid))
                 .and(Order.EVENT_SLUG.eq(eventSlug))
                 .get().toList()
         if (tickets.size == 0) {
-            return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.INVALID)
+            return checkOfflineWithoutData(list, ticketid, type)
         }
         val position = tickets[0]
-        val item = position.getItem()
-        val order = position.getOrder()
-        val list = dataStore.select(CheckInList::class.java)
-                .where(CheckInList.SERVER_ID.eq(listId))
-                .and(CheckInList.EVENT_SLUG.eq(eventSlug))
-                .get().firstOrNull()
-                ?: return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.ERROR, "Check-in list not found")
         if (list.getSubevent_id() != null && list.getSubevent_id() > 0 && list.getSubevent_id() != position.subeventId) {
             return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.INVALID)
         }
+        val item = position.getItem()
+        val order = position.getOrder()
         if (!list.all_items) {
             val is_in_list = dataStore.count(CheckInList_Item::class.java)
                     .where(CheckInList_Item.ITEM_ID.eq(item.getId()))
@@ -79,6 +308,8 @@ class AsyncCheckProvider(private val eventSlug: String, private val dataStore: B
             sentry.captureException(e)
             return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.ERROR)
         }
+
+        // !!! When extending this, also extend checkOfflineWithoutData !!!
 
         val res = TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.ERROR)
         res.scanType = type
@@ -123,9 +354,12 @@ class AsyncCheckProvider(private val eventSlug: String, private val dataStore: B
             res.isCheckinAllowed = list.include_pending
             return res;
         }
+
+        // !!! When extending this, also extend checkOfflineWithoutData !!!
+
         val rules = list.rules
         if (type == TicketCheckProvider.CheckInType.ENTRY && rules != null && rules.length() > 0) {
-            val jsonLogic = JsonLogic()
+            val jsonLogic = initJsonLogic(position.getSubevent_id())
             val data = mutableMapOf<String, Any>()
             val tz = DateTimeZone.forID(event.getTimezone())
             data.put("product", position.getItem().getServer_id().toString())
@@ -139,61 +373,14 @@ class AsyncCheckProvider(private val eventSlug: String, private val dataStore: B
                 DateTime(it.fullDatetime).withZone(tz).toLocalDate()
             }.toHashSet().size)
 
-            jsonLogic.addOperation("objectList") { l, _ -> l }
-            jsonLogic.addOperation("lookup") { l, d -> l?.getOrNull(1) }
-            jsonLogic.addOperation("inList") { l, d ->
-                (l?.getOrNull(1) as List<*>).contains(
-                        l.getOrNull(0)
-                )
-            }
-            jsonLogic.addOperation("isAfter") { l, d ->
-                if (l?.size == 2 || (l?.size == 3 && l.getOrNull(2) == null)) {
-                    (l.getOrNull(0) as DateTime).isAfter(l.getOrNull(1) as DateTime)
-                } else if (l?.size == 3) {
-                    (l.getOrNull(0) as DateTime).plusMinutes(l.getOrNull(2) as Int).isAfter(l.getOrNull(1) as DateTime)
-                } else {
-                    false
-                }
-            }
-            jsonLogic.addOperation("isBefore") { l, d ->
-                if (l?.size == 2 || (l?.size == 3 && l.getOrNull(2) == null)) {
-                    (l.getOrNull(0) as DateTime).isBefore(l.getOrNull(1) as DateTime)
-                } else if (l?.size == 3) {
-                    (l.getOrNull(0) as DateTime).minusMinutes(l.getOrNull(2) as Int).isBefore(l.getOrNull(1) as DateTime)
-                } else {
-                    false
-                }
-            }
-            jsonLogic.addOperation("buildTime") { l, d ->
-                val t = l?.getOrNull(0)
-                var evjson = event.json
-                if (position.getSubevent_id() != 0L) {
-                    val subevent = dataStore.select(SubEvent::class.java)
-                            .where(SubEvent.EVENT_SLUG.eq(eventSlug))
-                            .and(SubEvent.SERVER_ID.eq(position.getSubevent_id()))
-                            .get().first()
-                    evjson = subevent.json
-                }
-                if (t == "custom") {
-                    ISODateTimeFormat.dateTimeParser().parseDateTime(l.getOrNull(1) as String?)
-                } else if (t == "date_from") {
-                    // TODO: respect subevent
-                    ISODateTimeFormat.dateTimeParser().parseDateTime(evjson.getString("date_from"))
-                } else if (t == "date_to") {
-                    ISODateTimeFormat.dateTimeParser().parseDateTime(evjson.optString("date_to"))
-                } else if (t == "date_admission") {
-                    ISODateTimeFormat.dateTimeParser().parseDateTime(evjson.optString("date_admission") ?: evjson.getString("date_from"))
-                } else {
-                    null
-                }
-            }
-
             if (!jsonLogic.applyString(rules.toString(), data, safe = true).truthy) {
                 res.type = TicketCheckProvider.CheckResult.Type.RULES
                 res.isCheckinAllowed = false
                 return res
             }
         }
+
+        // !!! When extending this, also extend checkOfflineWithoutData !!!
 
         val questions = item.questions
         val answerMap = position.answers
@@ -230,6 +417,9 @@ class AsyncCheckProvider(private val eventSlug: String, private val dataStore: B
             }
             required_answers.add(TicketCheckProvider.RequiredAnswer(q, answer))
         }
+
+        // !!! When extending this, also extend checkOfflineWithoutData !!!
+
         if (ask_questions && required_answers.size > 0) {
             res.isCheckinAllowed = true
             res.type = TicketCheckProvider.CheckResult.Type.ANSWERS_REQUIRED
@@ -238,7 +428,7 @@ class AsyncCheckProvider(private val eventSlug: String, private val dataStore: B
             val entry_allowed = (
                     type == TicketCheckProvider.CheckInType.EXIT ||
                             list.isAllowMultipleEntries ||
-                            checkIns.size == 0 ||
+                            checkIns.isEmpty() ||
                             (list.isAllowEntryAfterExit && checkIns.last().type == "exit")
                     )
             if (!entry_allowed) {
@@ -267,6 +457,8 @@ class AsyncCheckProvider(private val eventSlug: String, private val dataStore: B
                 dataStore.insert(ci)
             }
         }
+
+        // !!! When extending this, also extend checkOfflineWithoutData !!!
         return res
     }
 

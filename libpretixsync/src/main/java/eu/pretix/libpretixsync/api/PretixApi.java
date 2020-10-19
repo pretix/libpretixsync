@@ -120,7 +120,7 @@ public class PretixApi {
         if (pdf_data) {
             pd = "?pdf_data=true";
         }
-        return postResource(eventResourceUrl("checkinlists/" + listId + "/positions/" + secret + "/redeem") + pd, body);
+        return postResource(eventResourceUrl("checkinlists/" + listId + "/positions/" + URLEncoder.encode(secret) + "/redeem") + pd, body);
     }
 
     public ApiResponse status(Long listId) throws ApiException {
