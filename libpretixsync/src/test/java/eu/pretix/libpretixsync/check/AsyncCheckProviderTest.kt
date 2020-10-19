@@ -597,4 +597,39 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         assertEquals(true, i.isAdmission)
         assertEquals(0, i.variations!!.size)
     }
+
+    @Test
+    fun testSignedAndValid() {
+        val r = p!!.check("E4BibyTSylQOgeKjuMPiTDxi5HXPuTVsx1qCli3IL0143gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKAEAPAQA")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+        assertEquals(dataStore.count(QueuedCheckIn::class.java).get().value(), 1)
+    }
+
+    @Test
+    fun testSignedAndRevoked() {
+        val rev = RevokedTicketSecret()
+        rev.setEvent_slug(configStore!!.eventSlug)
+        rev.setCreated("2020-10-19T10:00:00+00:00")
+        rev.setSecret("E4BibyTSylQOgeKjuMPiTDxi5HXPuTVsx1qCli3IL0143gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKAEAPAQA")
+        rev.setJson_data("{}")
+        dataStore.insert(rev)
+
+        val r = p!!.check("E4BibyTSylQOgeKjuMPiTDxi5HXPuTVsx1qCli3IL0143gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKAEAPAQA")
+        assertEquals(TicketCheckProvider.CheckResult.Type.REVOKED, r.type)
+        assertEquals(dataStore.count(QueuedCheckIn::class.java).get().value(), 0)
+    }
+
+    @Test
+    fun testSignedUnknownProduct() {
+        val r = p!!.check("OUmw2Ro3YOMQ4ktAlAIsDVe4Xsr1KXla/0SZVN34qIZWtUX0hx1DXDHxaCatGTNzOeCMjHQABR5E6ESCOOx1g7AIkBhVkdDdJJTVSZWCKAEAPAQA")
+        assertEquals(TicketCheckProvider.CheckResult.Type.ERROR, r.type)
+        assertEquals(dataStore.count(QueuedCheckIn::class.java).get().value(), 0)
+    }
+
+    @Test
+    fun testSignedInvalidSignature() {
+        val r = p!!.check("EFAKEyTSylQOgeKjuMPiTDxi5HXPuTVsx1qCli3IL0143gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKAEAPAQA")
+        assertEquals(TicketCheckProvider.CheckResult.Type.INVALID, r.type)
+        assertEquals(dataStore.count(QueuedCheckIn::class.java).get().value(), 0)
+    }
 }

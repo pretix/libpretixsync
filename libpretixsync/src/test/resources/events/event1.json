@@ -21,5 +21,8 @@
     "pretix.plugins.stripe",
     "pretix.plugins.badges",
     "pretix.plugins.ticketoutputpdf"
-  ]
+  ],
+  "valid_keys": {
+    "pretix_sig1": ["LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUNvd0JRWURLMlZ3QXlFQTdBRDcvdkZBMzNFc1k0ejJQSHI3aVpQc1o4bjVkaDBhalA4Z3l6Tm1tSXM9Ci0tLS0tRU5EIFBVQkxJQyBLRVktLS0tLQo="]
+  }
 }
