@@ -16,7 +16,7 @@ class SetupServerErrorException(override var message: String?) : SetupException(
 class SetupBadRequestException(override var message: String?) : SetupException(message)
 class SetupBadResponseException(override var message: String?) : SetupException(message)
 
-data class SetupResult(val url: String, val api_token: String, val organizer: String, val device_id: Long, val unique_serial: String, val security_profile: String, val device_name: String)
+data class SetupResult(val url: String, val api_token: String, val organizer: String, val device_id: Long, val unique_serial: String, val security_profile: String, val device_name: String, val gate_name: String?)
 
 class SetupManager(private val hardware_brand: String, private val hardware_model: String, private val software_brand: String, private val software_version: String, private val http_factory: HttpClientFactory) {
     fun initialize(url: String, token: String): SetupResult {
@@ -50,9 +50,10 @@ class SetupManager(private val hardware_brand: String, private val hardware_mode
         } else {
             try {
                 val respo = JSONObject(body)
+                val gate = if (respo.has("gate") && !respo.isNull("gate")) respo.getJSONObject("gate").getString("name") else null
                 return SetupResult(
                         url, respo.getString("api_token"), respo.getString("organizer"), respo.getLong("device_id"), respo.getString("unique_serial"),
-                        respo.optString("security_profile", "full"), respo.optString("name")
+                        respo.optString("security_profile", "full"), respo.optString("name"), gate
                 )
             } catch (e: JSONException) {
                 e.printStackTrace()

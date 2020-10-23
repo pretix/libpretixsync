@@ -56,6 +56,15 @@ public class FakeConfigStore implements ConfigStore {
     }
 
     @Override
+    public String getDeviceKnownGateName() {
+        return null;
+    }
+
+    @Override
+    public void setDeviceKnownGateName(String value) {
+    }
+
+    @Override
     public String getApiKey() {
         return "12345";
     }

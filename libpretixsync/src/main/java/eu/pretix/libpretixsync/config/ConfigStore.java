@@ -14,6 +14,10 @@ public interface ConfigStore {
 
     public void setDeviceKnownName(String value);
 
+    public String getDeviceKnownGateName();
+
+    public void setDeviceKnownGateName(String value);
+
     public int getDeviceKnownVersion();
 
     public void setDeviceKnownVersion(int value);

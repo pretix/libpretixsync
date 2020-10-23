@@ -186,6 +186,11 @@ public class SyncManager {
                 );
                 configStore.setDeviceKnownVersion(app_version);
                 configStore.setDeviceKnownName(resp.getData().getString("name"));
+                String gate = null;
+                if (resp.getData().has("gate") && !resp.getData().isNull("gate")) {
+                    gate = resp.getData().getJSONObject("gate").getString("name");
+                }
+                configStore.setDeviceKnownGateName(gate);
             }
         } catch (ApiException | JSONException e) {
             configStore.setLastFailedSync(System.currentTimeMillis());
