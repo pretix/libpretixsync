@@ -55,4 +55,6 @@ public interface ConfigStore {
     public void setKnownPretixVersion(Long val);
 
     public Long getKnownPretixVersion();
+
+    public Boolean getAutoSwitchRequested();
 }

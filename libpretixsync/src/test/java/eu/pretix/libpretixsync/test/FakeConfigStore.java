@@ -147,4 +147,9 @@ public class FakeConfigStore implements ConfigStore {
     public Long getKnownPretixVersion() {
         return 0L;
     }
+
+    @Override
+    public Boolean getAutoSwitchRequested() {
+        return false;
+    }
 }

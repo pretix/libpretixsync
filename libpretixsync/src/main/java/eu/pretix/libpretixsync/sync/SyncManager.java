@@ -67,6 +67,19 @@ public class SyncManager {
         public void postFeedback(String current_action);
     }
 
+    public static class EventSwitchRequested extends Exception {
+        public String eventSlug;
+        public String eventName;
+        public Long subeventId;
+        public Long checkinlistId;
+        public EventSwitchRequested(String eventSlug, String eventName, Long subeventId, Long checkinlistId) {
+            this.eventSlug = eventSlug;
+            this.eventName = eventName;
+            this.subeventId = subeventId;
+            this.checkinlistId = checkinlistId;
+        }
+    }
+
     public SyncManager(
             ConfigStore configStore,
             PretixApi api,
@@ -100,8 +113,8 @@ public class SyncManager {
         this.software_version = software_version;
     }
 
-    public SyncResult sync(boolean force) {
-        return sync(force, null);
+    public SyncResult sync(boolean force) throws EventSwitchRequested {
+        return sync(force, null, null);
     }
 
     /**
@@ -110,7 +123,7 @@ public class SyncManager {
      * @param force Force a new sync
      * @return A SyncResult describing the results of the synchronization
      */
-    public SyncResult sync(boolean force, SyncManager.ProgressFeedback feedback) {
+    public SyncResult sync(boolean force, Long listId, SyncManager.ProgressFeedback feedback) throws EventSwitchRequested {
         if (!configStore.isConfigured()) {
             return new SyncResult(false, false);
         }
@@ -127,6 +140,12 @@ public class SyncManager {
         canceled.setCanceled(false);
         boolean download = force || (System.currentTimeMillis() - configStore.getLastDownload()) > download_interval;
         try {
+            if (configStore.getAutoSwitchRequested()) {
+                if (feedback != null) {
+                    feedback.postFeedback("Checking for other event…");
+                }
+                checkEventSelection(listId);
+            }
             if (feedback != null) {
                 feedback.postFeedback("Uploading data…");
             }
@@ -170,6 +189,37 @@ public class SyncManager {
             configStore.setLastFailedSyncMsg(e.getMessage());
         }
         return new SyncResult(true, true);
+    }
+
+    private void checkEventSelection(Long listId) throws EventSwitchRequested {
+        try {
+            String query = "current_event=" + configStore.getEventSlug();
+            if (configStore.getSubEventId() > 0) {
+                query += "&current_subevent=" + configStore.getSubEventId();
+            }
+            if (listId != null && listId > 0) {
+                query += "&current_checkinlist=" + listId;
+            }
+            PretixApi.ApiResponse resp = api.fetchResource(
+                    api.apiURL("device/eventselection?" + query)
+            );
+            if (resp.getResponse().code() == 200) {
+                String eventSlug = resp.getData().getJSONObject("event").getString("slug");
+                Long subeventId = resp.getData().isNull("subevent") ? 0 : resp.getData().optLong("subevent", 0);
+                Long checkinlistId = resp.getData().isNull("checkinlist") ? 0 : resp.getData().optLong("checkinlist", 0);
+                if (!eventSlug.equals(configStore.getEventSlug()) || !subeventId.equals(configStore.getSubEventId()) || !checkinlistId.equals(listId)) {
+                    throw new EventSwitchRequested(eventSlug, resp.getData().getJSONObject("event").getString("name"), subeventId, checkinlistId);
+                }
+            }
+        } catch (ResourceNotModified e) {
+            // Current event is fine
+        } catch (NotFoundApiException e) {
+            // Either there are no available events, or the pretix version is too old. Either way,
+            // we don't care.
+        } catch (ApiException | JSONException e) {
+            configStore.setLastFailedSync(System.currentTimeMillis());
+            configStore.setLastFailedSyncMsg(e.getMessage());
+        }
     }
 
     private void bumpKnownVersion() {
