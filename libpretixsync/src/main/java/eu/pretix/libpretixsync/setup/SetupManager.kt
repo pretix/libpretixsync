@@ -28,10 +28,14 @@ class SetupManager(private val hardware_brand: String, private val hardware_mode
         apiBody.put("software_brand", software_brand)
         apiBody.put("software_version", software_version)
 
-        val request = Request.Builder()
-                .url(url + "/api/v1/device/initialize")
-                .post(apiBody.toString().toByteArray().toRequestBody("application/json".toMediaTypeOrNull()))
-                .build()
+        val request = try {
+            Request.Builder()
+                    .url(url + "/api/v1/device/initialize")
+                    .post(apiBody.toString().toByteArray().toRequestBody("application/json".toMediaTypeOrNull()))
+                    .build()
+        } catch (e: IllegalArgumentException) {
+            throw SetupException("Invalid URL entered")
+        }
         var response: Response?
         response = client.newCall(request).execute();
 
