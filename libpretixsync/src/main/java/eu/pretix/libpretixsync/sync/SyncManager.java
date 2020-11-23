@@ -194,7 +194,7 @@ public class SyncManager {
     private void checkEventSelection(Long listId) throws EventSwitchRequested {
         try {
             String query = "current_event=" + configStore.getEventSlug();
-            if (configStore.getSubEventId() > 0) {
+            if (configStore.getSubEventId() != null && configStore.getSubEventId() > 0) {
                 query += "&current_subevent=" + configStore.getSubEventId();
             }
             if (listId != null && listId > 0) {
