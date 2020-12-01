@@ -33,6 +33,9 @@ public class AbstractReceipt implements LocalObject {
     public String order_code;
 
     @Nullable
+    public String chosen_cart_id;
+
+    @Nullable
     public Long server_id;
 
     @Column(value = BuildConfig.BOOLEAN_FALSE)
