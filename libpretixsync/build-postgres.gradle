@@ -91,13 +91,13 @@ dependencies {
     compile 'com.squareup.okhttp3:okhttp:4.3.0'
     compile 'io.requery:requery:1.6.0'
     compile 'io.requery:requery-kotlin:1.6.0'
-    compile 'joda-time:joda-time:2.9.9'
+    compile 'joda-time:joda-time:2.10.6'
 
     // Use older org.json version to have an environment equivalent to the android platform
     compile 'org.json:json:20090211'
 
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
-    implementation 'net.sourceforge.streamsupport:streamsupport-cfuture:1.7.1'
+    implementation 'net.sourceforge.streamsupport:streamsupport-cfuture:1.7.2'
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.10.1'
     implementation 'com.fasterxml.jackson.module:jackson-module-kotlin:2.10.1'
 
@@ -109,7 +109,7 @@ dependencies {
     kapt 'io.requery:requery-processor:1.6.0'
     annotationProcessor 'javax.annotation:jsr250-api:1.0'
 
-    testCompile 'junit:junit:4.12'
+    testCompile 'junit:junit:4.13'
     testCompile 'org.xerial:sqlite-jdbc:3.30.1'
 }
 
