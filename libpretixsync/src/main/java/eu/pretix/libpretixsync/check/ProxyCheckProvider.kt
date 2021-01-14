@@ -12,6 +12,7 @@ import eu.pretix.libpretixsync.SentryInterface
 import eu.pretix.libpretixsync.api.ApiException
 import eu.pretix.libpretixsync.api.HttpClientFactory
 import eu.pretix.libpretixsync.config.ConfigStore
+import eu.pretix.libpretixsync.db.Answer
 import eu.pretix.libpretixsync.serialization.JSONArrayDeserializer
 import eu.pretix.libpretixsync.serialization.JSONArraySerializer
 import eu.pretix.libpretixsync.serialization.JSONObjectDeserializer
@@ -88,10 +89,10 @@ class ProxyCheckProvider(private val config: ConfigStore, httpClientFactory: Htt
         return body
     }
 
-    override fun check(ticketid: String, answers: List<TicketCheckProvider.Answer>?, ignore_unpaid: Boolean, with_badge_data: Boolean, type: TicketCheckProvider.CheckInType): TicketCheckProvider.CheckResult {
+    override fun check(ticketid: String, answers: List<Answer>?, ignore_unpaid: Boolean, with_badge_data: Boolean, type: TicketCheckProvider.CheckInType): TicketCheckProvider.CheckResult {
         val data: MutableMap<String, Any> = HashMap()
         data["ticketid"] = ticketid
-        data["answers"] = answers ?: emptyList<TicketCheckProvider.Answer>()
+        data["answers"] = answers ?: emptyList<Answer>()
         data["ignore_unpaid"] = ignore_unpaid
         data["with_badge_data"] = with_badge_data
         data["type"] = type

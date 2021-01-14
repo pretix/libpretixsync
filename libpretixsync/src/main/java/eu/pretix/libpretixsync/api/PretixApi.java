@@ -4,6 +4,8 @@ import eu.pretix.libpretixsync.DummySentryImplementation;
 import eu.pretix.libpretixsync.SentryInterface;
 import eu.pretix.libpretixsync.check.TicketCheckProvider;
 import eu.pretix.libpretixsync.config.ConfigStore;
+import eu.pretix.libpretixsync.db.Answer;
+import eu.pretix.libpretixsync.db.Question;
 import eu.pretix.libpretixsync.db.QueuedCheckIn;
 import eu.pretix.libpretixsync.utils.NetUtils;
 import okhttp3.*;
@@ -90,7 +92,7 @@ public class PretixApi {
         return PretixApi.fromConfig(config, new DefaultHttpClientFactory());
     }
 
-    public ApiResponse redeem(String secret, Date datetime, boolean force, String nonce, List<TicketCheckProvider.Answer> answers, Long listId, boolean ignore_unpaid, boolean pdf_data, String type) throws ApiException, JSONException {
+    public ApiResponse redeem(String secret, Date datetime, boolean force, String nonce, List<Answer> answers, Long listId, boolean ignore_unpaid, boolean pdf_data, String type) throws ApiException, JSONException {
         String dt = null;
         if (datetime != null) {
             dt = QueuedCheckIn.formatDatetime(datetime);
@@ -98,7 +100,7 @@ public class PretixApi {
         return redeem(secret, dt, force, nonce, answers, listId, ignore_unpaid, pdf_data, type);
     }
 
-    public ApiResponse redeem(String secret, String datetime, boolean force, String nonce, List<TicketCheckProvider.Answer> answers, Long listId, boolean ignore_unpaid, boolean pdf_data, String type) throws ApiException, JSONException {
+    public ApiResponse redeem(String secret, String datetime, boolean force, String nonce, List<Answer> answers, Long listId, boolean ignore_unpaid, boolean pdf_data, String type) throws ApiException, JSONException {
         JSONObject body = new JSONObject();
         if (datetime != null) {
             body.put("datetime", datetime);
@@ -109,8 +111,8 @@ public class PretixApi {
         body.put("type", type);
         JSONObject answerbody = new JSONObject();
         if (answers != null) {
-            for (TicketCheckProvider.Answer a : answers) {
-                answerbody.put("" + a.getQuestion().getServer_id(), a.getValue());
+            for (Answer a : answers) {
+                answerbody.put("" + ((Question) a.getQuestion()).getServer_id(), a.getValue());
             }
         }
         body.put("answers", answerbody);

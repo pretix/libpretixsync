@@ -505,8 +505,8 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         val ra = r.requiredAnswers!![0]
         assertEquals(1, ra.question.getServer_id())
 
-        val answers = ArrayList<TicketCheckProvider.Answer>()
-        answers.add(TicketCheckProvider.Answer(ra.question, "True"))
+        val answers = ArrayList<Answer>()
+        answers.add(Answer(ra.question, "True"))
 
         r = p!!.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj", answers, false, false, TicketCheckProvider.CheckInType.ENTRY)
         assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
@@ -526,8 +526,8 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         assertEquals(1, r.requiredAnswers?.size)
         val ra = r.requiredAnswers!![0]
 
-        val answers = ArrayList<TicketCheckProvider.Answer>()
-        answers.add(TicketCheckProvider.Answer(ra.question, "True"))
+        val answers = ArrayList<Answer>()
+        answers.add(Answer(ra.question, "True"))
 
         r = p!!.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj", answers, false, false, TicketCheckProvider.CheckInType.ENTRY)
         assertEquals(TicketCheckProvider.CheckResult.Type.ANSWERS_REQUIRED, r.type)

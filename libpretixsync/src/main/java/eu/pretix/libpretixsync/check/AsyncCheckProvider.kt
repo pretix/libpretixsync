@@ -266,7 +266,7 @@ class AsyncCheckProvider(private val eventSlug: String, private val dataStore: B
         return check(ticketid, ArrayList(), false, true, TicketCheckProvider.CheckInType.ENTRY)
     }
 
-    override fun check(ticketid: String, answers: List<TicketCheckProvider.Answer>?, ignore_unpaid: Boolean, with_badge_data: Boolean, type: TicketCheckProvider.CheckInType): TicketCheckProvider.CheckResult {
+    override fun check(ticketid: String, answers: List<Answer>?, ignore_unpaid: Boolean, with_badge_data: Boolean, type: TicketCheckProvider.CheckInType): TicketCheckProvider.CheckResult {
         sentry.addBreadcrumb("provider.check", "offline check started")
         val dt = now()
         val list = dataStore.select(CheckInList::class.java)
@@ -386,7 +386,7 @@ class AsyncCheckProvider(private val eventSlug: String, private val dataStore: B
         val answerMap = position.answers
         if (answers != null) {
             for (a in answers) {
-                answerMap[a.question.getServer_id()] = a.value
+                answerMap[(a.question as Question).getServer_id()] = a.value
             }
         }
         val givenAnswers = JSONArray()

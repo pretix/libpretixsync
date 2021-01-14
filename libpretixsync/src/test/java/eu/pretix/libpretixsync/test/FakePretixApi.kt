@@ -3,6 +3,7 @@ package eu.pretix.libpretixsync.test
 import eu.pretix.libpretixsync.api.DefaultHttpClientFactory
 import eu.pretix.libpretixsync.api.PretixApi
 import eu.pretix.libpretixsync.check.TicketCheckProvider
+import eu.pretix.libpretixsync.db.Answer
 import org.json.JSONObject
 import java.util.*
 import kotlin.collections.ArrayList
@@ -19,7 +20,7 @@ class FakePretixApi : PretixApi("http://1.1.1.1/", "a", "demo", "demo", 1, Defau
     var redeemRequestDatetime: Date? = null
     var redeemRequestForce = false
     var redeemRequestNonce: String? = null
-    var redeemRequestAnswers: List<TicketCheckProvider.Answer>? = null
+    var redeemRequestAnswers: List<Answer>? = null
     var redeemRequestListId: Long? = null
     var redeemRequestIgnoreUnpaid = false
     var redeemRequestPdfData = false
@@ -29,7 +30,7 @@ class FakePretixApi : PretixApi("http://1.1.1.1/", "a", "demo", "demo", 1, Defau
     var lastRequestUrl: String? = null
     var lastRequestBody: JSONObject? = null
 
-    override fun redeem(secret: String?, datetime: Date?, force: Boolean, nonce: String?, answers: MutableList<TicketCheckProvider.Answer>?, listId: Long?, ignore_unpaid: Boolean, pdf_data: Boolean, type: String): ApiResponse {
+    override fun redeem(secret: String?, datetime: Date?, force: Boolean, nonce: String?, answers: MutableList<TicketCheckProvider.Answer>?, listId: Long?, ignore_unpaid: Boolean, pdf_data: Boolean, type: String?): ApiResponse {
         redeemRequestSecret = secret
         redeemRequestDatetime = datetime
         redeemRequestForce = force

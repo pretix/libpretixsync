@@ -1,6 +1,7 @@
 package eu.pretix.libpretixsync.check
 
 import eu.pretix.libpretixsync.SentryInterface
+import eu.pretix.libpretixsync.db.Answer
 import eu.pretix.libpretixsync.db.Question
 import org.json.JSONObject
 import java.util.*
@@ -17,9 +18,6 @@ interface TicketCheckProvider {
         fun setCurrent_value(current_value: String?) {
             currentValue = current_value
         }
-    }
-
-    class Answer(var question: Question, var value: String) {
     }
 
     class CheckResult {

@@ -16,6 +16,7 @@ import eu.pretix.libpretixsync.api.PretixApi;
 import eu.pretix.libpretixsync.api.ResourceNotModified;
 import eu.pretix.libpretixsync.check.TicketCheckProvider;
 import eu.pretix.libpretixsync.config.ConfigStore;
+import eu.pretix.libpretixsync.db.Answer;
 import eu.pretix.libpretixsync.db.CheckIn;
 import eu.pretix.libpretixsync.db.Closing;
 import eu.pretix.libpretixsync.db.Order;
@@ -492,14 +493,14 @@ public class SyncManager {
 
         try {
             for (QueuedCheckIn qci : queued) {
-                List<TicketCheckProvider.Answer> answers = new ArrayList<>();
+                List<Answer> answers = new ArrayList<>();
                 try {
                     JSONArray ja = new JSONArray(qci.getAnswers());
                     for (int i = 0; i < ja.length(); i++) {
                         JSONObject jo = ja.getJSONObject(i);
                         Question q = new Question();
                         q.setServer_id(jo.getLong("question"));
-                        answers.add(new TicketCheckProvider.Answer(q, jo.getString("answer")));
+                        answers.add(new Answer(q, jo.getString("answer"), null));
                     }
                 } catch (JSONException e) {
                 }

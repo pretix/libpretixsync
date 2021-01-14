@@ -7,6 +7,7 @@ import eu.pretix.libpretixsync.api.DefaultHttpClientFactory
 import eu.pretix.libpretixsync.api.HttpClientFactory
 import eu.pretix.libpretixsync.api.PretixApi
 import eu.pretix.libpretixsync.config.ConfigStore
+import eu.pretix.libpretixsync.db.Answer
 import eu.pretix.libpretixsync.db.CheckInList
 import eu.pretix.libpretixsync.db.Item
 import eu.pretix.libpretixsync.db.Question
@@ -33,7 +34,7 @@ class OnlineCheckProvider(private val config: ConfigStore, httpClientFactory: Ht
         api.sentry = sentry
     }
 
-    override fun check(ticketid: String, answers: List<TicketCheckProvider.Answer>?, ignore_unpaid: Boolean, with_badge_data: Boolean, type: TicketCheckProvider.CheckInType): TicketCheckProvider.CheckResult {
+    override fun check(ticketid: String, answers: List<Answer>?, ignore_unpaid: Boolean, with_badge_data: Boolean, type: TicketCheckProvider.CheckInType): TicketCheckProvider.CheckResult {
         sentry.addBreadcrumb("provider.check", "started")
         val list = dataStore.select(CheckInList::class.java)
                 .where(CheckInList.SERVER_ID.eq(listId))
