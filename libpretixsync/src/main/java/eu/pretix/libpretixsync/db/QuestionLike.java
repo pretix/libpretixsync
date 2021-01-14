@@ -26,6 +26,10 @@ public abstract class QuestionLike {
 
     public abstract boolean requiresAnswer();
 
+    public String getDefault() {
+        return null;
+    }
+
     public String clean_answer(String answer, List<QuestionOption> opts) throws AbstractQuestion.ValidationException {
         QuestionType type = getType();
         if (requiresAnswer()) {
