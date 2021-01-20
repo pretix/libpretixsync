@@ -15,7 +15,9 @@ import org.json.JSONObject;
 
 import javax.net.ssl.SSLException;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -315,4 +317,22 @@ public class PretixApi {
         }
     }
 
+    public String uploadFile(File file, MediaType mediaType, String filename) throws ApiException {
+        Request.Builder request = new Request.Builder()
+                .url(apiURL("upload"))
+                .post(RequestBody.create(file, mediaType))
+                .header("Content-Disposition", "attachment; filename=\"" + filename + "\"")
+                .header("Authorization", "Device " + key);
+        try {
+            ApiResponse resp = apiCall(request.build());
+            if (resp.response.code() != 201) {
+                throw new FinalApiException("Could not upload file: " + resp.data);
+            }
+            return resp.data.getString("id");
+        } catch (ResourceNotModified exc) { // can't happen
+            throw new FinalApiException("resource not modified");
+        } catch (JSONException exc) {
+            throw new FinalApiException("JSONException");
+        }
+    }
 }

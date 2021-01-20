@@ -2,9 +2,11 @@ package eu.pretix.libpretixsync.test
 
 import eu.pretix.libpretixsync.api.DefaultHttpClientFactory
 import eu.pretix.libpretixsync.api.PretixApi
-import eu.pretix.libpretixsync.check.TicketCheckProvider
 import eu.pretix.libpretixsync.db.Answer
+import okhttp3.MediaType
 import org.json.JSONObject
+import java.io.File
+import java.io.InputStream
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -30,7 +32,7 @@ class FakePretixApi : PretixApi("http://1.1.1.1/", "a", "demo", "demo", 1, Defau
     var lastRequestUrl: String? = null
     var lastRequestBody: JSONObject? = null
 
-    override fun redeem(secret: String?, datetime: Date?, force: Boolean, nonce: String?, answers: MutableList<TicketCheckProvider.Answer>?, listId: Long?, ignore_unpaid: Boolean, pdf_data: Boolean, type: String?): ApiResponse {
+    override fun redeem(secret: String?, datetime: Date?, force: Boolean, nonce: String?, answers: MutableList<Answer>?, listId: Long?, ignore_unpaid: Boolean, pdf_data: Boolean, type: String?): ApiResponse {
         redeemRequestSecret = secret
         redeemRequestDatetime = datetime
         redeemRequestForce = force
@@ -81,5 +83,9 @@ class FakePretixApi : PretixApi("http://1.1.1.1/", "a", "demo", "demo", 1, Defau
         lastRequestUrl = full_url
         lastRequestBody = null
         return downloadResponses.removeAt(0)()
+    }
+
+    override fun uploadFile(file: File?, mediaType: MediaType?, filename: String?): String {
+        return "file:abcd"
     }
 }

@@ -43,11 +43,20 @@ public abstract class QuestionLike {
         } else if ((answer == null || answer.trim().equals("")) && type != QuestionType.B) {
             return "";
         }
+        if (answer.startsWith("file:///") && type != QuestionType.F) {
+            // sorry!
+            throw new ValidationException("Question is not a file field");
+        }
+
         if (type == QuestionType.N) {
             try {
                 return new BigDecimal(answer).toPlainString();
             } catch (NumberFormatException e) {
                 throw new ValidationException("Invalid number supplied");
+            }
+        } else if (type == QuestionType.F) {
+            if (!answer.startsWith("file:///")) {
+                throw new ValidationException("Invalid file path supplied");
             }
         } else if (type == QuestionType.EMAIL) {
             if (!Patterns.EMAIL_ADDRESS.matcher(answer).matches()) {
