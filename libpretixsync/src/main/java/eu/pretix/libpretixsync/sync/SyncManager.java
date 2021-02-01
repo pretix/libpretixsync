@@ -320,6 +320,7 @@ public class SyncManager {
                 if ((System.currentTimeMillis() - configStore.getLastCleanup()) > 3600 * 1000 * 12) {
                     osa.deleteOldSubevents();
                     osa.deleteOldEvents();
+                    osa.deleteOldPdfImages();
                     configStore.setLastCleanup(System.currentTimeMillis());
                 }
             } else if (profile == Profile.PRETIXSCAN_ONLINE) {
@@ -430,7 +431,7 @@ public class SyncManager {
                         dataStore.runInTransaction(() -> {
                             dataStore.update(r, Receipt.ORDER_CODE);
                             dataStore.delete(qo);
-                            (new OrderSyncAdapter(dataStore, null, configStore.getEventSlug(), configStore.getSubEventId(), true, true, api, null)).standaloneRefreshFromJSON(resp.getData());
+                            (new OrderSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), configStore.getSubEventId(), true, true, api, null)).standaloneRefreshFromJSON(resp.getData());
                             return null;
                         });
                     } else if (resp.getResponse().code() == 400) {

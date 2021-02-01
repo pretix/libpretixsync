@@ -10,6 +10,11 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
@@ -25,6 +30,7 @@ import java.util.concurrent.ExecutionException;
 import eu.pretix.libpretixsync.api.ApiException;
 import eu.pretix.libpretixsync.api.PretixApi;
 import eu.pretix.libpretixsync.api.ResourceNotModified;
+import eu.pretix.libpretixsync.db.CachedPdfImage;
 import eu.pretix.libpretixsync.db.CheckIn;
 import eu.pretix.libpretixsync.db.CheckInList;
 import eu.pretix.libpretixsync.db.Event;
@@ -33,6 +39,7 @@ import eu.pretix.libpretixsync.db.Order;
 import eu.pretix.libpretixsync.db.OrderPosition;
 import eu.pretix.libpretixsync.db.ResourceLastModified;
 import eu.pretix.libpretixsync.db.SubEvent;
+import eu.pretix.libpretixsync.utils.HashUtils;
 import eu.pretix.libpretixsync.utils.JSONUtils;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
@@ -200,6 +207,72 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
         if (known.size() > 0) {
             store.delete(known.values());
         }
+
+
+        // Images
+        if (jsonobj.has("pdf_data")) {
+            JSONObject pdfdata = jsonobj.getJSONObject("pdf_data");
+            if (pdfdata.has("images")) {
+                JSONObject images = pdfdata.getJSONObject("images");
+                updatePdfImages(obj, images);
+            }
+        }
+    }
+
+    private void updatePdfImages(OrderPosition op, JSONObject images) {
+        Set<String> seen_etags = new HashSet<>();
+        for (Iterator it = images.keys(); it.hasNext(); ) {
+            String k = (String) it.next();
+            String remote_filename = images.optString(k);
+            if (remote_filename == null || !remote_filename.startsWith("http")) {
+                continue;
+            }
+            String etag = HashUtils.toSHA1(remote_filename.getBytes());
+            if (remote_filename.contains("#etag=")) {
+                etag = remote_filename.split("#etag=")[1];
+            }
+            String local_filename = "pdfimage_" + etag + ".bin";
+            seen_etags.add(etag);
+
+            if (!fileStorage.contains(local_filename)) {
+                try {
+                    PretixApi.ApiResponse file = api.downloadFile(remote_filename);
+                    OutputStream os = fileStorage.writeStream(local_filename);
+                    InputStream is = file.getResponse().body().byteStream();
+                    byte[] buffer = new byte[1444];
+                    int byteread;
+                    while ((byteread = is.read(buffer)) != -1) {
+                        os.write(buffer, 0, byteread);
+                    }
+                    is.close();
+                    os.close();
+                } catch (ApiException e) {
+                    // TODO: What to do?
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    // TODO: What to do?
+                    e.printStackTrace();
+                    fileStorage.delete(local_filename);
+                }
+            }
+            CachedPdfImage cpi = store.select(CachedPdfImage.class).where(CachedPdfImage.ORDERPOSITION_ID.eq(op.getId())).and(CachedPdfImage.KEY.eq(k)).get().firstOrNull();
+            if (cpi == null) {
+                cpi = new CachedPdfImage();
+                cpi.setEtag(etag);
+                cpi.setKey(k);
+                cpi.setOrderposition_id(op.getId());
+                store.insert(cpi);
+            } else {
+                cpi.setEtag(etag);
+                store.update(cpi);
+            }
+        }
+
+        store.delete(CachedPdfImage.class).where(
+                CachedPdfImage.ORDERPOSITION_ID.eq(op.getId()).and(
+                        CachedPdfImage.ETAG.notIn(seen_etags)
+                )
+        );
     }
 
     @Override
@@ -653,6 +726,19 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
                         feedback.postFeedback("Deleting " + getResourceName() + " of old events (" + deleted + ")…");
                     }
                 }
+            }
+        }
+    }
+
+    public void deleteOldPdfImages() {
+        store.delete(CachedPdfImage.class).where(
+                CachedPdfImage.ORDERPOSITION_ID.notIn(store.select(OrderPosition.ID).from(OrderPosition.class))
+        );
+        for (String filename : fileStorage.listFiles((file, s) -> s.startsWith("pdfimage_"))) {
+            String namebase = filename.split(".")[0];
+            String etag = namebase.split("_")[1];
+            if (store.count(CachedPdfImage.class).where(CachedPdfImage.ETAG.eq(etag)).get().value() == 0) {
+                fileStorage.delete(filename);
             }
         }
     }
