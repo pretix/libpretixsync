@@ -735,7 +735,7 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
                 CachedPdfImage.ORDERPOSITION_ID.notIn(store.select(OrderPosition.ID).from(OrderPosition.class))
         );
         for (String filename : fileStorage.listFiles((file, s) -> s.startsWith("pdfimage_"))) {
-            String namebase = filename.split(".")[0];
+            String namebase = filename.split("\\.")[0];
             String etag = namebase.split("_")[1];
             if (store.count(CachedPdfImage.class).where(CachedPdfImage.ETAG.eq(etag)).get().value() == 0) {
                 fileStorage.delete(filename);
