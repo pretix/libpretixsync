@@ -214,12 +214,12 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
             JSONObject pdfdata = jsonobj.getJSONObject("pdf_data");
             if (pdfdata.has("images")) {
                 JSONObject images = pdfdata.getJSONObject("images");
-                updatePdfImages(obj, images);
+                updatePdfImages(obj.getServer_id(), images);
             }
         }
     }
 
-    private void updatePdfImages(OrderPosition op, JSONObject images) {
+    private void updatePdfImages(Long serverId, JSONObject images) {
         Set<String> seen_etags = new HashSet<>();
         for (Iterator it = images.keys(); it.hasNext(); ) {
             String k = (String) it.next();
@@ -255,12 +255,12 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
                     fileStorage.delete(local_filename);
                 }
             }
-            CachedPdfImage cpi = store.select(CachedPdfImage.class).where(CachedPdfImage.ORDERPOSITION_ID.eq(op.getId())).and(CachedPdfImage.KEY.eq(k)).get().firstOrNull();
+            CachedPdfImage cpi = store.select(CachedPdfImage.class).where(CachedPdfImage.ORDERPOSITION_ID.eq(serverId)).and(CachedPdfImage.KEY.eq(k)).get().firstOrNull();
             if (cpi == null) {
                 cpi = new CachedPdfImage();
                 cpi.setEtag(etag);
                 cpi.setKey(k);
-                cpi.setOrderposition_id(op.getId());
+                cpi.setOrderposition_id(serverId);
                 store.insert(cpi);
             } else {
                 cpi.setEtag(etag);
@@ -269,7 +269,7 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
         }
 
         store.delete(CachedPdfImage.class).where(
-                CachedPdfImage.ORDERPOSITION_ID.eq(op.getId()).and(
+                CachedPdfImage.ORDERPOSITION_ID.eq(serverId).and(
                         CachedPdfImage.ETAG.notIn(seen_etags)
                 )
         );
@@ -732,7 +732,7 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
 
     public void deleteOldPdfImages() {
         store.delete(CachedPdfImage.class).where(
-                CachedPdfImage.ORDERPOSITION_ID.notIn(store.select(OrderPosition.ID).from(OrderPosition.class))
+                CachedPdfImage.ORDERPOSITION_ID.notIn(store.select(OrderPosition.SERVER_ID).from(OrderPosition.class))
         );
         for (String filename : fileStorage.listFiles((file, s) -> s.startsWith("pdfimage_"))) {
             String namebase = filename.split("\\.")[0];
