@@ -88,30 +88,30 @@ open class PretixApi(url: String, key: String, orgaSlug: String, eventSlug: Stri
         }
     }
 
-    fun apiURL(suffix: String): String? {
+    fun apiURL(suffix: String): String {
         return try {
             URL(URL(url), "/api/v1/$suffix").toString()
         } catch (e: MalformedURLException) {
             e.printStackTrace()
-            null
+            ""
         }
     }
 
-    fun organizerResourceUrl(resource: String): String? {
+    fun organizerResourceUrl(resource: String): String {
         return try {
             URL(URL(url), "/api/v1/organizers/$orgaSlug/$resource/").toString()
         } catch (e: MalformedURLException) {
             e.printStackTrace()
-            null
+            ""
         }
     }
 
-    fun eventResourceUrl(resource: String): String? {
+    fun eventResourceUrl(resource: String): String {
         return try {
             URL(URL(url), "/api/v1/organizers/$orgaSlug/events/$eventSlug/$resource/").toString()
         } catch (e: MalformedURLException) {
             e.printStackTrace()
-            null
+            ""
         }
     }
 
