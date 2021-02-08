@@ -218,7 +218,7 @@ public class Migrations {
             updateVersionTable(c, 62);
         }
         if (db_version < 63) {
-            execIgnore(c, "ALTER TABLE CheckIn ADD chosen_cart_id TEXT NULL;", "duplicate column name");
+            execIgnore(c, "ALTER TABLE Receipt ADD chosen_cart_id TEXT NULL;", "duplicate column name");
             updateVersionTable(c, 63);
         }
         if (db_version < 64) {
