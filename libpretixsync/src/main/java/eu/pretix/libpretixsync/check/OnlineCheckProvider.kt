@@ -48,7 +48,7 @@ class OnlineCheckProvider(private val config: ConfigStore, httpClientFactory: Ht
             if (responseObj.response.code == 404) {
                 res.type = TicketCheckProvider.CheckResult.Type.INVALID
             } else {
-                val response = responseObj.data
+                val response = responseObj.data!!
                 val status = response.getString("status")
                 if ("ok" == status) {
                     res.type = TicketCheckProvider.CheckResult.Type.VALID
@@ -138,7 +138,7 @@ class OnlineCheckProvider(private val config: ConfigStore, httpClientFactory: Ht
         sentry.addBreadcrumb("provider.search", "started")
         return try {
             val response = api.search(listId, query, page)
-            val resdata = response.data.getJSONArray("results")
+            val resdata = response.data!!.getJSONArray("results")
             val results: MutableList<TicketCheckProvider.SearchResult> = ArrayList()
             for (i in 0 until resdata.length()) {
                 val res = resdata.getJSONObject(i)
@@ -190,7 +190,7 @@ class OnlineCheckProvider(private val config: ConfigStore, httpClientFactory: Ht
         sentry.addBreadcrumb("provider.status", "started")
         return try {
             val response = api.status(listId)
-            val r = parseStatusResponse(response.data)
+            val r = parseStatusResponse(response.data!!)
 
             val list = dataStore.select(CheckInList::class.java)
                     .where(CheckInList.SERVER_ID.eq(listId))

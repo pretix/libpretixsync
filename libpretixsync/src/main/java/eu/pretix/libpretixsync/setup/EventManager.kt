@@ -24,14 +24,14 @@ class EventManager(private val store: BlockingEntityStore<Persistable>, private 
         if (resp_events.response.code != 200) {
             throw IOException()
         }
-        var events = parseEvents(resp_events.data)
+        var events = parseEvents(resp_events.data!!)
 
         val resp_subevents = api.fetchResource(api.organizerResourceUrl("subevents")
                 + "?ends_after=$oneDayAgo" + if (require_live) "&active=true&event__live=true" else "")
         if (resp_subevents.response.code != 200) {
             throw IOException()
         }
-        events += parseEvents(resp_subevents.data, subevents=true)
+        events += parseEvents(resp_subevents.data!!, subevents=true)
 
         return events.sortedBy {
             return@sortedBy it.date_from
@@ -60,7 +60,7 @@ class EventManager(private val store: BlockingEntityStore<Persistable>, private 
                         if (event == null) {
                             api.eventSlug = eventSlug
                             try {
-                                event = api.fetchResource(api.organizerResourceUrl("events/" + eventSlug))
+                                event = api.fetchResource(api.organizerResourceUrl("events/" + eventSlug)!!)
 
                                 if (event.response.code != 200) {
                                     throw IOException()
@@ -71,7 +71,7 @@ class EventManager(private val store: BlockingEntityStore<Persistable>, private 
                             }
                         }
 
-                        event!!.data.getBoolean("live") && json.getBoolean("active")
+                        event!!.data!!.getBoolean("live") && json.getBoolean("active")
                     } else if (require_live) { true } else {
                         json.getBoolean("live")
                     }))
@@ -84,7 +84,7 @@ class EventManager(private val store: BlockingEntityStore<Persistable>, private 
             if (resp.response.code != 200) {
                 throw IOException()
             }
-            return events + parseEvents(resp.data, subevents, depth + 1)
+            return events + parseEvents(resp.data!!, subevents, depth + 1)
         } else {
             return events
         }
