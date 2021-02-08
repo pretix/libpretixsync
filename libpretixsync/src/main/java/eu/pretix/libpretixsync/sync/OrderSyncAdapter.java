@@ -219,7 +219,7 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
         }
     }
 
-    private void updatePdfImages(Long serverId, JSONObject images) {
+    public void updatePdfImages(Long serverId, JSONObject images) {
         Set<String> seen_etags = new HashSet<>();
         for (Iterator it = images.keys(); it.hasNext(); ) {
             String k = (String) it.next();

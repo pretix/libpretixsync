@@ -328,6 +328,11 @@ public class SyncManager {
                 dataStore.delete(OrderPosition.class).get().value();
                 dataStore.delete(Order.class).get().value();
                 dataStore.delete(ResourceLastModified.class).where(ResourceLastModified.RESOURCE.like("order%")).get().value();
+                OrderSyncAdapter osa = new OrderSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), configStore.getSubEventId(), with_pdf_data, false, api, feedback);
+                if ((System.currentTimeMillis() - configStore.getLastCleanup()) > 3600 * 1000 * 12) {
+                    osa.deleteOldPdfImages();
+                    configStore.setLastCleanup(System.currentTimeMillis());
+                }
             }
             if (profile == Profile.PRETIXPOS) {
                 // We don't need these on pretixSCAN, so we can save some traffic

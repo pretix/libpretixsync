@@ -3,7 +3,6 @@ package eu.pretix.libpretixsync.check
 import eu.pretix.libpretixsync.DummySentryImplementation
 import eu.pretix.libpretixsync.SentryInterface
 import eu.pretix.libpretixsync.api.ApiException
-import eu.pretix.libpretixsync.api.DefaultHttpClientFactory
 import eu.pretix.libpretixsync.api.HttpClientFactory
 import eu.pretix.libpretixsync.api.PretixApi
 import eu.pretix.libpretixsync.config.ConfigStore
@@ -11,14 +10,17 @@ import eu.pretix.libpretixsync.db.Answer
 import eu.pretix.libpretixsync.db.CheckInList
 import eu.pretix.libpretixsync.db.Item
 import eu.pretix.libpretixsync.db.Question
+import eu.pretix.libpretixsync.sync.FileStorage
+import eu.pretix.libpretixsync.sync.OrderSyncAdapter
 import io.requery.BlockingEntityStore
 import io.requery.Persistable
 import org.joda.time.format.ISODateTimeFormat
 import org.json.JSONException
 import org.json.JSONObject
+import java.lang.Exception
 import java.util.*
 
-class OnlineCheckProvider(private val config: ConfigStore, httpClientFactory: HttpClientFactory?, dataStore: BlockingEntityStore<Persistable>, listId: Long) : TicketCheckProvider {
+class OnlineCheckProvider(private val config: ConfigStore, httpClientFactory: HttpClientFactory?, dataStore: BlockingEntityStore<Persistable>, val fileStore: FileStorage, listId: Long) : TicketCheckProvider {
     protected var api: PretixApi
     private var sentry: SentryInterface
     private val dataStore: BlockingEntityStore<Persistable>
@@ -112,6 +114,21 @@ class OnlineCheckProvider(private val config: ConfigStore, httpClientFactory: Ht
                             res.firstScanned = parser.parseDateTime(ci.getString("datetime")).toDate()
                         }
                     }
+
+                    // Images
+                    try {
+                        if (posjson.has("pdf_data")) {
+                            val pdfdata = posjson.getJSONObject("pdf_data")
+                            if (pdfdata.has("images")) {
+                                val images = pdfdata.getJSONObject("images")
+                                OrderSyncAdapter(dataStore, fileStore, config.eventSlug, config.subEventId, true, false, api, null).updatePdfImages(posjson.getLong("id"), images)
+                            }
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        // ignore, we don't want the whole thing to fail because of this
+                    }
+
                 }
                 res.isRequireAttention = response.optBoolean("require_attention", false)
             }
