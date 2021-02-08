@@ -6,11 +6,14 @@ import eu.pretix.libpretixsync.config.ConfigStore
 import eu.pretix.libpretixsync.db.Answer
 import eu.pretix.libpretixsync.db.Question
 import eu.pretix.libpretixsync.db.QueuedCheckIn
+import eu.pretix.libpretixsync.db.ReceiptLine
 import eu.pretix.libpretixsync.utils.NetUtils
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
 import java.io.File
@@ -55,7 +58,18 @@ open class PretixApi(url: String, key: String, orgaSlug: String, eventSlug: Stri
         val answerbody = JSONObject()
         if (answers != null) {
             for (a in answers) {
-                answerbody.put("" + (a.question as Question).getServer_id(), a.value)
+                if (a.value.startsWith("file:///")) {
+                    val fileid = uploadFile(File(a.value.substring(7)), when (a.value.split(".").last()) {
+                        "jpeg", "jpg" -> "image/jpeg".toMediaTypeOrNull()!!
+                        "png" -> "image/png".toMediaTypeOrNull()!!
+                        "gif" -> "image/gif".toMediaTypeOrNull()!!
+                        "pdf" -> "application/pdf".toMediaTypeOrNull()!!
+                        else -> "application/unknown".toMediaTypeOrNull()!!
+                    }, a.value.split("/").last())
+                    answerbody.put("" + (a.question as Question).getServer_id(), fileid)
+                } else {
+                    answerbody.put("" + (a.question as Question).getServer_id(), a.value)
+                }
             }
         }
         body.put("answers", answerbody)
