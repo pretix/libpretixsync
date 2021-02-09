@@ -687,6 +687,9 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
         }
 
         Event e = store.select(Event.class).where(Event.SLUG.eq(slug)).get().firstOrNull();
+        if (e == null) {
+            return null;
+        }
 
         DateTime d = new DateTime(e.getDate_to() != null ? e.getDate_to() : e.getDate_from());
         long v = d.plus(Duration.standardDays(14)).getMillis();
@@ -709,7 +712,7 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
         for (Tuple t : tuples) {
             String slug = t.get(0);
             Long deletionDate = deletionTimeForEvent(slug);
-            if (deletionDate < System.currentTimeMillis()) {
+            if (deletionDate == null || deletionDate < System.currentTimeMillis()) {
                 store.delete(ResourceLastModified.class).where(ResourceLastModified.RESOURCE.like("order%")).and(ResourceLastModified.EVENT_SLUG.eq(slug));
                 while (true) {
                     List<Tuple> ordersToDelete = store.select(Order.ID).where(Order.EVENT_SLUG.eq(slug)).limit(200).get().toList();
