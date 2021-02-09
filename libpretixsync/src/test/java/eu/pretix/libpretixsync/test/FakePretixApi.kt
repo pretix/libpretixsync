@@ -32,7 +32,7 @@ class FakePretixApi : PretixApi("http://1.1.1.1/", "a", "demo", "demo", 1, Defau
     var lastRequestUrl: String? = null
     var lastRequestBody: JSONObject? = null
 
-    override fun redeem(secret: String?, datetime: Date?, force: Boolean, nonce: String?, answers: MutableList<Answer>?, listId: Long?, ignore_unpaid: Boolean, pdf_data: Boolean, type: String?): ApiResponse {
+    override fun redeem(secret: String, datetime: Date?, force: Boolean, nonce: String?, answers: List<Answer>?, listId: Long, ignore_unpaid: Boolean, pdf_data: Boolean, type: String?): ApiResponse {
         redeemRequestSecret = secret
         redeemRequestDatetime = datetime
         redeemRequestForce = force
@@ -44,48 +44,48 @@ class FakePretixApi : PretixApi("http://1.1.1.1/", "a", "demo", "demo", 1, Defau
         return redeemResponses.removeAt(0)()
     }
 
-    override fun status(listId: Long?): ApiResponse {
+    override fun status(listId: Long): ApiResponse {
         statusRequestListId = listId
         return statusResponses.removeAt(0)()
     }
 
-    override fun search(listId: Long?, query: String?, page: Int): ApiResponse {
+    override fun search(listId: Long, query: String?, page: Int): ApiResponse {
         searchRequestListId = listId
         searchRequestQuery = query
         return searchResponses.removeAt(0)()
     }
 
-    override fun deleteResource(full_url: String?): ApiResponse {
+    override fun deleteResource(full_url: String): ApiResponse {
         lastRequestUrl = full_url
         lastRequestBody = null
         return deleteResponses.removeAt(0)()
     }
 
-    override fun postResource(full_url: String?, data: JSONObject?): ApiResponse {
+    override fun postResource(full_url: String, data: JSONObject): ApiResponse {
         lastRequestUrl = full_url
         lastRequestBody = data
         return postResponses.removeAt(0)()
     }
 
-    override fun fetchResource(full_url: String?, if_modified_since: String?): ApiResponse {
+    override fun fetchResource(full_url: String, if_modified_since: String?): ApiResponse {
         lastRequestUrl = full_url
         lastRequestBody = null
         return fetchResponses.removeAt(0)()
     }
 
-    override fun fetchResource(full_url: String?): ApiResponse {
+    override fun fetchResource(full_url: String): ApiResponse {
         lastRequestUrl = full_url
         lastRequestBody = null
         return fetchResponses.removeAt(0)()
     }
 
-    override fun downloadFile(full_url: String?): ApiResponse {
+    override fun downloadFile(full_url: String): ApiResponse? {
         lastRequestUrl = full_url
         lastRequestBody = null
         return downloadResponses.removeAt(0)()
     }
 
-    override fun uploadFile(file: File?, mediaType: MediaType?, filename: String?): String {
+    override fun uploadFile(file: File, mediaType: MediaType, filename: String): String {
         return "file:abcd"
     }
 }
