@@ -25,9 +25,9 @@ import java.net.URLEncoder
 import java.util.*
 import javax.net.ssl.SSLException
 
-open class PretixApi(url: String, key: String, orgaSlug: String, eventSlug: String, version: Int, httpClientFactory: HttpClientFactory) {
+open class PretixApi(url: String, key: String, orgaSlug: String, eventSlug: String?, version: Int, httpClientFactory: HttpClientFactory) {
     private val url: String
-    public var eventSlug: String
+    public var eventSlug: String?
     private val orgaSlug: String
     private val key: String
     private val version: Int
@@ -122,7 +122,7 @@ open class PretixApi(url: String, key: String, orgaSlug: String, eventSlug: Stri
 
     fun eventResourceUrl(resource: String): String {
         return try {
-            URL(URL(url), "/api/v1/organizers/$orgaSlug/events/$eventSlug/$resource/").toString()
+            URL(URL(url), "/api/v1/organizers/$orgaSlug/events/${eventSlug!!}/$resource/").toString()
         } catch (e: MalformedURLException) {
             e.printStackTrace()
             ""
