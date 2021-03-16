@@ -299,9 +299,9 @@ public class SyncManager {
                 download(new TaxRuleSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
                 download(new TicketLayoutSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
             }
+            download(new BadgeLayoutSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
             if (profile == Profile.PRETIXSCAN || profile == Profile.PRETIXSCAN_ONLINE) {
                 // We don't need these on pretixPOS, so we can save some traffic
-                download(new BadgeLayoutSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
                 download(new CheckInListSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), configStore.getSubEventId(), api, feedback));
                 try {
                     download(new RevokedTicketSecretSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
