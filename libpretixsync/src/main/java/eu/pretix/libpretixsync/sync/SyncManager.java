@@ -300,6 +300,11 @@ public class SyncManager {
                 download(new TicketLayoutSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
             }
             download(new BadgeLayoutSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
+            try {
+                download(new BadgeLayoutItemSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
+            } catch (ApiException e) {
+                // ignore, this is only supported from pretix 2.5. We have legacy code in BadgeLayoutSyncAdapter to fall back to
+            }
             if (profile == Profile.PRETIXSCAN || profile == Profile.PRETIXSCAN_ONLINE) {
                 // We don't need these on pretixPOS, so we can save some traffic
                 download(new CheckInListSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), configStore.getSubEventId(), api, feedback));
@@ -307,11 +312,6 @@ public class SyncManager {
                     download(new RevokedTicketSecretSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
                 } catch (NotFoundApiException e) {
                     // ignore, this is only supported from pretix 3.12.
-                }
-                try {
-                    download(new BadgeLayoutItemSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
-                } catch (ApiException e) {
-                    // ignore, this is only supported from pretix 2.5. We have legacy code in BadgeLayoutSyncAdapter to fall back to
                 }
             }
             if (profile == Profile.PRETIXSCAN && !skip_orders) {
