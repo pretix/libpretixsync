@@ -697,14 +697,14 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
         return v;
     }
 
-    public void deleteOldEvents() {
+    public void deleteOldEvents(List<String> keepSlugs) {
         if (feedback != null) {
             feedback.postFeedback("Deleting " + getResourceName() + " of old events…");
         }
 
         List<Tuple> tuples = store.select(Order.EVENT_SLUG)
                 .from(Order.class)
-                .where(Order.EVENT_SLUG.ne(eventSlug))
+                .where(Order.EVENT_SLUG.notIn(keepSlugs))
                 .groupBy(Order.EVENT_SLUG)
                 .orderBy(Order.EVENT_SLUG)
                 .get().toList();

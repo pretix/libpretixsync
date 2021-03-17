@@ -51,6 +51,7 @@ public class SyncManager {
     private String hardware_model;
     private String software_brand;
     private String software_version;
+    public List<String> keepSlugs;
 
     public class CanceledState {
         private boolean canceled = false;
@@ -112,6 +113,8 @@ public class SyncManager {
         this.hardware_model = hardware_model;
         this.software_brand = software_brand;
         this.software_version = software_version;
+        this.keepSlugs = new ArrayList<>();
+        this.keepSlugs.add(configStore.getEventSlug());
     }
 
     public SyncResult sync(boolean force) throws EventSwitchRequested {
@@ -335,7 +338,7 @@ public class SyncManager {
                 download(osa);
                 if ((System.currentTimeMillis() - configStore.getLastCleanup()) > 3600 * 1000 * 12) {
                     osa.deleteOldSubevents();
-                    osa.deleteOldEvents();
+                    osa.deleteOldEvents(keepSlugs);
                     osa.deleteOldPdfImages();
                     configStore.setLastCleanup(System.currentTimeMillis());
                 }
