@@ -95,7 +95,7 @@ public class AllSubEventsSyncAdapter extends BaseDownloadSyncAdapter<SubEvent, L
 
     @Override
     protected String getUrl() {
-        return api.eventResourceUrl(getResourceName());
+        return api.organizerResourceUrl(getResourceName());
     }
 
     @Override
