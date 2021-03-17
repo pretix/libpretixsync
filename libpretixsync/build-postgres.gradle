@@ -1,5 +1,5 @@
 buildscript {
-    ext.kotlin_version = '1.3.50'
+    ext.kotlin_version = '1.3.72'
 
     repositories {
         google()
@@ -40,6 +40,21 @@ buildConfig {
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
+
+configurations {
+    // https://github.com/gradle/gradle/issues/12126
+    // https://github.com/google/protobuf-gradle-plugin/issues/391
+    testCompileProtoPath {
+        attributes {
+            attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(Usage, Usage.JAVA_API))
+        }
+    }
+    compileProtoPath {
+        attributes {
+            attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(Usage, Usage.JAVA_API))
+        }
+    }
+}
 
 repositories {
     mavenCentral()
@@ -101,9 +116,9 @@ dependencies {
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.10.1'
     implementation 'com.fasterxml.jackson.module:jackson-module-kotlin:2.10.1'
 
-    annotationProcessor 'io.requery:requery-processor:1.6.0'
-    kapt 'io.requery:requery-processor:1.6.0'
-    annotationProcessor 'javax.annotation:jsr250-api:1.0'
+    implementation 'commons-codec:commons-codec:1.15'
+    implementation 'net.i2p.crypto:eddsa:0.3.0'
+    implementation 'com.google.protobuf:protobuf-lite:3.0.0'
 
     annotationProcessor 'io.requery:requery-processor:1.6.0'
     kapt 'io.requery:requery-processor:1.6.0'

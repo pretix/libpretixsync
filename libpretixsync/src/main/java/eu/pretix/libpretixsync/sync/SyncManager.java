@@ -118,6 +118,22 @@ public class SyncManager {
         return sync(force, null, null);
     }
 
+
+    public SyncResult sync(boolean force, SyncManager.ProgressFeedback feedback) {
+        if (!configStore.isConfigured()) {
+            return new SyncResult(false, false);
+        }
+        if (configStore.getAutoSwitchRequested()) {
+            throw new RuntimeException("Invalid call: If auto switch is requested, a list ID needs to be supplied");
+        }
+        try {
+            return this.sync(force, -1L, feedback);
+        } catch (EventSwitchRequested eventSwitchRequested) {
+            // can't happen
+            throw new RuntimeException("Invalid call: If auto switch is requested, a list ID needs to be supplied");
+        }
+    }
+
     /**
      * Synchronize data with the pretix server
      *
