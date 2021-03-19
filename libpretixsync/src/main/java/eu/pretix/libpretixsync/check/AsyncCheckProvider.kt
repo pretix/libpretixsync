@@ -543,6 +543,7 @@ class AsyncCheckProvider(private val eventSlug: String, private val dataStore: B
                 sentry.captureException(e)
             }
             sr.isRequireAttention = require_attention
+            sr.position = position.json
             results.add(sr)
         }
         return results

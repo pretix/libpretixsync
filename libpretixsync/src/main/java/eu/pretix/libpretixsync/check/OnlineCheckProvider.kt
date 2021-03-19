@@ -190,6 +190,7 @@ class OnlineCheckProvider(private val config: ConfigStore, httpClientFactory: Ht
                     sr.status = TicketCheckProvider.SearchResult.Status.CANCELED
                 }
                 sr.isRequireAttention = res.optBoolean("require_attention", false)
+                sr.position = res
                 results.add(sr)
             }
             results

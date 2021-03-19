@@ -66,6 +66,7 @@ interface TicketCheckProvider {
         var status: Status? = null
         var isRedeemed = false
         var isRequireAttention = false
+        var position: JSONObject? = null
 
         constructor() {}
         constructor(r: SearchResult) {
@@ -79,6 +80,7 @@ interface TicketCheckProvider {
             isRedeemed = r.isRedeemed
             isRequireAttention = r.isRequireAttention
             addonText = r.addonText
+            position = r.position
         }
 
     }
