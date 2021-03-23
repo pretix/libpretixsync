@@ -1,17 +1,18 @@
 package eu.pretix.libpretixsync.crypto
 
 
+import eu.pretix.libpretixsync.utils.codec.binary.Base64.decodeBase64
 import net.i2p.crypto.eddsa.EdDSAEngine
 import net.i2p.crypto.eddsa.EdDSAPublicKey
 import net.i2p.crypto.eddsa.spec.EdDSANamedCurveTable
 import net.i2p.crypto.eddsa.spec.EdDSAPublicKeySpec
-import org.apache.commons.codec.binary.Base64.decodeBase64
+import java.nio.charset.Charset
 
 fun readPubkeyFromPem(pem: String): EdDSAPublicKey {
     val keySpecs = EdDSANamedCurveTable.getByName(EdDSANamedCurveTable.ED_25519);
     var pubKeyPEM: String = pem.replace("-----BEGIN PUBLIC KEY-----\n", "")
     pubKeyPEM = pubKeyPEM.replace("-----END PUBLIC KEY-----", "")
-    val asn1Bytes = decodeBase64(pubKeyPEM.trim())
+    val asn1Bytes = decodeBase64(pubKeyPEM.trim().toByteArray(Charset.defaultCharset()))
     // asn1Bytes is in ASN.1 format and contains the structure SubjectPublicKeyInfo defined in
     // RFC 3280. However, since we know what algorithm is used, let's take a very stupid approach
     // to parsing, for now.

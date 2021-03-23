@@ -6,6 +6,7 @@ import eu.pretix.libpretixsync.crypto.isValidSignature
 import eu.pretix.libpretixsync.crypto.readPubkeyFromPem
 import eu.pretix.libpretixsync.crypto.sig1.TicketProtos
 import eu.pretix.libpretixsync.db.*
+import eu.pretix.libpretixsync.utils.codec.binary.Base64.decodeBase64
 import eu.pretix.libpretixsync.utils.logic.JsonLogic
 import eu.pretix.libpretixsync.utils.logic.truthy
 import io.requery.BlockingEntityStore
@@ -14,7 +15,6 @@ import io.requery.query.Condition
 import io.requery.query.Result
 import io.requery.query.Scalar
 import io.requery.query.WhereAndOr
-import org.apache.commons.codec.binary.Base64
 import org.joda.time.DateTime
 import org.joda.time.DateTimeZone
 import org.joda.time.format.ISODateTimeFormat
@@ -100,7 +100,7 @@ class AsyncCheckProvider(private val eventSlug: String, private val dataStore: B
     private fun decodePretixSig1(qrcode: String): SignedTicketData? {
         val rawbytes: ByteArray
         try {
-            rawbytes = Base64.decodeBase64(qrcode.reversed())
+            rawbytes = decodeBase64(qrcode.reversed().toByteArray(Charset.defaultCharset()))
         } catch (e: Exception) {
             return null
         }
@@ -116,7 +116,7 @@ class AsyncCheckProvider(private val eventSlug: String, private val dataStore: B
         val validKeys = event.validKeys?.optJSONArray("pretix_sig1") ?: return null
         for (vki in 0 until validKeys.length()) {
             val vk = validKeys.getString(vki)
-            if (isValidSignature(payload, signature, readPubkeyFromPem(Base64.decodeBase64(vk).toString(Charset.defaultCharset())))) {
+            if (isValidSignature(payload, signature, readPubkeyFromPem(decodeBase64(vk.toByteArray(Charset.defaultCharset())).toString(Charset.defaultCharset())))) {
                 val ticket = TicketProtos.Ticket.parseFrom(payload)
                 return SignedTicketData(
                         ticket.seed,
