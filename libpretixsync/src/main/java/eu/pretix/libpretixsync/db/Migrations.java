@@ -14,7 +14,7 @@ import io.requery.sql.TableCreationMode;
 
 public class Migrations {
     private static EntityModel model = Models.DEFAULT;
-    public static int CURRENT_VERSION = 64;
+    public static int CURRENT_VERSION = 65;
 
     private static void createVersionTable(Connection c, int version) throws SQLException {
         Statement s2 = c.createStatement();
@@ -222,6 +222,10 @@ public class Migrations {
             updateVersionTable(c, 63);
         }
         if (db_version < 64) {
+            create_notexists(dataSource);
+            updateVersionTable(c, 64);
+        }
+        if (db_version < 65) {
             create_notexists(dataSource);
             updateVersionTable(c, 64);
         }

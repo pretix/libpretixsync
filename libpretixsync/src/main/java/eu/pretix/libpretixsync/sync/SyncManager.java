@@ -317,6 +317,12 @@ public class SyncManager {
                 download(new QuotaSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
                 download(new TaxRuleSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
                 download(new TicketLayoutSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
+
+                try {
+                    download(new CashierSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
+                } catch (NotFoundApiException e) {
+                    // ignore, this is only supported from a later pretixpos-backend version
+                }
             }
             download(new BadgeLayoutSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
             try {
