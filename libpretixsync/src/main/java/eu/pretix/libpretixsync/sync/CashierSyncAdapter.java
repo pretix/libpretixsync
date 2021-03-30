@@ -31,13 +31,13 @@ public class CashierSyncAdapter extends BaseConditionalSyncAdapter<Cashier, Long
     @Override
     public CloseableIterator<Cashier> runBatch(List<Long> ids) {
         return store.select(Cashier.class)
-                .where(ItemCategory.SERVER_ID.in(ids))
+                .where(Cashier.SERVER_ID.in(ids))
                 .get().iterator();
     }
 
     @Override
     CloseableIterator<Tuple> getKnownIDsIterator() {
-        return store.select(ItemCategory.SERVER_ID)
+        return store.select(Cashier.SERVER_ID)
                 .get().iterator();
     }
 

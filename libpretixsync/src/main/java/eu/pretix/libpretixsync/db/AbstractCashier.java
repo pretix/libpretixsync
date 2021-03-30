@@ -23,6 +23,7 @@ public class AbstractCashier implements RemoteObject, CashierLike {
 
     public String pin;
 
+    @Column(value = "0", nullable = false)
     public boolean active;
 
     @Column(definition = "TEXT")
