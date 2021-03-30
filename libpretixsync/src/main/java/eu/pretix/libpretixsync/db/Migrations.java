@@ -14,7 +14,7 @@ import io.requery.sql.TableCreationMode;
 
 public class Migrations {
     private static EntityModel model = Models.DEFAULT;
-    public static int CURRENT_VERSION = 65;
+    public static int CURRENT_VERSION = 66;
 
     private static void createVersionTable(Connection c, int version) throws SQLException {
         Statement s2 = c.createStatement();
@@ -228,6 +228,10 @@ public class Migrations {
         if (db_version < 65) {
             create_notexists(dataSource);
             updateVersionTable(c, 64);
+        }
+        if (db_version < 66) {
+            execIgnore(c, "ALTER TABLE Cashier ADD active NUMBER DEFAULT(0);", "duplicate column name");
+            updateVersionTable(c, 66);
         }
 
         // Note that the Android app currently does not use these queries!

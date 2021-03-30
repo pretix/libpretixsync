@@ -10,7 +10,7 @@ import io.requery.Generated;
 import io.requery.Key;
 
 @Entity(cacheable = false)
-public class AbstractCashier implements RemoteObject {
+public class AbstractCashier implements RemoteObject, CashierLike {
     @Generated
     @Key
     public Long id;
@@ -23,6 +23,8 @@ public class AbstractCashier implements RemoteObject {
 
     public String pin;
 
+    public boolean active;
+
     @Column(definition = "TEXT")
     public String json_data;
 
@@ -31,11 +33,19 @@ public class AbstractCashier implements RemoteObject {
         return new JSONObject(json_data);
     }
 
-    private boolean checkPIN(String pin) {
+    @Override
+    public boolean checkPIN(String pin) {
+        if (!this.active) {
+            return false;
+        }
         return this.pin.equals(pin);
     }
 
+    @Override
     public boolean validOnDevice(String device) {
+        if (!this.active) {
+            return false;
+        }
         try {
             JSONObject team = getJSON().getJSONObject("team");
             if (team.optBoolean("all_devices", false)) {
@@ -54,12 +64,31 @@ public class AbstractCashier implements RemoteObject {
         }
     }
 
+    @Override
     public boolean hasPermission(String permission) {
+        if (!this.active) {
+            return false;
+        }
         try {
             JSONObject team = getJSON().getJSONObject("team");
             return team.optBoolean(permission, false);
         } catch (JSONException e) {
             return false;
         }
+    }
+
+    @Override
+    public String getName() {
+        return this.name;
+    }
+
+    @Override
+    public long getNumericId() {
+        return this.server_id;
+    }
+
+    @Override
+    public String getUserId() {
+        return this.userid;
     }
 }
