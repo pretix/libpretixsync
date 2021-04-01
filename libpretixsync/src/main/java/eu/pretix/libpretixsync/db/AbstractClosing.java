@@ -29,6 +29,12 @@ public class AbstractClosing implements LocalObject {
 
     public boolean open;
 
+    public Long cashier_numericid;
+
+    public String cashier_userid;
+
+    public String cashier_name;
+
     @Nullable
     public Long first_receipt;
 
@@ -76,6 +82,7 @@ public class AbstractClosing implements LocalObject {
         jo.put("cash_counted", cash_counted);
         jo.put("datetime", df.format(datetime));
         jo.put("invoice_settings", invoice_settings);
+        jo.put("cashier", cashier_numericid);
         jo.put("data", json_data != null ? new JSONObject(json_data) : new JSONObject());
         return jo;
     }

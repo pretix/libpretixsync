@@ -68,6 +68,12 @@ public class AbstractReceipt implements LocalObject {
     @ManyToOne
     public Closing closing;
 
+    public Long cashier_numericid;
+
+    public String cashier_userid;
+
+    public String cashier_name;
+
     public boolean canceled;
 
     @Column(value = BuildConfig.BOOLEAN_FALSE)
@@ -105,6 +111,7 @@ public class AbstractReceipt implements LocalObject {
         jo.put("fiscalisation_data", fiscalisation_data == null || fiscalisation_data.equals("null") || fiscalisation_data.isEmpty() ? new JSONObject() : new JSONObject(fiscalisation_data));
         jo.put("fiscalisation_text", fiscalisation_text == null || fiscalisation_text.equals("null") || fiscalisation_text.isEmpty() ? "" : fiscalisation_text);
         jo.put("fiscalisation_qr", fiscalisation_qr == null || fiscalisation_qr.equals("null") || fiscalisation_qr.isEmpty() ? "" : fiscalisation_qr);
+        jo.put("cashier", cashier_numericid);
         return jo;
     }
 }
