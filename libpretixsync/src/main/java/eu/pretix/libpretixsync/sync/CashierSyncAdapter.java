@@ -23,7 +23,7 @@ public class CashierSyncAdapter extends BaseConditionalSyncAdapter<Cashier, Long
         obj.setServer_id(jsonobj.getLong("id"));
         obj.setName(jsonobj.getString("name"));
         obj.setUserid(jsonobj.getString("userid"));
-        obj.setPin(jsonobj.getString("pin"));
+        obj.setPin(jsonobj.isNull("pin") ? "" : jsonobj.getString("pin"));
         obj.setJson_data(jsonobj.toString());
         obj.setActive(jsonobj.getBoolean("active"));
     }
