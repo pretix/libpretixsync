@@ -14,8 +14,9 @@ import io.requery.query.Tuple;
 import io.requery.util.CloseableIterator;
 
 public class CashierSyncAdapter extends BaseConditionalSyncAdapter<Cashier, Long> {
-    public CashierSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, PretixApi api, SyncManager.ProgressFeedback feedback) {
-        super(store, fileStorage, eventSlug, api, feedback);
+    public CashierSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, PretixApi api, SyncManager.ProgressFeedback feedback) {
+        // we don't really care about the event slug, let's keep the cache together
+        super(store, fileStorage, "__all__", api, feedback);
     }
 
     @Override

@@ -308,6 +308,16 @@ public class SyncManager {
             }
 
 
+            if (profile == Profile.PRETIXPOS) {
+                try {
+                    download(new CashierSyncAdapter(dataStore, fileStorage, api, feedback));
+                } catch (NotFoundApiException e) {
+                    // ignore, this is only supported from a later pretixpos-backend version
+                }
+                if (configStore.getEventSlug() == null) {
+                    return;
+                }
+            }
             download(new EventSyncAdapter(dataStore, configStore.getEventSlug(), configStore.getEventSlug(), api, feedback));
             download(new AllSubEventsSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
             download(new ItemCategorySyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
@@ -317,12 +327,6 @@ public class SyncManager {
                 download(new QuotaSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
                 download(new TaxRuleSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
                 download(new TicketLayoutSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
-
-                try {
-                    download(new CashierSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
-                } catch (NotFoundApiException e) {
-                    // ignore, this is only supported from a later pretixpos-backend version
-                }
             }
             download(new BadgeLayoutSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
             try {
