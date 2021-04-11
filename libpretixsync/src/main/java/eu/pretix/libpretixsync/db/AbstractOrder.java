@@ -36,6 +36,15 @@ public class AbstractOrder implements RemoteObject {
     @OneToMany
     public List<OrderPosition> positions;
 
+    public boolean isTestmode() {
+        try {
+            return getJSON().getBoolean("testmode");
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
     public String getPaymentProvider() {
         try {
             return getJSON().getString("payment_provider");

@@ -84,6 +84,9 @@ public class AbstractReceipt implements LocalObject {
     @Column(nullable = false, value = BuildConfig.BOOLEAN_FALSE)
     public boolean printed;
 
+    @Column(nullable = false, value = BuildConfig.BOOLEAN_FALSE)
+    public boolean training;
+
     @OneToMany
     public List<QueuedOrder> queuedorders;
 
@@ -112,6 +115,7 @@ public class AbstractReceipt implements LocalObject {
         jo.put("fiscalisation_text", fiscalisation_text == null || fiscalisation_text.equals("null") || fiscalisation_text.isEmpty() ? "" : fiscalisation_text);
         jo.put("fiscalisation_qr", fiscalisation_qr == null || fiscalisation_qr.equals("null") || fiscalisation_qr.isEmpty() ? "" : fiscalisation_qr);
         jo.put("cashier", cashier_numericid);
+        jo.put("training", training);
         return jo;
     }
 }

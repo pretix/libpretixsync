@@ -14,7 +14,7 @@ import io.requery.sql.TableCreationMode;
 
 public class Migrations {
     private static EntityModel model = Models.DEFAULT;
-    public static int CURRENT_VERSION = 67;
+    public static int CURRENT_VERSION = 68;
 
     private static void createVersionTable(Connection c, int version) throws SQLException {
         Statement s2 = c.createStatement();
@@ -241,6 +241,10 @@ public class Migrations {
             execIgnore(c, "ALTER TABLE Closing ADD cashier_userid TEXT NULL;", "duplicate column name");
             execIgnore(c, "ALTER TABLE Closing ADD cashier_name TEXT NULL;", "duplicate column name");
             updateVersionTable(c, 67);
+        }
+        if (db_version < 68) {
+            execIgnore(c, "ALTER TABLE Receipt ADD training NUMBER DEFAULT(0);", "duplicate column name");
+            updateVersionTable(c, 68);
         }
 
         // Note that the Android app currently does not use these queries!
