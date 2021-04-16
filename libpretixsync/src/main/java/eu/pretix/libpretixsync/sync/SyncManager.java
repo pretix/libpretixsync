@@ -6,6 +6,7 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.ExecutionException;
 
 import eu.pretix.libpretixsync.SentryInterface;
@@ -22,6 +23,7 @@ import eu.pretix.libpretixsync.db.Closing;
 import eu.pretix.libpretixsync.db.Order;
 import eu.pretix.libpretixsync.db.OrderPosition;
 import eu.pretix.libpretixsync.db.Question;
+import eu.pretix.libpretixsync.db.QueuedCall;
 import eu.pretix.libpretixsync.db.QueuedCheckIn;
 import eu.pretix.libpretixsync.db.QueuedOrder;
 import eu.pretix.libpretixsync.db.Receipt;
@@ -280,6 +282,8 @@ public class SyncManager {
         if (canceled.isCanceled()) throw new SyncException("Canceled");
         uploadTicketData();
         if (canceled.isCanceled()) throw new SyncException("Canceled");
+        uploadQueuedCalls();
+        if (canceled.isCanceled()) throw new SyncException("Canceled");
         uploadReceipts();
         if (canceled.isCanceled()) throw new SyncException("Canceled");
         uploadClosings();
@@ -393,6 +397,40 @@ public class SyncManager {
             sentry.captureException(e);
             throw new SyncException(e.getMessage());
         }
+    }
+
+    protected void uploadQueuedCalls() throws SyncException {
+        sentry.addBreadcrumb("sync.queue", "Start queuedcall upload");
+
+        List<QueuedCall> calls = dataStore.select(QueuedCall.class)
+                .get().toList();
+
+        try {
+            for (QueuedCall call : calls) {
+                PretixApi.ApiResponse response = api.postResource(
+                        call.url,
+                        new JSONObject(call.body),
+                        call.idempotency_key
+                );
+                if (response.getResponse().code() < 500) {
+                    dataStore.delete(call);
+                    if (response.getResponse().code() >= 400) {
+                        sentry.captureException(new ApiException("Received response (" + response.getResponse().code() + ") for queued call: " + response.getData().toString()));
+                        // We ignore 400s, because we can't do something about them
+                    }
+                } else {
+                    throw new SyncException(response.getData().toString());
+                }
+            }
+        } catch (JSONException e) {
+            sentry.captureException(e);
+            throw new SyncException("Unknown server response");
+        } catch (ApiException e) {
+            sentry.addBreadcrumb("sync.queue", "API Error: " + e.getMessage());
+            throw new SyncException(e.getMessage());
+        }
+
+        sentry.addBreadcrumb("sync.queue", "Receipt upload complete");
     }
 
     protected void uploadReceipts() throws SyncException {
