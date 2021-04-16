@@ -144,6 +144,28 @@ open class PretixApi(url: String, key: String, orgaSlug: String, eventSlug: Stri
     }
 
     @Throws(ApiException::class)
+    open fun patchResource(full_url: String, data: JSONObject): ApiResponse {
+        return patchResource(full_url, data, null)
+    }
+
+    @Throws(ApiException::class)
+    fun patchResource(full_url: String?, data: JSONObject, idempotency_key: String?): ApiResponse {
+        var request = Request.Builder()
+                .url(full_url!!)
+                .patch(data.toString().toRequestBody("application/json".toMediaType()))
+                .header("Authorization", "Device $key")
+        if (idempotency_key != null) {
+            request = request.header("X-Idempotency-Key", idempotency_key)
+        }
+        return try {
+            apiCall(request.build())
+        } catch (resourceNotModified: ResourceNotModified) {
+            resourceNotModified.printStackTrace()
+            throw FinalApiException("Resource not modified")
+        }
+    }
+
+    @Throws(ApiException::class)
     open fun postResource(full_url: String, data: JSONObject): ApiResponse {
         return postResource(full_url, data, null)
     }

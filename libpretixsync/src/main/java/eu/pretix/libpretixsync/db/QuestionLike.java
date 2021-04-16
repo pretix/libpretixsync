@@ -55,7 +55,7 @@ public abstract class QuestionLike {
                 throw new ValidationException("Invalid number supplied");
             }
         } else if (type == QuestionType.F) {
-            if (!answer.startsWith("file:///")) {
+            if (!answer.startsWith("file:///") && !answer.startsWith("http")) {
                 throw new ValidationException("Invalid file path supplied");
             }
         } else if (type == QuestionType.EMAIL) {
