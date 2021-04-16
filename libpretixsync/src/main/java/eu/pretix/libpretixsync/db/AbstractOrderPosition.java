@@ -104,6 +104,15 @@ public class AbstractOrderPosition implements RemoteObject {
         return null;
     }
 
+    public boolean hasAnyCheckins() {
+        try {
+            JSONArray checkins = getJSON().optJSONArray("checkins");
+            return checkins.length() > 0;
+        } catch (JSONException e) {
+        }
+        return false;
+    }
+
     public Map<Long, String> getAnswers() {
         try {
             JSONArray arr = getJSON().getJSONArray("answers");
