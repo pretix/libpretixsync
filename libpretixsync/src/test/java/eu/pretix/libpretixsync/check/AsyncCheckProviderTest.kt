@@ -456,7 +456,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
     }
 
     @Test
-    fun testRulesIsAfterCustomTime() {
+    fun testRulesIsAfterCustomDateTime() {
         val p2 = AsyncCheckProvider("demo", dataStore, 2L)
 
         // Ticket is valid unlimited times, but only on two arbitrary days
@@ -467,6 +467,22 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         assertEquals(TicketCheckProvider.CheckResult.Type.RULES, r.type)
 
         p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2020-01-01T22:01:00.000Z"))
+        r = p2.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+    }
+
+    @Test
+    fun testRulesIsAfterCustomTime() {
+        val p2 = AsyncCheckProvider("demo", dataStore, 2L)
+
+        // Ticket is valid unlimited times, but only on two arbitrary days
+        setRuleOnList2("{\"isAfter\": [{\"var\": \"now\"}, {\"buildTime\": [\"customtime\", \"14:00\"]}]}")
+
+        p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2020-01-01T04:50:00.000Z"))
+        var r = p2.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.RULES, r.type)
+
+        p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2020-01-01T05:01:00.000Z"))
         r = p2.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
         assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
     }

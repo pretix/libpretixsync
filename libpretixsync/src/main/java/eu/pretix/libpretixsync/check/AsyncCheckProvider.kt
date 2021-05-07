@@ -17,6 +17,7 @@ import io.requery.query.Scalar
 import io.requery.query.WhereAndOr
 import org.joda.time.DateTime
 import org.joda.time.DateTimeZone
+import org.joda.time.IllegalInstantException
 import org.joda.time.format.ISODateTimeFormat
 import org.json.JSONArray
 import org.json.JSONException
@@ -42,7 +43,7 @@ class AsyncCheckProvider(private val eventSlug: String, private val dataStore: B
         this.sentry = sentry
     }
 
-    private fun initJsonLogic(subeventId: Long): JsonLogic {
+    private fun initJsonLogic(subeventId: Long, tz: DateTimeZone): JsonLogic {
         val jsonLogic = JsonLogic()
         jsonLogic.addOperation("objectList") { l, _ -> l }
         jsonLogic.addOperation("lookup") { l, d -> l?.getOrNull(1) }
@@ -81,6 +82,15 @@ class AsyncCheckProvider(private val eventSlug: String, private val dataStore: B
             }
             if (t == "custom") {
                 ISODateTimeFormat.dateTimeParser().parseDateTime(l.getOrNull(1) as String?)
+            } else if (t == "customtime") {
+                val time = ISODateTimeFormat.timeParser().parseLocalTime(l.getOrNull(1) as String?)
+                val today = DateTime(now()).withZone(tz).toLocalDate()
+                try {
+                    today.toLocalDateTime(time).toDateTime(tz)
+                } catch (e: IllegalInstantException) {
+                    // DST gap, let's rather do something wrong than crash :(
+                    today.toLocalDateTime(time.minusHours(1)).toDateTime(tz)
+                }
             } else if (t == "date_from") {
                 ISODateTimeFormat.dateTimeParser().parseDateTime(evjson.getString("date_from"))
             } else if (t == "date_to") {
@@ -192,9 +202,9 @@ class AsyncCheckProvider(private val eventSlug: String, private val dataStore: B
 
         val rules = list.rules
         if (type == TicketCheckProvider.CheckInType.ENTRY && rules != null && rules.length() > 0) {
-            val jsonLogic = initJsonLogic(decoded.subevent ?: 0)
             val data = mutableMapOf<String, Any>()
             val tz = DateTimeZone.forID(event.getTimezone())
+            val jsonLogic = initJsonLogic(decoded.subevent ?: 0, tz)
             data.put("product", item.getServer_id().toString())
             data.put("variation", if (decoded.variation != null && decoded.variation > 0) {
                 decoded.variation.toString()
@@ -359,9 +369,9 @@ class AsyncCheckProvider(private val eventSlug: String, private val dataStore: B
 
         val rules = list.rules
         if (type == TicketCheckProvider.CheckInType.ENTRY && rules != null && rules.length() > 0) {
-            val jsonLogic = initJsonLogic(position.getSubevent_id())
             val data = mutableMapOf<String, Any>()
             val tz = DateTimeZone.forID(event.getTimezone())
+            val jsonLogic = initJsonLogic(position.getSubevent_id(), tz)
             data.put("product", position.getItem().getServer_id().toString())
             data.put("variation", position.getVariation_id().toString())
             data.put("now", dt)
