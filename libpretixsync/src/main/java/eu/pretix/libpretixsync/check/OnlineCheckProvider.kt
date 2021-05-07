@@ -84,6 +84,9 @@ class OnlineCheckProvider(private val config: ConfigStore, httpClientFactory: Ht
                     } else if ("product" == reason) {
                         res.type = TicketCheckProvider.CheckResult.Type.PRODUCT
                     }
+                    if (response.has("reason_explanation") && !response.isNull("reason_explanation")) {
+                        res.reasonExplanation = response.getString("reason_explanation")
+                    }
                 }
                 if (response.has("position")) {
                     val posjson = response.getJSONObject("position")

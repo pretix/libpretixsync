@@ -35,6 +35,7 @@ interface TicketCheckProvider {
         var orderCode: String? = null
         var firstScanned: Date? = null
         var addonText: String? = null
+        var reasonExplanation: String? = null
         var isRequireAttention = false
         var isCheckinAllowed = false
         var requiredAnswers: List<RequiredAnswer>? = null
