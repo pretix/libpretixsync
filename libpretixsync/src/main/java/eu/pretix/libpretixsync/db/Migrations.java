@@ -234,10 +234,10 @@ public class Migrations {
             updateVersionTable(c, 66);
         }
         if (db_version < 67) {
-            execIgnore(c, "ALTER TABLE Receipt ADD cashier_localid NUMERIC NULL;", "duplicate column name");
+            execIgnore(c, "ALTER TABLE Receipt ADD cashier_numericid NUMERIC NULL;", "duplicate column name");
             execIgnore(c, "ALTER TABLE Receipt ADD cashier_userid TEXT NULL;", "duplicate column name");
             execIgnore(c, "ALTER TABLE Receipt ADD cashier_name TEXT NULL;", "duplicate column name");
-            execIgnore(c, "ALTER TABLE Closing ADD cashier_localid NUMERIC NULL;", "duplicate column name");
+            execIgnore(c, "ALTER TABLE Closing ADD cashier_numericid NUMERIC NULL;", "duplicate column name");
             execIgnore(c, "ALTER TABLE Closing ADD cashier_userid TEXT NULL;", "duplicate column name");
             execIgnore(c, "ALTER TABLE Closing ADD cashier_name TEXT NULL;", "duplicate column name");
             updateVersionTable(c, 67);
