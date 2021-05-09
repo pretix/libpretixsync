@@ -54,6 +54,7 @@ public class SyncManager {
     private String software_brand;
     private String software_version;
     public List<String> keepSlugs;
+    private CheckConnectivityFeedback connectivityFeedback;
 
     public class CanceledState {
         private boolean canceled = false;
@@ -69,6 +70,11 @@ public class SyncManager {
 
     public interface ProgressFeedback {
         public void postFeedback(String current_action);
+    }
+
+    public interface CheckConnectivityFeedback {
+        void recordError();
+        void recordSuccess(Long durationInMillis);
     }
 
     public static class EventSwitchRequested extends Exception {
@@ -98,7 +104,8 @@ public class SyncManager {
             String hardware_brand,
             String hardware_model,
             String software_brand,
-            String software_version
+            String software_version,
+            CheckConnectivityFeedback connectivityFeedback
     ) {
         this.configStore = configStore;
         this.api = api;
@@ -115,6 +122,7 @@ public class SyncManager {
         this.hardware_model = hardware_model;
         this.software_brand = software_brand;
         this.software_version = software_version;
+        this.connectivityFeedback = connectivityFeedback;
         this.keepSlugs = new ArrayList<>();
         this.keepSlugs.add(configStore.getEventSlug());
     }
@@ -492,6 +500,7 @@ public class SyncManager {
                 });
                 try {
                     api.setEventSlug(qo.getEvent_slug());
+                    Long startedAt = System.currentTimeMillis();
                     PretixApi.ApiResponse resp = api.postResource(
                             api.eventResourceUrl("orders") + "?pdf_data=true&force=true",
                             new JSONObject(qo.getPayload()),
@@ -506,6 +515,9 @@ public class SyncManager {
                             (new OrderSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), configStore.getSubEventId(), true, true, api, null)).standaloneRefreshFromJSON(resp.getData());
                             return null;
                         });
+                        if (connectivityFeedback != null) {
+                            connectivityFeedback.recordSuccess(System.currentTimeMillis() - startedAt);
+                        }
                     } else if (resp.getResponse().code() == 400) {
                         // TODO: User feedback or log in some way?
                         qo.setError(resp.getData().toString());
@@ -516,9 +528,15 @@ public class SyncManager {
                 }
             }
         } catch (JSONException e) {
+            if (connectivityFeedback != null) {
+                connectivityFeedback.recordError();
+            }
             sentry.captureException(e);
             throw new SyncException("Unknown server response");
         } catch (ApiException e) {
+            if (connectivityFeedback != null) {
+                connectivityFeedback.recordError();
+            }
             sentry.addBreadcrumb("sync.queue", "API Error: " + e.getMessage());
             throw new SyncException(e.getMessage());
         }
@@ -581,11 +599,15 @@ public class SyncManager {
                 PretixApi.ApiResponse ar;
                 try {
                     api.setEventSlug(qci.getEvent_slug());
+                    Long startedAt = System.currentTimeMillis();
                     if (qci.getDatetime_string() == null || qci.getDatetime_string().equals("")) {
                         // Backwards compatibility
                         ar = api.redeem(qci.getSecret(), qci.getDatetime(), true, qci.getNonce(), answers, qci.checkinListId, false, false, qci.getType());
                     } else {
                         ar = api.redeem(qci.getSecret(), qci.getDatetime_string(), true, qci.getNonce(), answers, qci.checkinListId, false, false, qci.getType());
+                    }
+                    if (connectivityFeedback != null) {
+                        connectivityFeedback.recordSuccess(System.currentTimeMillis() - startedAt);
                     }
                 } finally {
                     api.setEventSlug(configStore.getEventSlug());
@@ -603,11 +625,17 @@ public class SyncManager {
                 }
             }
         } catch (JSONException e) {
+            if (connectivityFeedback != null) {
+                connectivityFeedback.recordError();
+            }
             sentry.captureException(e);
             throw new SyncException("Unknown server response");
         } catch (NotFoundApiException e) {
             // Ticket secret no longer exists, too bad :\
         } catch (ApiException e) {
+            if (connectivityFeedback != null) {
+                connectivityFeedback.recordError();
+            }
             sentry.addBreadcrumb("sync.tickets", "API Error: " + e.getMessage());
             throw new SyncException(e.getMessage());
         }
