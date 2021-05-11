@@ -402,31 +402,33 @@ class AsyncCheckProvider(private val eventSlug: String, private val dataStore: B
         val givenAnswers = JSONArray()
         val required_answers: MutableList<TicketCheckProvider.RequiredAnswer> = ArrayList()
         var ask_questions = false
-        for (q in questions) {
-            if (!q.isAskDuringCheckin) {
-                continue
-            }
-            var answer: String? = ""
-            if (answerMap.containsKey(q.getServer_id())) {
-                answer = answerMap[q.getServer_id()]
-                try {
-                    answer = q.clean_answer(answer, q.options)
-                    val jo = JSONObject()
-                    jo.put("answer", answer)
-                    jo.put("question", q.getServer_id())
-                    givenAnswers.put(jo)
-                } catch (e: QuestionLike.ValidationException) {
-                    answer = ""
-                    ask_questions = true
-                } catch (e: JSONException) {
-                    answer = ""
-                    ask_questions = true
-                }
-            } else {
-                ask_questions = true
-            }
-            required_answers.add(TicketCheckProvider.RequiredAnswer(q, answer))
-        }
+		if (type != TicketCheckProvider.CheckInType.EXIT) {
+			for (q in questions) {
+				if (!q.isAskDuringCheckin) {
+					continue
+				}
+				var answer: String? = ""
+				if (answerMap.containsKey(q.getServer_id())) {
+					answer = answerMap[q.getServer_id()]
+					try {
+						answer = q.clean_answer(answer, q.options)
+						val jo = JSONObject()
+						jo.put("answer", answer)
+						jo.put("question", q.getServer_id())
+						givenAnswers.put(jo)
+					} catch (e: QuestionLike.ValidationException) {
+						answer = ""
+						ask_questions = true
+					} catch (e: JSONException) {
+						answer = ""
+						ask_questions = true
+					}
+				} else {
+					ask_questions = true
+				}
+				required_answers.add(TicketCheckProvider.RequiredAnswer(q, answer))
+			}
+		}
 
         // !!! When extending this, also extend checkOfflineWithoutData !!!
 
