@@ -7,6 +7,7 @@ import java.sql.Statement;
 
 import javax.sql.DataSource;
 
+import eu.pretix.libpretixsync.BuildConfig;
 import eu.pretix.libpretixsync.Models;
 import io.requery.meta.EntityModel;
 import io.requery.sql.SchemaModifier;
@@ -18,30 +19,33 @@ public class Migrations {
 
     private static void createVersionTable(Connection c, int version) throws SQLException {
         Statement s2 = c.createStatement();
-        execIgnore(c, "CREATE TABLE _version (version NUMERIC);", "duplicate column name");
+        execIgnore(c, "CREATE TABLE _version (version NUMERIC);", new String[] {"duplicate column name", "already exists", "existiert bereits"});
         s2.close();
         Statement s3 = c.createStatement();
-        execIgnore(c, "INSERT INTO _version (version) VALUES (" + version + ");", "duplicate column name");
+        execIgnore(c, "INSERT INTO _version (version) VALUES (" + version + ");", new String[] {"duplicate column name", "already exists", "existiert bereits"});
         s3.close();
     }
 
     private static void updateVersionTable(Connection c, int version) throws SQLException {
         Statement s2 = c.createStatement();
-        execIgnore(c, "DELETE FROM _version;", "duplicate column name");
+        execIgnore(c, "DELETE FROM _version;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
         s2.close();
         Statement s3 = c.createStatement();
-        execIgnore(c, "INSERT INTO _version (version) VALUES (" + version + ");", "duplicate column name");
+        execIgnore(c, "INSERT INTO _version (version) VALUES (" + version + ");", new String[] {"duplicate column name", "already exists", "existiert bereits"});
         s3.close();
     }
 
-    private static void execIgnore(Connection c, String sql, String ignoreMatch) throws SQLException {
+    private static void execIgnore(Connection c, String sql, String[] ignoreMatch) throws SQLException {
         Statement s1 = c.createStatement();
         try {
             s1.execute(sql);
         } catch (SQLException e) {
-            if (!e.getMessage().contains(ignoreMatch)) {
-                throw e;
+            for (String m : ignoreMatch) {
+                if (e.getMessage().contains(m)) {
+                    return;
+                }
             }
+            throw e;
         } finally {
             s1.close();
         }
@@ -85,7 +89,7 @@ public class Migrations {
             updateVersionTable(c, 28);
         }
         if (db_version < 30) {
-            execIgnore(c, "ALTER TABLE Receipt ADD payment_data TEXT;", "duplicate column name");
+            execIgnore(c, "ALTER TABLE Receipt ADD payment_data TEXT;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
             create_notexists(dataSource);
             updateVersionTable(c, 30);
         }
@@ -94,80 +98,80 @@ public class Migrations {
             updateVersionTable(c, 32);
         }
         if (db_version < 33) {
-            execIgnore(c, "ALTER TABLE ResourceLastModified ADD status TEXT;", "duplicate column name");
+            execIgnore(c, "ALTER TABLE ResourceLastModified ADD status TEXT;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
             create_notexists(dataSource);
             updateVersionTable(c, 33);
         }
         if (db_version < 34) {
-            execIgnore(c, "ALTER TABLE QueuedCheckin ADD event_slug TEXT;", "duplicate column name");
+            execIgnore(c, "ALTER TABLE QueuedCheckin ADD event_slug TEXT;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
             updateVersionTable(c, 34);
         }
         if (db_version < 35) {
-            execIgnore(c, "ALTER TABLE QueuedOrder ADD locked NUMBER DEFAULT(0);", "duplicate column name");
+            execIgnore(c, "ALTER TABLE QueuedOrder ADD locked NUMBER DEFAULT(0);", new String[] {"duplicate column name", "already exists", "existiert bereits"});
             updateVersionTable(c, 35);
         }
         if (db_version < 36) {
-            execIgnore(c, "ALTER TABLE QueuedOrder ADD idempotency_key TEXT;", "duplicate column name");
+            execIgnore(c, "ALTER TABLE QueuedOrder ADD idempotency_key TEXT;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
             updateVersionTable(c, 36);
         }
         if (db_version < 37) {
-            execIgnore(c, "ALTER TABLE Item ADD picture_filename TEXT;", "duplicate column name");
+            execIgnore(c, "ALTER TABLE Item ADD picture_filename TEXT;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
             updateVersionTable(c, 37);
         }
         if (db_version < 38) {
-            execIgnore(c, "ALTER TABLE ReceiptLine ADD seat_guid TEXT;", "duplicate column name");
-            execIgnore(c, "ALTER TABLE ReceiptLine ADD seat_name TEXT;", "duplicate column name");
+            execIgnore(c, "ALTER TABLE ReceiptLine ADD seat_guid TEXT;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            execIgnore(c, "ALTER TABLE ReceiptLine ADD seat_name TEXT;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
             updateVersionTable(c, 38);
         }
         if (db_version < 39) {
-            execIgnore(c, "CREATE INDEX orderposition_secret ON orderposition (secret);", "already exists");
+            execIgnore(c, "CREATE INDEX orderposition_secret ON orderposition (secret);", new String[] {"already exists", "existiert bereits"});
             updateVersionTable(c, 39);
         }
         if (db_version < 46) {
             Statement s4 = c.createStatement();
-            execIgnore(c, "ALTER TABLE Receipt ADD email_to TEXT;", "duplicate column name");
+            execIgnore(c, "ALTER TABLE Receipt ADD email_to TEXT;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
             s4.close();
             updateVersionTable(c, 46);
         }
         if (db_version < 47) {
-            execIgnore(c, "ALTER TABLE ReceiptLine ADD price_calculated_from_net INT;", "duplicate column name");
-            execIgnore(c, "ALTER TABLE ReceiptLine ADD canceled_because_of_receipt INT;", "duplicate column name");
-            execIgnore(c, "ALTER TABLE Receipt ADD fiscalisation_data TEXT;", "duplicate column name");
-            execIgnore(c, "ALTER TABLE Receipt ADD fiscalisation_text TEXT;", "duplicate column name");
-            execIgnore(c, "ALTER TABLE Receipt ADD fiscalisation_qr TEXT;", "duplicate column name");
-            execIgnore(c, "ALTER TABLE Receipt ADD started DATE;", "duplicate column name");
+            execIgnore(c, "ALTER TABLE ReceiptLine ADD price_calculated_from_net INT;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            execIgnore(c, "ALTER TABLE ReceiptLine ADD canceled_because_of_receipt INT;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            execIgnore(c, "ALTER TABLE Receipt ADD fiscalisation_data TEXT;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            execIgnore(c, "ALTER TABLE Receipt ADD fiscalisation_text TEXT;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            execIgnore(c, "ALTER TABLE Receipt ADD fiscalisation_qr TEXT;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            execIgnore(c, "ALTER TABLE Receipt ADD started DATE;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
             updateVersionTable(c, 47);
         }
         if (db_version < 48) {
             Statement s4 = c.createStatement();
-            execIgnore(c, "ALTER TABLE Closing ADD invoice_settings TEXT;", "duplicate column name");
+            execIgnore(c, "ALTER TABLE Closing ADD invoice_settings TEXT;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
             s4.close();
             updateVersionTable(c, 48);
         }
         if (db_version < 49) {
             Statement s3 = c.createStatement();
-            execIgnore(c, "ALTER TABLE Item ADD ticket_layout_pretixpos_id INT;", "duplicate column name");
+            execIgnore(c, "ALTER TABLE Item ADD ticket_layout_pretixpos_id INT;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
             s3.close();
             updateVersionTable(c, 49);
         }
         if (db_version < 50) {
             Statement s1 = c.createStatement();
-            execIgnore(c, "ALTER TABLE QueuedCheckin ADD datetime_string TEXT;", "duplicate column name");
+            execIgnore(c, "ALTER TABLE QueuedCheckin ADD datetime_string TEXT;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
             s1.close();
             updateVersionTable(c, 50);
         }
         if (db_version < 51) {
             Statement s1 = c.createStatement();
-            execIgnore(c, "ALTER TABLE QueuedCheckin ADD type TEXT;", "duplicate column name");
+            execIgnore(c, "ALTER TABLE QueuedCheckin ADD type TEXT;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
             s1.close();
             s1 = c.createStatement();
-            execIgnore(c, "ALTER TABLE CheckIn ADD type TEXT;", "duplicate column name");
+            execIgnore(c, "ALTER TABLE CheckIn ADD type TEXT;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
             s1.close();
             updateVersionTable(c, 51);
         }
         if (db_version < 52) {
             Statement s2 = c.createStatement();
-            execIgnore(c, "ALTER TABLE ReceiptLine ADD answers TEXT;", "duplicate column name");
+            execIgnore(c, "ALTER TABLE ReceiptLine ADD answers TEXT;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
             s2.close();
             updateVersionTable(c, 52);
         }
@@ -176,37 +180,37 @@ public class Migrations {
             updateVersionTable(c, 53);
         }
         if (db_version < 54) {
-            execIgnore(c, "ALTER TABLE ReceiptLine ADD attendee_name INT;", "duplicate column name");
-            execIgnore(c, "ALTER TABLE ReceiptLine ADD attendee_email INT;", "duplicate column name");
-            execIgnore(c, "ALTER TABLE ReceiptLine ADD attendee_company TEXT;", "duplicate column name");
-            execIgnore(c, "ALTER TABLE ReceiptLine ADD attendee_street TEXT;", "duplicate column name");
-            execIgnore(c, "ALTER TABLE ReceiptLine ADD attendee_zipcode TEXT;", "duplicate column name");
-            execIgnore(c, "ALTER TABLE ReceiptLine ADD attendee_city DATE;", "duplicate column name");
-            execIgnore(c, "ALTER TABLE ReceiptLine ADD attendee_country DATE;", "duplicate column name");
+            execIgnore(c, "ALTER TABLE ReceiptLine ADD attendee_name INT;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            execIgnore(c, "ALTER TABLE ReceiptLine ADD attendee_email INT;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            execIgnore(c, "ALTER TABLE ReceiptLine ADD attendee_company TEXT;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            execIgnore(c, "ALTER TABLE ReceiptLine ADD attendee_street TEXT;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            execIgnore(c, "ALTER TABLE ReceiptLine ADD attendee_zipcode TEXT;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            execIgnore(c, "ALTER TABLE ReceiptLine ADD attendee_city DATE;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            execIgnore(c, "ALTER TABLE ReceiptLine ADD attendee_country DATE;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
             updateVersionTable(c, 54);
         }
         if (db_version < 56) {
-            execIgnore(c, "ALTER TABLE orders ADD deleteAfterTimestamp NUMERIC;", "duplicate column name");
+            execIgnore(c, "ALTER TABLE orders ADD deleteAfterTimestamp NUMERIC;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
             updateVersionTable(c, 56);
         }
         if (db_version < 57) {
-            execIgnore(c, "CREATE INDEX orderposition_order ON orderposition (order_ref);", "already exists");
-            execIgnore(c, "CREATE INDEX checkin_position ON CheckIn (position);", "already exists");
+            execIgnore(c, "CREATE INDEX orderposition_order ON orderposition (order_ref);", new String[] {"already exists", "existiert bereits"});
+            execIgnore(c, "CREATE INDEX checkin_position ON CheckIn (position);", new String[] {"already exists", "existiert bereits"});
             updateVersionTable(c, 57);
         }
         if (db_version < 58) {
-            execIgnore(c, "ALTER TABLE CheckIn ADD listId INT;", "duplicate column name");
-            execIgnore(c, "UPDATE CheckIn SET listId = list WHERE (listID = 0 OR listId IS NULL);", "no such column: list");
-            execIgnore(c, "CREATE INDEX checkin_listid ON CheckIn (listId);", "already exists");
+            execIgnore(c, "ALTER TABLE CheckIn ADD listId INT;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            execIgnore(c, "UPDATE CheckIn SET listId = list WHERE (listID = 0 OR listId IS NULL);", new String[] {"no such column: list"});
+            execIgnore(c, "CREATE INDEX checkin_listid ON CheckIn (listId);", new String[] {"already exists", "existiert bereits"});
             updateVersionTable(c, 58);
         }
         if (db_version < 59) {
-            execIgnore(c, "ALTER TABLE ResourceLastModified ADD \"meta\" TEXT;", "duplicate column name");
+            execIgnore(c, "ALTER TABLE ResourceLastModified ADD \"meta\" TEXT;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
             updateVersionTable(c, 59);
         }
         if (db_version < 60) {
-            execIgnore(c, "ALTER TABLE CheckIn ADD server_id NUMERIC NULL;", "duplicate column name");
-            execIgnore(c, "CREATE INDEX checkin_server_id ON CheckIn (server_id);", "already exists");
+            execIgnore(c, "ALTER TABLE CheckIn ADD server_id NUMERIC NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            execIgnore(c, "CREATE INDEX checkin_server_id ON CheckIn (server_id);", new String[] {"already exists", "existiert bereits"});
             updateVersionTable(c, 60);
         }
         if (db_version < 61) {
@@ -218,7 +222,7 @@ public class Migrations {
             updateVersionTable(c, 62);
         }
         if (db_version < 63) {
-            execIgnore(c, "ALTER TABLE Receipt ADD chosen_cart_id TEXT NULL;", "duplicate column name");
+            execIgnore(c, "ALTER TABLE Receipt ADD chosen_cart_id TEXT NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
             updateVersionTable(c, 63);
         }
         if (db_version < 64) {
@@ -230,20 +234,20 @@ public class Migrations {
             updateVersionTable(c, 64);
         }
         if (db_version < 66) {
-            execIgnore(c, "ALTER TABLE Cashier ADD active NUMBER DEFAULT(0);", "duplicate column name");
+            execIgnore(c, "ALTER TABLE Cashier ADD active " + BuildConfig.BOOLEAN_TYPE + " DEFAULT(" + BuildConfig.BOOLEAN_FALSE + ");", new String[] {"duplicate column name", "already exists", "existiert bereits"});
             updateVersionTable(c, 66);
         }
         if (db_version < 67) {
-            execIgnore(c, "ALTER TABLE Receipt ADD cashier_numericid NUMERIC NULL;", "duplicate column name");
-            execIgnore(c, "ALTER TABLE Receipt ADD cashier_userid TEXT NULL;", "duplicate column name");
-            execIgnore(c, "ALTER TABLE Receipt ADD cashier_name TEXT NULL;", "duplicate column name");
-            execIgnore(c, "ALTER TABLE Closing ADD cashier_numericid NUMERIC NULL;", "duplicate column name");
-            execIgnore(c, "ALTER TABLE Closing ADD cashier_userid TEXT NULL;", "duplicate column name");
-            execIgnore(c, "ALTER TABLE Closing ADD cashier_name TEXT NULL;", "duplicate column name");
+            execIgnore(c, "ALTER TABLE Receipt ADD cashier_numericid NUMERIC NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            execIgnore(c, "ALTER TABLE Receipt ADD cashier_userid TEXT NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            execIgnore(c, "ALTER TABLE Receipt ADD cashier_name TEXT NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            execIgnore(c, "ALTER TABLE Closing ADD cashier_numericid NUMERIC NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            execIgnore(c, "ALTER TABLE Closing ADD cashier_userid TEXT NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            execIgnore(c, "ALTER TABLE Closing ADD cashier_name TEXT NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
             updateVersionTable(c, 67);
         }
         if (db_version < 68) {
-            execIgnore(c, "ALTER TABLE Receipt ADD training NUMBER DEFAULT(0);", "duplicate column name");
+            execIgnore(c, "ALTER TABLE Receipt ADD training " + BuildConfig.BOOLEAN_TYPE + " DEFAULT(" + BuildConfig.BOOLEAN_FALSE + ");", new String[] {"duplicate column name", "already exists", "existiert bereits"});
             updateVersionTable(c, 68);
         }
         if (db_version < 69) {

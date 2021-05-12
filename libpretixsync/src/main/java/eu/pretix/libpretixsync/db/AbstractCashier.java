@@ -1,5 +1,6 @@
 package eu.pretix.libpretixsync.db;
 
+import eu.pretix.libpretixsync.BuildConfig;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -23,7 +24,7 @@ public class AbstractCashier implements RemoteObject, CashierLike {
 
     public String pin;
 
-    @Column(value = "false", nullable = false)
+    @Column(value = BuildConfig.BOOLEAN_FALSE, nullable = false)
     public boolean active;
 
     @Column(definition = "TEXT")
