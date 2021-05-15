@@ -8,7 +8,6 @@ buildscript {
         }
     }
     dependencies {
-        classpath "net.ltgt.gradle:gradle-apt-plugin:0.21"
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
         classpath "com.google.protobuf:protobuf-gradle-plugin:0.8.11"
     }
@@ -18,7 +17,6 @@ plugins {
     id 'de.fuerstenau.buildconfig' version '1.1.8'
 }
 apply plugin: 'java-library'
-apply plugin: 'net.ltgt.apt-idea'
 apply plugin: 'jacoco'
 apply plugin: 'kotlin'
 apply plugin: 'kotlin-kapt'
@@ -131,3 +129,13 @@ task copyTestResources(type: Copy) {
     into "${buildDir}/classes/test"
 }
 processTestResources.dependsOn copyTestResources
+
+idea {
+    module {
+        sourceDirs += compileJava.options.annotationProcessorGeneratedSourcesDirectory
+        generatedSourceDirs += compileJava.options.annotationProcessorGeneratedSourcesDirectory
+        testSourceDirs += compileTestJava.options.annotationProcessorGeneratedSourcesDirectory
+        generatedSourceDirs += compileTestJava.options.annotationProcessorGeneratedSourcesDirectory
+        scopes.PROVIDED.plus += [ configurations.annotationProcessor ]
+    }
+}
