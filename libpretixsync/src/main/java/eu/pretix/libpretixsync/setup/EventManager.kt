@@ -15,30 +15,34 @@ class EventManager(private val store: BlockingEntityStore<Persistable>, private 
     val eventMap = HashMap<String, PretixApi.ApiResponse>()
 
     fun getAvailableEvents() : List<RemoteEvent> {
+        val oneDayAgo = DateTime.now() - Hours.hours(24)
+        return getAvailableEvents(oneDayAgo, 5)
+    }
+
+    fun getAvailableEvents(endsAfter: DateTime, maxPages: Int) : List<RemoteEvent> {
         eventMap.clear()
 
-        val oneDayAgo = URLEncoder.encode((DateTime.now() - Hours.hours(24)).toString())
-
+        val endsAfterUrl = URLEncoder.encode(endsAfter.toString())
         val resp_events = api.fetchResource(api.organizerResourceUrl("events") +
-                "?ends_after=$oneDayAgo" + if (require_live) "&live=true" else "")
+                "?ends_after=$endsAfterUrl" + if (require_live) "&live=true" else "")
         if (resp_events.response.code != 200) {
             throw IOException()
         }
-        var events = parseEvents(resp_events.data!!)
+        var events = parseEvents(resp_events.data!!, maxDepth=maxPages)
 
         val resp_subevents = api.fetchResource(api.organizerResourceUrl("subevents")
-                + "?ends_after=$oneDayAgo" + if (require_live) "&active=true&event__live=true" else "")
+                + "?ends_after=$endsAfterUrl" + if (require_live) "&active=true&event__live=true" else "")
         if (resp_subevents.response.code != 200) {
             throw IOException()
         }
-        events += parseEvents(resp_subevents.data!!, subevents=true)
+        events += parseEvents(resp_subevents.data!!, subevents=true, maxDepth=maxPages)
 
         return events.sortedBy {
             return@sortedBy it.date_from
         }
     }
 
-    private fun parseEvents(data: JSONObject, subevents: Boolean = false, depth: Int=1): List<RemoteEvent> {
+    private fun parseEvents(data: JSONObject, maxDepth: Int, subevents: Boolean = false, depth: Int=1): List<RemoteEvent> {
         val events = ArrayList<RemoteEvent>()
 
         val results = data.getJSONArray("results")
@@ -78,13 +82,13 @@ class EventManager(private val store: BlockingEntityStore<Persistable>, private 
         }
 
 
-        if (!data.isNull("next") && depth < 5) {
+        if (!data.isNull("next") && depth < maxDepth) {
             val next = data.getString("next")
             val resp = api.fetchResource(next)
             if (resp.response.code != 200) {
                 throw IOException()
             }
-            return events + parseEvents(resp.data!!, subevents, depth + 1)
+            return events + parseEvents(resp.data!!, maxDepth, subevents, depth + 1)
         } else {
             return events
         }
