@@ -16,22 +16,24 @@ class EventManager(private val store: BlockingEntityStore<Persistable>, private 
 
     fun getAvailableEvents() : List<RemoteEvent> {
         val oneDayAgo = DateTime.now() - Hours.hours(24)
-        return getAvailableEvents(oneDayAgo, 5)
+        return getAvailableEvents(oneDayAgo, 5, null)
     }
 
-    fun getAvailableEvents(endsAfter: DateTime, maxPages: Int) : List<RemoteEvent> {
+    fun getAvailableEvents(endsAfter: DateTime, maxPages: Int, availabilityForChannel: String?) : List<RemoteEvent> {
         eventMap.clear()
+
+        val avail = if (availabilityForChannel != null) "with_availability_for=${availabilityForChannel}&" else ""
 
         val endsAfterUrl = URLEncoder.encode(endsAfter.toString())
         val resp_events = api.fetchResource(api.organizerResourceUrl("events") +
-                "?ends_after=$endsAfterUrl" + if (require_live) "&live=true" else "")
+                "?${avail}ends_after=$endsAfterUrl" + if (require_live) "&live=true" else "")
         if (resp_events.response.code != 200) {
             throw IOException()
         }
         var events = parseEvents(resp_events.data!!, maxDepth=maxPages)
 
         val resp_subevents = api.fetchResource(api.organizerResourceUrl("subevents")
-                + "?ends_after=$endsAfterUrl" + if (require_live) "&active=true&event__live=true" else "")
+                + "?${avail}ends_after=$endsAfterUrl" + if (require_live) "&active=true&event__live=true" else "")
         if (resp_subevents.response.code != 200) {
             throw IOException()
         }
@@ -58,6 +60,11 @@ class EventManager(private val store: BlockingEntityStore<Persistable>, private 
                     subevent_id=if (subevents) {
                         json.getLong("id")
                     } else null,
+                    best_availability_state=if(json.has("best_availability_state") && !json.isNull("best_availability_state")) {
+                        json.getLong("best_availability_state")
+                    } else {
+                        null
+                    },
                     live=if (subevents && !require_live) {
                         val eventSlug = json.getString("event")
                         var event = eventMap[eventSlug]
@@ -101,6 +108,7 @@ data class RemoteEvent(
         val date_from: DateTime,
         val date_to: DateTime?,
         val subevent_id: Long?,
+        val best_availability_state: Long?,
         val live: Boolean
 ) {
     val name: String
