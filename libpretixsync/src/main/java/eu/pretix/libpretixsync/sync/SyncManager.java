@@ -422,7 +422,9 @@ public class SyncManager {
                 );
                 if (response.getResponse().code() < 500) {
                     dataStore.delete(call);
-                    if (response.getResponse().code() >= 400) {
+                    if (response.getResponse().code() == 404 && call.url.contains("/failed_checkins/")) {
+                        // ignored, this is an old pretix version
+                    } else if (response.getResponse().code() >= 400) {
                         sentry.captureException(new ApiException("Received response (" + response.getResponse().code() + ") for queued call: " + response.getData().toString()));
                         // We ignore 400s, because we can't do something about them
                     }
