@@ -130,12 +130,8 @@ task copyTestResources(type: Copy) {
 }
 processTestResources.dependsOn copyTestResources
 
-idea {
-    module {
-        sourceDirs += compileJava.options.annotationProcessorGeneratedSourcesDirectory
-        generatedSourceDirs += compileJava.options.annotationProcessorGeneratedSourcesDirectory
-        testSourceDirs += compileTestJava.options.annotationProcessorGeneratedSourcesDirectory
-        generatedSourceDirs += compileTestJava.options.annotationProcessorGeneratedSourcesDirectory
-        scopes.PROVIDED.plus += [ configurations.annotationProcessor ]
+sourceSets.all { sourceSet ->
+    tasks.named(sourceSet.compileJavaTaskName).configure {
+        options.annotationProcessorGeneratedSourcesDirectory = file("$buildDir/generated/source/kapt/${sourceSet.name}")
     }
 }
