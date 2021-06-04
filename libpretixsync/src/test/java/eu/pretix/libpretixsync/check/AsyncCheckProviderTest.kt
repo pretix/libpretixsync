@@ -25,7 +25,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
     fun setUpFakes() {
         configStore = FakeConfigStore()
         fakeApi = FakePretixApi()
-        p = AsyncCheckProvider("demo", dataStore, 1L)
+        p = AsyncCheckProvider(configStore!!, "demo", dataStore, 1L)
 
         EventSyncAdapter(dataStore, "demo", "demo", fakeApi, null).standaloneRefreshFromJSON(jsonResource("events/event1.json"))
         ItemSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, null).standaloneRefreshFromJSON(jsonResource("items/item1.json"))
@@ -99,7 +99,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testSimpleUnpaidIgnoreWithoutIncludePending() {
-        val p2 = AsyncCheckProvider("demo", dataStore, 2L)
+        val p2 = AsyncCheckProvider(configStore!!, "demo", dataStore, 2L)
         var r = p2.check("h4t6w9ykuea4n5zaapy648y2dcfg8weq")
         assertEquals(TicketCheckProvider.CheckResult.Type.UNPAID, r.type)
 
@@ -109,7 +109,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testInvalidProduct() {
-        val p2 = AsyncCheckProvider("demo", dataStore, 2L)
+        val p2 = AsyncCheckProvider(configStore!!, "demo", dataStore, 2L)
         val r = p2.check("g2sc5ym78h5q5y5sbswses2b5h8pp6kt")
         assertEquals(TicketCheckProvider.CheckResult.Type.PRODUCT, r.type)
     }
@@ -141,7 +141,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testSimpleRedeemedOnOtherList() {
-        val p2 = AsyncCheckProvider("demo", dataStore, 2L)
+        val p2 = AsyncCheckProvider(configStore!!, "demo", dataStore, 2L)
         var r = p2.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
         assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
         r = p!!.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
@@ -150,7 +150,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testAllowMultiEntry() {
-        val p2 = AsyncCheckProvider("demo", dataStore, 2L)
+        val p2 = AsyncCheckProvider(configStore!!, "demo", dataStore, 2L)
         var r = p2.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
         assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
         r = p2.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
@@ -187,7 +187,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testSingleEntryAfterExitForbidden() {
-        val p3 = AsyncCheckProvider("demo", dataStore, 3L)
+        val p3 = AsyncCheckProvider(configStore!!, "demo", dataStore, 3L)
         var r = p3.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
         assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
         r = p3.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj", null, false, false, TicketCheckProvider.CheckInType.EXIT)
@@ -207,7 +207,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testRulesSimple() {
-        val p2 = AsyncCheckProvider("demo", dataStore, 2L)
+        val p2 = AsyncCheckProvider(configStore!!, "demo", dataStore, 2L)
 
         setRuleOnList2("{\"and\": [false, true]}")
         var r = p2.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
@@ -222,7 +222,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testRulesProduct() {
-        val p2 = AsyncCheckProvider("demo", dataStore, 2L)
+        val p2 = AsyncCheckProvider(configStore!!, "demo", dataStore, 2L)
 
         setRuleOnList2("{\n" +
                 "        \"inList\": [\n" +
@@ -252,7 +252,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testRulesVariation() {
-        val p2 = AsyncCheckProvider("demo", dataStore, 2L)
+        val p2 = AsyncCheckProvider(configStore!!, "demo", dataStore, 2L)
 
         setRuleOnList2("{\n" +
                 "        \"inList\": [\n" +
@@ -282,7 +282,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testRulesEntriesNumber() {
-        val p2 = AsyncCheckProvider("demo", dataStore, 2L)
+        val p2 = AsyncCheckProvider(configStore!!, "demo", dataStore, 2L)
 
         setRuleOnList2("{\"<\": [{\"var\": \"entries_number\"}, 3]}")
         var r = p2.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
@@ -299,7 +299,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testRulesEntriesToday() {
-        val p2 = AsyncCheckProvider("demo", dataStore, 2L)
+        val p2 = AsyncCheckProvider(configStore!!, "demo", dataStore, 2L)
 
         p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2020-01-01T10:00:00.000Z"))
         setRuleOnList2("{\"<\": [{\"var\": \"entries_today\"}, 3]}")
@@ -333,7 +333,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testRulesEntriesDays() {
-        val p2 = AsyncCheckProvider("demo", dataStore, 2L)
+        val p2 = AsyncCheckProvider(configStore!!, "demo", dataStore, 2L)
 
         // Ticket is valid unlimited times, but only on two arbitrary days
         setRuleOnList2("{\"or\": [{\">\": [{\"var\": \"entries_today\"}, 0]}, {\"<\": [{\"var\": \"entries_days\"}, 2]}]}")
@@ -369,7 +369,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testRulesIsAfterTolerance() {
-        val p2 = AsyncCheckProvider("demo", dataStore, 2L)
+        val p2 = AsyncCheckProvider(configStore!!, "demo", dataStore, 2L)
 
         // Ticket is valid unlimited times, but only on two arbitrary days
         setRuleOnList2("{\"isAfter\": [{\"var\": \"now\"}, {\"buildTime\": [\"date_admission\"]}, 10]}")
@@ -389,7 +389,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testRulesIsAfterSubevent() {
-        val p2 = AsyncCheckProvider("demo", dataStore, 2L)
+        val p2 = AsyncCheckProvider(configStore!!, "demo", dataStore, 2L)
 
         // Ticket is valid unlimited times, but only on two arbitrary days
         setRuleOnList2("{\"isAfter\": [{\"var\": \"now\"}, {\"buildTime\": [\"date_admission\"]}, 10]}")
@@ -409,7 +409,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testRulesIsAfterNoTolerance() {
-        val p2 = AsyncCheckProvider("demo", dataStore, 2L)
+        val p2 = AsyncCheckProvider(configStore!!, "demo", dataStore, 2L)
 
         // Ticket is valid unlimited times, but only on two arbitrary days
         setRuleOnList2("{\"isAfter\": [{\"var\": \"now\"}, {\"buildTime\": [\"date_admission\"]}, null]}")
@@ -425,7 +425,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testRulesIsBeforeTolerance() {
-        val p2 = AsyncCheckProvider("demo", dataStore, 2L)
+        val p2 = AsyncCheckProvider(configStore!!, "demo", dataStore, 2L)
 
         // Ticket is valid unlimited times, but only on two arbitrary days
         setRuleOnList2("{\"isBefore\": [{\"var\": \"now\"}, {\"buildTime\": [\"date_to\"]}, 10]}")
@@ -441,7 +441,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testRulesIsBeforeNoTolerance() {
-        val p2 = AsyncCheckProvider("demo", dataStore, 2L)
+        val p2 = AsyncCheckProvider(configStore!!, "demo", dataStore, 2L)
 
         // Ticket is valid unlimited times, but only on two arbitrary days
         setRuleOnList2("{\"isBefore\": [{\"var\": \"now\"}, {\"buildTime\": [\"date_to\"]}]}")
@@ -457,7 +457,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testRulesIsAfterCustomDateTime() {
-        val p2 = AsyncCheckProvider("demo", dataStore, 2L)
+        val p2 = AsyncCheckProvider(configStore!!, "demo", dataStore, 2L)
 
         // Ticket is valid unlimited times, but only on two arbitrary days
         setRuleOnList2("{\"isAfter\": [{\"var\": \"now\"}, {\"buildTime\": [\"custom\", \"2020-01-01T22:00:00.000Z\"]}]}")
@@ -473,7 +473,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testRulesIsAfterCustomTime() {
-        val p2 = AsyncCheckProvider("demo", dataStore, 2L)
+        val p2 = AsyncCheckProvider(configStore!!, "demo", dataStore, 2L)
 
         // Ticket is valid unlimited times, but only on two arbitrary days
         setRuleOnList2("{\"isAfter\": [{\"var\": \"now\"}, {\"buildTime\": [\"customtime\", \"14:00\"]}]}")
