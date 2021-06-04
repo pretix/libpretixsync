@@ -412,9 +412,10 @@ public class SyncManager {
 
         List<QueuedCall> calls = dataStore.select(QueuedCall.class)
                 .get().toList();
-
+        String url = "";
         try {
             for (QueuedCall call : calls) {
+                url = call.url;
                 PretixApi.ApiResponse response = api.postResource(
                         call.url,
                         new JSONObject(call.body),
@@ -422,9 +423,7 @@ public class SyncManager {
                 );
                 if (response.getResponse().code() < 500) {
                     dataStore.delete(call);
-                    if (response.getResponse().code() == 404 && call.url.contains("/failed_checkins/")) {
-                        // ignored, this is an old pretix version
-                    } else if (response.getResponse().code() >= 400) {
+                    if (response.getResponse().code() >= 400) {
                         sentry.captureException(new ApiException("Received response (" + response.getResponse().code() + ") for queued call: " + response.getData().toString()));
                         // We ignore 400s, because we can't do something about them
                     }
@@ -435,6 +434,11 @@ public class SyncManager {
         } catch (JSONException e) {
             sentry.captureException(e);
             throw new SyncException("Unknown server response");
+        } catch (NotFoundApiException e) {
+            if (!url.contains("/failed_checkins/")) {  // ignore this one: old pretix systems don't have it
+                sentry.addBreadcrumb("sync.queue", "API Error: " + e.getMessage());
+                throw new SyncException(e.getMessage());
+            }
         } catch (ApiException e) {
             sentry.addBreadcrumb("sync.queue", "API Error: " + e.getMessage());
             throw new SyncException(e.getMessage());
