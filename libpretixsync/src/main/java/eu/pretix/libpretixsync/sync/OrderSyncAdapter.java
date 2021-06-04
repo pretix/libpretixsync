@@ -37,7 +37,7 @@ import eu.pretix.libpretixsync.db.Event;
 import eu.pretix.libpretixsync.db.Item;
 import eu.pretix.libpretixsync.db.Order;
 import eu.pretix.libpretixsync.db.OrderPosition;
-import eu.pretix.libpretixsync.db.ResourceLastModified;
+import eu.pretix.libpretixsync.db.ResourceSyncStatus;
 import eu.pretix.libpretixsync.db.SubEvent;
 import eu.pretix.libpretixsync.utils.HashUtils;
 import eu.pretix.libpretixsync.utils.JSONUtils;
@@ -63,7 +63,7 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
     private List<CheckIn> checkinCreateCache = new ArrayList<>();
     private String firstResponseTimestamp;
     private String lastOrderTimestamp;
-    private ResourceLastModified rlm;
+    private ResourceSyncStatus rlm;
     private boolean withPdfData;
     private boolean is_pretixpos;
     private Long subeventId;
@@ -83,9 +83,9 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
             super.download();
             completed = true;
         } finally {
-            ResourceLastModified resourceLastModified = store.select(ResourceLastModified.class)
-                    .where(ResourceLastModified.RESOURCE.eq(rlmName()))
-                    .and(ResourceLastModified.EVENT_SLUG.eq(eventSlug))
+            ResourceSyncStatus resourceSyncStatus = store.select(ResourceSyncStatus.class)
+                    .where(ResourceSyncStatus.RESOURCE.eq(rlmName()))
+                    .and(ResourceSyncStatus.EVENT_SLUG.eq(eventSlug))
                     .limit(1)
                     .get().firstOrNull();
 
@@ -96,29 +96,29 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
             // (i.e. no timestamp was stored beforehand) we will still store the timestamp to be
             // able to continue properly.
             if (firstResponseTimestamp != null) {
-                if (resourceLastModified == null) {
-                    resourceLastModified = new ResourceLastModified();
-                    resourceLastModified.setResource(rlmName());
-                    resourceLastModified.setEvent_slug(eventSlug);
+                if (resourceSyncStatus == null) {
+                    resourceSyncStatus = new ResourceSyncStatus();
+                    resourceSyncStatus.setResource(rlmName());
+                    resourceSyncStatus.setEvent_slug(eventSlug);
                     if (completed) {
-                        resourceLastModified.setStatus("complete");
+                        resourceSyncStatus.setStatus("complete");
                     } else {
-                        resourceLastModified.setStatus("incomplete:" + lastOrderTimestamp);
+                        resourceSyncStatus.setStatus("incomplete:" + lastOrderTimestamp);
                     }
-                    resourceLastModified.setLast_modified(firstResponseTimestamp);
-                    store.upsert(resourceLastModified);
+                    resourceSyncStatus.setLast_modified(firstResponseTimestamp);
+                    store.upsert(resourceSyncStatus);
                 } else {
                     if (completed) {
-                        resourceLastModified.setLast_modified(firstResponseTimestamp);
-                        store.upsert(resourceLastModified);
+                        resourceSyncStatus.setLast_modified(firstResponseTimestamp);
+                        store.upsert(resourceSyncStatus);
                     }
                 }
-            } else if (completed && resourceLastModified != null) {
-                resourceLastModified.setStatus("complete");
-                store.update(resourceLastModified);
-            } else if (!completed && lastOrderTimestamp != null && resourceLastModified != null) {
-                resourceLastModified.setStatus("incomplete:" + lastOrderTimestamp);
-                store.update(resourceLastModified);
+            } else if (completed && resourceSyncStatus != null) {
+                resourceSyncStatus.setStatus("complete");
+                store.update(resourceSyncStatus);
+            } else if (!completed && lastOrderTimestamp != null && resourceSyncStatus != null) {
+                resourceSyncStatus.setStatus("incomplete:" + lastOrderTimestamp);
+                store.update(resourceSyncStatus);
             }
             lastOrderTimestamp = null;
             firstResponseTimestamp = null;
@@ -349,9 +349,9 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
     @Override
     protected JSONObject downloadPage(String url, boolean isFirstPage) throws ApiException, ResourceNotModified {
         if (isFirstPage) {
-            rlm = store.select(ResourceLastModified.class)
-                    .where(ResourceLastModified.RESOURCE.eq(rlmName()))
-                    .and(ResourceLastModified.EVENT_SLUG.eq(eventSlug))
+            rlm = store.select(ResourceSyncStatus.class)
+                    .where(ResourceSyncStatus.RESOURCE.eq(rlmName()))
+                    .and(ResourceSyncStatus.EVENT_SLUG.eq(eventSlug))
                     .limit(1)
                     .get().firstOrNull();
         }
@@ -713,7 +713,7 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
             String slug = t.get(0);
             Long deletionDate = deletionTimeForEvent(slug);
             if (deletionDate == null || deletionDate < System.currentTimeMillis()) {
-                store.delete(ResourceLastModified.class).where(ResourceLastModified.RESOURCE.like("order%")).and(ResourceLastModified.EVENT_SLUG.eq(slug));
+                store.delete(ResourceSyncStatus.class).where(ResourceSyncStatus.RESOURCE.like("order%")).and(ResourceSyncStatus.EVENT_SLUG.eq(slug));
                 while (true) {
                     List<Tuple> ordersToDelete = store.select(Order.ID).where(Order.EVENT_SLUG.eq(slug)).limit(200).get().toList();
                     if (ordersToDelete.size() == 0) {

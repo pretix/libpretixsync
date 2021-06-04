@@ -29,7 +29,7 @@ import eu.pretix.libpretixsync.db.QueuedOrder;
 import eu.pretix.libpretixsync.db.Receipt;
 import eu.pretix.libpretixsync.db.ReceiptLine;
 import eu.pretix.libpretixsync.db.ReceiptPayment;
-import eu.pretix.libpretixsync.db.ResourceLastModified;
+import eu.pretix.libpretixsync.db.ResourceSyncStatus;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
 
@@ -368,7 +368,7 @@ public class SyncManager {
                 dataStore.delete(CheckIn.class).get().value();
                 dataStore.delete(OrderPosition.class).get().value();
                 dataStore.delete(Order.class).get().value();
-                dataStore.delete(ResourceLastModified.class).where(ResourceLastModified.RESOURCE.like("order%")).get().value();
+                dataStore.delete(ResourceSyncStatus.class).where(ResourceSyncStatus.RESOURCE.like("order%")).get().value();
                 OrderSyncAdapter osa = new OrderSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), configStore.getSubEventId(), with_pdf_data, false, api, feedback);
                 if ((System.currentTimeMillis() - configStore.getLastCleanup()) > 3600 * 1000 * 12) {
                     osa.deleteOldPdfImages();
@@ -390,7 +390,7 @@ public class SyncManager {
             deleted += dataStore.delete(CheckIn.class).get().value();
             deleted += dataStore.delete(OrderPosition.class).get().value();
             deleted += dataStore.delete(Order.class).get().value();
-            deleted += dataStore.delete(ResourceLastModified.class).get().value();
+            deleted += dataStore.delete(ResourceSyncStatus.class).get().value();
             throw new SyncException(e.getMessage());
         } catch (JSONException e) {
             e.printStackTrace();

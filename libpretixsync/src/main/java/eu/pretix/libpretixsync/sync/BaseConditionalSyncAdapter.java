@@ -9,7 +9,7 @@ import eu.pretix.libpretixsync.api.ApiException;
 import eu.pretix.libpretixsync.api.PretixApi;
 import eu.pretix.libpretixsync.api.ResourceNotModified;
 import eu.pretix.libpretixsync.db.RemoteObject;
-import eu.pretix.libpretixsync.db.ResourceLastModified;
+import eu.pretix.libpretixsync.db.ResourceSyncStatus;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
 
@@ -22,20 +22,20 @@ abstract public class BaseConditionalSyncAdapter<T extends RemoteObject & Persis
 
     @Override
     protected JSONObject downloadPage(String url, boolean isFirstPage) throws ApiException, ResourceNotModified {
-        ResourceLastModified resourceLastModified = store.select(ResourceLastModified.class)
-                .where(ResourceLastModified.RESOURCE.eq(getResourceName()))
-                .and(ResourceLastModified.EVENT_SLUG.eq(eventSlug))
+        ResourceSyncStatus resourceSyncStatus = store.select(ResourceSyncStatus.class)
+                .where(ResourceSyncStatus.RESOURCE.eq(getResourceName()))
+                .and(ResourceSyncStatus.EVENT_SLUG.eq(eventSlug))
                 .limit(1)
                 .get().firstOrNull();
-        if (resourceLastModified == null) {
-            resourceLastModified = new ResourceLastModified();
+        if (resourceSyncStatus == null) {
+            resourceSyncStatus = new ResourceSyncStatus();
         } else {
-            if (!getMeta().equals(resourceLastModified.getMeta()) && !(getMeta().equals("") && resourceLastModified.getMeta() == null)) {
-                store.delete(resourceLastModified);
-                resourceLastModified = new ResourceLastModified();
+            if (!getMeta().equals(resourceSyncStatus.getMeta()) && !(getMeta().equals("") && resourceSyncStatus.getMeta() == null)) {
+                store.delete(resourceSyncStatus);
+                resourceSyncStatus = new ResourceSyncStatus();
             }
         }
-        PretixApi.ApiResponse apiResponse = api.fetchResource(url, resourceLastModified.getLast_modified());
+        PretixApi.ApiResponse apiResponse = api.fetchResource(url, resourceSyncStatus.getLast_modified());
         if (isFirstPage) {
             firstResponse = apiResponse;
         }
@@ -51,21 +51,21 @@ abstract public class BaseConditionalSyncAdapter<T extends RemoteObject & Persis
         firstResponse = null;
         super.download();
         if (firstResponse != null) {
-            ResourceLastModified resourceLastModified = store.select(ResourceLastModified.class)
-                    .where(ResourceLastModified.RESOURCE.eq(getResourceName()))
-                    .and(ResourceLastModified.EVENT_SLUG.eq(eventSlug))
+            ResourceSyncStatus resourceSyncStatus = store.select(ResourceSyncStatus.class)
+                    .where(ResourceSyncStatus.RESOURCE.eq(getResourceName()))
+                    .and(ResourceSyncStatus.EVENT_SLUG.eq(eventSlug))
                     .limit(1)
                     .get().firstOrNull();
-            if (resourceLastModified == null) {
-                resourceLastModified = new ResourceLastModified();
-                resourceLastModified.setResource(getResourceName());
-                resourceLastModified.setEvent_slug(eventSlug);
-                resourceLastModified.setMeta(getMeta());
+            if (resourceSyncStatus == null) {
+                resourceSyncStatus = new ResourceSyncStatus();
+                resourceSyncStatus.setResource(getResourceName());
+                resourceSyncStatus.setEvent_slug(eventSlug);
+                resourceSyncStatus.setMeta(getMeta());
             }
             if (firstResponse.getResponse().header("Last-Modified") != null) {
-                resourceLastModified.setLast_modified(firstResponse.getResponse().header("Last-Modified"));
-                resourceLastModified.setMeta(getMeta());
-                store.upsert(resourceLastModified);
+                resourceSyncStatus.setLast_modified(firstResponse.getResponse().header("Last-Modified"));
+                resourceSyncStatus.setMeta(getMeta());
+                store.upsert(resourceSyncStatus);
             }
             firstResponse = null;
         }

@@ -15,7 +15,7 @@ import io.requery.sql.TableCreationMode;
 
 public class Migrations {
     private static EntityModel model = Models.DEFAULT;
-    public static int CURRENT_VERSION = 69;
+    public static int CURRENT_VERSION = 70;
 
     private static void createVersionTable(Connection c, int version) throws SQLException {
         Statement s2 = c.createStatement();
@@ -98,7 +98,7 @@ public class Migrations {
             updateVersionTable(c, 32);
         }
         if (db_version < 33) {
-            execIgnore(c, "ALTER TABLE ResourceLastModified ADD status TEXT;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            //execIgnore(c, "ALTER TABLE ResourceLastModified ADD status TEXT;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
             create_notexists(dataSource);
             updateVersionTable(c, 33);
         }
@@ -205,7 +205,7 @@ public class Migrations {
             updateVersionTable(c, 58);
         }
         if (db_version < 59) {
-            execIgnore(c, "ALTER TABLE ResourceLastModified ADD \"meta\" TEXT;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            //execIgnore(c, "ALTER TABLE ResourceLastModified ADD \"meta\" TEXT;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
             updateVersionTable(c, 59);
         }
         if (db_version < 60) {
@@ -254,11 +254,15 @@ public class Migrations {
             create_notexists(dataSource);
             updateVersionTable(c, 69);
         }
+        if (db_version < 70) {
+            create_notexists(dataSource);
+            updateVersionTable(c, 70);
+        }
 
         // Note that the Android app currently does not use these queries!
 
         if (db_version < CURRENT_VERSION) {
-            exec(c, "DELETE FROM ResourceLastModified;");
+            exec(c, "DELETE FROM ResourceSyncStatus;");
         }
         updateVersionTable(c, CURRENT_VERSION);
     }

@@ -12,7 +12,7 @@ import java.util.concurrent.ExecutionException;
 import eu.pretix.libpretixsync.api.ApiException;
 import eu.pretix.libpretixsync.api.PretixApi;
 import eu.pretix.libpretixsync.api.ResourceNotModified;
-import eu.pretix.libpretixsync.db.ResourceLastModified;
+import eu.pretix.libpretixsync.db.ResourceSyncStatus;
 import eu.pretix.libpretixsync.db.SubEvent;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
@@ -21,7 +21,7 @@ import io.requery.util.CloseableIterator;
 
 public class AllSubEventsSyncAdapter extends BaseDownloadSyncAdapter<SubEvent, Long> {
     private String firstResponseTimestamp;
-    private ResourceLastModified rlm;
+    private ResourceSyncStatus rlm;
 
     public AllSubEventsSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, PretixApi api, SyncManager.ProgressFeedback feedback) {
         super(store, fileStorage, eventSlug, api, feedback);
@@ -34,9 +34,9 @@ public class AllSubEventsSyncAdapter extends BaseDownloadSyncAdapter<SubEvent, L
             super.download();
             completed = true;
         } finally {
-            ResourceLastModified resourceLastModified = store.select(ResourceLastModified.class)
-                    .where(ResourceLastModified.RESOURCE.eq("subevents"))
-                    .and(ResourceLastModified.EVENT_SLUG.eq(eventSlug))
+            ResourceSyncStatus resourceSyncStatus = store.select(ResourceSyncStatus.class)
+                    .where(ResourceSyncStatus.RESOURCE.eq("subevents"))
+                    .and(ResourceSyncStatus.EVENT_SLUG.eq(eventSlug))
                     .limit(1)
                     .get().firstOrNull();
 
@@ -47,24 +47,24 @@ public class AllSubEventsSyncAdapter extends BaseDownloadSyncAdapter<SubEvent, L
             // (i.e. no timestamp was stored beforehand) we will still store the timestamp to be
             // able to continue properly.
             if (firstResponseTimestamp != null) {
-                if (resourceLastModified == null) {
-                    resourceLastModified = new ResourceLastModified();
-                    resourceLastModified.setResource("subevents");
-                    resourceLastModified.setEvent_slug(eventSlug);
+                if (resourceSyncStatus == null) {
+                    resourceSyncStatus = new ResourceSyncStatus();
+                    resourceSyncStatus.setResource("subevents");
+                    resourceSyncStatus.setEvent_slug(eventSlug);
                     if (completed) {
-                        resourceLastModified.setStatus("complete");
-                        resourceLastModified.setLast_modified(firstResponseTimestamp);
-                        store.upsert(resourceLastModified);
+                        resourceSyncStatus.setStatus("complete");
+                        resourceSyncStatus.setLast_modified(firstResponseTimestamp);
+                        store.upsert(resourceSyncStatus);
                     }
                 } else {
                     if (completed) {
-                        resourceLastModified.setLast_modified(firstResponseTimestamp);
-                        store.upsert(resourceLastModified);
+                        resourceSyncStatus.setLast_modified(firstResponseTimestamp);
+                        store.upsert(resourceSyncStatus);
                     }
                 }
-            } else if (completed && resourceLastModified != null) {
-                resourceLastModified.setStatus("complete");
-                store.update(resourceLastModified);
+            } else if (completed && resourceSyncStatus != null) {
+                resourceSyncStatus.setStatus("complete");
+                store.update(resourceSyncStatus);
             }
             firstResponseTimestamp = null;
         }
@@ -129,9 +129,9 @@ public class AllSubEventsSyncAdapter extends BaseDownloadSyncAdapter<SubEvent, L
     @Override
     protected JSONObject downloadPage(String url, boolean isFirstPage) throws ApiException, ResourceNotModified {
         if (isFirstPage) {
-            rlm = store.select(ResourceLastModified.class)
-                    .where(ResourceLastModified.RESOURCE.eq("subevents"))
-                    .and(ResourceLastModified.EVENT_SLUG.eq(eventSlug))
+            rlm = store.select(ResourceSyncStatus.class)
+                    .where(ResourceSyncStatus.RESOURCE.eq("subevents"))
+                    .and(ResourceSyncStatus.EVENT_SLUG.eq(eventSlug))
                     .limit(1)
                     .get().firstOrNull();
         }
