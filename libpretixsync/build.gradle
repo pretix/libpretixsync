@@ -32,6 +32,7 @@ buildConfig {
     clsName = 'BuildConfig'
     packageName = "eu.pretix.libpretixsync"
     charset = 'UTF-8'
+    buildConfigField 'String', 'DB', 'sqlite'
     buildConfigField 'String', 'BOOLEAN_TYPE', 'NUMERIC'
     buildConfigField 'String', 'BOOLEAN_FALSE', '0'
 }

@@ -15,7 +15,7 @@ import io.requery.sql.TableCreationMode;
 
 public class Migrations {
     private static EntityModel model = Models.DEFAULT;
-    public static int CURRENT_VERSION = 72;
+    public static int CURRENT_VERSION = 73;
 
     private static void createVersionTable(Connection c, int version) throws SQLException {
         Statement s2 = c.createStatement();
@@ -266,6 +266,13 @@ public class Migrations {
         if (db_version < 71) {
             execIgnore(c, "ALTER TABLE Quota ADD size NUMERIC NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
             updateVersionTable(c, 62);
+        }
+        if (db_version < 72) {
+            if (BuildConfig.DB == "postgres") {
+                exec(c, "alter table queuedcall alter column body type text using body::text;");
+                exec(c, "alter table queuedcall alter column url type text using body::text;");
+            }
+            updateVersionTable(c, 72);
         }
 
         // Note that the Android app currently does not use these queries!

@@ -1,5 +1,6 @@
 package eu.pretix.libpretixsync.db;
 
+import io.requery.Column;
 import org.joda.time.format.ISODateTimeFormat;
 
 import java.text.DateFormat;
@@ -19,8 +20,10 @@ public abstract class AbstractQueuedCall {
     @Generated
     public Long id;
 
+    @Column(definition = "TEXT")
     public String url;
 
+    @Column(definition = "TEXT")
     public String body;
 
     public String idempotency_key;
