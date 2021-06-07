@@ -130,8 +130,9 @@ task copyTestResources(type: Copy) {
 }
 processTestResources.dependsOn copyTestResources
 
-sourceSets.all { sourceSet ->
-    tasks.named(sourceSet.compileJavaTaskName).configure {
-        options.annotationProcessorGeneratedSourcesDirectory = file("$buildDir/generated/source/kapt/${sourceSet.name}")
+sourceSets {
+    main {
+        java.srcDirs += file("$buildDir/generated/source/kapt/main")
+        kotlin.srcDirs += file("$buildDir/generated/source/kapt/main")
     }
 }

@@ -138,3 +138,10 @@ task copyTestResources(type: Copy) {
     into "${buildDir}/classes/test"
 }
 processTestResources.dependsOn copyTestResources
+
+sourceSets {
+    main {
+        java.srcDirs += file("$buildDir/generated/source/kapt/main")
+        kotlin.srcDirs += file("$buildDir/generated/source/kapt/main")
+    }
+}
