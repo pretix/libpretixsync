@@ -336,7 +336,7 @@ public class SyncManager {
             download(new ItemSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
             download(new QuestionSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
             if (profile == Profile.PRETIXPOS) {
-                download(new QuotaSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
+                download(new QuotaSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), configStore.getSubEventId(), api, feedback));
                 download(new TaxRuleSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
                 download(new TicketLayoutSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
             }

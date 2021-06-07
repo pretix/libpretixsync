@@ -35,6 +35,15 @@ public class AbstractQuota implements RemoteObject {
     @JunctionTable
     List<Item> items;
 
+    @Column(nullable = true)
+    public Long size;
+
+    @Column(nullable = true)
+    public Long available;
+
+    @Column(nullable = true)
+    public Long available_number;
+
     public boolean isUnlimited() {
         try {
             return getJSON().isNull("size");
