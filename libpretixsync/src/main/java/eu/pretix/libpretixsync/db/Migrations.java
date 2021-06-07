@@ -265,14 +265,14 @@ public class Migrations {
         }
         if (db_version < 71) {
             execIgnore(c, "ALTER TABLE Quota ADD size NUMERIC NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
-            updateVersionTable(c, 62);
+            updateVersionTable(c, 72);
         }
-        if (db_version < 72) {
+        if (db_version < 73) {
             if (BuildConfig.DB == "postgres") {
                 exec(c, "alter table queuedcall alter column body type text using body::text;");
                 exec(c, "alter table queuedcall alter column url type text using body::text;");
             }
-            updateVersionTable(c, 72);
+            updateVersionTable(c, 73);
         }
 
         // Note that the Android app currently does not use these queries!
