@@ -36,7 +36,7 @@ public class AllSubEventsSyncAdapter extends BaseDownloadSyncAdapter<SubEvent, L
         } finally {
             ResourceSyncStatus resourceSyncStatus = store.select(ResourceSyncStatus.class)
                     .where(ResourceSyncStatus.RESOURCE.eq("subevents"))
-                    .and(ResourceSyncStatus.EVENT_SLUG.eq(eventSlug))
+                    .and(ResourceSyncStatus.EVENT_SLUG.eq("__all__"))
                     .limit(1)
                     .get().firstOrNull();
 
@@ -50,7 +50,7 @@ public class AllSubEventsSyncAdapter extends BaseDownloadSyncAdapter<SubEvent, L
                 if (resourceSyncStatus == null) {
                     resourceSyncStatus = new ResourceSyncStatus();
                     resourceSyncStatus.setResource("subevents");
-                    resourceSyncStatus.setEvent_slug(eventSlug);
+                    resourceSyncStatus.setEvent_slug("__all__");
                     if (completed) {
                         resourceSyncStatus.setStatus("complete");
                         resourceSyncStatus.setLast_modified(firstResponseTimestamp);
@@ -77,7 +77,6 @@ public class AllSubEventsSyncAdapter extends BaseDownloadSyncAdapter<SubEvent, L
     @Override
     CloseableIterator<Tuple> getKnownIDsIterator() {
         return store.select(SubEvent.SERVER_ID)
-                .where(SubEvent.EVENT_SLUG.eq(eventSlug))
                 .get().iterator();
     }
 
@@ -122,7 +121,6 @@ public class AllSubEventsSyncAdapter extends BaseDownloadSyncAdapter<SubEvent, L
     public CloseableIterator<SubEvent> runBatch(List<Long> parameterBatch) {
         return store.select(SubEvent.class)
                 .where(SubEvent.SERVER_ID.in(parameterBatch))
-                .and(SubEvent.EVENT_SLUG.eq(eventSlug))
                 .get().iterator();
     }
 
@@ -131,7 +129,6 @@ public class AllSubEventsSyncAdapter extends BaseDownloadSyncAdapter<SubEvent, L
         if (isFirstPage) {
             rlm = store.select(ResourceSyncStatus.class)
                     .where(ResourceSyncStatus.RESOURCE.eq("subevents"))
-                    .and(ResourceSyncStatus.EVENT_SLUG.eq(eventSlug))
                     .limit(1)
                     .get().firstOrNull();
         }

@@ -106,6 +106,9 @@ public abstract class BaseDownloadSyncAdapter<T extends RemoteObject & Persistab
         while (it.hasNext()) {
             try {
                 T obj = it.next();
+                if (known.containsKey(getId(obj))) {
+                    store.delete(known.get(getId(obj)));
+                }
                 known.put(getId(obj), obj);
             } catch (BatchEmptyException e) {
                 // Ignore
