@@ -55,7 +55,21 @@ public class AbstractQuota implements RemoteObject {
 
     public boolean appliesToVariation(ItemVariation var) {
         try {
-            JSONArray ja = getJSON().getJSONArray("variations");
+            return appliesToVariation(getJSON(), var);
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    @Override
+    public JSONObject getJSON() throws JSONException {
+        return new JSONObject(json_data);
+    }
+
+    public static boolean appliesToVariation(JSONObject quotaJson, ItemVariation var) {
+        try {
+            JSONArray ja = quotaJson.getJSONArray("variations");
             for (int i = 0; i < ja.length(); i++) {
                 if (ja.getLong(i) == var.getServer_id()) {
                     return true;
@@ -66,10 +80,5 @@ public class AbstractQuota implements RemoteObject {
             e.printStackTrace();
             return false;
         }
-    }
-
-    @Override
-    public JSONObject getJSON() throws JSONException {
-        return new JSONObject(json_data);
     }
 }
