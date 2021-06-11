@@ -36,7 +36,9 @@ class OnlineCheckProvider(private val config: ConfigStore, httpClientFactory: Ht
         api.sentry = sentry
     }
 
-    override fun check(ticketid: String, answers: List<Answer>?, ignore_unpaid: Boolean, with_badge_data: Boolean, type: TicketCheckProvider.CheckInType): TicketCheckProvider.CheckResult {
+    override fun check(ticketid_: String, answers: List<Answer>?, ignore_unpaid: Boolean, with_badge_data: Boolean, type: TicketCheckProvider.CheckInType): TicketCheckProvider.CheckResult {
+        val ticketid = ticketid_.replace(Regex("[\\p{C}]"), "�")  // remove unprintable characters
+
         sentry.addBreadcrumb("provider.check", "started")
         val list = dataStore.select(CheckInList::class.java)
                 .where(CheckInList.SERVER_ID.eq(listId))

@@ -8,6 +8,7 @@ import eu.pretix.libpretixsync.crypto.isValidSignature
 import eu.pretix.libpretixsync.crypto.readPubkeyFromPem
 import eu.pretix.libpretixsync.crypto.sig1.TicketProtos
 import eu.pretix.libpretixsync.db.*
+import eu.pretix.libpretixsync.utils.codec.binary.Base64
 import eu.pretix.libpretixsync.utils.codec.binary.Base64.decodeBase64
 import eu.pretix.libpretixsync.utils.logic.JsonLogic
 import eu.pretix.libpretixsync.utils.logic.truthy
@@ -57,10 +58,15 @@ class AsyncCheckProvider(private val config: ConfigStore, private val eventSlug:
            :<json raw_variation: Internal ID of an item variationyou matched. Optional.
            :<json raw_subevent: Internal ID of an event series date you matched. Optional.
          */
+
         val dt = now()
         val jdoc = JSONObject()
         jdoc.put("datetime", QueuedCheckIn.formatDatetime(dt.toDate()))
-        jdoc.put("raw_barcode", raw_barcode)
+        if (raw_barcode.contains(Regex("[\\p{C}]"))) {
+            jdoc.put("raw_barcode", "binary:" + Base64.encodeBase64(raw_barcode.toByteArray(Charset.defaultCharset())).toString(Charset.defaultCharset()))
+        } else {
+            jdoc.put("raw_barcode", raw_barcode)
+        }
         jdoc.put("type", when (type) {
             TicketCheckProvider.CheckInType.ENTRY -> "entry"
             TicketCheckProvider.CheckInType.EXIT -> "exit"
