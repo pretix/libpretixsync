@@ -22,6 +22,8 @@ public abstract class QuestionLike {
 
     public abstract String getQuestion();
 
+    public abstract String getIdentifier();
+
     public abstract List<QuestionOption> getOptions();
 
     public abstract boolean requiresAnswer();

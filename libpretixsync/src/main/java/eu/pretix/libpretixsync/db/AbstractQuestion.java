@@ -49,6 +49,16 @@ public class AbstractQuestion extends QuestionLike implements RemoteObject {
     }
 
     @Override
+    public String getIdentifier() {
+        try {
+            return getJSON().getString("identifier");
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return "<invalid>";
+        }
+    }
+
+    @Override
     public String getQuestion() {
         try {
             return I18nString.toString(getJSON().getJSONObject("question"));
