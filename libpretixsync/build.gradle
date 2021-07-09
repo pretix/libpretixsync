@@ -118,7 +118,6 @@ dependencies {
     implementation 'net.i2p.crypto:eddsa:0.3.0'
     implementation 'com.google.protobuf:protobuf-lite:3.0.0'
 
-    annotationProcessor 'io.requery:requery-processor:1.6.0'
     kapt 'io.requery:requery-processor:1.6.0'
     annotationProcessor 'javax.annotation:jsr250-api:1.0'
 
