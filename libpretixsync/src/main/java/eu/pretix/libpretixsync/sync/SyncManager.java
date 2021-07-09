@@ -375,12 +375,14 @@ public class SyncManager {
                     configStore.setLastCleanup(System.currentTimeMillis());
                 }
             }
-            if (profile == Profile.PRETIXPOS) {
+
+            // We used to only Sync the settings for pretixPOS, but for COVID-certificate validation, we need the Settings, too.
+            try {
+                download(new SettingsSyncAdapter(dataStore, configStore.getEventSlug(), configStore.getEventSlug(), api, feedback));
+            } catch (ApiException e) {
+                // Older pretix installations
                 // We don't need these on pretixSCAN, so we can save some traffic
-                try {
-                    download(new SettingsSyncAdapter(dataStore, configStore.getEventSlug(), configStore.getEventSlug(), api, feedback));
-                } catch (ApiException e) {
-                    // Older pretix installations
+                if (profile == Profile.PRETIXPOS) {
                     download(new InvoiceSettingsSyncAdapter(dataStore, configStore.getEventSlug(), configStore.getEventSlug(), api, feedback));
                 }
             }
