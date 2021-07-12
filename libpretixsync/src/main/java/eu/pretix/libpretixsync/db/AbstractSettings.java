@@ -74,6 +74,9 @@ public abstract class AbstractSettings implements RemoteObject {
     @Nullable
     public boolean covid_certificates_accept_manual;
 
+    @Nullable
+    public boolean covid_certificates_record_proof;
+
     @Column(definition = "TEXT")
     public String json_data;
 
@@ -102,6 +105,7 @@ public abstract class AbstractSettings implements RemoteObject {
         j.put("covid_certificates_allow_tested_antigen_unknown_max", jsonobj.optInt("covid_certificates_allow_tested_antigen_unknown_max"));
         j.put("covid_certificates_accept_eudgc", jsonobj.optBoolean("covid_certificates_accept_eudgc"));
         j.put("covid_certificates_accept_manual", jsonobj.optBoolean("covid_certificates_accept_manual"));
+        j.put("covid_certificates_record_proof", jsonobj.optBoolean("covid_certificates_record_proof"));
         return j;
     }
 
