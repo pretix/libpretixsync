@@ -42,6 +42,9 @@ public abstract class AbstractSettings implements RemoteObject {
     public int covid_certificates_allow_vaccinated_max;
 
     @Nullable
+    public boolean covid_certificates_record_proof_vaccinated;
+
+    @Nullable
     public boolean covid_certificates_allow_cured;
 
     @Nullable
@@ -49,6 +52,9 @@ public abstract class AbstractSettings implements RemoteObject {
 
     @Nullable
     public int covid_certificates_allow_cured_max;
+
+    @Nullable
+    public boolean covid_certificates_record_proof_cured;
 
     @Nullable
     public boolean covid_certificates_allow_tested_pcr;
@@ -60,6 +66,9 @@ public abstract class AbstractSettings implements RemoteObject {
     public int covid_certificates_allow_tested_pcr_max;
 
     @Nullable
+    public boolean covid_certificates_record_proof_tested_pcr;
+
+    @Nullable
     public boolean covid_certificates_allow_tested_antigen_unknown;
 
     @Nullable
@@ -69,13 +78,13 @@ public abstract class AbstractSettings implements RemoteObject {
     public int covid_certificates_allow_tested_antigen_unknown_max;
 
     @Nullable
+    public boolean covid_certificates_record_proof_tested_antigen_unknown;
+
+    @Nullable
     public boolean covid_certificates_accept_eudgc;
 
     @Nullable
     public boolean covid_certificates_accept_manual;
-
-    @Nullable
-    public boolean covid_certificates_record_proof;
 
     @Column(definition = "TEXT")
     public String json_data;
@@ -94,18 +103,21 @@ public abstract class AbstractSettings implements RemoteObject {
         j.put("covid_certificates_allow_vaccinated", jsonobj.optBoolean("covid_certificates_allow_vaccinated"));
         j.put("covid_certificates_allow_vaccinated_min", jsonobj.optInt("covid_certificates_allow_vaccinated_min"));
         j.put("covid_certificates_allow_vaccinated_max", jsonobj.optInt("covid_certificates_allow_vaccinated_max"));
+        j.put("covid_certificates_record_proof_vaccinated", jsonobj.optBoolean("covid_certificates_record_proof_vaccinated"));
         j.put("covid_certificates_allow_cured", jsonobj.optBoolean("covid_certificates_allow_cured"));
         j.put("covid_certificates_allow_cured_min", jsonobj.optInt("covid_certificates_allow_cured_min"));
         j.put("covid_certificates_allow_cured_max", jsonobj.optInt("covid_certificates_allow_cured_max"));
+        j.put("covid_certificates_record_proof_cured", jsonobj.optBoolean("covid_certificates_record_proof_cured"));
         j.put("covid_certificates_allow_tested_pcr", jsonobj.optBoolean("covid_certificates_allow_tested_pcr"));
         j.put("covid_certificates_allow_tested_pcr_min", jsonobj.optInt("covid_certificates_allow_tested_pcr_min"));
         j.put("covid_certificates_allow_tested_pcr_max", jsonobj.optInt("covid_certificates_allow_tested_pcr_max"));
+        j.put("covid_certificates_record_proof_tested_pcr", jsonobj.optBoolean("covid_certificates_record_proof_tested_pcr"));
         j.put("covid_certificates_allow_tested_antigen_unknown", jsonobj.optBoolean("covid_certificates_allow_tested_antigen_unknown"));
         j.put("covid_certificates_allow_tested_antigen_unknown_min", jsonobj.optInt("covid_certificates_allow_tested_antigen_unknown_min"));
         j.put("covid_certificates_allow_tested_antigen_unknown_max", jsonobj.optInt("covid_certificates_allow_tested_antigen_unknown_max"));
+        j.put("covid_certificates_record_proof_tested_antigen_unknown", jsonobj.optBoolean("covid_certificates_record_proof_tested_antigen_unknown"));
         j.put("covid_certificates_accept_eudgc", jsonobj.optBoolean("covid_certificates_accept_eudgc"));
         j.put("covid_certificates_accept_manual", jsonobj.optBoolean("covid_certificates_accept_manual"));
-        j.put("covid_certificates_record_proof", jsonobj.optBoolean("covid_certificates_record_proof"));
         return j;
     }
 

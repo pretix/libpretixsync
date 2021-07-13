@@ -44,18 +44,21 @@ public class SettingsSyncAdapter extends BaseSingleObjectSyncAdapter<Settings> {
         obj.setCovid_certificates_allow_vaccinated(jsonobj.optBoolean("covid_certificates_allow_vaccinated"));
         obj.setCovid_certificates_allow_vaccinated_min(jsonobj.optInt("covid_certificates_allow_vaccinated_min"));
         obj.setCovid_certificates_allow_vaccinated_max(jsonobj.optInt("covid_certificates_allow_vaccinated_max"));
+        obj.setCovid_certificates_record_proof_vaccinated(jsonobj.optBoolean("covid_certificates_record_proof_vaccinated"));
         obj.setCovid_certificates_allow_cured(jsonobj.optBoolean("covid_certificates_allow_cured"));
         obj.setCovid_certificates_allow_cured_min(jsonobj.optInt("covid_certificates_allow_cured_min"));
         obj.setCovid_certificates_allow_cured_max(jsonobj.optInt("covid_certificates_allow_cured_max"));
+        obj.setCovid_certificates_record_proof_cured(jsonobj.optBoolean("covid_certificates_record_proof_cured"));
         obj.setCovid_certificates_allow_tested_pcr(jsonobj.optBoolean("covid_certificates_allow_tested_pcr"));
         obj.setCovid_certificates_allow_tested_pcr_min(jsonobj.optInt("covid_certificates_allow_tested_pcr_min"));
         obj.setCovid_certificates_allow_tested_pcr_max(jsonobj.optInt("covid_certificates_allow_tested_pcr_max"));
+        obj.setCovid_certificates_record_proof_tested_pcr(jsonobj.optBoolean("covid_certificates_record_proof_tested_pcr"));
         obj.setCovid_certificates_allow_tested_antigen_unknown(jsonobj.optBoolean("covid_certificates_allow_tested_antigen_unknown"));
         obj.setCovid_certificates_allow_tested_antigen_unknown_min(jsonobj.optInt("covid_certificates_allow_tested_antigen_unknown_min"));
         obj.setCovid_certificates_allow_tested_antigen_unknown_max(jsonobj.optInt("covid_certificates_allow_tested_antigen_unknown_max"));
+        obj.setCovid_certificates_record_proof_tested_antigen_unknown(jsonobj.optBoolean("covid_certificates_record_proof_tested_antigen_unknown"));
         obj.setCovid_certificates_accept_eudgc(jsonobj.optBoolean("covid_certificates_accept_eudgc"));
         obj.setCovid_certificates_accept_manual(jsonobj.optBoolean("covid_certificates_accept_manual"));
-        obj.setCovid_certificates_record_proof(jsonobj.optBoolean("covid_certificates_record_proof"));
         obj.setJson_data(jsonobj.toString());
     }
 
