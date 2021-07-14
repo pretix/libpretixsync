@@ -43,6 +43,7 @@ import eu.pretix.libpretixsync.utils.HashUtils;
 import eu.pretix.libpretixsync.utils.JSONUtils;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
+import io.requery.RollbackException;
 import io.requery.query.Scalar;
 import io.requery.query.Tuple;
 import io.requery.util.CloseableIterator;
@@ -562,7 +563,7 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
         try {
             new SubEventSyncAdapter(store, eventSlug, String.valueOf(sid), api, current_action -> {
             }).download();
-        } catch (JSONException | ApiException e) {
+        } catch (RollbackException | JSONException | ApiException e) {
             subeventsDeletionDate.put(sid, null);
             return null;
         }
