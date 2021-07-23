@@ -203,10 +203,10 @@ class OnlineCheckProvider(private val config: ConfigStore, httpClientFactory: Ht
             results
         } catch (e: JSONException) {
             sentry.captureException(e)
-            throw CheckException("Unknown server response")
+            throw CheckException("Unknown server response", e)
         } catch (e: ApiException) {
             sentry.addBreadcrumb("provider.search", "API Error: " + e.message)
-            throw CheckException(e.message)
+            throw CheckException(e.message, e)
         }
     }
 
@@ -228,10 +228,10 @@ class OnlineCheckProvider(private val config: ConfigStore, httpClientFactory: Ht
             r
         } catch (e: JSONException) {
             sentry.captureException(e)
-            throw CheckException("Unknown server response")
+            throw CheckException("Unknown server response", e)
         } catch (e: ApiException) {
             sentry.addBreadcrumb("provider.search", "API Error: " + e.message)
-            throw CheckException(e.message)
+            throw CheckException(e.message, e)
         }
     }
 
