@@ -629,7 +629,7 @@ public class SyncManager {
                     // Modern pretix versions already log this case and handle it if possible, nothing
                     // we can do here.
                     dataStore.delete(qci);
-                }
+                } // Else: will be retried later
             }
         } catch (JSONException e) {
             if (connectivityFeedback != null) {
