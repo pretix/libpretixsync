@@ -326,6 +326,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val eventSlug:
                     type == TicketCheckProvider.CheckInType.EXIT ||
                             list.isAllowMultipleEntries ||
                             queuedCheckIns.isEmpty() ||
+                            queuedCheckIns.all { it.type == "exit" } ||
                             (list.isAllowEntryAfterExit && queuedCheckIns.last().type == "exit")
                     )
             if (!entry_allowed) {
@@ -527,6 +528,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val eventSlug:
                     type == TicketCheckProvider.CheckInType.EXIT ||
                             list.isAllowMultipleEntries ||
                             checkIns.isEmpty() ||
+                            checkIns.all { it.type == "exit" } ||
                             (list.isAllowEntryAfterExit && checkIns.last().type == "exit")
                     )
             if (!entry_allowed) {
