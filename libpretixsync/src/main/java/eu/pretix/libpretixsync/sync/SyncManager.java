@@ -1,5 +1,6 @@
 package eu.pretix.libpretixsync.sync;
 
+import io.requery.sql.StatementExecutionException;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -196,6 +197,13 @@ public class SyncManager {
             configStore.setLastFailedSync(0);
             if (feedback != null) {
                 feedback.postFeedback("Sync completed.");
+            }
+        } catch (StatementExecutionException e) {
+            if (e.getCause() != null && e.getCause().getMessage().contains("SQLITE_BUSY")) {
+                configStore.setLastFailedSync(System.currentTimeMillis());
+                configStore.setLastFailedSyncMsg("Local database was locked");
+            } else {
+                throw e;
             }
         } catch (SyncException e) {
             configStore.setLastFailedSync(System.currentTimeMillis());
