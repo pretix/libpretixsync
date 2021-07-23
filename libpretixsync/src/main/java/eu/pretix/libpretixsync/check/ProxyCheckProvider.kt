@@ -137,13 +137,13 @@ class ProxyCheckProvider(private val config: ConfigStore, httpClientFactory: Htt
             mapper.readValue(body)
         } catch (e: ApiException) {
             sentry.addBreadcrumb("provider.search", "API Error: " + e.message)
-            throw CheckException(e.message)
+            throw CheckException(e.message, e)
         } catch (e: JsonProcessingException) {
             e.printStackTrace()
-            throw CheckException(e.message)
+            throw CheckException(e.message, e)
         } catch (e: IOException) {
             e.printStackTrace()
-            throw CheckException(e.message)
+            throw CheckException(e.message, e)
         }
     }
 
@@ -158,16 +158,16 @@ class ProxyCheckProvider(private val config: ConfigStore, httpClientFactory: Htt
             mapper.readValue(body, TicketCheckProvider.StatusResult::class.java)
         } catch (e: ApiException) {
             sentry.addBreadcrumb("provider.status", "API Error: " + e.message)
-            throw CheckException(e.message)
+            throw CheckException(e.message, e)
         } catch (e: JsonParseException) {
             e.printStackTrace()
-            throw CheckException(e.message)
+            throw CheckException(e.message, e)
         } catch (e: JsonMappingException) {
             e.printStackTrace()
-            throw CheckException(e.message)
+            throw CheckException(e.message, e)
         } catch (e: IOException) {
             e.printStackTrace()
-            throw CheckException(e.message)
+            throw CheckException(e.message, e)
         }
     }
 
