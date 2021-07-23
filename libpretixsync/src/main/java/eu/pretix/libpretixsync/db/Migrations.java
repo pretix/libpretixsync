@@ -15,7 +15,7 @@ import io.requery.sql.TableCreationMode;
 
 public class Migrations {
     private static EntityModel model = Models.DEFAULT;
-    public static int CURRENT_VERSION = 76;
+    public static int CURRENT_VERSION = 77;
 
     private static void createVersionTable(Connection c, int version) throws SQLException {
         Statement s2 = c.createStatement();
@@ -273,6 +273,27 @@ public class Migrations {
                 exec(c, "alter table queuedcall alter column url type text using body::text;");
             }
             updateVersionTable(c, 73);
+        }
+        if (db_version < 77) {
+            execIgnore(c, "ALTER TABLE settings ADD covid_certificates_allow_vaccinated " + BuildConfig.BOOLEAN_TYPE + " NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            execIgnore(c, "ALTER TABLE settings ADD covid_certificates_allow_vaccinated_min NUMERIC NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            execIgnore(c, "ALTER TABLE settings ADD covid_certificates_allow_vaccinated_max NUMERIC NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            execIgnore(c, "ALTER TABLE settings ADD covid_certificates_record_proof_vaccinated " + BuildConfig.BOOLEAN_TYPE + " NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            execIgnore(c, "ALTER TABLE settings ADD covid_certificates_allow_cured " + BuildConfig.BOOLEAN_TYPE + " NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            execIgnore(c, "ALTER TABLE settings ADD covid_certificates_allow_cured_min NUMERIC NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            execIgnore(c, "ALTER TABLE settings ADD covid_certificates_allow_cured_max NUMERIC NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            execIgnore(c, "ALTER TABLE settings ADD covid_certificates_record_proof_cured " + BuildConfig.BOOLEAN_TYPE + " NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            execIgnore(c, "ALTER TABLE settings ADD covid_certificates_allow_tested_pcr " + BuildConfig.BOOLEAN_TYPE + " NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            execIgnore(c, "ALTER TABLE settings ADD covid_certificates_allow_tested_pcr_min NUMERIC NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            execIgnore(c, "ALTER TABLE settings ADD covid_certificates_allow_tested_pcr_max NUMERIC NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            execIgnore(c, "ALTER TABLE settings ADD covid_certificates_record_proof_tested_pcr " + BuildConfig.BOOLEAN_TYPE + " NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            execIgnore(c, "ALTER TABLE settings ADD covid_certificates_allow_tested_antigen_unknown " + BuildConfig.BOOLEAN_TYPE + " NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            execIgnore(c, "ALTER TABLE settings ADD covid_certificates_allow_tested_antigen_unknown_min NUMERIC NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            execIgnore(c, "ALTER TABLE settings ADD covid_certificates_allow_tested_antigen_unknown_max NUMERIC NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            execIgnore(c, "ALTER TABLE settings ADD covid_certificates_record_proof_tested_antigen_unknown " + BuildConfig.BOOLEAN_TYPE + " NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            execIgnore(c, "ALTER TABLE settings ADD covid_certificates_accept_eudgc " + BuildConfig.BOOLEAN_TYPE + " NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            execIgnore(c, "ALTER TABLE settings ADD covid_certificates_accept_manual " + BuildConfig.BOOLEAN_TYPE + " NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            updateVersionTable(c, 77);
         }
 
         // Note that the Android app currently does not use these queries!
