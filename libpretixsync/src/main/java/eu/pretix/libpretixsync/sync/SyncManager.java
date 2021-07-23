@@ -621,15 +621,14 @@ public class SyncManager {
                     api.setEventSlug(configStore.getEventSlug());
                 }
                 JSONObject response = ar.getData();
-                String status = response.getString("status");
+                String status = response.optString("status", null);
                 if ("ok".equals(status)) {
                     dataStore.delete(qci);
-                } else {
-                    String reason = response.optString("reason");
-                    if ("already_redeemed".equals(reason)) {
-                        // Well, we can't really do something about this.
-                        dataStore.delete(qci);
-                    } // Else: Retry later
+                } else if (ar.getResponse().code() == 404 || ar.getResponse().code() == 400) {
+                    // There's no point in re-trying a 404 or 400 since it won't change on later uploads.
+                    // Modern pretix versions already log this case and handle it if possible, nothing
+                    // we can do here.
+                    dataStore.delete(qci);
                 }
             }
         } catch (JSONException e) {
