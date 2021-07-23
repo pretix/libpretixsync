@@ -24,6 +24,7 @@ import java.net.URL
 import java.net.URLEncoder
 import java.util.*
 import javax.net.ssl.SSLException
+import javax.net.ssl.SSLPeerUnverifiedException
 
 open class PretixApi(url: String, key: String, orgaSlug: String, eventSlug: String?, version: Int, httpClientFactory: HttpClientFactory) {
     private val url: String
@@ -217,11 +218,19 @@ open class PretixApi(url: String, key: String, orgaSlug: String, eventSlug: Stri
     }
 
     @Throws(ApiException::class, ResourceNotModified::class)
-    private fun apiCall(request: Request, json: Boolean = true): ApiResponse {
+    private fun apiCall(request: Request, json: Boolean = true, is_retry: Boolean=false): ApiResponse {
         val response: Response
         response = try {
             client.newCall(request).execute()
-        } catch (e: SSLException) {
+        } catch (e: SSLPeerUnverifiedException) {
+            if (!is_retry) {
+                // On Windows, we occasionally see SSL errors after a long period of idle. We didn't fully figure
+                // it out, but it seems to be because it tries to reuse a SSL socket that the server already closed.
+                // We assume it's safe to retry in all cases since the verification happens before any payload
+                // reaches the server.
+                client.connectionPool.evictAll()
+                return apiCall(request, json, is_retry)
+            }
             e.printStackTrace()
             throw ApiException("Error while creating a secure connection.", e)
         } catch (e: IOException) {
