@@ -396,7 +396,7 @@ public class SyncManager {
             throw new SyncException(e.getMessage());
         } catch (JSONException e) {
             e.printStackTrace();
-            throw new SyncException("Unknown server response");
+            throw new SyncException("Unknown server response: " + e.getMessage());
         } catch (ApiException e) {
             sentry.addBreadcrumb("sync.tickets", "API Error: " + e.getMessage());
             throw new SyncException(e.getMessage());
@@ -435,7 +435,7 @@ public class SyncManager {
             }
         } catch (JSONException e) {
             sentry.captureException(e);
-            throw new SyncException("Unknown server response");
+            throw new SyncException("Unknown server response: " + e.getMessage());
         } catch (NotFoundApiException e) {
             if (!url.contains("/failed_checkins/")) {  // ignore this one: old pretix systems don't have it
                 sentry.addBreadcrumb("sync.queue", "API Error: " + e.getMessage());
@@ -483,7 +483,7 @@ public class SyncManager {
             }
         } catch (JSONException e) {
             sentry.captureException(e);
-            throw new SyncException("Unknown server response");
+            throw new SyncException("Unknown server response: " + e.getMessage());
         } catch (ApiException e) {
             sentry.addBreadcrumb("sync.queue", "API Error: " + e.getMessage());
             throw new SyncException(e.getMessage());
@@ -540,7 +540,7 @@ public class SyncManager {
                 connectivityFeedback.recordError();
             }
             sentry.captureException(e);
-            throw new SyncException("Unknown server response");
+            throw new SyncException("Unknown server response: " + e.getMessage());
         } catch (ApiException e) {
             if (connectivityFeedback != null) {
                 connectivityFeedback.recordError();
@@ -575,7 +575,7 @@ public class SyncManager {
             }
         } catch (JSONException e) {
             sentry.captureException(e);
-            throw new SyncException("Unknown server response");
+            throw new SyncException("Unknown server response: " + e.getMessage());
         } catch (ApiException e) {
             sentry.addBreadcrumb("sync.queue", "API Error: " + e.getMessage());
             throw new SyncException(e.getMessage());
@@ -637,7 +637,7 @@ public class SyncManager {
                 connectivityFeedback.recordError();
             }
             sentry.captureException(e);
-            throw new SyncException("Unknown server response");
+            throw new SyncException("Unknown server response: " + e.getMessage());
         } catch (NotFoundApiException e) {
             // Ticket secret no longer exists, too bad :\
         } catch (ApiException e) {
