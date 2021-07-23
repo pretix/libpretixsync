@@ -156,6 +156,9 @@ class AsyncCheckProvider(private val config: ConfigStore, private val eventSlug:
         } catch (e: Exception) {
             return null
         }
+        if (rawbytes.size == 0) {
+            return null
+        }
         val version = rawbytes[0].toUByte().toInt()
         if (version != 0x01) {
             return null
