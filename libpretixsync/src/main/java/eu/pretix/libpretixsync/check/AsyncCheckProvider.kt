@@ -250,8 +250,6 @@ class AsyncCheckProvider(private val config: ConfigStore, private val eventSlug:
                     it.getCheckinListId() == listId
                 }.sortedWith(compareBy({ it.fullDatetime }, { it.id }))
 
-        // TODO: check revoke list
-
         val rules = list.rules
         if (type == TicketCheckProvider.CheckInType.ENTRY && rules != null && rules.length() > 0) {
             val data = mutableMapOf<String, Any>()
