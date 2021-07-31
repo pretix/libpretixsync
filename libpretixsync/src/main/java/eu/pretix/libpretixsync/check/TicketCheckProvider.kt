@@ -33,6 +33,7 @@ interface TicketCheckProvider {
         var seat: String? = null
         var message: String? = null
         var orderCode: String? = null
+        var positionId: Long? = null
         var firstScanned: Date? = null
         var addonText: String? = null
         var reasonExplanation: String? = null
@@ -50,6 +51,13 @@ interface TicketCheckProvider {
             this.type = type
         }
 
+        fun orderCodeAndPositionId(): String? {
+            if (orderCode != null && positionId != null && positionId!! > 0) {
+                return "${orderCode}-${positionId}"
+            } else {
+                return orderCode
+            }
+        }
     }
 
     class SearchResult {
@@ -63,6 +71,7 @@ interface TicketCheckProvider {
         var attendee_name: String? = null
         var seat: String? = null
         var orderCode: String? = null
+        var positionId: Long? = null
         var addonText: String? = null
         var status: Status? = null
         var isRedeemed = false
@@ -77,6 +86,7 @@ interface TicketCheckProvider {
             attendee_name = r.attendee_name
             seat = r.seat
             orderCode = r.orderCode
+            positionId = r.positionId
             status = r.status
             isRedeemed = r.isRedeemed
             isRequireAttention = r.isRequireAttention
@@ -84,6 +94,13 @@ interface TicketCheckProvider {
             position = r.position
         }
 
+        fun orderCodeAndPositionId(): String? {
+            if (orderCode != null && positionId != null && positionId!! > 0) {
+                return "${orderCode}-${positionId}"
+            } else {
+                return orderCode
+            }
+        }
     }
 
     class StatusResultItemVariation(var id: Long, var name: String?, var total: Int, var checkins: Int) {

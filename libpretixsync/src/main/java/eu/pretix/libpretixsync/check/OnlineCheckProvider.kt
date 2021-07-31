@@ -113,6 +113,7 @@ class OnlineCheckProvider(private val config: ConfigStore, httpClientFactory: Ht
                         res.seat = posjson.getJSONObject("seat").getString("name")
                     }
                     res.orderCode = posjson.optString("order")
+                    res.positionId = posjson.optLong("positionid")
                     res.position = posjson
                     val checkins = posjson.getJSONArray("checkins")
                     for (i in 0 until checkins.length()) {
@@ -186,6 +187,7 @@ class OnlineCheckProvider(private val config: ConfigStore, httpClientFactory: Ht
                     sr.seat = res.getJSONObject("seat").getString("name")
                 }
                 sr.orderCode = res.optString("order")
+                sr.positionId = res.optLong("positionid")
                 sr.secret = res.optString("secret")
                 sr.isRedeemed = res.getJSONArray("checkins").length() > 0
                 val status = res.optString("order__status", "p")

@@ -425,6 +425,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val eventSlug:
         res.attendee_name = position.attendee_name
         res.seat = position.seatName
         res.orderCode = position.getOrder().getCode()
+        res.positionId = position.getPositionid()
         res.position = jPosition
         var require_attention = position.getOrder().isCheckin_attention
         try {
@@ -620,6 +621,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val eventSlug:
             sr.attendee_name = position.attendee_name
             sr.seat = position.seatName
             sr.orderCode = order.getCode()
+            sr.positionId = position.getPositionid()
             sr.secret = position.getSecret()
             val queuedCheckIns = dataStore.count(QueuedCheckIn::class.java)
                     .where(QueuedCheckIn.SECRET.eq(position.getSecret()))
