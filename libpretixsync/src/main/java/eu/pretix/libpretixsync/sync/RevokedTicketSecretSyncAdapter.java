@@ -37,7 +37,7 @@ public class RevokedTicketSecretSyncAdapter extends BaseDownloadSyncAdapter<Revo
             completed = true;
         } finally {
             ResourceSyncStatus resourceSyncStatus = store.select(ResourceSyncStatus.class)
-                    .where(ResourceSyncStatus.RESOURCE.eq("revokedticketsecrets"))
+                    .where(ResourceSyncStatus.RESOURCE.eq(getResourceName()))
                     .and(ResourceSyncStatus.EVENT_SLUG.eq(eventSlug))
                     .limit(1)
                     .get().firstOrNull();
@@ -51,7 +51,7 @@ public class RevokedTicketSecretSyncAdapter extends BaseDownloadSyncAdapter<Revo
             if (firstResponseTimestamp != null) {
                 if (resourceSyncStatus == null) {
                     resourceSyncStatus = new ResourceSyncStatus();
-                    resourceSyncStatus.setResource("subevents");
+                    resourceSyncStatus.setResource(getResourceName());
                     resourceSyncStatus.setEvent_slug(eventSlug);
                     if (completed) {
                         resourceSyncStatus.setStatus("complete");
@@ -128,7 +128,7 @@ public class RevokedTicketSecretSyncAdapter extends BaseDownloadSyncAdapter<Revo
     protected JSONObject downloadPage(String url, boolean isFirstPage) throws ApiException, ResourceNotModified {
         if (isFirstPage) {
             rlm = store.select(ResourceSyncStatus.class)
-                    .where(ResourceSyncStatus.RESOURCE.eq("revokedticketsecrets"))
+                    .where(ResourceSyncStatus.RESOURCE.eq(getResourceName()))
                     .and(ResourceSyncStatus.EVENT_SLUG.eq(eventSlug))
                     .limit(1)
                     .get().firstOrNull();
@@ -164,7 +164,14 @@ public class RevokedTicketSecretSyncAdapter extends BaseDownloadSyncAdapter<Revo
 
         PretixApi.ApiResponse apiResponse = api.fetchResource(url);
         if (isFirstPage) {
-            firstResponseTimestamp = apiResponse.getResponse().header("X-Page-Generated");
+            try {
+                JSONArray results = apiResponse.getData().getJSONArray("results");
+                if (results.length() > 0) {
+                    firstResponseTimestamp = results.getJSONObject(0).getString("created");
+                }
+            } catch (JSONException | NullPointerException e) {
+                e.printStackTrace();
+            }
         }
         return apiResponse.getData();
     }
