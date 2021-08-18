@@ -168,14 +168,24 @@ open class PretixApi(url: String, key: String, orgaSlug: String, eventSlug: Stri
 
     @Throws(ApiException::class)
     open fun postResource(full_url: String, data: JSONObject): ApiResponse {
-        return postResource(full_url, data, null)
+        return postResource(full_url, data.toString(), null)
+    }
+
+    @Throws(ApiException::class)
+    open fun postResource(full_url: String, data: JSONArray): ApiResponse {
+        return postResource(full_url, data.toString(), null)
     }
 
     @Throws(ApiException::class)
     fun postResource(full_url: String?, data: JSONObject, idempotency_key: String?): ApiResponse {
+        return postResource(full_url, data.toString(), idempotency_key)
+    }
+
+    @Throws(ApiException::class)
+    fun postResource(full_url: String?, data: String, idempotency_key: String?): ApiResponse {
         var request = Request.Builder()
                 .url(full_url!!)
-                .post(data.toString().toRequestBody("application/json".toMediaType()))
+                .post(data.toRequestBody("application/json".toMediaType()))
                 .header("Authorization", "Device $key")
         if (idempotency_key != null) {
             request = request.header("X-Idempotency-Key", idempotency_key)
