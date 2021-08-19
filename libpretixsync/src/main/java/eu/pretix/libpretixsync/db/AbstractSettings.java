@@ -100,24 +100,6 @@ public abstract class AbstractSettings implements RemoteObject {
         j.put("invoice_address_from_country", jsonobj.optString("invoice_address_from_country"));
         j.put("invoice_address_from_tax_id", jsonobj.optString("invoice_address_from_tax_id"));
         j.put("invoice_address_from_vat_id", jsonobj.optString("invoice_address_from_vat_id"));
-        j.put("covid_certificates_allow_vaccinated", jsonobj.optBoolean("covid_certificates_allow_vaccinated"));
-        j.put("covid_certificates_allow_vaccinated_min", jsonobj.optInt("covid_certificates_allow_vaccinated_min"));
-        j.put("covid_certificates_allow_vaccinated_max", jsonobj.optInt("covid_certificates_allow_vaccinated_max"));
-        j.put("covid_certificates_record_proof_vaccinated", jsonobj.optBoolean("covid_certificates_record_proof_vaccinated"));
-        j.put("covid_certificates_allow_cured", jsonobj.optBoolean("covid_certificates_allow_cured"));
-        j.put("covid_certificates_allow_cured_min", jsonobj.optInt("covid_certificates_allow_cured_min"));
-        j.put("covid_certificates_allow_cured_max", jsonobj.optInt("covid_certificates_allow_cured_max"));
-        j.put("covid_certificates_record_proof_cured", jsonobj.optBoolean("covid_certificates_record_proof_cured"));
-        j.put("covid_certificates_allow_tested_pcr", jsonobj.optBoolean("covid_certificates_allow_tested_pcr"));
-        j.put("covid_certificates_allow_tested_pcr_min", jsonobj.optInt("covid_certificates_allow_tested_pcr_min"));
-        j.put("covid_certificates_allow_tested_pcr_max", jsonobj.optInt("covid_certificates_allow_tested_pcr_max"));
-        j.put("covid_certificates_record_proof_tested_pcr", jsonobj.optBoolean("covid_certificates_record_proof_tested_pcr"));
-        j.put("covid_certificates_allow_tested_antigen_unknown", jsonobj.optBoolean("covid_certificates_allow_tested_antigen_unknown"));
-        j.put("covid_certificates_allow_tested_antigen_unknown_min", jsonobj.optInt("covid_certificates_allow_tested_antigen_unknown_min"));
-        j.put("covid_certificates_allow_tested_antigen_unknown_max", jsonobj.optInt("covid_certificates_allow_tested_antigen_unknown_max"));
-        j.put("covid_certificates_record_proof_tested_antigen_unknown", jsonobj.optBoolean("covid_certificates_record_proof_tested_antigen_unknown"));
-        j.put("covid_certificates_accept_eudgc", jsonobj.optBoolean("covid_certificates_accept_eudgc"));
-        j.put("covid_certificates_accept_manual", jsonobj.optBoolean("covid_certificates_accept_manual"));
         return j;
     }
 
