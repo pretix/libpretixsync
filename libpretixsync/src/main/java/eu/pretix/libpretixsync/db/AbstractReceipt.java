@@ -55,6 +55,9 @@ public class AbstractReceipt implements LocalObject {
 
     public String fiscalisation_qr;
 
+    @Nullable
+    public String additional_text;
+
     @Column(nullable = true)
     public String email_to;
 
@@ -116,6 +119,7 @@ public class AbstractReceipt implements LocalObject {
         jo.put("fiscalisation_qr", fiscalisation_qr == null || fiscalisation_qr.equals("null") || fiscalisation_qr.isEmpty() ? "" : fiscalisation_qr);
         jo.put("cashier", cashier_numericid);
         jo.put("training", training);
+        jo.put("additional_text", additional_text);
         return jo;
     }
 }

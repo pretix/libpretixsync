@@ -33,6 +33,9 @@ public abstract class AbstractSettings implements RemoteObject {
     public String vat_id;
 
     @Nullable
+    public String pretixpos_additional_receipt_text;
+
+    @Nullable
     public boolean covid_certificates_allow_vaccinated;
 
     @Nullable

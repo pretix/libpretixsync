@@ -59,6 +59,7 @@ public class SettingsSyncAdapter extends BaseSingleObjectSyncAdapter<Settings> {
         obj.setCovid_certificates_record_proof_tested_antigen_unknown(jsonobj.optBoolean("covid_certificates_record_proof_tested_antigen_unknown"));
         obj.setCovid_certificates_accept_eudgc(jsonobj.optBoolean("covid_certificates_accept_eudgc"));
         obj.setCovid_certificates_accept_manual(jsonobj.optBoolean("covid_certificates_accept_manual"));
+        obj.setPretixpos_additional_receipt_text(jsonobj.optString("pretixpos_additional_receipt_text"));
         obj.setJson_data(jsonobj.toString());
     }
 
