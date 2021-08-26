@@ -144,8 +144,8 @@ class JsonLogic {
                 }
             },
             "/" to { l, _ -> with(l?.doubleList ?: listOf()) { this[0] / this[1] } },
-            "min" to { l, _ -> l?.filter { it is Number }?.minBy { (it as Number).toDouble() } },
-            "max" to { l, _ -> l?.filter { it is Number }?.maxBy { (it as Number).toDouble() } },
+            "min" to { l, _ -> l?.filter { it is Number }?.minByOrNull { (it as Number).toDouble() } },
+            "max" to { l, _ -> l?.filter { it is Number }?.maxByOrNull{ (it as Number).toDouble() } },
             "merge" to { l, _ -> l?.flat },
             "substr" to { l, _ ->
                 val str = l?.getOrNull(0).toString()
