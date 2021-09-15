@@ -2,6 +2,9 @@ package eu.pretix.libpretixsync.db;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import org.joda.time.DateTime;
+import org.joda.time.format.ISODateTimeFormat;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -22,6 +25,9 @@ public class ItemVariation implements Serializable {
     private Long position;
     private Long available;
     private Long available_number;
+    private JSONArray sales_channels;
+    private String available_from;
+    private String available_until;
 
     public void setServer_id(Long server_id) {
         this.server_id = server_id;
@@ -91,6 +97,30 @@ public class ItemVariation implements Serializable {
         this.available_number = available_number;
     }
 
+    public JSONArray getSales_channels() {
+        return sales_channels;
+    }
+
+    public void setSales_channels(JSONArray sales_channels) {
+        this.sales_channels = sales_channels;
+    }
+
+    public String getAvailable_from() {
+        return available_from;
+    }
+
+    public void setAvailable_from(String available_from) {
+        this.available_from = available_from;
+    }
+
+    public String getAvailable_until() {
+        return available_until;
+    }
+
+    public void setAvailable_until(String available_until) {
+        this.available_until = available_until;
+    }
+
     private void writeObject(java.io.ObjectOutputStream out)
             throws IOException {
         JSONObject jsonObject = new JSONObject();
@@ -103,6 +133,9 @@ public class ItemVariation implements Serializable {
             jsonObject.put("position", position);
             jsonObject.put("available", available);
             jsonObject.put("available_number", available_number);
+            jsonObject.put("sales_channels", sales_channels);
+            jsonObject.put("available_from", available_from);
+            jsonObject.put("available_until", available_until);
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -125,6 +158,9 @@ public class ItemVariation implements Serializable {
             position = jsonObject.getLong("position");
             available = !jsonObject.isNull("available") ? jsonObject.optLong("available") : null;
             available_number = !jsonObject.isNull("available_number") ? jsonObject.optLong("available_number") : null;
+            available_from = jsonObject.optString("available_from");
+            available_until = jsonObject.optString("available_until");
+            sales_channels = jsonObject.optJSONArray("sales_channels");
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -133,5 +169,38 @@ public class ItemVariation implements Serializable {
 
     private void readObjectNoData()
             throws ObjectStreamException {
+    }
+
+    public boolean availableOnSalesChannel(String channel) {
+        try {
+            if (sales_channels == null) {
+                return true;
+            }
+            for (int i = 0; i < sales_channels.length(); i++) {
+                if (sales_channels.getString(i).equals(channel)) {
+                    return true;
+                }
+            }
+            return false;
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return true;
+        }
+    }
+
+    public boolean availableByTime() {
+        if (available_from != null && available_from.length() > 5) {
+            DateTime af = ISODateTimeFormat.dateTimeParser().parseDateTime(available_from);
+            if (af.isAfterNow()) {
+                return false;
+            }
+        }
+        if (available_until != null && available_until.length() > 5) {
+            DateTime af = ISODateTimeFormat.dateTimeParser().parseDateTime(available_until);
+            if (af.isBeforeNow()) {
+                return false;
+            }
+        }
+        return true;
     }
 }

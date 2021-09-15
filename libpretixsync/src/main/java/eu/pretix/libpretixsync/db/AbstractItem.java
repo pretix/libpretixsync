@@ -213,6 +213,9 @@ public class AbstractItem implements RemoteObject {
             v.setPrice(new BigDecimal(variation.getString("price")));
             v.setServer_id(variation.getLong("id"));
             v.setValue(variation.getJSONObject("value"));
+            v.setAvailable_from(variation.optString("available_from"));
+            v.setAvailable_until(variation.optString("available_until"));
+            v.setSales_channels(variation.optJSONArray("sales_channels"));
             l.add(v);
         }
         return l;
