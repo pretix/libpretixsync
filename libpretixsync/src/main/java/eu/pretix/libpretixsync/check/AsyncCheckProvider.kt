@@ -149,6 +149,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val eventSlug:
 
     data class SignedTicketData(val seed: String, val item: Long, val variation: Long?, val subevent: Long?)
 
+    @ExperimentalUnsignedTypes
     private fun decodePretixSig1(qrcode: String): SignedTicketData? {
         val rawbytes: ByteArray
         try {
