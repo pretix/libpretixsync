@@ -55,6 +55,15 @@ public class AbstractReceiptLine implements LocalObject {
     public Long subevent_id;
 
     @Nullable
+    public String subevent_text;
+
+    @Nullable
+    public String event_date_from;
+
+    @Nullable
+    public String event_date_to;
+
+    @Nullable
     public String seat_guid;
 
     @Nullable
@@ -131,6 +140,9 @@ public class AbstractReceiptLine implements LocalObject {
         jo.put("secret", secret);
         jo.put("seat", seat_guid != null ? seat_guid : JSONObject.NULL);
         jo.put("subevent", subevent_id);
+        jo.put("event_date_from", event_date_from != null && event_date_from.length() > 5 ? event_date_from : JSONObject.NULL);
+        jo.put("event_date_to", event_date_to != null && event_date_to.length() > 5 ? event_date_to : JSONObject.NULL);
+        jo.put("subevent_text", subevent_text != null && subevent_text.length() > 0 && !subevent_text.equals("null") ? subevent_text : JSONObject.NULL);
         jo.put("item", item_id != null && item_id != 0L ? item_id : JSONObject.NULL);
         jo.put("variation", variation_id);
         jo.put("answers", answers);
