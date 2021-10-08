@@ -152,4 +152,9 @@ public class FakeConfigStore implements ConfigStore {
     public Boolean getAutoSwitchRequested() {
         return false;
     }
+
+    @Override
+    public String getSyncCycleId() {
+        return "1";
+    }
 }

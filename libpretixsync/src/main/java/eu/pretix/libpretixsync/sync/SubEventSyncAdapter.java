@@ -7,14 +7,16 @@ import org.json.JSONObject;
 import java.util.List;
 
 import eu.pretix.libpretixsync.api.PretixApi;
+import eu.pretix.libpretixsync.db.Migrations;
 import eu.pretix.libpretixsync.db.SubEvent;
 import eu.pretix.libpretixsync.utils.JSONUtils;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
 
 public class SubEventSyncAdapter extends BaseSingleObjectSyncAdapter<SubEvent> {
-    public SubEventSyncAdapter(BlockingEntityStore<Persistable> store, String eventSlug, String key, PretixApi api, SyncManager.ProgressFeedback feedback) {
-        super(store, eventSlug, key, api, feedback);
+
+    public SubEventSyncAdapter(BlockingEntityStore<Persistable> store, String eventSlug, String key, PretixApi api, String syncCycleId, SyncManager.ProgressFeedback feedback) {
+        super(store, eventSlug, key, api, syncCycleId, feedback);
     }
 
     @Override
@@ -65,6 +67,8 @@ public class SubEventSyncAdapter extends BaseSingleObjectSyncAdapter<SubEvent> {
         }
 
         // Store object
+        data.put("__libpretixsync_dbversion", Migrations.CURRENT_VERSION);
+        data.put("__libpretixsync_syncCycleId", syncCycleId);
         if (old == null) {
             updateObject(obj, data);
             store.insert(obj);

@@ -129,7 +129,8 @@ class OnlineCheckProvider(private val config: ConfigStore, httpClientFactory: Ht
                             val pdfdata = posjson.getJSONObject("pdf_data")
                             if (pdfdata.has("images")) {
                                 val images = pdfdata.getJSONObject("images")
-                                OrderSyncAdapter(dataStore, fileStore, config.eventSlug, config.subEventId, true, false, api, null).updatePdfImages(posjson.getLong("id"), images)
+                                OrderSyncAdapter(dataStore, fileStore, config.eventSlug, config.subEventId, true, false, api, config.syncCycleId, null)
+                                        .updatePdfImages(posjson.getLong("id"), images)
                             }
                         }
                     } catch (e: Exception) {

@@ -19,6 +19,7 @@ import java.util.concurrent.Executors;
 import eu.pretix.libpretixsync.api.ApiException;
 import eu.pretix.libpretixsync.api.PretixApi;
 import eu.pretix.libpretixsync.api.ResourceNotModified;
+import eu.pretix.libpretixsync.db.Migrations;
 import eu.pretix.libpretixsync.db.RemoteObject;
 import eu.pretix.libpretixsync.utils.JSONUtils;
 import io.requery.BlockingEntityStore;
@@ -31,6 +32,7 @@ public abstract class BaseDownloadSyncAdapter<T extends RemoteObject & Persistab
 
     protected BlockingEntityStore<Persistable> store;
     protected PretixApi api;
+    protected String syncCycleId;
     protected String eventSlug;
     protected FileStorage fileStorage;
     protected Set<K> knownIDs;
@@ -43,9 +45,10 @@ public abstract class BaseDownloadSyncAdapter<T extends RemoteObject & Persistab
     protected int totalOnline;
     protected SyncManager.CanceledState canceledState;
 
-    public BaseDownloadSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, PretixApi api, SyncManager.ProgressFeedback feedback) {
+    public BaseDownloadSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, PretixApi api, String syncCycleId, SyncManager.ProgressFeedback feedback) {
         this.store = store;
         this.api = api;
+        this.syncCycleId = syncCycleId;
         this.eventSlug = eventSlug;
         this.fileStorage = fileStorage;
         this.feedback = feedback;
@@ -137,6 +140,8 @@ public abstract class BaseDownloadSyncAdapter<T extends RemoteObject & Persistab
 
                 for (int i = 0; i < l; i++) {
                     JSONObject jsonobj = preprocessObject(data.getJSONObject(i));
+                    jsonobj.put("__libpretixsync_dbversion", Migrations.CURRENT_VERSION);
+                    jsonobj.put("__libpretixsync_syncCycleId", syncCycleId);
                     K jsonid = getId(jsonobj);
                     T obj;
                     JSONObject old = null;

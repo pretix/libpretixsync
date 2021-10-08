@@ -15,8 +15,8 @@ import java.util.Iterator;
 import java.util.List;
 
 public class AllEventsSyncAdapter extends BaseDownloadSyncAdapter<Event, String> {
-    public AllEventsSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, PretixApi api, SyncManager.ProgressFeedback feedback) {
-        super(store, fileStorage, eventSlug, api, feedback);
+    public AllEventsSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, PretixApi api, String syncCycleId, SyncManager.ProgressFeedback feedback) {
+        super(store, fileStorage, eventSlug, api, syncCycleId, feedback);
     }
 
     @Override

@@ -28,6 +28,8 @@ public interface ConfigStore {
 
     public String getEventSlug();
 
+    public String getSyncCycleId();
+
     public Long getSubEventId();
 
     public long getLastDownload();

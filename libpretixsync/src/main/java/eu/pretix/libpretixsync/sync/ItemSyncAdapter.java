@@ -12,6 +12,7 @@ import java.util.List;
 import eu.pretix.libpretixsync.api.ApiException;
 import eu.pretix.libpretixsync.api.PretixApi;
 import eu.pretix.libpretixsync.db.Item;
+import eu.pretix.libpretixsync.db.Migrations;
 import eu.pretix.libpretixsync.utils.HashUtils;
 import eu.pretix.libpretixsync.utils.JSONUtils;
 import io.requery.BlockingEntityStore;
@@ -20,8 +21,9 @@ import io.requery.query.Tuple;
 import io.requery.util.CloseableIterator;
 
 public class ItemSyncAdapter extends BaseConditionalSyncAdapter<Item, Long> {
-    public ItemSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, PretixApi api, SyncManager.ProgressFeedback feedback) {
-        super(store, fileStorage, eventSlug, api, feedback);
+
+    public ItemSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, PretixApi api, String syncCycleId, SyncManager.ProgressFeedback feedback) {
+        super(store, fileStorage, eventSlug, api, syncCycleId, feedback);
     }
 
     @Override
@@ -119,6 +121,8 @@ public class ItemSyncAdapter extends BaseConditionalSyncAdapter<Item, Long> {
         }
 
         // Store object
+        data.put("__libpretixsync_dbversion", Migrations.CURRENT_VERSION);
+        data.put("__libpretixsync_syncCycleId", syncCycleId);
         if (old == null) {
             updateObject(obj, data);
             store.insert(obj);

@@ -35,6 +35,7 @@ import eu.pretix.libpretixsync.db.CheckIn;
 import eu.pretix.libpretixsync.db.CheckInList;
 import eu.pretix.libpretixsync.db.Event;
 import eu.pretix.libpretixsync.db.Item;
+import eu.pretix.libpretixsync.db.Migrations;
 import eu.pretix.libpretixsync.db.Order;
 import eu.pretix.libpretixsync.db.OrderPosition;
 import eu.pretix.libpretixsync.db.ResourceSyncStatus;
@@ -50,8 +51,8 @@ import io.requery.util.CloseableIterator;
 import kotlin.reflect.jvm.internal.impl.util.Check;
 
 public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
-    public OrderSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, Long subeventId, boolean withPdfData, boolean is_pretixpos, PretixApi api, SyncManager.ProgressFeedback feedback) {
-        super(store, fileStorage, eventSlug, api, feedback);
+    public OrderSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, Long subeventId, boolean withPdfData, boolean is_pretixpos, PretixApi api, String syncCylceId, SyncManager.ProgressFeedback feedback) {
+        super(store, fileStorage, eventSlug, api, syncCylceId, feedback);
         this.withPdfData = withPdfData;
         this.subeventId = subeventId;
         this.is_pretixpos = is_pretixpos;
@@ -313,6 +314,8 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
         }
         for (int i = 0; i < posarray.length(); i++) {
             JSONObject posjson = posarray.getJSONObject(i);
+            posjson.put("__libpretixsync_dbversion", Migrations.CURRENT_VERSION);
+            posjson.put("__libpretixsync_syncCycleId", syncCycleId);
             Long jsonid = posjson.getLong("id");
             JSONObject old = null;
             OrderPosition posobj;
@@ -541,6 +544,8 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
         ids.add(data.getString("code"));
         getKnownObjects(ids);
         // Store object
+        data.put("__libpretixsync_dbversion", Migrations.CURRENT_VERSION);
+        data.put("__libpretixsync_syncCycleId", syncCycleId);
         if (old == null) {
             updateObject(order, data);
         } else {
@@ -561,7 +566,7 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
         }
 
         try {
-            new SubEventSyncAdapter(store, eventSlug, String.valueOf(sid), api, current_action -> {
+            new SubEventSyncAdapter(store, eventSlug, String.valueOf(sid), api, syncCycleId, current_action -> {
             }).download();
         } catch (RollbackException | JSONException | ApiException e) {
             subeventsDeletionDate.put(sid, null);

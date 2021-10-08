@@ -21,8 +21,8 @@ public class BadgeLayoutItemSyncAdapter extends BaseDownloadSyncAdapter<BadgeLay
     private Map<Long, Item> itemCache = new HashMap<>();
     private Map<Long, BadgeLayout> layoutCache = new HashMap<>();
 
-    public BadgeLayoutItemSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, PretixApi api, SyncManager.ProgressFeedback feedback) {
-        super(store, fileStorage, eventSlug, api, feedback);
+    public BadgeLayoutItemSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, PretixApi api, String syncCycleId, SyncManager.ProgressFeedback feedback) {
+        super(store, fileStorage, eventSlug, api, syncCycleId, feedback);
     }
 
     private Item getItem(long id) {

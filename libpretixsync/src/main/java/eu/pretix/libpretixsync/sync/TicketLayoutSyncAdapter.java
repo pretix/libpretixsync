@@ -21,8 +21,9 @@ import io.requery.query.Tuple;
 import io.requery.util.CloseableIterator;
 
 public class TicketLayoutSyncAdapter extends BaseDownloadSyncAdapter<TicketLayout, Long> {
-    public TicketLayoutSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, PretixApi api, SyncManager.ProgressFeedback feedback) {
-        super(store, fileStorage, eventSlug, api, feedback);
+
+    public TicketLayoutSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, PretixApi api, String syncCycleId, SyncManager.ProgressFeedback feedback) {
+        super(store, fileStorage, eventSlug, api, syncCycleId, feedback);
     }
 
     @Override

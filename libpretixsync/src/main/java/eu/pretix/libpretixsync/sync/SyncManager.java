@@ -330,7 +330,7 @@ public class SyncManager {
 
             if (profile == Profile.PRETIXPOS) {
                 try {
-                    download(new CashierSyncAdapter(dataStore, fileStorage, api, feedback));
+                    download(new CashierSyncAdapter(dataStore, fileStorage, api, configStore.getSyncCycleId(), feedback));
                 } catch (NotFoundApiException e) {
                     // ignore, this is only supported from a later pretixpos-backend version
                 }
@@ -338,33 +338,33 @@ public class SyncManager {
                     return;
                 }
             }
-            download(new EventSyncAdapter(dataStore, configStore.getEventSlug(), configStore.getEventSlug(), api, feedback));
-            download(new AllSubEventsSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
-            download(new ItemCategorySyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
-            download(new ItemSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
-            download(new QuestionSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
+            download(new EventSyncAdapter(dataStore, configStore.getEventSlug(), configStore.getEventSlug(), api, configStore.getSyncCycleId(), feedback));
+            download(new AllSubEventsSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, configStore.getSyncCycleId(), feedback));
+            download(new ItemCategorySyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, configStore.getSyncCycleId(), feedback));
+            download(new ItemSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, configStore.getSyncCycleId(), feedback));
+            download(new QuestionSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, configStore.getSyncCycleId(), feedback));
             if (profile == Profile.PRETIXPOS) {
-                download(new QuotaSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), configStore.getSubEventId(), api, feedback));
-                download(new TaxRuleSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
-                download(new TicketLayoutSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
+                download(new QuotaSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, configStore.getSyncCycleId(), feedback, configStore.getSubEventId()));
+                download(new TaxRuleSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, configStore.getSyncCycleId(), feedback));
+                download(new TicketLayoutSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, configStore.getSyncCycleId(), feedback));
             }
-            download(new BadgeLayoutSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
+            download(new BadgeLayoutSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, configStore.getSyncCycleId(), feedback));
             try {
-                download(new BadgeLayoutItemSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
+                download(new BadgeLayoutItemSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, configStore.getSyncCycleId(), feedback));
             } catch (ApiException e) {
                 // ignore, this is only supported from pretix 2.5. We have legacy code in BadgeLayoutSyncAdapter to fall back to
             }
-            download(new CheckInListSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), configStore.getSubEventId(), api, feedback));
+            download(new CheckInListSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, configStore.getSyncCycleId(), feedback, configStore.getSubEventId()));
             if (profile == Profile.PRETIXSCAN || profile == Profile.PRETIXSCAN_ONLINE) {
                 // We don't need these on pretixPOS, so we can save some traffic
                 try {
-                    download(new RevokedTicketSecretSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, feedback));
+                    download(new RevokedTicketSecretSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, configStore.getSyncCycleId(), feedback));
                 } catch (NotFoundApiException e) {
                     // ignore, this is only supported from pretix 3.12.
                 }
             }
             if (profile == Profile.PRETIXSCAN && !skip_orders) {
-                OrderSyncAdapter osa = new OrderSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), configStore.getSubEventId(), with_pdf_data, false, api, feedback);
+                OrderSyncAdapter osa = new OrderSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), configStore.getSubEventId(), with_pdf_data, false, api, configStore.getSyncCycleId(), feedback);
                 download(osa);
                 if ((System.currentTimeMillis() - configStore.getLastCleanup()) > 3600 * 1000 * 12) {
                     osa.deleteOldSubevents();
@@ -377,7 +377,7 @@ public class SyncManager {
                 dataStore.delete(OrderPosition.class).get().value();
                 dataStore.delete(Order.class).get().value();
                 dataStore.delete(ResourceSyncStatus.class).where(ResourceSyncStatus.RESOURCE.like("order%")).get().value();
-                OrderSyncAdapter osa = new OrderSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), configStore.getSubEventId(), with_pdf_data, false, api, feedback);
+                OrderSyncAdapter osa = new OrderSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), configStore.getSubEventId(), with_pdf_data, false, api, configStore.getSyncCycleId(), feedback);
                 if ((System.currentTimeMillis() - configStore.getLastCleanup()) > 3600 * 1000 * 12) {
                     osa.deleteOldPdfImages();
                     configStore.setLastCleanup(System.currentTimeMillis());
@@ -386,12 +386,12 @@ public class SyncManager {
 
             // We used to only Sync the settings for pretixPOS, but for COVID-certificate validation, we need the Settings, too.
             try {
-                download(new SettingsSyncAdapter(dataStore, configStore.getEventSlug(), configStore.getEventSlug(), api, feedback));
+                download(new SettingsSyncAdapter(dataStore, configStore.getEventSlug(), configStore.getEventSlug(), api, configStore.getSyncCycleId(), feedback));
             } catch (ApiException e) {
                 // Older pretix installations
                 // We don't need these on pretixSCAN, so we can save some traffic
                 if (profile == Profile.PRETIXPOS) {
-                    download(new InvoiceSettingsSyncAdapter(dataStore, configStore.getEventSlug(), configStore.getEventSlug(), api, feedback));
+                    download(new InvoiceSettingsSyncAdapter(dataStore, configStore.getEventSlug(), configStore.getEventSlug(), api, configStore.getSyncCycleId(), feedback));
                 }
             }
 
@@ -528,7 +528,7 @@ public class SyncManager {
                         dataStore.runInTransaction(() -> {
                             dataStore.update(r, Receipt.ORDER_CODE);
                             dataStore.delete(qo);
-                            (new OrderSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), configStore.getSubEventId(), true, true, api, null)).standaloneRefreshFromJSON(resp.getData());
+                            (new OrderSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), configStore.getSubEventId(), true, true, api, configStore.getSyncCycleId(), null)).standaloneRefreshFromJSON(resp.getData());
                             return null;
                         });
                         if (connectivityFeedback != null) {

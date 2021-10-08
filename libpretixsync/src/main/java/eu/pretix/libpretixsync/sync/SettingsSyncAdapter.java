@@ -11,8 +11,9 @@ import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
 
 public class SettingsSyncAdapter extends BaseSingleObjectSyncAdapter<Settings> {
-    public SettingsSyncAdapter(BlockingEntityStore<Persistable> store, String eventSlug, String key, PretixApi api, SyncManager.ProgressFeedback feedback) {
-        super(store, eventSlug, key, api, feedback);
+
+    public SettingsSyncAdapter(BlockingEntityStore<Persistable> store, String eventSlug, String key, PretixApi api, String syncCycleId, SyncManager.ProgressFeedback feedback) {
+        super(store, eventSlug, key, api, syncCycleId, feedback);
     }
 
     @Override

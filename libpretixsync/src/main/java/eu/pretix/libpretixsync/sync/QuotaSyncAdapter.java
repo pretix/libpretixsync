@@ -19,8 +19,8 @@ import io.requery.util.CloseableIterator;
 public class QuotaSyncAdapter extends BaseDownloadSyncAdapter<Quota, Long> {
     private Long subeventId;
 
-    public QuotaSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, Long subeventId, PretixApi api, SyncManager.ProgressFeedback feedback) {
-        super(store, fileStorage, eventSlug, api, feedback);
+    public QuotaSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, PretixApi api, String syncCycleId, SyncManager.ProgressFeedback feedback, Long subeventId) {
+        super(store, fileStorage, eventSlug, api, syncCycleId, feedback);
         this.subeventId = subeventId;
     }
 

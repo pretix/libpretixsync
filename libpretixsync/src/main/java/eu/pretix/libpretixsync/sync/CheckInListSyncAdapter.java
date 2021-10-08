@@ -11,6 +11,7 @@ import java.util.List;
 import eu.pretix.libpretixsync.api.PretixApi;
 import eu.pretix.libpretixsync.db.CheckInList;
 import eu.pretix.libpretixsync.db.Item;
+import eu.pretix.libpretixsync.db.Migrations;
 import eu.pretix.libpretixsync.utils.JSONUtils;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
@@ -20,8 +21,8 @@ import io.requery.util.CloseableIterator;
 public class CheckInListSyncAdapter extends BaseConditionalSyncAdapter<CheckInList, Long> {
     private Long subeventId;
 
-    public CheckInListSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, Long subeventId, PretixApi api, SyncManager.ProgressFeedback feedback) {
-        super(store, fileStorage, eventSlug, api, feedback);
+    public CheckInListSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, PretixApi api, String syncCycleId, SyncManager.ProgressFeedback feedback, Long subeventId) {
+        super(store, fileStorage, eventSlug, api, syncCycleId, feedback);
         this.subeventId = subeventId;
     }
 
@@ -116,8 +117,9 @@ public class CheckInListSyncAdapter extends BaseConditionalSyncAdapter<CheckInLi
         if (obj.getId() != null) {
             old = obj.getJSON();
         }
-
         // Store object
+        data.put("__libpretixsync_dbversion", Migrations.CURRENT_VERSION);
+        data.put("__libpretixsync_syncCycleId", syncCycleId);
         if (old == null) {
             updateObject(obj, data);
             store.insert(obj);

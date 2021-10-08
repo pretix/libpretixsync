@@ -14,8 +14,9 @@ import io.requery.query.Tuple;
 import io.requery.util.CloseableIterator;
 
 public class ItemCategorySyncAdapter extends BaseConditionalSyncAdapter<ItemCategory, Long> {
-    public ItemCategorySyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, PretixApi api, SyncManager.ProgressFeedback feedback) {
-        super(store, fileStorage, eventSlug, api, feedback);
+
+    public ItemCategorySyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, PretixApi api, String syncCycleId, SyncManager.ProgressFeedback feedback) {
+        super(store, fileStorage, eventSlug, api, syncCycleId, feedback);
     }
 
     @Override

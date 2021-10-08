@@ -8,6 +8,7 @@ import java.util.concurrent.Callable;
 import eu.pretix.libpretixsync.api.ApiException;
 import eu.pretix.libpretixsync.api.PretixApi;
 import eu.pretix.libpretixsync.api.ResourceNotModified;
+import eu.pretix.libpretixsync.db.Migrations;
 import eu.pretix.libpretixsync.db.RemoteObject;
 import eu.pretix.libpretixsync.utils.JSONUtils;
 import io.requery.BlockingEntityStore;
@@ -19,14 +20,16 @@ public abstract class BaseSingleObjectSyncAdapter<T extends RemoteObject & Persi
     protected PretixApi api;
     protected String eventSlug;
     protected String key;
+    protected String syncCycleId;
     protected SyncManager.ProgressFeedback feedback;
     protected SyncManager.CanceledState canceledState;
 
-    public BaseSingleObjectSyncAdapter(BlockingEntityStore<Persistable> store, String eventSlug, String key, PretixApi api, SyncManager.ProgressFeedback feedback) {
+    public BaseSingleObjectSyncAdapter(BlockingEntityStore<Persistable> store, String eventSlug, String key, PretixApi api, String syncCycleId, SyncManager.ProgressFeedback feedback) {
         this.store = store;
         this.api = api;
         this.eventSlug = eventSlug;
         this.key = key;
+        this.syncCycleId = syncCycleId;
         this.feedback = feedback;
     }
 
@@ -51,6 +54,13 @@ public abstract class BaseSingleObjectSyncAdapter<T extends RemoteObject & Persi
     abstract T getKnownObject();
 
     protected void processData(final JSONObject data) {
+        try {
+            data.put("__libpretixsync_dbversion", Migrations.CURRENT_VERSION);
+            data.put("__libpretixsync_syncCycleId", syncCycleId);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
         store.runInTransaction(new Callable<Void>() {
             @Override
             public Void call() throws Exception {
