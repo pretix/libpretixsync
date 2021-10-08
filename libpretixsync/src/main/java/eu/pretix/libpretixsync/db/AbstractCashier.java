@@ -5,6 +5,9 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import io.requery.Column;
 import io.requery.Entity;
 import io.requery.Generated;
@@ -68,12 +71,14 @@ public class AbstractCashier implements RemoteObject, CashierLike {
 
     @Override
     public boolean hasPermission(String permission) {
+        Map<String, Boolean> defaults = new HashMap<>();
+        defaults.put("can_open_drawer", true);
         if (!this.active) {
             return false;
         }
         try {
             JSONObject team = getJSON().getJSONObject("team");
-            return team.optBoolean(permission, false);
+            return team.optBoolean(permission, defaults.getOrDefault(permission, false));
         } catch (JSONException e) {
             return false;
         }
