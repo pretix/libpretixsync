@@ -60,7 +60,6 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
 
     private Map<Long, Item> itemCache = new HashMap<>();
     private Map<Long, CheckInList> listCache = new HashMap<>();
-    private Map<String, List<OrderPosition>> positionCache = new HashMap<>();
     private Map<Long, List<CheckIn>> checkinCache = new HashMap<>();
     private List<CheckIn> checkinCreateCache = new ArrayList<>();
     private String firstResponseTimestamp;
@@ -299,11 +298,11 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
         }
 
         Map<Long, OrderPosition> known = new HashMap<>();
-        List<OrderPosition> positions = positionCache.get(obj.getCode());
-        if (positions != null) {
-            for (OrderPosition op : positions) {
-                known.put(op.getServer_id(), op);
-            }
+        List<OrderPosition> allPos = store.select(OrderPosition.class)
+                .leftJoin(Order.class).on(Order.ID.eq(OrderPosition.ORDER_ID))
+                .where(Order.ID.eq(obj.getId())).get().toList();
+        for (OrderPosition op : allPos) {
+            known.put(op.getServer_id(), op);
         }
 
         JSONArray posarray = jsonobj.getJSONArray("positions");
@@ -321,7 +320,7 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
             OrderPosition posobj;
             if (known.containsKey(jsonid)) {
                 posobj = known.get(jsonid);
-                old = obj.getJSON();
+                old = posobj.getJSON();
             } else {
                 posobj = new OrderPosition();
                 posobj.setOrder(obj);
@@ -452,24 +451,10 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
 
     @Override
     protected Map<String, Order> getKnownObjects(Set<String> ids) {
-        positionCache.clear();
         checkinCache.clear();
 
         if (ids.isEmpty()) {
             return new HashMap<>();
-        }
-        List<OrderPosition> allPos = store.select(OrderPosition.class)
-                .leftJoin(Order.class).on(Order.ID.eq(OrderPosition.ORDER_ID))
-                .where(Order.CODE.in(ids)).get().toList();
-        for (OrderPosition p : allPos) {
-            String code = p.getOrder().getCode();
-            if (positionCache.containsKey(code)) {
-                positionCache.get(code).add(p);
-            } else {
-                List<OrderPosition> opos = new ArrayList<>();
-                opos.add(p);
-                positionCache.put(code, opos);
-            }
         }
 
         List<CheckIn> allCheckins = store.select(CheckIn.class)
