@@ -90,6 +90,9 @@ public abstract class AbstractSettings implements RemoteObject {
     public boolean covid_certificates_record_proof_other;
 
     @Nullable
+    public boolean covid_certificates_record_validity_time;
+
+    @Nullable
     public boolean covid_certificates_accept_eudgc;
 
     @Nullable
