@@ -8,6 +8,7 @@ import eu.pretix.libpretixsync.db.Question
 import eu.pretix.libpretixsync.db.QueuedCheckIn
 import eu.pretix.libpretixsync.db.ReceiptLine
 import eu.pretix.libpretixsync.utils.NetUtils
+import eu.pretix.libpretixsync.utils.URLFragmentEncoder
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -22,6 +23,7 @@ import java.io.UnsupportedEncodingException
 import java.net.MalformedURLException
 import java.net.URL
 import java.net.URLEncoder
+import java.nio.charset.Charset
 import java.util.*
 import javax.net.ssl.SSLException
 import javax.net.ssl.SSLPeerUnverifiedException
@@ -80,7 +82,7 @@ open class PretixApi(url: String, key: String, orgaSlug: String, eventSlug: Stri
         if (pdf_data) {
             pd = "?pdf_data=true"
         }
-        return postResource(eventResourceUrl("checkinlists/" + listId + "/positions/" + URLEncoder.encode(secret) + "/redeem") + pd, body)
+        return postResource(eventResourceUrl("checkinlists/" + listId + "/positions/" + URLFragmentEncoder.STRICT.encode(secret, Charset.forName("UTF-8")) + "/redeem") + pd, body)
     }
 
     @Throws(ApiException::class)
