@@ -98,6 +98,9 @@ public abstract class AbstractSettings implements RemoteObject {
     @Nullable
     public boolean covid_certificates_accept_manual;
 
+    @Nullable
+    public String covid_certificates_combination_rules;
+
     @Column(definition = "TEXT")
     public String json_data;
 
