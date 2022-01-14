@@ -11,9 +11,17 @@ interface TicketCheckProvider {
         ENTRY, EXIT
     }
 
-    class RequiredAnswer(var question: Question, current_value: String?) {
-        var currentValue: String? = current_value
-            private set
+    class RequiredAnswer {
+        lateinit var question: Question
+        var currentValue: String? = null
+
+        constructor(question: Question, current_value: String?) {
+            this.question = question
+            this.currentValue = current_value
+        }
+
+        constructor() {  // required for de-serialization
+        }
 
         fun setCurrent_value(current_value: String?) {
             currentValue = current_value
@@ -49,6 +57,9 @@ interface TicketCheckProvider {
 
         constructor(type: Type?) {
             this.type = type
+        }
+
+        constructor() {  // required for de-serialization
         }
 
         fun orderCodeAndPositionId(): String? {
