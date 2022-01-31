@@ -133,11 +133,14 @@ open class PretixApi(url: String, key: String, orgaSlug: String, eventSlug: Stri
     }
 
     @Throws(ApiException::class)
-    open fun deleteResource(full_url: String): ApiResponse {
-        val request = Request.Builder()
+    open fun deleteResource(full_url: String, idempotency_key: String? = null): ApiResponse {
+        var request = Request.Builder()
                 .url(full_url)
                 .delete()
                 .header("Authorization", "Device $key")
+        if (idempotency_key != null) {
+            request = request.header("X-Idempotency-Key", idempotency_key)
+        }
         return try {
             apiCall(request.build(), false)
         } catch (resourceNotModified: ResourceNotModified) {
