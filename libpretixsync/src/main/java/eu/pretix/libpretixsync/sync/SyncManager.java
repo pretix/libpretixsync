@@ -39,23 +39,23 @@ public class SyncManager {
         PRETIXPOS, PRETIXSCAN, PRETIXSCAN_ONLINE
     }
 
-    private SentryInterface sentry;
-    private PretixApi api;
-    private ConfigStore configStore;
-    private long upload_interval;
-    private long download_interval;
-    private BlockingEntityStore<Persistable> dataStore;
-    private FileStorage fileStorage;
-    private Profile profile;
-    private boolean with_pdf_data;
-    private CanceledState canceled;
-    private int app_version;
-    private String hardware_brand;
-    private String hardware_model;
-    private String software_brand;
-    private String software_version;
+    protected SentryInterface sentry;
+    protected PretixApi api;
+    protected ConfigStore configStore;
+    protected long upload_interval;
+    protected long download_interval;
+    protected BlockingEntityStore<Persistable> dataStore;
+    protected FileStorage fileStorage;
+    protected Profile profile;
+    protected boolean with_pdf_data;
+    protected CanceledState canceled;
+    protected int app_version;
+    protected String hardware_brand;
+    protected String hardware_model;
+    protected String software_brand;
+    protected String software_version;
     public List<String> keepSlugs;
-    private CheckConnectivityFeedback connectivityFeedback;
+    protected CheckConnectivityFeedback connectivityFeedback;
 
     public class CanceledState {
         private boolean canceled = false;
@@ -293,7 +293,7 @@ public class SyncManager {
         }
     }
 
-    private void upload() throws SyncException {
+    protected void upload() throws SyncException {
         uploadOrders();
         if (canceled.isCanceled()) throw new SyncException("Canceled");
         uploadTicketData();
