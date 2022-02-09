@@ -505,15 +505,13 @@ public class SyncManager {
 
         List<QueuedOrder> orders = dataStore.select(QueuedOrder.class)
                 .where(QueuedOrder.ERROR.isNull())
+                .and(QueuedOrder.LOCKED.eq(false))
                 .get().toList();
 
         try {
             for (QueuedOrder qo : orders) {
-                dataStore.runInTransaction(() -> {
-                    qo.setLocked(true);
-                    dataStore.update(qo, QueuedOrder.LOCKED);
-                    return null;
-                });
+                qo.setLocked(true);
+                dataStore.update(qo, QueuedOrder.LOCKED);
                 try {
                     api.setEventSlug(qo.getEvent_slug());
                     Long startedAt = System.currentTimeMillis();
@@ -525,12 +523,9 @@ public class SyncManager {
                     if (resp.getResponse().code() == 201) {
                         Receipt r = qo.getReceipt();
                         r.setOrder_code(resp.getData().getString("code"));
-                        dataStore.runInTransaction(() -> {
-                            dataStore.update(r, Receipt.ORDER_CODE);
-                            dataStore.delete(qo);
-                            (new OrderSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), configStore.getSubEventId(), true, true, api, configStore.getSyncCycleId(), null)).standaloneRefreshFromJSON(resp.getData());
-                            return null;
-                        });
+                        dataStore.update(r, Receipt.ORDER_CODE);
+                        dataStore.delete(qo);
+                        (new OrderSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), configStore.getSubEventId(), true, true, api, configStore.getSyncCycleId(), null)).standaloneRefreshFromJSON(resp.getData());
                         if (connectivityFeedback != null) {
                             connectivityFeedback.recordSuccess(System.currentTimeMillis() - startedAt);
                         }
