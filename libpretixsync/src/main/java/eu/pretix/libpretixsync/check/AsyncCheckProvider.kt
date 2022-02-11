@@ -78,7 +78,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val eventSlug:
         if (subevent != null && subevent > 0) jdoc.put("subevent", subevent)
 
         val qo = QueuedCall()
-        val api = PretixApi.fromConfig(config)
+        val api = PretixApi.fromConfig(config)  // todo: uses wrong http client
         qo.setUrl(api.eventResourceUrl("checkinlists") + listId + "/failed_checkins/")
         qo.setBody(jdoc.toString())
         qo.setIdempotency_key(NonceGenerator.nextNonce())

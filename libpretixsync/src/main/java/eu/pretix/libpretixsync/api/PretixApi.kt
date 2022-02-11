@@ -40,7 +40,7 @@ open class PretixApi(url: String, key: String, orgaSlug: String, eventSlug: Stri
     inner class ApiResponse(val data: JSONObject?, val response: Response)
 
     @Throws(ApiException::class, JSONException::class)
-    open fun redeem(secret: String, datetime: Date?, force: Boolean, nonce: String?, answers: List<Answer>?, listId: Long, ignore_unpaid: Boolean, pdf_data: Boolean, type: String?): ApiResponse {
+    fun redeem(secret: String, datetime: Date?, force: Boolean, nonce: String?, answers: List<Answer>?, listId: Long, ignore_unpaid: Boolean, pdf_data: Boolean, type: String?): ApiResponse {
         var dt: String? = null
         if (datetime != null) {
             dt = QueuedCheckIn.formatDatetime(datetime)
@@ -49,7 +49,7 @@ open class PretixApi(url: String, key: String, orgaSlug: String, eventSlug: Stri
     }
 
     @Throws(ApiException::class, JSONException::class)
-    fun redeem(secret: String, datetime: String?, force: Boolean, nonce: String?, answers: List<Answer>?, listId: Long, ignore_unpaid: Boolean, pdf_data: Boolean, type: String?): ApiResponse {
+    open fun redeem(secret: String, datetime: String?, force: Boolean, nonce: String?, answers: List<Answer>?, listId: Long, ignore_unpaid: Boolean, pdf_data: Boolean, type: String?): ApiResponse {
         val body = JSONObject()
         if (datetime != null) {
             body.put("datetime", datetime)
@@ -150,12 +150,12 @@ open class PretixApi(url: String, key: String, orgaSlug: String, eventSlug: Stri
     }
 
     @Throws(ApiException::class)
-    open fun patchResource(full_url: String, data: JSONObject): ApiResponse {
+    fun patchResource(full_url: String, data: JSONObject): ApiResponse {
         return patchResource(full_url, data, null)
     }
 
     @Throws(ApiException::class)
-    fun patchResource(full_url: String?, data: JSONObject, idempotency_key: String?): ApiResponse {
+    open fun patchResource(full_url: String?, data: JSONObject, idempotency_key: String?): ApiResponse {
         var request = Request.Builder()
                 .url(full_url!!)
                 .patch(data.toString().toRequestBody("application/json".toMediaType()))
@@ -172,22 +172,22 @@ open class PretixApi(url: String, key: String, orgaSlug: String, eventSlug: Stri
     }
 
     @Throws(ApiException::class)
-    open fun postResource(full_url: String, data: JSONObject): ApiResponse {
+    fun postResource(full_url: String, data: JSONObject): ApiResponse {
         return postResource(full_url, data.toString(), null)
     }
 
     @Throws(ApiException::class)
-    open fun postResource(full_url: String, data: JSONArray): ApiResponse {
+    fun postResource(full_url: String, data: JSONArray): ApiResponse {
         return postResource(full_url, data.toString(), null)
     }
 
     @Throws(ApiException::class)
-    fun postResource(full_url: String?, data: JSONObject, idempotency_key: String?): ApiResponse {
+    fun postResource(full_url: String, data: JSONObject, idempotency_key: String?): ApiResponse {
         return postResource(full_url, data.toString(), idempotency_key)
     }
 
     @Throws(ApiException::class)
-    fun postResource(full_url: String?, data: String, idempotency_key: String?): ApiResponse {
+    open fun postResource(full_url: String, data: String, idempotency_key: String?): ApiResponse {
         var request = Request.Builder()
                 .url(full_url!!)
                 .post(data.toRequestBody("application/json".toMediaType()))
@@ -215,7 +215,7 @@ open class PretixApi(url: String, key: String, orgaSlug: String, eventSlug: Stri
     }
 
     @Throws(ApiException::class, ResourceNotModified::class)
-    open fun fetchResource(full_url: String): ApiResponse {
+    fun fetchResource(full_url: String): ApiResponse {
         return fetchResource(full_url, null)
     }
 

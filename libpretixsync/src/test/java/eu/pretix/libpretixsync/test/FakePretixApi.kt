@@ -4,6 +4,7 @@ import eu.pretix.libpretixsync.api.DefaultHttpClientFactory
 import eu.pretix.libpretixsync.api.PretixApi
 import eu.pretix.libpretixsync.db.Answer
 import okhttp3.MediaType
+import org.json.JSONException
 import org.json.JSONObject
 import java.io.File
 import java.io.InputStream
@@ -19,7 +20,7 @@ class FakePretixApi : PretixApi("http://1.1.1.1/", "a", "demo", "demo", 1, Defau
     val fetchResponses: MutableList<(() -> ApiResponse)> = ArrayList()
     var downloadResponses: MutableList<(() -> ApiResponse)> = ArrayList()
     var redeemRequestSecret: String? = null
-    var redeemRequestDatetime: Date? = null
+    var redeemRequestDatetime: String? = null
     var redeemRequestForce = false
     var redeemRequestNonce: String? = null
     var redeemRequestAnswers: List<Answer>? = null
@@ -32,7 +33,7 @@ class FakePretixApi : PretixApi("http://1.1.1.1/", "a", "demo", "demo", 1, Defau
     var lastRequestUrl: String? = null
     var lastRequestBody: JSONObject? = null
 
-    override fun redeem(secret: String, datetime: Date?, force: Boolean, nonce: String?, answers: List<Answer>?, listId: Long, ignore_unpaid: Boolean, pdf_data: Boolean, type: String?): ApiResponse {
+    override fun redeem(secret: String, datetime: String?, force: Boolean, nonce: String?, answers: List<Answer>?, listId: Long, ignore_unpaid: Boolean, pdf_data: Boolean, type: String?): ApiResponse {
         redeemRequestSecret = secret
         redeemRequestDatetime = datetime
         redeemRequestForce = force
@@ -55,25 +56,23 @@ class FakePretixApi : PretixApi("http://1.1.1.1/", "a", "demo", "demo", 1, Defau
         return searchResponses.removeAt(0)()
     }
 
-    override fun deleteResource(full_url: String): ApiResponse {
+    override fun deleteResource(full_url: String, idempotency_key: String?): ApiResponse {
         lastRequestUrl = full_url
         lastRequestBody = null
         return deleteResponses.removeAt(0)()
     }
 
-    override fun postResource(full_url: String, data: JSONObject): ApiResponse {
+    override fun postResource(full_url: String, data: String, idempotency_key: String?): ApiResponse {
         lastRequestUrl = full_url
-        lastRequestBody = data
+        try {
+            lastRequestBody = JSONObject(data)
+        } catch (e: JSONException) {
+            lastRequestBody = null
+        }
         return postResponses.removeAt(0)()
     }
 
     override fun fetchResource(full_url: String, if_modified_since: String?): ApiResponse {
-        lastRequestUrl = full_url
-        lastRequestBody = null
-        return fetchResponses.removeAt(0)()
-    }
-
-    override fun fetchResource(full_url: String): ApiResponse {
         lastRequestUrl = full_url
         lastRequestBody = null
         return fetchResponses.removeAt(0)()
