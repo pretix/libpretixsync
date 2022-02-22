@@ -1,8 +1,10 @@
 package eu.pretix.libpretixsync.sync;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import eu.pretix.libpretixsync.api.PretixApi;
@@ -42,9 +44,25 @@ public class SettingsSyncAdapter extends BaseSingleObjectSyncAdapter<Settings> {
         obj.setCountry(jsonobj.optString("invoice_address_from_country"));
         obj.setTax_id(jsonobj.optString("invoice_address_from_tax_id"));
         obj.setVat_id(jsonobj.optString("invoice_address_from_vat_id"));
+        obj.setCovid_certificates_record_proof(jsonobj.optBoolean("covid_certificates_record_proof", true));
         obj.setCovid_certificates_allow_vaccinated(jsonobj.optBoolean("covid_certificates_allow_vaccinated"));
         obj.setCovid_certificates_allow_vaccinated_min(jsonobj.optInt("covid_certificates_allow_vaccinated_min"));
         obj.setCovid_certificates_allow_vaccinated_max(jsonobj.optInt("covid_certificates_allow_vaccinated_max"));
+        
+        if (jsonobj.has("covid_certificates_allow_vaccinated_products")) {
+            StringBuilder l = new StringBuilder();
+            JSONArray arr = jsonobj.getJSONArray("covid_certificates_allow_vaccinated_products");
+            for (int i = 0; i < arr.length(); i++) {
+                if (l.length() > 0) {
+                    l.append(",");
+                }
+                l.append(arr.getString(i));
+            }
+            obj.setCovid_certificates_allow_vaccinated_products(l.toString());
+        } else {
+            obj.setCovid_certificates_allow_vaccinated_products("EU/1/20/1528,EU/1/20/1525,EU/1/20/1507,EU/1/21/1529");
+        }
+        
         obj.setCovid_certificates_record_proof_vaccinated(jsonobj.optBoolean("covid_certificates_record_proof_vaccinated"));
         obj.setCovid_certificates_allow_cured(jsonobj.optBoolean("covid_certificates_allow_cured"));
         obj.setCovid_certificates_allow_cured_min(jsonobj.optInt("covid_certificates_allow_cured_min"));

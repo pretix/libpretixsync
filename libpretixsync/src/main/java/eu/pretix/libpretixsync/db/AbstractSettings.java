@@ -36,6 +36,9 @@ public abstract class AbstractSettings implements RemoteObject {
     public String pretixpos_additional_receipt_text;
 
     @Nullable
+    public Boolean covid_certificates_record_proof;
+
+    @Nullable
     public boolean covid_certificates_allow_vaccinated;
 
     @Nullable
@@ -43,6 +46,9 @@ public abstract class AbstractSettings implements RemoteObject {
 
     @Nullable
     public int covid_certificates_allow_vaccinated_max;
+
+    @Nullable
+    public String covid_certificates_allow_vaccinated_products;
 
     @Nullable
     public boolean covid_certificates_record_proof_vaccinated;
