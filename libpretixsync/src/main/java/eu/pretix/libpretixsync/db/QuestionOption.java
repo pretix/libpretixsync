@@ -14,6 +14,26 @@ public class QuestionOption {
         this.value = value;
     }
 
+    public QuestionOption() {
+
+    }
+
+    public void setServer_id(Long server_id) {
+        this.server_id = server_id;
+    }
+
+    public void setPosition(Long position) {
+        this.position = position;
+    }
+
+    public void setIdentifier(String identifier) {
+        this.identifier = identifier;
+    }
+
+    public void setValue(String value) {
+        this.value = value;
+    }
+
     public Long getPosition() {
         return position;
     }
