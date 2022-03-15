@@ -53,8 +53,6 @@ repositories {
     mavenCentral()
 }
 
-configurations { create("compile") } // Not sure why we need this, but we do?
-
 compileKotlin {
     kotlinOptions {
         jvmTarget = "1.8"
