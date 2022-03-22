@@ -1,5 +1,6 @@
 package eu.pretix.libpretixsync.sync;
 
+import eu.pretix.libpretixsync.utils.JSONUtils;
 import io.requery.sql.StatementExecutionException;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -50,6 +51,7 @@ public class SyncManager {
     protected boolean with_pdf_data;
     protected CanceledState canceled;
     protected int app_version;
+    protected JSONObject app_info;
     protected String hardware_brand;
     protected String hardware_model;
     protected String software_brand;
@@ -102,6 +104,7 @@ public class SyncManager {
             Profile profile,
             boolean with_pdf_data,
             int app_version,
+            JSONObject app_info,
             String hardware_brand,
             String hardware_model,
             String software_brand,
@@ -119,6 +122,7 @@ public class SyncManager {
         this.with_pdf_data = with_pdf_data;
         this.canceled = new CanceledState();
         this.app_version = app_version;
+        this.app_info = app_info;
         this.hardware_brand = hardware_brand;
         this.hardware_model = hardware_model;
         this.software_brand = software_brand;
@@ -262,17 +266,22 @@ public class SyncManager {
 
     private void bumpKnownVersion() {
         try {
-            if (app_version != configStore.getDeviceKnownVersion()) {
+            JSONObject newInfo = app_info != null ? app_info : configStore.getDeviceKnownInfo();
+            if (app_version != configStore.getDeviceKnownVersion() || !JSONUtils.similar(newInfo, configStore.getDeviceKnownInfo())) {
                 JSONObject apiBody = new JSONObject();
                 apiBody.put("hardware_brand", hardware_brand);
                 apiBody.put("hardware_model", hardware_model);
                 apiBody.put("software_brand", software_brand);
                 apiBody.put("software_version", software_version);
+                if (newInfo != null) {
+                    apiBody.put("info", newInfo);
+                }
                 PretixApi.ApiResponse resp = api.postResource(
                         api.apiURL("device/update"),
                         apiBody
                 );
                 configStore.setDeviceKnownVersion(app_version);
+                configStore.setDeviceKnownInfo(app_info);
                 configStore.setDeviceKnownName(resp.getData().getString("name"));
                 String gate = null;
                 if (resp.getData().has("gate") && !resp.getData().isNull("gate")) {

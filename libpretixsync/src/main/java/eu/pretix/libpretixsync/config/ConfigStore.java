@@ -1,5 +1,7 @@
 package eu.pretix.libpretixsync.config;
 
+import org.json.JSONObject;
+
 public interface ConfigStore {
 
     public boolean isDebug();
@@ -21,6 +23,10 @@ public interface ConfigStore {
     public int getDeviceKnownVersion();
 
     public void setDeviceKnownVersion(int value);
+
+    public JSONObject getDeviceKnownInfo();
+
+    public void setDeviceKnownInfo(JSONObject value);
 
     public String getApiKey();
 
