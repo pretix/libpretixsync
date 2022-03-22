@@ -25,6 +25,9 @@ public class AbstractClosing implements LocalObject {
 
     public Long server_id;
 
+    @Nullable
+    public boolean dsfinvk_uploaded;
+
     public Date datetime;
 
     public boolean open;
@@ -70,7 +73,7 @@ public class AbstractClosing implements LocalObject {
     @Override
     public JSONObject toJSON() throws JSONException {
         TimeZone tz = TimeZone.getTimeZone("UTC");
-        DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'");
+        DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
         df.setTimeZone(tz);
 
         JSONObject jo = new JSONObject();

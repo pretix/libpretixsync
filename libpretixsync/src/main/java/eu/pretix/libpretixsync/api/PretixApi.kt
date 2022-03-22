@@ -316,6 +316,25 @@ open class PretixApi(url: String, key: String, orgaSlug: String, eventSlug: Stri
     }
 
     @Throws(ApiException::class)
+    open fun putFile(url: String, file: File, mediaType: MediaType, filename: String) {
+        val request = Request.Builder()
+                .url(url)
+                .put(file.asRequestBody(mediaType))
+                .header("Content-Disposition", "attachment; filename=\"$filename\"")
+                .header("Authorization", "Device $key")
+        try {
+            val resp = apiCall(request.build())
+            if (resp.response.code != 201 && resp.response.code != 200) {
+                throw FinalApiException("Could not upload file: " + resp.data)
+            }
+        } catch (exc: ResourceNotModified) { // can't happen
+            throw FinalApiException("resource not modified")
+        } catch (exc: JSONException) {
+            throw FinalApiException("JSONException")
+        }
+    }
+
+    @Throws(ApiException::class)
     open fun uploadFile(file: File, mediaType: MediaType, filename: String): String {
         val request = Request.Builder()
                 .url(apiURL("upload")!!)
