@@ -46,7 +46,10 @@ public class JSONUtils {
      * @return true if they are equal
      */
     public static boolean similar(JSONObject first, Object other) {
-        if (!(other instanceof JSONObject)) {
+        if (first == null && other == null) {
+            return true;
+        }
+        if (first == null || !(other instanceof JSONObject)) {
             return false;
         }
         Set<String> set = setFromIterable(first.keys());
