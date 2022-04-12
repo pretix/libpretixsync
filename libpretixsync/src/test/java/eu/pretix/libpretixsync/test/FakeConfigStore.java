@@ -1,5 +1,7 @@
 package eu.pretix.libpretixsync.test;
 
+import org.json.JSONObject;
+
 import eu.pretix.libpretixsync.api.PretixApi;
 import eu.pretix.libpretixsync.config.ConfigStore;
 
@@ -43,6 +45,15 @@ public class FakeConfigStore implements ConfigStore {
 
     @Override
     public void setDeviceKnownVersion(int value) {
+    }
+
+    @Override
+    public JSONObject getDeviceKnownInfo() {
+        return new JSONObject();
+    }
+
+    @Override
+    public void setDeviceKnownInfo(JSONObject value) {
     }
 
     @Override

@@ -20,6 +20,7 @@ import io.requery.query.Scalar
 import io.requery.query.WhereAndOr
 import org.joda.time.DateTime
 import org.joda.time.DateTimeZone
+import org.joda.time.Duration
 import org.joda.time.IllegalInstantException
 import org.joda.time.format.ISODateTimeFormat
 import org.json.JSONArray
@@ -266,6 +267,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val eventSlug:
                 ""
             })
             data.put("now", dt)
+            data.put("now_isoweekday", dt.withZone(tz).dayOfWeek().get())
             data.put("entries_number", queuedCheckIns.filter { it.type == "entry" }.size)
             data.put("entries_today", queuedCheckIns.filter {
                 DateTime(it.fullDatetime).withZone(tz).toLocalDate() == dt.withZone(tz).toLocalDate() && it.type == "entry"
@@ -273,6 +275,11 @@ class AsyncCheckProvider(private val config: ConfigStore, private val eventSlug:
             data.put("entries_days", queuedCheckIns.map {
                 DateTime(it.fullDatetime).withZone(tz).toLocalDate()
             }.toHashSet().size)
+            val minutes_since_entries = queuedCheckIns.map {
+                Duration(DateTime(it.fullDatetime).withZone(tz), dt).toStandardMinutes().minutes
+            }
+            data.put("minutes_since_last_entry", minutes_since_entries.minOrNull() ?: -1)
+            data.put("minutes_since_first_entry", minutes_since_entries.maxOrNull() ?: -1)
 
             if (!jsonLogic.applyString(rules.toString(), data, safe = true).truthy) {
                 res.type = TicketCheckProvider.CheckResult.Type.RULES
@@ -469,6 +476,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val eventSlug:
             data.put("product", position.getItem().getServer_id().toString())
             data.put("variation", position.getVariation_id().toString())
             data.put("now", dt)
+            data.put("now_isoweekday", dt.withZone(tz).dayOfWeek().get())
             data.put("entries_number", checkIns.filter { it.type == "entry" }.size)
             data.put("entries_today", checkIns.filter {
                 DateTime(it.fullDatetime).withZone(tz).toLocalDate() == dt.withZone(tz).toLocalDate() && it.type == "entry"
@@ -476,6 +484,11 @@ class AsyncCheckProvider(private val config: ConfigStore, private val eventSlug:
             data.put("entries_days", checkIns.map {
                 DateTime(it.fullDatetime).withZone(tz).toLocalDate()
             }.toHashSet().size)
+            val minutes_since_entries = checkIns.map {
+                Duration(DateTime(it.fullDatetime).withZone(tz), dt).toStandardMinutes().minutes
+            }
+            data.put("minutes_since_last_entry", minutes_since_entries.minOrNull() ?: -1)
+            data.put("minutes_since_first_entry", minutes_since_entries.maxOrNull() ?: -1)
 
             if (!jsonLogic.applyString(rules.toString(), data, safe = true).truthy) {
                 res.type = TicketCheckProvider.CheckResult.Type.RULES
