@@ -368,6 +368,50 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
     }
 
     @Test
+    fun testRulesMinutesSinceLastEntry() {
+        val p2 = AsyncCheckProvider(configStore!!, "demo", dataStore, 2L)
+        setRuleOnList2("{\"or\": [{\"<=\": [{\"var\": \"minutes_since_last_entry\"}, -1]}, {\">\": [{\"var\": \"minutes_since_last_entry\"}, 180]}]}")
+
+        p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2020-01-01T10:00:00.000Z"))
+        var r = p2.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+
+        p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2020-01-01T12:55:00.000Z"))
+        r = p2.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.RULES, r.type)
+
+        p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2020-01-01T13:01:00.000Z"))
+        r = p2.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+
+        p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2020-01-01T15:55:00.000Z"))
+        r = p2.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.RULES, r.type)
+
+        p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2020-01-01T16:02:00.000Z"))
+        r = p2.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+    }
+
+    @Test
+    fun testRulesMinutesSinceFirstEntry() {
+        val p2 = AsyncCheckProvider(configStore!!, "demo", dataStore, 2L)
+        setRuleOnList2("{\"or\": [{\"<=\": [{\"var\": \"minutes_since_first_entry\"}, -1]}, {\"<\": [{\"var\": \"minutes_since_first_entry\"}, 180]}]}")
+
+        p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2020-01-01T10:00:00.000Z"))
+        var r = p2.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+
+        p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2020-01-01T12:55:00.000Z"))
+        r = p2.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+
+        p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2020-01-01T13:01:00.000Z"))
+        r = p2.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.RULES, r.type)
+    }
+
+    @Test
     fun testRulesIsAfterTolerance() {
         val p2 = AsyncCheckProvider(configStore!!, "demo", dataStore, 2L)
 
@@ -483,6 +527,22 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         assertEquals(TicketCheckProvider.CheckResult.Type.RULES, r.type)
 
         p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2020-01-01T05:01:00.000Z"))
+        r = p2.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+    }
+
+    @Test
+    fun testRulesCompareIsoweekday() {
+        val p2 = AsyncCheckProvider(configStore!!, "demo", dataStore, 2L)
+
+        // Ticket is valid unlimited times, but only on two arbitrary days
+        setRuleOnList2("{\">=\": [{\"var\": \"now_isoweekday\"}, 6]}")
+
+        p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2022-04-06T21:55:00.000Z"))
+        var r = p2.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.RULES, r.type)
+
+        p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2022-04-09T22:05:00.000Z"))
         r = p2.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj")
         assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
     }
