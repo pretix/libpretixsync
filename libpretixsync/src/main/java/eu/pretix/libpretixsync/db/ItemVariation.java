@@ -28,6 +28,7 @@ public class ItemVariation implements Serializable {
     private JSONArray sales_channels;
     private String available_from;
     private String available_until;
+    private boolean hide_without_voucher;
 
     public void setServer_id(Long server_id) {
         this.server_id = server_id;
@@ -121,6 +122,14 @@ public class ItemVariation implements Serializable {
         this.available_until = available_until;
     }
 
+    public boolean isHide_without_voucher() {
+        return hide_without_voucher;
+    }
+
+    public void setHide_without_voucher(boolean hide_without_voucher) {
+        this.hide_without_voucher = hide_without_voucher;
+    }
+
     private void writeObject(java.io.ObjectOutputStream out)
             throws IOException {
         JSONObject jsonObject = new JSONObject();
@@ -136,6 +145,7 @@ public class ItemVariation implements Serializable {
             jsonObject.put("sales_channels", sales_channels);
             jsonObject.put("available_from", available_from);
             jsonObject.put("available_until", available_until);
+            jsonObject.put("hide_without_voucher", hide_without_voucher);
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -161,6 +171,7 @@ public class ItemVariation implements Serializable {
             available_from = jsonObject.optString("available_from");
             available_until = jsonObject.optString("available_until");
             sales_channels = jsonObject.optJSONArray("sales_channels");
+            hide_without_voucher = jsonObject.getBoolean("hide_without_voucher");
         } catch (JSONException e) {
             e.printStackTrace();
         }

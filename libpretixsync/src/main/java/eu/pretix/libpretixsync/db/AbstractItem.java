@@ -161,6 +161,26 @@ public class AbstractItem implements RemoteObject {
         }
     }
 
+    @JsonIgnore
+    public boolean isRequireVoucher() {
+        try {
+            return getJSON().getBoolean("require_voucher");
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return true;
+        }
+    }
+
+    @JsonIgnore
+    public boolean isHideWithoutVoucher() {
+        try {
+            return getJSON().getBoolean("hide_without_voucher");
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return true;
+        }
+    }
+
     public boolean availableByTime() {
         try {
             JSONObject jo = getJSON();
@@ -216,6 +236,7 @@ public class AbstractItem implements RemoteObject {
             v.setAvailable_from(variation.optString("available_from"));
             v.setAvailable_until(variation.optString("available_until"));
             v.setSales_channels(variation.optJSONArray("sales_channels"));
+            v.setHide_without_voucher(variation.optBoolean("hide_without_voucher", false));
             l.add(v);
         }
         return l;

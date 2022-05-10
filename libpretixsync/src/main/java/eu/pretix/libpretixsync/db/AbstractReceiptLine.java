@@ -60,7 +60,19 @@ public class AbstractReceiptLine implements LocalObject {
     public BigDecimal tax_value;
 
     @Nullable
+    public BigDecimal listed_price;
+
+    @Nullable
+    public BigDecimal price_after_voucher;
+
+    @Nullable
+    public BigDecimal custom_price_input;
+
+    @Nullable
     public String secret;
+
+    @Nullable
+    public String voucher_code;
 
     @Nullable
     public Long subevent_id;
@@ -144,6 +156,10 @@ public class AbstractReceiptLine implements LocalObject {
         jo.put("canceled", canceled);
         jo.put("canceled_because_of_receipt", canceled_because_of_receipt);
         jo.put("price_calculated_from_net", price_calculated_from_net);
+        jo.put("listed_price", listed_price);
+        jo.put("price_after_voucher", price_after_voucher);
+        jo.put("custom_price_input", custom_price_input);
+        jo.put("voucher_code", voucher_code);
         jo.put("price", price);
         jo.put("tax_rate", tax_rate != null ? tax_rate : "0.00");
         jo.put("tax_value", tax_value != null ? tax_value : "0.00");
