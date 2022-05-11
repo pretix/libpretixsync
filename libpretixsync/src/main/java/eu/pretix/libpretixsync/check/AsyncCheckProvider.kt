@@ -272,10 +272,10 @@ class AsyncCheckProvider(private val config: ConfigStore, private val eventSlug:
             data.put("entries_today", queuedCheckIns.filter {
                 DateTime(it.fullDatetime).withZone(tz).toLocalDate() == dt.withZone(tz).toLocalDate() && it.type == "entry"
             }.size)
-            data.put("entries_days", queuedCheckIns.map {
+            data.put("entries_days", queuedCheckIns.filter { it.type == "entry" }.map {
                 DateTime(it.fullDatetime).withZone(tz).toLocalDate()
             }.toHashSet().size)
-            val minutes_since_entries = queuedCheckIns.map {
+            val minutes_since_entries = queuedCheckIns.filter { it.type == "entry" }.map {
                 Duration(DateTime(it.fullDatetime).withZone(tz), dt).toStandardMinutes().minutes
             }
             data.put("minutes_since_last_entry", minutes_since_entries.minOrNull() ?: -1)
@@ -481,10 +481,10 @@ class AsyncCheckProvider(private val config: ConfigStore, private val eventSlug:
             data.put("entries_today", checkIns.filter {
                 DateTime(it.fullDatetime).withZone(tz).toLocalDate() == dt.withZone(tz).toLocalDate() && it.type == "entry"
             }.size)
-            data.put("entries_days", checkIns.map {
+            data.put("entries_days", checkIns.filter { it.type == "entry" }.map {
                 DateTime(it.fullDatetime).withZone(tz).toLocalDate()
             }.toHashSet().size)
-            val minutes_since_entries = checkIns.map {
+            val minutes_since_entries = checkIns.filter { it.type == "entry" }.map {
                 Duration(DateTime(it.fullDatetime).withZone(tz), dt).toStandardMinutes().minutes
             }
             data.put("minutes_since_last_entry", minutes_since_entries.minOrNull() ?: -1)
