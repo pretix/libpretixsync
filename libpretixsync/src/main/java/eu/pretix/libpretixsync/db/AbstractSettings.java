@@ -35,6 +35,8 @@ public abstract class AbstractSettings implements RemoteObject {
     @Nullable
     public String pretixpos_additional_receipt_text;
 
+    public Integer pretixpos_cashier_otp_length;
+
     @Nullable
     public Boolean covid_certificates_record_proof;
 

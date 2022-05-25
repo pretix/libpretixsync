@@ -1,6 +1,14 @@
 package eu.pretix.libpretixsync.db;
 
+import dev.samstevens.totp.code.CodeGenerator;
+import dev.samstevens.totp.code.CodeVerifier;
+import dev.samstevens.totp.code.DefaultCodeGenerator;
+import dev.samstevens.totp.code.DefaultCodeVerifier;
+import dev.samstevens.totp.code.HashingAlgorithm;
+import dev.samstevens.totp.time.SystemTimeProvider;
+import dev.samstevens.totp.time.TimeProvider;
 import eu.pretix.libpretixsync.BuildConfig;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -25,7 +33,11 @@ public class AbstractCashier implements RemoteObject, CashierLike {
 
     public String userid;
 
+    public String login_method;
+
     public String pin;
+
+    public String otp_key;
 
     @Column(value = BuildConfig.BOOLEAN_FALSE, nullable = false)
     public boolean active;
@@ -40,10 +52,33 @@ public class AbstractCashier implements RemoteObject, CashierLike {
 
     @Override
     public boolean checkPIN(String pin) {
+        // LOGIN_AUTO = 'a'
+        // LOGIN_PIN = 'p'
+        // LOGIN_OTP = 'o'
+        // LOGIN_RFID = 'r'
         if (!this.active) {
             return false;
         }
-        return this.pin.equals(pin);
+
+        if (
+                (this.login_method.contains("p") || this.login_method.isEmpty()) && this.pin.equals(pin)
+        ) {
+            return true;
+        }
+
+        if (this.login_method.contains("a")) {
+            return true;
+        }
+
+        // TODO: Read Length from settings (pretixpos_cashier_otp_length)
+        if (this.login_method.contains("o") && pin.length() == 6) {
+            CodeGenerator codeGenerator = new DefaultCodeGenerator(HashingAlgorithm.SHA1, 6);
+            TimeProvider timeProvider = new SystemTimeProvider();
+            CodeVerifier verifier = new DefaultCodeVerifier(codeGenerator, timeProvider);
+            return verifier.isValidCode(this.otp_key, pin);
+        }
+
+        return false;
     }
 
     @Override

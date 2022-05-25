@@ -115,6 +115,8 @@ dependencies {
 
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.xerial:sqlite-jdbc:3.36.0.1'
+
+    implementation 'dev.samstevens.totp:totp:1.7.1'
 }
 
 task copyTestResources(type: Copy) {
