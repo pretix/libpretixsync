@@ -16,24 +16,24 @@ class EventManager(private val store: BlockingEntityStore<Persistable>, private 
 
     fun getAvailableEvents() : List<RemoteEvent> {
         val oneDayAgo = DateTime.now() - Hours.hours(24)
-        return getAvailableEvents(oneDayAgo, 5, null)
+        return getAvailableEvents(oneDayAgo, 5, null, null)
     }
 
-    fun getAvailableEvents(endsAfter: DateTime, maxPages: Int, availabilityForChannel: String?) : List<RemoteEvent> {
+    fun getAvailableEvents(endsAfter: DateTime, maxPages: Int, availabilityForChannel: String?, requireChannel: String?) : List<RemoteEvent> {
         eventMap.clear()
 
         val avail = if (availabilityForChannel != null) "with_availability_for=${availabilityForChannel}&" else ""
 
         val endsAfterUrl = URLEncoder.encode(endsAfter.toString())
         val resp_events = api.fetchResource(api.organizerResourceUrl("events") +
-                "?${avail}ends_after=$endsAfterUrl" + if (require_live) "&live=true" else "")
+                "?${avail}ends_after=$endsAfterUrl" + (if (require_live) "&live=true" else "") + (if (requireChannel != null) "&sales_channel=$requireChannel" else ""))
         if (resp_events.response.code != 200) {
             throw IOException()
         }
         var events = parseEvents(resp_events.data!!, maxDepth=maxPages)
 
         val resp_subevents = api.fetchResource(api.organizerResourceUrl("subevents")
-                + "?${avail}ends_after=$endsAfterUrl" + if (require_live) "&active=true&event__live=true" else "")
+                + "?${avail}ends_after=$endsAfterUrl" + (if (require_live) "&active=true&event__live=true" else "") + (if (requireChannel != null) "&sales_channel=$requireChannel" else ""))
         if (resp_subevents.response.code != 200) {
             throw IOException()
         }
