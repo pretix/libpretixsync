@@ -6,14 +6,16 @@ import eu.pretix.libpretixsync.config.ConfigStore
 import eu.pretix.libpretixsync.db.Answer
 import eu.pretix.libpretixsync.db.Question
 import eu.pretix.libpretixsync.db.QueuedCheckIn
-import eu.pretix.libpretixsync.db.ReceiptLine
 import eu.pretix.libpretixsync.utils.NetUtils
 import eu.pretix.libpretixsync.utils.URLFragmentEncoder
-import okhttp3.*
+import okhttp3.MediaType
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.Response
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
@@ -25,10 +27,9 @@ import java.net.URL
 import java.net.URLEncoder
 import java.nio.charset.Charset
 import java.util.*
-import javax.net.ssl.SSLException
 import javax.net.ssl.SSLPeerUnverifiedException
 
-open class PretixApi(url: String, key: String, orgaSlug: String, eventSlug: String?, version: Int, httpClientFactory: HttpClientFactory) {
+open class PretixApi(url: String, key: String, orgaSlug: String, eventSlug: String?, version: Int, httpClientFactory: HttpClientFactory, val acceptLanguage: String? = null) {
     private val url: String
     public var eventSlug: String?
     private val orgaSlug: String
@@ -88,7 +89,7 @@ open class PretixApi(url: String, key: String, orgaSlug: String, eventSlug: Stri
     @Throws(ApiException::class)
     open fun status(listId: Long): ApiResponse {
         return try {
-            fetchResource(eventResourceUrl("checkinlists/$listId/status")!!)
+            fetchResource(eventResourceUrl("checkinlists/$listId/status"))
         } catch (resourceNotModified: ResourceNotModified) {
             throw FinalApiException("invalid error")
         }
@@ -138,6 +139,9 @@ open class PretixApi(url: String, key: String, orgaSlug: String, eventSlug: Stri
                 .url(full_url)
                 .delete()
                 .header("Authorization", "Device $key")
+        if (acceptLanguage != null) {
+            request = request.header("Accept-Language", acceptLanguage)
+        }
         if (idempotency_key != null) {
             request = request.header("X-Idempotency-Key", idempotency_key)
         }
@@ -160,6 +164,9 @@ open class PretixApi(url: String, key: String, orgaSlug: String, eventSlug: Stri
                 .url(full_url!!)
                 .patch(data.toString().toRequestBody("application/json".toMediaType()))
                 .header("Authorization", "Device $key")
+        if (acceptLanguage != null) {
+            request = request.header("Accept-Language", acceptLanguage)
+        }
         if (idempotency_key != null) {
             request = request.header("X-Idempotency-Key", idempotency_key)
         }
@@ -189,9 +196,12 @@ open class PretixApi(url: String, key: String, orgaSlug: String, eventSlug: Stri
     @Throws(ApiException::class)
     open fun postResource(full_url: String, data: String, idempotency_key: String?): ApiResponse {
         var request = Request.Builder()
-                .url(full_url!!)
+                .url(full_url)
                 .post(data.toRequestBody("application/json".toMediaType()))
                 .header("Authorization", "Device $key")
+        if (acceptLanguage != null) {
+            request = request.header("Accept-Language", acceptLanguage)
+        }
         if (idempotency_key != null) {
             request = request.header("X-Idempotency-Key", idempotency_key)
         }
@@ -208,6 +218,9 @@ open class PretixApi(url: String, key: String, orgaSlug: String, eventSlug: Stri
         var request = Request.Builder()
                 .url(full_url)
                 .header("Authorization", "Device $key")
+        if (acceptLanguage != null) {
+            request = request.header("Accept-Language", acceptLanguage)
+        }
         if (if_modified_since != null) {
             request = request.header("If-Modified-Since", if_modified_since)
         }
@@ -221,9 +234,12 @@ open class PretixApi(url: String, key: String, orgaSlug: String, eventSlug: Stri
 
     @Throws(ApiException::class)
     open fun downloadFile(full_url: String): ApiResponse? {
-        val request = Request.Builder()
+        var request = Request.Builder()
                 .url(full_url)
                 .header("Authorization", "Device $key")
+        if (acceptLanguage != null) {
+            request = request.header("Accept-Language", acceptLanguage)
+        }
         return try {
             apiCall(request.build(), false)
         } catch (resourceNotModified: ResourceNotModified) {
@@ -317,11 +333,14 @@ open class PretixApi(url: String, key: String, orgaSlug: String, eventSlug: Stri
 
     @Throws(ApiException::class)
     open fun putFile(url: String, file: File, mediaType: MediaType, filename: String) {
-        val request = Request.Builder()
+        var request = Request.Builder()
                 .url(url)
                 .put(file.asRequestBody(mediaType))
                 .header("Content-Disposition", "attachment; filename=\"$filename\"")
                 .header("Authorization", "Device $key")
+        if (acceptLanguage != null) {
+            request = request.header("Accept-Language", acceptLanguage)
+        }
         try {
             val resp = apiCall(request.build())
             if (resp.response.code != 201 && resp.response.code != 200) {
@@ -336,11 +355,14 @@ open class PretixApi(url: String, key: String, orgaSlug: String, eventSlug: Stri
 
     @Throws(ApiException::class)
     open fun uploadFile(file: File, mediaType: MediaType, filename: String): String {
-        val request = Request.Builder()
-                .url(apiURL("upload")!!)
+        var request = Request.Builder()
+                .url(apiURL("upload"))
                 .post(file.asRequestBody(mediaType))
                 .header("Content-Disposition", "attachment; filename=\"$filename\"")
                 .header("Authorization", "Device $key")
+        if (acceptLanguage != null) {
+            request = request.header("Accept-Language", acceptLanguage)
+        }
         return try {
             val resp = apiCall(request.build())
             if (resp.response.code != 201) {
@@ -360,9 +382,9 @@ open class PretixApi(url: String, key: String, orgaSlug: String, eventSlug: Stri
          */
         const val SUPPORTED_API_VERSION = 4
         val JSON: MediaType = "application/json; charset=utf-8".toMediaType()
-        fun fromConfig(config: ConfigStore, httpClientFactory: HttpClientFactory?=null): PretixApi {
+        fun fromConfig(config: ConfigStore, httpClientFactory: HttpClientFactory?=null, acceptLanguage: String? = null): PretixApi {
             return PretixApi(config.apiUrl, config.apiKey, config.organizerSlug,
-                    config.eventSlug, config.apiVersion, httpClientFactory ?: DefaultHttpClientFactory())
+                    config.eventSlug, config.apiVersion, httpClientFactory ?: DefaultHttpClientFactory(), acceptLanguage)
         }
 
         fun fromConfig(config: ConfigStore): PretixApi {
