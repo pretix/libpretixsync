@@ -1,0 +1,35 @@
+name: test
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        java: [ '8', '11' ]
+
+    name: test with java ${{ matrix.java }}
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: ${{ matrix.java }}
+          distribution: 'temurin'
+
+      - name: Run Gradle
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: clean check test build jar jacocoTestReport
+          build-root-directory: libpretixsync
+
+      - name: Codecov
+        uses: codecov/codecov-action@v2

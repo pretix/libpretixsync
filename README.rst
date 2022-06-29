@@ -1,8 +1,8 @@
 libpretixsync
 =============
 
-.. image:: https://travis-ci.org/pretix/libpretixsync.svg?branch=master
-   :target: https://travis-ci.org/pretix/libpretixsync
+.. image:: https://github.com/pretix/libpretixsync/actions/workflows/test.yml/badge.svg
+   :target: https://github.com/pretix/libpretixsync/actions/workflows/test.yml
 
 .. image:: https://codecov.io/gh/pretix/libpretixsync/branch/master/graph/badge.svg
    :target: https://codecov.io/gh/pretix/libpretixsync
