@@ -33,6 +33,9 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         CheckInListSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null, 0).standaloneRefreshFromJSON(jsonResource("checkinlists/list1.json"))
         CheckInListSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null, 0).standaloneRefreshFromJSON(jsonResource("checkinlists/list2.json"))
         CheckInListSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null, 0).standaloneRefreshFromJSON(jsonResource("checkinlists/list3.json"))
+        CheckInListSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null, 0).standaloneRefreshFromJSON(jsonResource("checkinlists/list4.json"))
+        CheckInListSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null, 0).standaloneRefreshFromJSON(jsonResource("checkinlists/list5.json"))
+        CheckInListSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null, 0).standaloneRefreshFromJSON(jsonResource("checkinlists/list6.json"))
         SubEventSyncAdapter(dataStore, "demo", "14", fakeApi, "", null).standaloneRefreshFromJSON(jsonResource("subevents/subevent1.json"))
 
         val osa = OrderSyncAdapter(dataStore, FakeFileStorage(), "demo", 0, true, false, fakeApi, "", null)
@@ -42,6 +45,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         osa.standaloneRefreshFromJSON(jsonResource("orders/order4.json"))
         osa.standaloneRefreshFromJSON(jsonResource("orders/order6.json"))
         osa.standaloneRefreshFromJSON(jsonResource("orders/order7.json"))
+        osa.standaloneRefreshFromJSON(jsonResource("orders/order8.json"))
     }
 
     @Test
@@ -195,6 +199,30 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         r = p3.check("kfndgffgyw4tdgcacx6bb3bgemq69cxj", null, false, false, TicketCheckProvider.CheckInType.ENTRY)
         assertEquals(TicketCheckProvider.CheckResult.Type.USED, r.type)
         assertEquals(dataStore.count(QueuedCheckIn::class.java).get().value(), 2)
+    }
+
+    @Test
+    fun testAddonMatchDisabled() {
+        val p3 = AsyncCheckProvider(configStore!!, "demo", dataStore, 5L)
+        var r = p3.check("XwBltvZO50PKtygKtlIHgAFAxmhtDlzK")
+        assertEquals(TicketCheckProvider.CheckResult.Type.PRODUCT, r.type)
+        assertEquals(dataStore.count(QueuedCheckIn::class.java).get().value(), 0)
+    }
+
+    @Test
+    fun testAddonMatchValid() {
+        val p3 = AsyncCheckProvider(configStore!!, "demo", dataStore, 6L)
+        var r = p3.check("XwBltvZO50PKtygKtlIHgAFAxmhtDlzK")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+        assertEquals(dataStore.count(QueuedCheckIn::class.java).get().value(), 1)
+    }
+
+    @Test
+    fun testAddonMatchAmbiguous() {
+        val p3 = AsyncCheckProvider(configStore!!, "demo", dataStore, 4L)
+        var r = p3.check("XwBltvZO50PKtygKtlIHgAFAxmhtDlzK")
+        assertEquals(TicketCheckProvider.CheckResult.Type.AMBIGUOUS, r.type)
+        assertEquals(dataStore.count(QueuedCheckIn::class.java).get().value(), 0)
     }
 
     private fun setRuleOnList2(r: String) {
@@ -663,12 +691,12 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
     fun testStatusInfo() {
         val sr = p!!.status()
         assertEquals("All", sr.eventName)
-        assertEquals(11, sr.totalTickets)
+        assertEquals(13, sr.totalTickets)
         assertEquals(2, sr.alreadyScanned)
         assertEquals(2, sr.items!!.size)
         val i = sr.items!![0]
         assertEquals(1, i.id)
-        assertEquals(5, i.total)
+        assertEquals(6, i.total)
         assertEquals(1, i.checkins)
         assertEquals(true, i.isAdmission)
         assertEquals(0, i.variations!!.size)

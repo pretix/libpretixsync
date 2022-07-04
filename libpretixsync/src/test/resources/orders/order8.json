@@ -1,0 +1,81 @@
+{
+  "code": "ADDO1",
+  "status": "p",
+  "testmode": false,
+  "secret": "UI4rxv04gTOqYPDo",
+  "email": "addon@example.org",
+  "locale": "en",
+  "datetime": "2019-01-01T07:16:31Z",
+  "expires": "2020-03-03T16:50:46.773161Z",
+  "payment_date": null,
+  "payment_provider": "stripe",
+  "fees": [],
+  "total": "35.00",
+  "comment": "",
+  "invoice_address": null,
+  "positions": [
+    {
+      "id": 31179,
+      "order": "RR3IP",
+      "positionid": 1,
+      "item": 1,
+      "variation": null,
+      "price": "23.00",
+      "attendee_name": "Alexis Johnson",
+      "attendee_name_parts": {
+        "_scheme": "full",
+        "full_name": "Alexis Johnson"
+      },
+      "attendee_email": null,
+      "voucher": null,
+      "tax_rate": "0.00",
+      "tax_value": "0.00",
+      "secret": "XwBltvZO50PKtygKtlIHgAFAxmhtDlzK",
+      "addon_to": null,
+      "subevent": 14,
+      "checkins": [],
+      "downloads": [],
+      "answers": [],
+      "tax_rule": null,
+      "pseudonymization_id": "SDU3LNWEWP"
+    },
+    {
+      "id": 31180,
+      "order": "RR3IP",
+      "positionid": 1,
+      "item": 2,
+      "variation": null,
+      "price": "12.00",
+      "attendee_name": null,
+      "attendee_name_parts": {},
+      "attendee_email": null,
+      "voucher": null,
+      "tax_rate": "0.00",
+      "tax_value": "0.00",
+      "secret": "aqgLJEmKLWD86sfyF9ujcAewmL6z5gSQ",
+      "addon_to": 31179,
+      "subevent": 14,
+      "checkins": [],
+      "downloads": [],
+      "answers": [],
+      "tax_rule": null,
+      "pseudonymization_id": "ZDS38YQLHS"
+    }
+  ],
+  "downloads": [],
+  "checkin_attention": false,
+  "last_modified": "2019-03-04T16:31:22.544527Z",
+  "payments": [
+    {
+      "local_id": 1,
+      "state": "pending",
+      "amount": "35.00",
+      "created": "2019-03-04T16:31:23.345435Z",
+      "payment_date": null,
+      "provider": "stripe"
+    }
+  ],
+  "refunds": [],
+  "require_approval": false,
+  "sales_channel": "web"
+}
