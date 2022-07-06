@@ -480,7 +480,9 @@ class AsyncCheckProvider(private val config: ConfigStore, private val eventSlug:
                 .get().value()
             if (is_in_list == 0) {
                 storeFailedCheckin("product", ticketid, type, position=position.getServer_id(), item=position.getItem().getServer_id(), variation=position.getVariation_id(),  subevent=position.getSubevent_id())
-                return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.PRODUCT)
+                res.type = TicketCheckProvider.CheckResult.Type.PRODUCT
+                res.isCheckinAllowed = false
+                return res
             }
         }
 
