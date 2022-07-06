@@ -97,7 +97,7 @@ protobuf {
 check.dependsOn jacocoTestReport
 
 dependencies {
-    implementation 'com.squareup.okhttp3:okhttp:4.9.1'
+    implementation 'com.squareup.okhttp3:okhttp:4.9.3'
     implementation 'io.requery:requery:1.6.0'
     implementation 'io.requery:requery-kotlin:1.6.0'
     implementation 'joda-time:joda-time:2.10.10'
