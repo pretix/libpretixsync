@@ -29,9 +29,8 @@ import java.nio.charset.Charset
 import java.util.*
 import javax.net.ssl.SSLPeerUnverifiedException
 
-open class PretixApi(url: String, key: String, orgaSlug: String, eventSlug: String?, version: Int, httpClientFactory: HttpClientFactory, val acceptLanguage: String? = null) {
+open class PretixApi(url: String, key: String, orgaSlug: String, version: Int, httpClientFactory: HttpClientFactory, val acceptLanguage: String? = null) {
     private val url: String
-    public var eventSlug: String?
     private val orgaSlug: String
     private val key: String
     private val version: Int
@@ -41,16 +40,16 @@ open class PretixApi(url: String, key: String, orgaSlug: String, eventSlug: Stri
     inner class ApiResponse(val data: JSONObject?, val response: Response)
 
     @Throws(ApiException::class, JSONException::class)
-    fun redeem(secret: String, datetime: Date?, force: Boolean, nonce: String?, answers: List<Answer>?, listId: Long, ignore_unpaid: Boolean, pdf_data: Boolean, type: String?): ApiResponse {
+    fun redeem(eventSlug: String, secret: String, datetime: Date?, force: Boolean, nonce: String?, answers: List<Answer>?, listId: Long, ignore_unpaid: Boolean, pdf_data: Boolean, type: String?): ApiResponse {
         var dt: String? = null
         if (datetime != null) {
             dt = QueuedCheckIn.formatDatetime(datetime)
         }
-        return redeem(secret, dt, force, nonce, answers, listId, ignore_unpaid, pdf_data, type)
+        return redeem(eventSlug, secret, dt, force, nonce, answers, listId, ignore_unpaid, pdf_data, type)
     }
 
     @Throws(ApiException::class, JSONException::class)
-    open fun redeem(secret: String, datetime: String?, force: Boolean, nonce: String?, answers: List<Answer>?, listId: Long, ignore_unpaid: Boolean, pdf_data: Boolean, type: String?): ApiResponse {
+    open fun redeem(eventSlug: String, secret: String, datetime: String?, force: Boolean, nonce: String?, answers: List<Answer>?, listId: Long, ignore_unpaid: Boolean, pdf_data: Boolean, type: String?): ApiResponse {
         val body = JSONObject()
         if (datetime != null) {
             body.put("datetime", datetime)
@@ -83,22 +82,89 @@ open class PretixApi(url: String, key: String, orgaSlug: String, eventSlug: Stri
         if (pdf_data) {
             pd = "?pdf_data=true"
         }
-        return postResource(eventResourceUrl("checkinlists/" + listId + "/positions/" + URLFragmentEncoder.STRICT.encode(secret, Charset.forName("UTF-8")) + "/redeem") + pd, body)
+        return postResource(eventResourceUrl(eventSlug, "checkinlists/" + listId + "/positions/" + URLFragmentEncoder.STRICT.encode(secret, Charset.forName("UTF-8")) + "/redeem") + pd, body)
+    }
+
+    @Throws(ApiException::class, JSONException::class)
+    fun redeem(lists: List<Long>, secret: String, datetime: Date?, force: Boolean, nonce: String?, answers: List<Answer>?, ignore_unpaid: Boolean, pdf_data: Boolean, type: String?): ApiResponse {
+        var dt: String? = null
+        if (datetime != null) {
+            dt = QueuedCheckIn.formatDatetime(datetime)
+        }
+        return redeem(lists, secret, dt, force, nonce, answers, ignore_unpaid, pdf_data, type)
+    }
+
+    @Throws(ApiException::class, JSONException::class)
+    open fun redeem(lists: List<Long>, secret: String, datetime: String?, force: Boolean, nonce: String?, answers: List<Answer>?, ignore_unpaid: Boolean, pdf_data: Boolean, type: String?): ApiResponse {
+        val body = JSONObject()
+        if (datetime != null) {
+            body.put("datetime", datetime)
+        }
+        body.put("force", force)
+        body.put("ignore_unpaid", ignore_unpaid)
+        body.put("nonce", nonce)
+        body.put("type", type)
+        val answerbody = JSONObject()
+        if (answers != null) {
+            for (a in answers) {
+                if (a.value.startsWith("file:///")) {
+                    val fileid = uploadFile(File(a.value.substring(7)), when (a.value.split(".").last()) {
+                        "jpeg", "jpg" -> "image/jpeg".toMediaTypeOrNull()!!
+                        "png" -> "image/png".toMediaTypeOrNull()!!
+                        "gif" -> "image/gif".toMediaTypeOrNull()!!
+                        "pdf" -> "application/pdf".toMediaTypeOrNull()!!
+                        else -> "application/unknown".toMediaTypeOrNull()!!
+                    }, a.value.split("/").last())
+                    answerbody.put("" + (a.question as Question).getServer_id(), fileid)
+                } else {
+                    answerbody.put("" + (a.question as Question).getServer_id(), a.value)
+                }
+            }
+        }
+        body.put("answers", answerbody)
+        body.put("questions_supported", true)
+        body.put("canceled_supported", true)
+        body.put("secret", secret)
+        val jlists = JSONArray()
+        for (l in lists) {
+            jlists.put(l)
+        }
+        body.put("lists", jlists)
+        var pd = ""
+        if (pdf_data) {
+            pd = "?pdf_data=true"
+        }
+        return postResource(organizerResourceUrl("checkinrpc/redeem") + pd, body)
     }
 
     @Throws(ApiException::class)
-    open fun status(listId: Long): ApiResponse {
+    open fun status(eventSlug: String, listId: Long): ApiResponse {
         return try {
-            fetchResource(eventResourceUrl("checkinlists/$listId/status"))
+            fetchResource(eventResourceUrl(eventSlug, "checkinlists/$listId/status"))
         } catch (resourceNotModified: ResourceNotModified) {
             throw FinalApiException("invalid error")
         }
     }
 
     @Throws(ApiException::class)
-    open fun search(listId: Long, query: String?, page: Int): ApiResponse {
+    open fun search(eventSlug: String, listId: Long, query: String?, page: Int): ApiResponse {
         return try {
-            fetchResource(eventResourceUrl("checkinlists/$listId/positions") + "?ignore_status=true&page=" + page + "&search=" + URLEncoder.encode(query, "UTF-8"))
+            fetchResource(eventResourceUrl(eventSlug, "checkinlists/$listId/positions") + "?ignore_status=true&page=" + page + "&search=" + URLEncoder.encode(query, "UTF-8"))
+        } catch (resourceNotModified: ResourceNotModified) {
+            throw FinalApiException("invalid error")
+        } catch (resourceNotModified: UnsupportedEncodingException) {
+            throw FinalApiException("invalid error")
+        }
+    }
+
+    @Throws(ApiException::class)
+    open fun search(lists: List<Long>, query: String?, page: Int): ApiResponse {
+        return try {
+            var url = organizerResourceUrl("checkinrpc/search/positions") + "?ignore_status=true&page=" + page + "&search=" + URLEncoder.encode(query, "UTF-8")
+            for (l in lists) {
+                url += "&list=$l"
+            }
+            fetchResource(url)
         } catch (resourceNotModified: ResourceNotModified) {
             throw FinalApiException("invalid error")
         } catch (resourceNotModified: UnsupportedEncodingException) {
@@ -124,9 +190,9 @@ open class PretixApi(url: String, key: String, orgaSlug: String, eventSlug: Stri
         }
     }
 
-    fun eventResourceUrl(resource: String): String {
+    fun eventResourceUrl(eventSlug: String, resource: String): String {
         return try {
-            URL(URL(url), "/api/v1/organizers/$orgaSlug/events/${eventSlug!!}/$resource/").toString()
+            URL(URL(url), "/api/v1/organizers/$orgaSlug/events/${eventSlug}/$resource/").toString()
         } catch (e: MalformedURLException) {
             e.printStackTrace()
             ""
@@ -384,7 +450,7 @@ open class PretixApi(url: String, key: String, orgaSlug: String, eventSlug: Stri
         val JSON: MediaType = "application/json; charset=utf-8".toMediaType()
         fun fromConfig(config: ConfigStore, httpClientFactory: HttpClientFactory?=null, acceptLanguage: String? = null): PretixApi {
             return PretixApi(config.apiUrl, config.apiKey, config.organizerSlug,
-                    config.eventSlug, config.apiVersion, httpClientFactory ?: DefaultHttpClientFactory(), acceptLanguage)
+                    config.apiVersion, httpClientFactory ?: DefaultHttpClientFactory(), acceptLanguage)
         }
 
         fun fromConfig(config: ConfigStore): PretixApi {
@@ -399,7 +465,6 @@ open class PretixApi(url: String, key: String, orgaSlug: String, eventSlug: Stri
         }
         this.url = url
         this.key = key
-        this.eventSlug = eventSlug
         this.orgaSlug = orgaSlug
         this.version = version
         client = httpClientFactory.buildClient(NetUtils.ignoreSSLforURL(url))

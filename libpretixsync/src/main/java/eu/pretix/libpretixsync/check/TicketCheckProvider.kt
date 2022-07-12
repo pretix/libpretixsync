@@ -125,13 +125,13 @@ interface TicketCheckProvider {
     class StatusResult(var eventName: String?, var totalTickets: Int, var alreadyScanned: Int, var currentlyInside: Int?, var items: List<StatusResultItem>?) {
     }
 
-    fun check(ticketid: String, answers: List<Answer>?, ignore_unpaid: Boolean, with_badge_data: Boolean, type: CheckInType): CheckResult
-    fun check(ticketid: String): CheckResult
+    fun check(eventsAndCheckinLists: Map<String, Long>, ticketid: String, answers: List<Answer>?, ignore_unpaid: Boolean, with_badge_data: Boolean, type: CheckInType): CheckResult
+    fun check(eventsAndCheckinLists: Map<String, Long>, ticketid: String): CheckResult
     @Throws(CheckException::class)
-    fun search(query: String, page: Int): List<SearchResult>
+    fun search(eventsAndCheckinLists: Map<String, Long>, query: String, page: Int): List<SearchResult>
 
     @Throws(CheckException::class)
-    fun status(): StatusResult?
+    fun status(eventSlug: String, listId: Long): StatusResult?
 
     fun setSentry(sentry: SentryInterface)
 }

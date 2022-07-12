@@ -2,6 +2,8 @@ package eu.pretix.libpretixsync.config;
 
 import org.json.JSONObject;
 
+import java.util.List;
+
 public interface ConfigStore {
 
     public boolean isDebug();
@@ -32,11 +34,13 @@ public interface ConfigStore {
 
     public String getOrganizerSlug();
 
-    public String getEventSlug();
-
     public String getSyncCycleId();
 
-    public Long getSubEventId();
+    public List<String> getSynchronizedEvents();
+
+    public Long getSelectedSubeventForEvent(String event);
+
+    public Long getSelectedCheckinListForEvent(String event);
 
     public long getLastDownload();
 

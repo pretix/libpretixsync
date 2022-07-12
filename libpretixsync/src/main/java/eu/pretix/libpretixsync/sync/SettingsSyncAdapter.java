@@ -88,7 +88,7 @@ public class SettingsSyncAdapter extends BaseSingleObjectSyncAdapter<Settings> {
 
     @Override
     protected String getUrl() {
-        return api.eventResourceUrl("settings");
+        return api.eventResourceUrl(eventSlug, "settings");
     }
 
     @Override

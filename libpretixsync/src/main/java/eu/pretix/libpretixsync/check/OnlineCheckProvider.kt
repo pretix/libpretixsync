@@ -20,35 +20,29 @@ import org.json.JSONObject
 import java.lang.Exception
 import java.util.*
 
-class OnlineCheckProvider(private val config: ConfigStore, httpClientFactory: HttpClientFactory?, dataStore: BlockingEntityStore<Persistable>, val fileStore: FileStorage, listId: Long) : TicketCheckProvider {
-    protected var api: PretixApi
-    private var sentry: SentryInterface
-    private val dataStore: BlockingEntityStore<Persistable>
-    private val listId: Long
+class OnlineCheckProvider(private val config: ConfigStore, httpClientFactory: HttpClientFactory?, private val dataStore: BlockingEntityStore<Persistable>, private val fileStore: FileStorage) : TicketCheckProvider {
+    private var sentry: SentryInterface = DummySentryImplementation()
+    private val api = PretixApi.fromConfig(config, httpClientFactory)
     private val parser = ISODateTimeFormat.dateTimeParser()
-
-    fun getSentry(): SentryInterface {
-        return sentry
-    }
 
     override fun setSentry(sentry: SentryInterface) {
         this.sentry = sentry
         api.sentry = sentry
     }
 
-    override fun check(ticketid_: String, answers: List<Answer>?, ignore_unpaid: Boolean, with_badge_data: Boolean, type: TicketCheckProvider.CheckInType): TicketCheckProvider.CheckResult {
+    override fun check(eventsAndCheckinLists: Map<String, Long>, ticketid_: String, answers: List<Answer>?, ignore_unpaid: Boolean, with_badge_data: Boolean, type: TicketCheckProvider.CheckInType): TicketCheckProvider.CheckResult {
         val ticketid = ticketid_.replace(Regex("[\\p{C}]"), "�")  // remove unprintable characters
 
         sentry.addBreadcrumb("provider.check", "started")
-        val list = dataStore.select(CheckInList::class.java)
-                .where(CheckInList.SERVER_ID.eq(listId))
-                .and(CheckInList.EVENT_SLUG.eq(config.eventSlug))
-                .get().firstOrNull()
-                ?: return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.ERROR, "Check-in list not found")
         return try {
             val res = TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.ERROR)
             res.scanType = type
-            val responseObj = api.redeem(ticketid, null as String?, false, null, answers, listId, ignore_unpaid, with_badge_data, type.toString().toLowerCase())
+            val responseObj = if (config.knownPretixVersion >= 40120001001) { // >= 4.12.0.dev1
+                api.redeem(eventsAndCheckinLists.values.toList(), ticketid, null as String?, false, null, answers, ignore_unpaid, with_badge_data, type.toString().lowercase(Locale.getDefault()))
+            } else {
+                if (eventsAndCheckinLists.size != 1) throw CheckException("Multi-event scan not supported by server.")
+                api.redeem(eventsAndCheckinLists.keys.first(), ticketid, null as String?, false, null, answers, eventsAndCheckinLists.values.first(), ignore_unpaid, with_badge_data, type.toString().lowercase(Locale.getDefault()))
+            }
             if (responseObj.response.code == 404) {
                 res.type = TicketCheckProvider.CheckResult.Type.INVALID
             } else {
@@ -86,7 +80,20 @@ class OnlineCheckProvider(private val config: ConfigStore, httpClientFactory: Ht
                     } else if ("unpaid" == reason) {
                         res.type = TicketCheckProvider.CheckResult.Type.UNPAID
                         // Decide whether the user is allowed to "try again" with "ignore_unpaid"
-                        res.isCheckinAllowed = list.include_pending && response.has("position") && response.getJSONObject("position").optString("order__status", "n") == "n"
+
+                        val includePending = if (response.has("list")) {
+                            // pretix >= 4.12
+                            response.getJSONObject("list").getBoolean("include_pending")
+                        } else {
+                            // pretix < 4.12, no multi-scan supported
+                            val list = dataStore.select(CheckInList::class.java)
+                                    .where(CheckInList.SERVER_ID.eq(eventsAndCheckinLists.values.first()))
+                                    .and(CheckInList.EVENT_SLUG.eq(eventsAndCheckinLists.keys.first()))
+                                    .get().firstOrNull()
+                                    ?: throw CheckException("Check-in list not found")
+                            list.isInclude_pending
+                        }
+                        res.isCheckinAllowed = includePending && response.has("position") && response.getJSONObject("position").optString("order__status", "n") == "n"
                     } else if ("product" == reason) {
                         res.type = TicketCheckProvider.CheckResult.Type.PRODUCT
                     }
@@ -120,7 +127,7 @@ class OnlineCheckProvider(private val config: ConfigStore, httpClientFactory: Ht
                     val checkins = posjson.getJSONArray("checkins")
                     for (i in 0 until checkins.length()) {
                         val ci = checkins.getJSONObject(i)
-                        if (ci.getLong("list") == listId) {
+                        if (eventsAndCheckinLists.containsValue(ci.getLong("list"))) {
                             res.firstScanned = parser.parseDateTime(ci.getString("datetime")).toDate()
                         }
                     }
@@ -131,8 +138,7 @@ class OnlineCheckProvider(private val config: ConfigStore, httpClientFactory: Ht
                             val pdfdata = posjson.getJSONObject("pdf_data")
                             if (pdfdata.has("images")) {
                                 val images = pdfdata.getJSONObject("images")
-                                OrderSyncAdapter(dataStore, fileStore, config.eventSlug, config.subEventId, true, false, api, config.syncCycleId, null)
-                                        .updatePdfImages(posjson.getLong("id"), images)
+                                OrderSyncAdapter.updatePdfImages(dataStore, fileStore, api, posjson.getLong("id"), images)
                             }
                         }
                     } catch (e: Exception) {
@@ -157,15 +163,20 @@ class OnlineCheckProvider(private val config: ConfigStore, httpClientFactory: Ht
         }
     }
 
-    override fun check(ticketid: String): TicketCheckProvider.CheckResult {
-        return check(ticketid, ArrayList(), false, true, TicketCheckProvider.CheckInType.ENTRY)
+    override fun check(eventsAndCheckinLists: Map<String, Long>, ticketid: String): TicketCheckProvider.CheckResult {
+        return check(eventsAndCheckinLists, ticketid, ArrayList(), false, true, TicketCheckProvider.CheckInType.ENTRY)
     }
 
     @Throws(CheckException::class)
-    override fun search(query: String, page: Int): List<TicketCheckProvider.SearchResult> {
+    override fun search(eventsAndCheckinLists: Map<String, Long>, query: String, page: Int): List<TicketCheckProvider.SearchResult> {
         sentry.addBreadcrumb("provider.search", "started")
         return try {
-            val response = api.search(listId, query, page)
+            val response = if (config.knownPretixVersion >= 40120001001) { // < 4.12.0.dev1
+                api.search(eventsAndCheckinLists.values.toList(), query, page)
+            } else {
+                if (eventsAndCheckinLists.size != 1) throw CheckException("Multi-event scan not supported by server.")
+                api.search(eventsAndCheckinLists.keys.first(), eventsAndCheckinLists.values.first(), query, page)
+            }
             val resdata = response.data!!.getJSONArray("results")
             val results: MutableList<TicketCheckProvider.SearchResult> = ArrayList()
             for (i in 0 until resdata.length()) {
@@ -216,15 +227,15 @@ class OnlineCheckProvider(private val config: ConfigStore, httpClientFactory: Ht
     }
 
     @Throws(CheckException::class)
-    override fun status(): TicketCheckProvider.StatusResult {
+    override fun status(eventSlug: String, listId: Long): TicketCheckProvider.StatusResult? {
         sentry.addBreadcrumb("provider.status", "started")
         return try {
-            val response = api.status(listId)
+            val response = api.status(eventSlug, listId)
             val r = parseStatusResponse(response.data!!)
 
             val list = dataStore.select(CheckInList::class.java)
                     .where(CheckInList.SERVER_ID.eq(listId))
-                    .and(CheckInList.EVENT_SLUG.eq(config.eventSlug))
+                    .and(CheckInList.EVENT_SLUG.eq(eventSlug))
                     .get().firstOrNull()
             if (list != null) {
                 r.eventName += " – " + list.name
@@ -275,12 +286,5 @@ class OnlineCheckProvider(private val config: ConfigStore, httpClientFactory: Ht
                     items
             )
         }
-    }
-
-    init {
-        api = PretixApi.fromConfig(config, httpClientFactory)
-        sentry = DummySentryImplementation()
-        this.listId = listId
-        this.dataStore = dataStore
     }
 }

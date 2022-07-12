@@ -8,7 +8,6 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Queue;
 import java.util.concurrent.ExecutionException;
 
 import eu.pretix.libpretixsync.SentryInterface;
@@ -17,7 +16,6 @@ import eu.pretix.libpretixsync.api.DeviceAccessRevokedException;
 import eu.pretix.libpretixsync.api.NotFoundApiException;
 import eu.pretix.libpretixsync.api.PretixApi;
 import eu.pretix.libpretixsync.api.ResourceNotModified;
-import eu.pretix.libpretixsync.check.TicketCheckProvider;
 import eu.pretix.libpretixsync.config.ConfigStore;
 import eu.pretix.libpretixsync.db.Answer;
 import eu.pretix.libpretixsync.db.CheckIn;
@@ -56,7 +54,6 @@ public class SyncManager {
     protected String hardware_model;
     protected String software_brand;
     protected String software_version;
-    public List<String> keepSlugs;
     protected CheckConnectivityFeedback connectivityFeedback;
 
     public class CanceledState {
@@ -128,28 +125,10 @@ public class SyncManager {
         this.software_brand = software_brand;
         this.software_version = software_version;
         this.connectivityFeedback = connectivityFeedback;
-        this.keepSlugs = new ArrayList<>();
-        this.keepSlugs.add(configStore.getEventSlug());
     }
 
     public SyncResult sync(boolean force) throws EventSwitchRequested {
-        return sync(force, null, null);
-    }
-
-
-    public SyncResult sync(boolean force, SyncManager.ProgressFeedback feedback) {
-        if (!configStore.isConfigured()) {
-            return new SyncResult(false, false);
-        }
-        if (configStore.getAutoSwitchRequested()) {
-            throw new RuntimeException("Invalid call: If auto switch is requested, a list ID needs to be supplied");
-        }
-        try {
-            return this.sync(force, -1L, feedback);
-        } catch (EventSwitchRequested eventSwitchRequested) {
-            // can't happen
-            throw new RuntimeException("Invalid call: If auto switch is requested, a list ID needs to be supplied");
-        }
+        return sync(force,null);
     }
 
     /**
@@ -158,7 +137,7 @@ public class SyncManager {
      * @param force Force a new sync
      * @return A SyncResult describing the results of the synchronization
      */
-    public SyncResult sync(boolean force, Long listId, SyncManager.ProgressFeedback feedback) throws EventSwitchRequested {
+    public SyncResult sync(boolean force, SyncManager.ProgressFeedback feedback) throws EventSwitchRequested {
         if (!configStore.isConfigured()) {
             return new SyncResult(false, false);
         }
@@ -175,11 +154,11 @@ public class SyncManager {
         canceled.setCanceled(false);
         boolean download = force || (System.currentTimeMillis() - configStore.getLastDownload()) > download_interval;
         try {
-            if (configStore.getAutoSwitchRequested()) {
+            if (configStore.getAutoSwitchRequested() && configStore.getSynchronizedEvents().size() == 1) {
                 if (feedback != null) {
                     feedback.postFeedback("Checking for other event…");
                 }
-                checkEventSelection(listId);
+                checkEventSelection(configStore.getSelectedCheckinListForEvent(configStore.getSynchronizedEvents().get(0)));
             }
             if (feedback != null) {
                 feedback.postFeedback("Uploading data…");
@@ -235,9 +214,15 @@ public class SyncManager {
 
     private void checkEventSelection(Long listId) throws EventSwitchRequested {
         try {
-            String query = "current_event=" + configStore.getEventSlug();
-            if (configStore.getSubEventId() != null && configStore.getSubEventId() > 0) {
-                query += "&current_subevent=" + configStore.getSubEventId();
+            if (configStore.getSynchronizedEvents().size() != 1) {
+                // Only supported if exactly one event is selected
+                return;
+            }
+            String configEventSlug = configStore.getSynchronizedEvents().get(0);
+            Long configSubeventId = configStore.getSelectedSubeventForEvent(configEventSlug);
+            String query = "current_event=" + configEventSlug;
+            if (configSubeventId != null && configSubeventId > 0) {
+                query += "&current_subevent=" + configSubeventId;
             }
             if (listId != null && listId > 0) {
                 query += "&current_checkinlist=" + listId;
@@ -249,7 +234,7 @@ public class SyncManager {
                 String eventSlug = resp.getData().getJSONObject("event").getString("slug");
                 Long subeventId = resp.getData().isNull("subevent") ? 0 : resp.getData().optLong("subevent", 0);
                 Long checkinlistId = resp.getData().isNull("checkinlist") ? 0 : resp.getData().optLong("checkinlist", 0);
-                if (!eventSlug.equals(configStore.getEventSlug()) || !subeventId.equals(configStore.getSubEventId()) || !checkinlistId.equals(listId)) {
+                if (!eventSlug.equals(configEventSlug) || !subeventId.equals(configSubeventId) || !checkinlistId.equals(listId)) {
                     throw new EventSwitchRequested(eventSlug, resp.getData().getJSONObject("event").getString("name"), subeventId, checkinlistId);
                 }
             }
@@ -305,7 +290,7 @@ public class SyncManager {
     protected void upload() throws SyncException {
         uploadOrders();
         if (canceled.isCanceled()) throw new SyncException("Canceled");
-        uploadTicketData();
+        uploadCheckins();
         if (canceled.isCanceled()) throw new SyncException("Canceled");
         uploadQueuedCalls();
         if (canceled.isCanceled()) throw new SyncException("Canceled");
@@ -343,42 +328,62 @@ public class SyncManager {
                 } catch (NotFoundApiException e) {
                     // ignore, this is only supported from a later pretixpos-backend version
                 }
-                if (configStore.getEventSlug() == null) {
+                if (configStore.getSynchronizedEvents().size() == 0) {
                     return;
                 }
             }
-            download(new EventSyncAdapter(dataStore, configStore.getEventSlug(), configStore.getEventSlug(), api, configStore.getSyncCycleId(), feedback));
-            download(new AllSubEventsSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, configStore.getSyncCycleId(), feedback));
-            download(new ItemCategorySyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, configStore.getSyncCycleId(), feedback));
-            download(new ItemSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, configStore.getSyncCycleId(), feedback));
-            download(new QuestionSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, configStore.getSyncCycleId(), feedback));
-            if (profile == Profile.PRETIXPOS) {
-                download(new QuotaSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, configStore.getSyncCycleId(), feedback, configStore.getSubEventId()));
-                download(new TaxRuleSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, configStore.getSyncCycleId(), feedback));
-                download(new TicketLayoutSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, configStore.getSyncCycleId(), feedback));
-            }
-            download(new BadgeLayoutSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, configStore.getSyncCycleId(), feedback));
-            try {
-                download(new BadgeLayoutItemSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, configStore.getSyncCycleId(), feedback));
-            } catch (ApiException e) {
-                // ignore, this is only supported from pretix 2.5. We have legacy code in BadgeLayoutSyncAdapter to fall back to
-            }
-            download(new CheckInListSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, configStore.getSyncCycleId(), feedback, configStore.getSubEventId()));
-            if (profile == Profile.PRETIXSCAN || profile == Profile.PRETIXSCAN_ONLINE) {
-                // We don't need these on pretixPOS, so we can save some traffic
+
+            download(new AllSubEventsSyncAdapter(dataStore, fileStorage, api, configStore.getSyncCycleId(), feedback));
+            for (String eventSlug : configStore.getSynchronizedEvents()) {
+                download(new EventSyncAdapter(dataStore, eventSlug, eventSlug, api, configStore.getSyncCycleId(), feedback));
+                download(new ItemCategorySyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
+                download(new ItemSyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
+                download(new QuestionSyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
+                if (profile == Profile.PRETIXPOS) {
+                    download(new QuotaSyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback, configStore.getSelectedSubeventForEvent(eventSlug)));
+                    download(new TaxRuleSyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
+                    download(new TicketLayoutSyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
+                }
+                download(new BadgeLayoutSyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
                 try {
-                    download(new RevokedTicketSecretSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), api, configStore.getSyncCycleId(), feedback));
-                } catch (NotFoundApiException e) {
-                    // ignore, this is only supported from pretix 3.12.
+                    download(new BadgeLayoutItemSyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
+                } catch (ApiException e) {
+                    // ignore, this is only supported from pretix 2.5. We have legacy code in BadgeLayoutSyncAdapter to fall back to
+                }
+                download(new CheckInListSyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback, configStore.getSelectedSubeventForEvent(eventSlug)));
+                if (profile == Profile.PRETIXSCAN || profile == Profile.PRETIXSCAN_ONLINE) {
+                    // We don't need these on pretixPOS, so we can save some traffic
+                    try {
+                        download(new RevokedTicketSecretSyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
+                    } catch (NotFoundApiException e) {
+                        // ignore, this is only supported from pretix 3.12.
+                    }
+                }
+                if (profile == Profile.PRETIXSCAN && !skip_orders) {
+                    OrderSyncAdapter osa = new OrderSyncAdapter(dataStore, fileStorage, eventSlug, configStore.getSelectedSubeventForEvent(eventSlug), with_pdf_data, false, api, configStore.getSyncCycleId(), feedback);
+                    download(osa);
+                }
+
+                // We used to only Sync the settings for pretixPOS, but for COVID-certificate validation, we need the Settings, too.
+                try {
+                    download(new SettingsSyncAdapter(dataStore, eventSlug, eventSlug, api, configStore.getSyncCycleId(), feedback));
+                } catch (ApiException e) {
+                    // Older pretix installations
+                    // We don't need these on pretixSCAN, so we can save some traffic
+                    if (profile == Profile.PRETIXPOS) {
+                        download(new InvoiceSettingsSyncAdapter(dataStore, eventSlug, eventSlug, api, configStore.getSyncCycleId(), feedback));
+                    }
                 }
             }
+
             if (profile == Profile.PRETIXSCAN && !skip_orders) {
-                OrderSyncAdapter osa = new OrderSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), configStore.getSubEventId(), with_pdf_data, false, api, configStore.getSyncCycleId(), feedback);
-                download(osa);
+                OrderCleanup oc = new OrderCleanup(dataStore, fileStorage, api, configStore.getSyncCycleId(), feedback);
                 if ((System.currentTimeMillis() - configStore.getLastCleanup()) > 3600 * 1000 * 12) {
-                    osa.deleteOldSubevents();
-                    osa.deleteOldEvents(keepSlugs);
-                    osa.deleteOldPdfImages();
+                    for (String eventSlug : configStore.getSynchronizedEvents()) {
+                        oc.deleteOldSubevents(eventSlug, configStore.getSelectedSubeventForEvent(eventSlug));
+                    }
+                    oc.deleteOldEvents(configStore.getSynchronizedEvents());
+                    oc.deleteOldPdfImages();
                     configStore.setLastCleanup(System.currentTimeMillis());
                 }
             } else if (profile == Profile.PRETIXSCAN_ONLINE) {
@@ -386,23 +391,13 @@ public class SyncManager {
                 dataStore.delete(OrderPosition.class).get().value();
                 dataStore.delete(Order.class).get().value();
                 dataStore.delete(ResourceSyncStatus.class).where(ResourceSyncStatus.RESOURCE.like("order%")).get().value();
-                OrderSyncAdapter osa = new OrderSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), configStore.getSubEventId(), with_pdf_data, false, api, configStore.getSyncCycleId(), feedback);
                 if ((System.currentTimeMillis() - configStore.getLastCleanup()) > 3600 * 1000 * 12) {
-                    osa.deleteOldPdfImages();
+                    OrderCleanup oc = new OrderCleanup(dataStore, fileStorage, api, configStore.getSyncCycleId(), feedback);
+                    oc.deleteOldPdfImages();
                     configStore.setLastCleanup(System.currentTimeMillis());
                 }
             }
 
-            // We used to only Sync the settings for pretixPOS, but for COVID-certificate validation, we need the Settings, too.
-            try {
-                download(new SettingsSyncAdapter(dataStore, configStore.getEventSlug(), configStore.getEventSlug(), api, configStore.getSyncCycleId(), feedback));
-            } catch (ApiException e) {
-                // Older pretix installations
-                // We don't need these on pretixSCAN, so we can save some traffic
-                if (profile == Profile.PRETIXPOS) {
-                    download(new InvoiceSettingsSyncAdapter(dataStore, configStore.getEventSlug(), configStore.getEventSlug(), api, configStore.getSyncCycleId(), feedback));
-                }
-            }
 
         } catch (DeviceAccessRevokedException e) {
             int deleted = 0;
@@ -521,30 +516,25 @@ public class SyncManager {
             for (QueuedOrder qo : orders) {
                 qo.setLocked(true);
                 dataStore.update(qo, QueuedOrder.LOCKED);
-                try {
-                    api.setEventSlug(qo.getEvent_slug());
-                    Long startedAt = System.currentTimeMillis();
-                    PretixApi.ApiResponse resp = api.postResource(
-                            api.eventResourceUrl("orders") + "?pdf_data=true&force=true",
-                            new JSONObject(qo.getPayload()),
-                            qo.getIdempotency_key()
-                    );
-                    if (resp.getResponse().code() == 201) {
-                        Receipt r = qo.getReceipt();
-                        r.setOrder_code(resp.getData().getString("code"));
-                        dataStore.update(r, Receipt.ORDER_CODE);
-                        dataStore.delete(qo);
-                        (new OrderSyncAdapter(dataStore, fileStorage, configStore.getEventSlug(), configStore.getSubEventId(), true, true, api, configStore.getSyncCycleId(), null)).standaloneRefreshFromJSON(resp.getData());
-                        if (connectivityFeedback != null) {
-                            connectivityFeedback.recordSuccess(System.currentTimeMillis() - startedAt);
-                        }
-                    } else if (resp.getResponse().code() == 400) {
-                        // TODO: User feedback or log in some way?
-                        qo.setError(resp.getData().toString());
-                        dataStore.update(qo);
+                Long startedAt = System.currentTimeMillis();
+                PretixApi.ApiResponse resp = api.postResource(
+                        api.eventResourceUrl(qo.getEvent_slug(), "orders") + "?pdf_data=true&force=true",
+                        new JSONObject(qo.getPayload()),
+                        qo.getIdempotency_key()
+                );
+                if (resp.getResponse().code() == 201) {
+                    Receipt r = qo.getReceipt();
+                    r.setOrder_code(resp.getData().getString("code"));
+                    dataStore.update(r, Receipt.ORDER_CODE);
+                    dataStore.delete(qo);
+                    (new OrderSyncAdapter(dataStore, fileStorage, qo.getEvent_slug(), null, true, true, api, configStore.getSyncCycleId(), null)).standaloneRefreshFromJSON(resp.getData());
+                    if (connectivityFeedback != null) {
+                        connectivityFeedback.recordSuccess(System.currentTimeMillis() - startedAt);
                     }
-                } finally {
-                    api.setEventSlug(configStore.getEventSlug());
+                } else if (resp.getResponse().code() == 400) {
+                    // TODO: User feedback or log in some way?
+                    qo.setError(resp.getData().toString());
+                    dataStore.update(qo);
                 }
             }
         } catch (JSONException e) {
@@ -596,7 +586,7 @@ public class SyncManager {
         sentry.addBreadcrumb("sync.queue", "Closings upload complete");
     }
 
-    protected void uploadTicketData() throws SyncException {
+    protected void uploadCheckins() throws SyncException {
         sentry.addBreadcrumb("sync.queue", "Start check-in upload");
 
         List<QueuedCheckIn> queued = dataStore.select(QueuedCheckIn.class)
@@ -617,20 +607,15 @@ public class SyncManager {
                 }
 
                 PretixApi.ApiResponse ar;
-                try {
-                    api.setEventSlug(qci.getEvent_slug());
-                    Long startedAt = System.currentTimeMillis();
-                    if (qci.getDatetime_string() == null || qci.getDatetime_string().equals("")) {
-                        // Backwards compatibility
-                        ar = api.redeem(qci.getSecret(), qci.getDatetime(), true, qci.getNonce(), answers, qci.checkinListId, false, false, qci.getType());
-                    } else {
-                        ar = api.redeem(qci.getSecret(), qci.getDatetime_string(), true, qci.getNonce(), answers, qci.checkinListId, false, false, qci.getType());
-                    }
-                    if (connectivityFeedback != null) {
-                        connectivityFeedback.recordSuccess(System.currentTimeMillis() - startedAt);
-                    }
-                } finally {
-                    api.setEventSlug(configStore.getEventSlug());
+                Long startedAt = System.currentTimeMillis();
+                if (qci.getDatetime_string() == null || qci.getDatetime_string().equals("")) {
+                    // Backwards compatibility
+                    ar = api.redeem(qci.getEvent_slug(), qci.getSecret(), qci.getDatetime(), true, qci.getNonce(), answers, qci.checkinListId, false, false, qci.getType());
+                } else {
+                    ar = api.redeem(qci.getEvent_slug(), qci.getSecret(), qci.getDatetime_string(), true, qci.getNonce(), answers, qci.checkinListId, false, false, qci.getType());
+                }
+                if (connectivityFeedback != null) {
+                    connectivityFeedback.recordSuccess(System.currentTimeMillis() - startedAt);
                 }
                 JSONObject response = ar.getData();
                 String status = response.optString("status", null);

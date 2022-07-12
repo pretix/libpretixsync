@@ -27,7 +27,7 @@ public class CheckInListSyncAdapter extends BaseConditionalSyncAdapter<CheckInLi
     }
 
     protected String getUrl() {
-        String url = api.eventResourceUrl(getResourceName());
+        String url = api.eventResourceUrl(eventSlug, getResourceName());
         url += "?exclude=checkin_count&exclude=position_count";
         if (this.subeventId != null && this.subeventId > 0L) {
             url += "&subevent_match=" + this.subeventId;

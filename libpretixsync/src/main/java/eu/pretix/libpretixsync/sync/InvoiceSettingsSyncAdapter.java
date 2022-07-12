@@ -18,6 +18,6 @@ public class InvoiceSettingsSyncAdapter extends SettingsSyncAdapter {
 
     @Override
     protected String getUrl() {
-        return api.eventResourceUrl("invoicesettings");
+        return api.eventResourceUrl(eventSlug, "invoicesettings");
     }
 }

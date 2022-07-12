@@ -69,20 +69,15 @@ class EventManager(private val store: BlockingEntityStore<Persistable>, private 
                         val eventSlug = json.getString("event")
                         var event = eventMap[eventSlug]
                         if (event == null) {
-                            api.eventSlug = eventSlug
-                            try {
-                                event = api.fetchResource(api.organizerResourceUrl("events/" + eventSlug)!!)
+                            event = api.fetchResource(api.organizerResourceUrl("events/" + eventSlug))
 
-                                if (event.response.code != 200) {
-                                    throw IOException()
-                                }
-                                eventMap[eventSlug] = event
-                            } finally {
-                                api.eventSlug = conf.eventSlug
+                            if (event.response.code != 200) {
+                                throw IOException()
                             }
+                            eventMap[eventSlug] = event
                         }
 
-                        event!!.data!!.getBoolean("live") && json.getBoolean("active")
+                        event.data!!.getBoolean("live") && json.getBoolean("active")
                     } else if (require_live) { true } else {
                         json.getBoolean("live")
                     }))
