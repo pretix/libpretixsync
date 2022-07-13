@@ -386,8 +386,38 @@ class AsyncCheckProvider(private val config: ConfigStore, private val eventSlug:
                 .get().toList()
         if (tickets.size == 0) {
             return checkOfflineWithoutData(list, ticketid, type, answers ?: emptyList())
+        } else if (tickets.size > 1) {
+            storeFailedCheckin("ambiguous", ticketid, type, position=tickets[0].getServer_id(), item=tickets[0].getItem().getServer_id(), variation=tickets[0].getVariation_id(),  subevent=tickets[0].getSubevent_id())
+            return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.AMBIGUOUS)
         }
-        val position = tickets[0]
+        val position = if (list.isAddonMatch) {
+            // Add-on matching, as per spec, but only if we have data, it's impossible in data-less mode
+            val candidates = mutableListOf(tickets[0])
+            candidates.addAll(tickets[0].getOrder().getPositions().filter {
+                it.addonToId == tickets[0].getServer_id()
+            })
+            val filteredCandidates = if (!list.all_items) {
+                val items = dataStore.select(CheckInList_Item.ITEM_ID)
+                        .where(CheckInList_Item.CHECK_IN_LIST_ID.eq(list.getId()))
+                        .get().toList().map { it.get<Long>(0) }.toHashSet()
+                candidates.filter { candidate -> items.contains(candidate.getItem().getId()) }
+            } else {
+                // This is a useless configuration that the backend won't allow, but we'll still handle
+                // it here for completeness
+                candidates
+            }
+            if (filteredCandidates.isEmpty()) {
+                storeFailedCheckin("product", ticketid, type, position=tickets[0].getServer_id(), item=tickets[0].getItem().getServer_id(), variation=tickets[0].getVariation_id(),  subevent=tickets[0].getSubevent_id())
+                return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.PRODUCT)
+            } else if (filteredCandidates.size > 1) {
+                storeFailedCheckin("ambiguous", ticketid, type, position=tickets[0].getServer_id(), item=tickets[0].getItem().getServer_id(), variation=tickets[0].getVariation_id(),  subevent=tickets[0].getSubevent_id())
+                return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.AMBIGUOUS)
+            }
+            filteredCandidates[0]
+        } else {
+            tickets[0]
+        }
+
         val item = position.getItem()
         val order = position.getOrder()
 

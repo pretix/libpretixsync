@@ -53,6 +53,14 @@ public class AbstractCheckInList implements RemoteObject {
         }
     }
 
+    public boolean isAddonMatch() {
+        try {
+            return getJSON().optBoolean("addon_match", false);
+        } catch (JSONException e) {
+            return false;
+        }
+    }
+
     public JSONObject getRules() {
         try {
             return getJSON().optJSONObject("rules");

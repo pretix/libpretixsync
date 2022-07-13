@@ -93,6 +93,19 @@ public class AbstractOrderPosition implements RemoteObject {
         }
     }
 
+    public Long getAddonToId() {
+        try {
+            long var = getJSON().optLong("addon_to", 0L);
+            if (var == 0) {
+                return null;
+            }
+            return var;
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
     public String getSeatName() {
         try {
             JSONObject seat = getJSON().optJSONObject("seat");

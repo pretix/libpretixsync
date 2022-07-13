@@ -79,6 +79,8 @@ class OnlineCheckProvider(private val config: ConfigStore, httpClientFactory: Ht
                         res.type = TicketCheckProvider.CheckResult.Type.CANCELED
                     } else if ("rules" == reason) {
                         res.type = TicketCheckProvider.CheckResult.Type.RULES
+                    } else if ("ambiguous" == reason) {
+                        res.type = TicketCheckProvider.CheckResult.Type.AMBIGUOUS
                     } else if ("revoked" == reason) {
                         res.type = TicketCheckProvider.CheckResult.Type.REVOKED
                     } else if ("unpaid" == reason) {

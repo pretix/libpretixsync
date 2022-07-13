@@ -26,6 +26,9 @@ apply plugin: 'com.google.protobuf'
 group 'eu.pretix.pretixdesk'
 version '1.0'
 
+compileJava.options.encoding = 'UTF-8'
+compileTestJava.options.encoding = 'UTF-8'
+
 buildConfig {
     appName = "libpretixsync"
     version = "0.0"
