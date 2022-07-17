@@ -50,6 +50,7 @@ interface TicketCheckProvider {
         var isCheckinAllowed = false
         var requiredAnswers: List<RequiredAnswer>? = null
         var position: JSONObject? = null
+        var eventSlug: String? = null
 
         constructor(type: Type?, message: String?) {
             this.type = type

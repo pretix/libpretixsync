@@ -477,6 +477,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
         res.orderCode = position.getOrder().getCode()
         res.positionId = position.getPositionid()
         res.position = jPosition
+        res.eventSlug = list.event_slug
         var require_attention = position.getOrder().isCheckin_attention
         try {
             require_attention = require_attention || item.json.optBoolean("checkin_attention", false)

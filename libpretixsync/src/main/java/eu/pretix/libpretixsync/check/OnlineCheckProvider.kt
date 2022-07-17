@@ -101,6 +101,14 @@ class OnlineCheckProvider(private val config: ConfigStore, httpClientFactory: Ht
                         res.reasonExplanation = response.getString("reason_explanation")
                     }
                 }
+
+                if (response.has("list")) {
+                    // pretix >= 4.12
+                    res.eventSlug = response.getJSONObject("list").getString("event")
+                } else {
+                    res.eventSlug = eventsAndCheckinLists.keys.first()
+                }
+
                 if (response.has("position")) {
                     val posjson = response.getJSONObject("position")
                     val item = dataStore.select(Item::class.java)
