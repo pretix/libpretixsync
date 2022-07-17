@@ -169,7 +169,7 @@ public class SyncManager {
                 if (feedback != null) {
                     feedback.postFeedback("Downloading data…");
                 }
-                downloadData(feedback, false);
+                downloadData(feedback, false, null);
                 configStore.setLastDownload(System.currentTimeMillis());
             }
 
@@ -198,11 +198,11 @@ public class SyncManager {
     /**
      * Like sync(), but without order data and with setting the sync state to "unsynced"
      */
-    public SyncResult syncMinimalEventSet(SyncManager.ProgressFeedback feedback) {
+    public SyncResult syncMinimalEventSet(String overrideEventSlug, SyncManager.ProgressFeedback feedback) {
         bumpKnownVersion();
         try {
             upload();
-            downloadData(feedback, true);
+            downloadData(feedback, true, overrideEventSlug);
             configStore.setLastDownload(0);
             configStore.setLastSync(0);
         } catch (SyncException e) {
@@ -210,6 +210,10 @@ public class SyncManager {
             configStore.setLastFailedSyncMsg(e.getMessage());
         }
         return new SyncResult(true, true);
+    }
+
+    public SyncResult syncMinimalEventSet(SyncManager.ProgressFeedback feedback) {
+        return syncMinimalEventSet(null, feedback);
     }
 
     private void checkEventSelection(Long listId) throws EventSwitchRequested {
@@ -309,7 +313,7 @@ public class SyncManager {
         canceled.setCanceled(true);
     }
 
-    protected void downloadData(SyncManager.ProgressFeedback feedback, Boolean skip_orders) throws SyncException {
+    protected void downloadData(SyncManager.ProgressFeedback feedback, Boolean skip_orders, String overrideEventSlug) throws SyncException {
         sentry.addBreadcrumb("sync.queue", "Start download");
 
         try {
@@ -334,7 +338,14 @@ public class SyncManager {
             }
 
             download(new AllSubEventsSyncAdapter(dataStore, fileStorage, api, configStore.getSyncCycleId(), feedback));
-            for (String eventSlug : configStore.getSynchronizedEvents()) {
+            List<String> slugs;
+            if (overrideEventSlug != null) {
+                slugs = new ArrayList<>();
+                slugs.add(overrideEventSlug);
+            } else {
+                slugs = configStore.getSynchronizedEvents();
+            }
+            for (String eventSlug : slugs) {
                 download(new EventSyncAdapter(dataStore, eventSlug, eventSlug, api, configStore.getSyncCycleId(), feedback));
                 download(new ItemCategorySyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
                 download(new ItemSyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
@@ -376,7 +387,7 @@ public class SyncManager {
                 }
             }
 
-            if (profile == Profile.PRETIXSCAN && !skip_orders) {
+            if (profile == Profile.PRETIXSCAN && !skip_orders && overrideEventSlug == null) {
                 OrderCleanup oc = new OrderCleanup(dataStore, fileStorage, api, configStore.getSyncCycleId(), feedback);
                 if ((System.currentTimeMillis() - configStore.getLastCleanup()) > 3600 * 1000 * 12) {
                     for (String eventSlug : configStore.getSynchronizedEvents()) {
@@ -386,7 +397,7 @@ public class SyncManager {
                     oc.deleteOldPdfImages();
                     configStore.setLastCleanup(System.currentTimeMillis());
                 }
-            } else if (profile == Profile.PRETIXSCAN_ONLINE) {
+            } else if (profile == Profile.PRETIXSCAN_ONLINE && overrideEventSlug == null) {
                 dataStore.delete(CheckIn.class).get().value();
                 dataStore.delete(OrderPosition.class).get().value();
                 dataStore.delete(Order.class).get().value();
