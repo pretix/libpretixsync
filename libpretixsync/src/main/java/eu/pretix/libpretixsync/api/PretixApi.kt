@@ -160,7 +160,7 @@ open class PretixApi(url: String, key: String, orgaSlug: String, version: Int, h
     @Throws(ApiException::class)
     open fun search(lists: List<Long>, query: String?, page: Int): ApiResponse {
         return try {
-            var url = organizerResourceUrl("checkinrpc/search/positions") + "?ignore_status=true&page=" + page + "&search=" + URLEncoder.encode(query, "UTF-8")
+            var url = organizerResourceUrl("checkinrpc/search") + "?ignore_status=true&page=" + page + "&search=" + URLEncoder.encode(query, "UTF-8")
             for (l in lists) {
                 url += "&list=$l"
             }
