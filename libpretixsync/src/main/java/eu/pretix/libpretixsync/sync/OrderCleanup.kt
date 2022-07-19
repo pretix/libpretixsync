@@ -141,11 +141,13 @@ class OrderCleanup(val store: BlockingEntityStore<Persistable>, val fileStorage:
         return v
     }
 
-    fun deleteOldEvents(keepSlugs: List<String?>?) {
+    fun deleteOldEvents(keepSlugs: List<String?>) {
+        if (keepSlugs.isEmpty())
+            return
         feedback?.postFeedback("Deleting orders of old events…")
         val tuples: List<Tuple> = store.select(Order.EVENT_SLUG)
                 .from(Order::class.java)
-                .where(Order.EVENT_SLUG.notIn(keepSlugs!!))
+                .where(Order.EVENT_SLUG.notIn(keepSlugs))
                 .groupBy(Order.EVENT_SLUG)
                 .orderBy(Order.EVENT_SLUG)
                 .get().toList()

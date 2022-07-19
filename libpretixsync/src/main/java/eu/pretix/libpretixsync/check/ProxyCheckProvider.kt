@@ -103,7 +103,7 @@ class ProxyCheckProvider(private val config: ConfigStore, httpClientFactory: Htt
         data["type"] = type
         return try {
             val request = Request.Builder()
-                    .url(config.apiUrl + "/proxyapi/v2/rpc/check/")  // todo: does not yet exist
+                    .url(config.apiUrl + "/proxyapi/v1/rpc/check/")  // todo: does not yet exist
                     .post(mapper.writeValueAsString(data).toRequestBody("application/json".toMediaType()))
                     .header("Authorization", "Device " + config.apiKey)
                     .build()
