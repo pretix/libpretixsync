@@ -12,6 +12,7 @@ import org.junit.Test
 import java.util.ArrayList
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 
 class AsyncCheckProviderTest : BaseDatabaseTest() {
     private var configStore: FakeConfigStore? = null
@@ -26,14 +27,17 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         p = AsyncCheckProvider(configStore!!, dataStore)
 
         EventSyncAdapter(dataStore, "demo", "demo", fakeApi, "", null).standaloneRefreshFromJSON(jsonResource("events/event1.json"))
+        EventSyncAdapter(dataStore, "demo", "demo", fakeApi, "", null).standaloneRefreshFromJSON(jsonResource("events/event2.json"))
         ItemSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null).standaloneRefreshFromJSON(jsonResource("items/item1.json"))
         ItemSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null).standaloneRefreshFromJSON(jsonResource("items/item2.json"))
+        ItemSyncAdapter(dataStore, FakeFileStorage(), "demo2", fakeApi, "", null).standaloneRefreshFromJSON(jsonResource("items/event2-item3.json"))
         CheckInListSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null, 0).standaloneRefreshFromJSON(jsonResource("checkinlists/list1.json"))
         CheckInListSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null, 0).standaloneRefreshFromJSON(jsonResource("checkinlists/list2.json"))
         CheckInListSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null, 0).standaloneRefreshFromJSON(jsonResource("checkinlists/list3.json"))
         CheckInListSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null, 0).standaloneRefreshFromJSON(jsonResource("checkinlists/list4.json"))
         CheckInListSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null, 0).standaloneRefreshFromJSON(jsonResource("checkinlists/list5.json"))
         CheckInListSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null, 0).standaloneRefreshFromJSON(jsonResource("checkinlists/list6.json"))
+        CheckInListSyncAdapter(dataStore, FakeFileStorage(), "demo2", fakeApi, "", null, 0).standaloneRefreshFromJSON(jsonResource("checkinlists/event2-list7.json"))
         SubEventSyncAdapter(dataStore, "demo", "14", fakeApi, "", null).standaloneRefreshFromJSON(jsonResource("subevents/subevent1.json"))
 
         val osa = OrderSyncAdapter(dataStore, FakeFileStorage(), "demo", 0, true, false, fakeApi, "", null)
@@ -44,6 +48,8 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         osa.standaloneRefreshFromJSON(jsonResource("orders/order6.json"))
         osa.standaloneRefreshFromJSON(jsonResource("orders/order7.json"))
         osa.standaloneRefreshFromJSON(jsonResource("orders/order8.json"))
+        val osa2 = OrderSyncAdapter(dataStore, FakeFileStorage(), "demo2", 0, true, false, fakeApi, "", null)
+        osa2.standaloneRefreshFromJSON(jsonResource("orders/event2-order1.json"))
     }
 
     @Test
@@ -717,5 +723,52 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         val r = p!!.check(mapOf("demo" to 1L), "EFAKEyTSylQOgeKjuMPiTDxi5HXPuTVsx1qCli3IL0143gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKAEAPAQA")
         assertEquals(TicketCheckProvider.CheckResult.Type.INVALID, r.type)
         assertEquals(dataStore.count(QueuedCheckIn::class.java).get().value(), 0)
+    }
+
+    @Test
+    @Throws(CheckException::class)
+    fun testSearchMultipleLists() {
+        configStore!!.setAllow_search(true)
+
+        // Search by email
+        var srList = p!!.search(mapOf("demo" to 1L), "holmesConnie@kelly.com", 1)
+        assertEquals(3, srList.size.toLong())
+        srList = p!!.search(mapOf("demo" to 1L, "demo2" to 7L), "holmesConnie@kelly.com", 1)
+        assertEquals(6, srList.size.toLong())
+        assertEquals(1, srList.filter { it.secret == "kfndgffgyw4tdgcacx6bb3bgemq69cxj" }.size)
+        assertEquals(1, srList.filter { it.secret == "hnu44vgdap9p3c7x634km9ftzg4j7454" }.size)
+    }
+
+    @Test
+    fun testWrongEvent() {
+        val r = p!!.check(mapOf("demo" to 1L), "hnu44vgdap9p3c7x634km9ftzg4j7454")
+        assertEquals(TicketCheckProvider.CheckResult.Type.INVALID, r.type)
+        assertNull(r.eventSlug)
+    }
+
+    @Test
+    fun testSimpleMultipleLists() {
+        var r = p!!.check(mapOf("demo" to 1L, "demo2" to 7L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+        assertEquals("demo", r.eventSlug)
+        r = p!!.check(mapOf("demo" to 1L, "demo2" to 7L), "hnu44vgdap9p3c7x634km9ftzg4j7454")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+        assertEquals("demo2", r.eventSlug)
+        r = p!!.check(mapOf("demo" to 1L, "demo2" to 7L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.USED, r.type)
+        assertEquals("demo", r.eventSlug)
+        r = p!!.check(mapOf("demo" to 1L, "demo2" to 7L), "hnu44vgdap9p3c7x634km9ftzg4j7454")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+        assertEquals("demo2", r.eventSlug)
+    }
+
+    @Test
+    fun testSignedMultipleLists() {
+        var r = p!!.check(mapOf("demo2" to 7L), "E4BibyTSylQOgeKjuMPiTDxi5HXPuTVsx1qCli3IL0143gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKAEAPAQA")
+        assertEquals(TicketCheckProvider.CheckResult.Type.INVALID, r.type)
+        assertEquals(dataStore.count(QueuedCheckIn::class.java).get().value(), 0)
+        r = p!!.check(mapOf("demo2" to 7L, "demo" to 1L), "E4BibyTSylQOgeKjuMPiTDxi5HXPuTVsx1qCli3IL0143gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKAEAPAQA")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+        assertEquals(dataStore.count(QueuedCheckIn::class.java).get().value(), 1)
     }
 }
