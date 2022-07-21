@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.JsonMappingException
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.module.SimpleModule
+import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.readValue
 import eu.pretix.libpretixsync.DummySentryImplementation
 import eu.pretix.libpretixsync.SentryInterface
@@ -43,6 +44,7 @@ class ProxyCheckProvider(private val config: ConfigStore, httpClientFactory: Htt
         m.addSerializer(JSONObject::class.java, JSONObjectSerializer())
         m.addSerializer(JSONArray::class.java, JSONArraySerializer())
         mapper.registerModule(m)
+        mapper.registerModule(KotlinModule())
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
     }
 
