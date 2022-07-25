@@ -15,7 +15,7 @@ import io.requery.sql.TableCreationMode;
 
 public class Migrations {
     private static EntityModel model = Models.DEFAULT;
-    public static int CURRENT_VERSION = 86;
+    public static int CURRENT_VERSION = 87;
 
     private static void createVersionTable(Connection c, int version) throws SQLException {
         Statement s2 = c.createStatement();
@@ -335,6 +335,13 @@ public class Migrations {
             execIgnore(c, "ALTER TABLE receiptline ADD voucher_code TEXT NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
             updateVersionTable(c, 86);
         }
+        if (db_version < 87) {
+            execIgnore(c, "CREATE INDEX receiptline_receipt ON receiptline (receipt);", new String[] {"already exists", "existiert bereits"});
+            execIgnore(c, "CREATE INDEX receiptline_addon_to ON receiptline (addon_to);", new String[] {"already exists", "existiert bereits"});
+            execIgnore(c, "CREATE INDEX receiptpayment_receipt ON receiptpayment (receipt);", new String[] {"already exists", "existiert bereits"});
+            execIgnore(c, "CREATE INDEX receipt_open ON receipt (open) WHERE open = 1;", new String[] {"already exists", "existiert bereits"});
+            updateVersionTable(c, 87);
+        }
 
         // Note that the Android app currently does not use these queries!
 
@@ -342,6 +349,12 @@ public class Migrations {
             exec(c, "DELETE FROM ResourceSyncStatus;");
         }
         updateVersionTable(c, CURRENT_VERSION);
+    }
+
+    public static void android_manual_migrations(Connection c, int oldVersion, int newVersion) throws SQLException {
+        if (oldVersion < 87 && newVersion >= 87) {
+            execIgnore(c, "CREATE INDEX receipt_open ON receipt (open) WHERE open = 1;", new String[] {"already exists", "existiert bereits"});
+        }
     }
 
     private static void create_drop(DataSource dataSource) {

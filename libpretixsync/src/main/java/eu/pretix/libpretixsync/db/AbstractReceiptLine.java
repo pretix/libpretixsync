@@ -12,11 +12,11 @@ import io.requery.Column;
 import io.requery.Entity;
 import io.requery.ForeignKey;
 import io.requery.Generated;
+import io.requery.Index;
 import io.requery.Key;
 import io.requery.ManyToOne;
 import io.requery.Nullable;
 import io.requery.OneToMany;
-import io.requery.OneToOne;
 
 @Entity(cacheable = false)
 public class AbstractReceiptLine implements LocalObject {
@@ -37,6 +37,7 @@ public class AbstractReceiptLine implements LocalObject {
 
     @ForeignKey
     @ManyToOne
+    @Index
     public Receipt receipt;
 
     public String type;
@@ -118,6 +119,7 @@ public class AbstractReceiptLine implements LocalObject {
     @ForeignKey
     @ManyToOne
     @Nullable
+    @Index
     public ReceiptLine addon_to;
 
     @OneToMany
