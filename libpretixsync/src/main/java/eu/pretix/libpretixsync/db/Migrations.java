@@ -15,7 +15,7 @@ import io.requery.sql.TableCreationMode;
 
 public class Migrations {
     private static EntityModel model = Models.DEFAULT;
-    public static int CURRENT_VERSION = 87;
+    public static int CURRENT_VERSION = 88;
 
     private static void createVersionTable(Connection c, int version) throws SQLException {
         Statement s2 = c.createStatement();
@@ -345,6 +345,14 @@ public class Migrations {
                 execIgnore(c, "CREATE INDEX receipt_open ON receipt (open) WHERE open = 1;", new String[]{"already exists", "existiert bereits"});
             }
             updateVersionTable(c, 87);
+        }
+        if (db_version < 88) {
+            if (BuildConfig.BOOLEAN_TYPE.equals("boolean")) {  // Postgres only
+                exec(c, "ALTER TABLE settings ALTER COLUMN pretixpos_additional_receipt_text TYPE TEXT");
+                exec(c, "ALTER TABLE settings ALTER COLUMN covid_certificates_allow_vaccinated_products TYPE TEXT");
+                exec(c, "ALTER TABLE settings ALTER COLUMN covid_certificates_combination_rules TYPE TEXT");
+            }
+            updateVersionTable(c, 88);
         }
 
         // Note that the Android app currently does not use these queries!
