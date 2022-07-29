@@ -339,7 +339,11 @@ public class Migrations {
             execIgnore(c, "CREATE INDEX receiptline_receipt ON receiptline (receipt);", new String[] {"already exists", "existiert bereits"});
             execIgnore(c, "CREATE INDEX receiptline_addon_to ON receiptline (addon_to);", new String[] {"already exists", "existiert bereits"});
             execIgnore(c, "CREATE INDEX receiptpayment_receipt ON receiptpayment (receipt);", new String[] {"already exists", "existiert bereits"});
-            execIgnore(c, "CREATE INDEX receipt_open ON receipt (open) WHERE open = 1;", new String[] {"already exists", "existiert bereits"});
+            if (BuildConfig.BOOLEAN_TYPE.equals("boolean")) {
+                execIgnore(c, "CREATE INDEX receipt_open ON receipt (open) WHERE open = true;", new String[]{"already exists", "existiert bereits"});
+            } else {
+                execIgnore(c, "CREATE INDEX receipt_open ON receipt (open) WHERE open = 1;", new String[]{"already exists", "existiert bereits"});
+            }
             updateVersionTable(c, 87);
         }
 
