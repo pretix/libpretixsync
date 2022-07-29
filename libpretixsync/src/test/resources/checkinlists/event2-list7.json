@@ -1,0 +1,13 @@
+{
+  "id": 7,
+  "name": "Multientry",
+  "all_products": true,
+  "limit_products": [],
+  "subevent": null,
+  "checkin_count": 24,
+  "position_count": 49180,
+  "include_pending": false,
+  "allow_multiple_entries": true,
+  "allow_entry_after_exit": true,
+  "rules": {}
+}

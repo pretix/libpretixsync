@@ -93,7 +93,7 @@ public class RevokedTicketSecretSyncAdapter extends BaseDownloadSyncAdapter<Revo
 
     @Override
     protected String getUrl() {
-        return api.eventResourceUrl(getResourceName());
+        return api.eventResourceUrl(eventSlug, getResourceName());
     }
 
     @Override

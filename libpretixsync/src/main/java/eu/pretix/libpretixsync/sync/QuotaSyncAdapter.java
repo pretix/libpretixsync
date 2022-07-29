@@ -5,7 +5,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import eu.pretix.libpretixsync.api.PretixApi;
@@ -25,7 +24,7 @@ public class QuotaSyncAdapter extends BaseDownloadSyncAdapter<Quota, Long> {
     }
 
     protected String getUrl() {
-        String url = api.eventResourceUrl(getResourceName());
+        String url = api.eventResourceUrl(eventSlug, getResourceName());
         url += "?with_availability=true";
         if (this.subeventId != null && this.subeventId > 0L) {
             url += "&subevent=" + this.subeventId;

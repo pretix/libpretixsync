@@ -23,8 +23,8 @@ public class AllSubEventsSyncAdapter extends BaseDownloadSyncAdapter<SubEvent, L
     private String firstResponseTimestamp;
     private ResourceSyncStatus rlm;
 
-    public AllSubEventsSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, PretixApi api, String syncCycleId, SyncManager.ProgressFeedback feedback) {
-        super(store, fileStorage, eventSlug, api, syncCycleId, feedback);
+    public AllSubEventsSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, PretixApi api, String syncCycleId, SyncManager.ProgressFeedback feedback) {
+        super(store, fileStorage, "__all__", api, syncCycleId, feedback);
     }
 
     @Override

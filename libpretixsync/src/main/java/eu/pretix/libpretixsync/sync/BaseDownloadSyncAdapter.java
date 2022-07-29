@@ -62,7 +62,7 @@ public abstract class BaseDownloadSyncAdapter<T extends RemoteObject & Persistab
     @Override
     public void download() throws JSONException, ApiException, ExecutionException, InterruptedException {
         if (feedback != null) {
-            feedback.postFeedback("Downloading " + getResourceName() + "…");
+            feedback.postFeedback("Downloading " + getResourceName() + " ["+ eventSlug + "]  …");
         }
         try {
             total = 0;
@@ -176,7 +176,7 @@ public abstract class BaseDownloadSyncAdapter<T extends RemoteObject & Persistab
         });
         total += l;
         if (feedback != null) {
-            feedback.postFeedback("Processed " + total + "/" + totalOnline + " " + getResourceName() + " (total in database: ~" + (sizeBefore + inserted) + ")…");
+            feedback.postFeedback("Processed " + total + "/" + totalOnline + " " + getResourceName() + " (total in database: ~" + (sizeBefore + inserted) + ") " + " [" + eventSlug + "] …");
         }
     }
 
@@ -215,7 +215,7 @@ public abstract class BaseDownloadSyncAdapter<T extends RemoteObject & Persistab
     }
 
     protected String getUrl() {
-        return api.eventResourceUrl(getResourceName());
+        return api.eventResourceUrl(eventSlug, getResourceName());
     }
 
     protected void downloadData() throws JSONException, ApiException, ResourceNotModified, ExecutionException, InterruptedException {
