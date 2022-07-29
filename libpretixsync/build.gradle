@@ -43,6 +43,15 @@ buildConfig {
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
+idea {
+    module {
+        sourceDirs += compileJava.options.annotationProcessorGeneratedSourcesDirectory
+        generatedSourceDirs += compileJava.options.annotationProcessorGeneratedSourcesDirectory
+        testSourceDirs += compileTestJava.options.annotationProcessorGeneratedSourcesDirectory
+        generatedSourceDirs += compileTestJava.options.annotationProcessorGeneratedSourcesDirectory
+    }
+}
+
 repositories {
     mavenCentral()
 }
