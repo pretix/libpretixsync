@@ -300,7 +300,7 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
         Map<Long, OrderPosition> known = new HashMap<>();
         List<OrderPosition> allPos = store.select(OrderPosition.class)
                 .leftJoin(Order.class).on(Order.ID.eq(OrderPosition.ORDER_ID))
-                .where(Order.ID.eq(obj.getId())).get().toList();
+                .where(OrderPosition.ORDER_ID.eq(obj.getId())).get().toList();
         for (OrderPosition op : allPos) {
             known.put(op.getServer_id(), op);
         }
