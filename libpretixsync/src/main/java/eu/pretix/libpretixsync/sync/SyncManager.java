@@ -160,10 +160,7 @@ public class SyncManager {
                 }
                 checkEventSelection(configStore.getSelectedCheckinListForEvent(configStore.getSynchronizedEvents().get(0)));
             }
-            if (feedback != null) {
-                feedback.postFeedback("Uploading data…");
-            }
-            upload();
+            upload(feedback);
 
             if (download) {
                 if (feedback != null) {
@@ -201,7 +198,7 @@ public class SyncManager {
     public SyncResult syncMinimalEventSet(String overrideEventSlug, SyncManager.ProgressFeedback feedback) {
         bumpKnownVersion();
         try {
-            upload();
+            upload(feedback);
             downloadData(feedback, true, overrideEventSlug);
             configStore.setLastDownload(0);
             configStore.setLastSync(0);
@@ -291,16 +288,35 @@ public class SyncManager {
         }
     }
 
-    protected void upload() throws SyncException {
-        uploadOrders();
+    protected void upload(ProgressFeedback feedback) throws SyncException {
+        if (feedback != null) {
+            feedback.postFeedback("Uploading orders…");
+        }
+        uploadOrders(feedback);
         if (canceled.isCanceled()) throw new SyncException("Canceled");
-        uploadCheckins();
+
+        if (feedback != null) {
+            feedback.postFeedback("Uploading checkins…");
+        }
+        uploadCheckins(feedback);
         if (canceled.isCanceled()) throw new SyncException("Canceled");
-        uploadQueuedCalls();
+
+        if (feedback != null) {
+            feedback.postFeedback("Uploading queued calls…");
+        }
+        uploadQueuedCalls(feedback);
         if (canceled.isCanceled()) throw new SyncException("Canceled");
-        uploadReceipts();
+
+        if (feedback != null) {
+            feedback.postFeedback("Uploading receipts…");
+        }
+        uploadReceipts(feedback);
         if (canceled.isCanceled()) throw new SyncException("Canceled");
-        uploadClosings();
+
+        if (feedback != null) {
+            feedback.postFeedback("Uploading closings…");
+        }
+        uploadClosings(feedback);
         if (canceled.isCanceled()) throw new SyncException("Canceled");
     }
 
@@ -432,14 +448,19 @@ public class SyncManager {
         }
     }
 
-    protected void uploadQueuedCalls() throws SyncException {
+    protected void uploadQueuedCalls(ProgressFeedback feedback) throws SyncException {
         sentry.addBreadcrumb("sync.queue", "Start queuedcall upload");
 
         List<QueuedCall> calls = dataStore.select(QueuedCall.class)
                 .get().toList();
         String url = "";
         try {
+            int i = 0;
             for (QueuedCall call : calls) {
+                if (feedback != null && i % 10 == 0) {
+                    feedback.postFeedback("Uploading queued calls (" + i + "/" + calls.size() + ") …");
+                }
+                i++;
                 url = call.url;
                 PretixApi.ApiResponse response = api.postResource(
                         call.url,
@@ -472,7 +493,7 @@ public class SyncManager {
         sentry.addBreadcrumb("sync.queue", "Receipt upload complete");
     }
 
-    protected void uploadReceipts() throws SyncException {
+    protected void uploadReceipts(ProgressFeedback feedback) throws SyncException {
         sentry.addBreadcrumb("sync.queue", "Start receipt upload");
 
         List<Receipt> receipts = dataStore.select(Receipt.class)
@@ -481,7 +502,12 @@ public class SyncManager {
                 .get().toList();
 
         try {
-            for (Receipt receipt : receipts) {
+            int i = 0;
+            for (Receipt receipt: receipts) {
+                if (feedback != null && (i % 10) == 0) {
+                    feedback.postFeedback("Uploading receipts (" + i + "/" + receipts.size() + ") …");
+                }
+                i++;
                 JSONObject data = receipt.toJSON();
                 JSONArray lines = new JSONArray();
                 JSONArray payments = new JSONArray();
@@ -515,7 +541,7 @@ public class SyncManager {
         sentry.addBreadcrumb("sync.queue", "Receipt upload complete");
     }
 
-    protected void uploadOrders() throws SyncException {
+    protected void uploadOrders(ProgressFeedback feedback) throws SyncException {
         sentry.addBreadcrumb("sync.queue", "Start order upload");
 
         List<QueuedOrder> orders = dataStore.select(QueuedOrder.class)
@@ -524,7 +550,13 @@ public class SyncManager {
                 .get().toList();
 
         try {
+            int i = 0;
             for (QueuedOrder qo : orders) {
+                if (feedback != null && i % 10 == 0) {
+                    feedback.postFeedback("Uploading orders (" + i + "/" + orders.size() + ") …");
+                }
+                i++;
+
                 qo.setLocked(true);
                 dataStore.update(qo, QueuedOrder.LOCKED);
                 Long startedAt = System.currentTimeMillis();
@@ -565,7 +597,7 @@ public class SyncManager {
         sentry.addBreadcrumb("sync.queue", "Receipt upload complete");
     }
 
-    protected void uploadClosings() throws SyncException {
+    protected void uploadClosings(ProgressFeedback feedback) throws SyncException {
         sentry.addBreadcrumb("sync.queue", "Start closings upload");
 
         List<Closing> closings = dataStore.select(Closing.class)
@@ -574,7 +606,12 @@ public class SyncManager {
                 .get().toList();
 
         try {
+            int i = 0;
             for (Closing closing : closings) {
+                if (feedback != null && i % 10 == 0) {
+                    feedback.postFeedback("Uploading closings (" + i + "/" + closings.size() + ") …");
+                }
+                i++;
                 PretixApi.ApiResponse response = api.postResource(
                         api.organizerResourceUrl("posdevices/" + configStore.getPosId() + "/closings"),
                         closing.toJSON()
@@ -597,19 +634,24 @@ public class SyncManager {
         sentry.addBreadcrumb("sync.queue", "Closings upload complete");
     }
 
-    protected void uploadCheckins() throws SyncException {
+    protected void uploadCheckins(ProgressFeedback feedback) throws SyncException {
         sentry.addBreadcrumb("sync.queue", "Start check-in upload");
 
         List<QueuedCheckIn> queued = dataStore.select(QueuedCheckIn.class)
                 .get().toList();
 
         try {
+            int i = 0;
             for (QueuedCheckIn qci : queued) {
+                if (feedback != null && i % 10 == 0) {
+                    feedback.postFeedback("Uploading checkins (" + i + "/" + queued.size() + ") …");
+                }
+                i++;
                 List<Answer> answers = new ArrayList<>();
                 try {
                     JSONArray ja = new JSONArray(qci.getAnswers());
-                    for (int i = 0; i < ja.length(); i++) {
-                        JSONObject jo = ja.getJSONObject(i);
+                    for (int j = 0; j < ja.length(); j++) {
+                        JSONObject jo = ja.getJSONObject(j);
                         Question q = new Question();
                         q.setServer_id(jo.getLong("question"));
                         answers.add(new Answer(q, jo.getString("answer"), null));
