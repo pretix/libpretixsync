@@ -18,6 +18,7 @@ import eu.pretix.libpretixsync.utils.I18nString;
 
 public class ItemVariation implements Serializable {
     private Long server_id;
+    private BigDecimal listed_price;
     private BigDecimal price;
     private boolean active;
     private JSONObject description;
@@ -36,6 +37,10 @@ public class ItemVariation implements Serializable {
 
     public void setPrice(BigDecimal price) {
         this.price = price;
+    }
+
+    public void setListed_price(BigDecimal listed_price) {
+        this.listed_price = listed_price;
     }
 
     public void setActive(boolean active) {
@@ -61,6 +66,8 @@ public class ItemVariation implements Serializable {
     public BigDecimal getPrice() {
         return price;
     }
+
+    public BigDecimal getListedPrice() { return listed_price; }
 
     public boolean isActive() {
         return active;
