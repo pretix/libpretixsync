@@ -288,7 +288,7 @@ public class AbstractItem implements RemoteObject {
             JSONObject obj = objects.getJSONObject(i);
             ItemBundle v = new ItemBundle();
             v.setBundledItemId(obj.getLong("bundled_item"));
-            v.setBundledVariationId(obj.getLong("bundled_variation"));
+            v.setBundledVariationId(obj.isNull("bundled_variation") ? null : obj.getLong("bundled_variation"));
             v.setCount(obj.getInt("count"));
             v.setDesignatedPrice(obj.isNull("designated_price") ? null : new BigDecimal(obj.getString("designated_price")));
             l.add(v);
