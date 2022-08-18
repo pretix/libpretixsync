@@ -10,6 +10,8 @@ import org.json.JSONObject;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -90,6 +92,16 @@ public class AbstractItem implements RemoteObject {
     public boolean isGiftcard() {
         try {
             return getJSON().getBoolean("issue_giftcard");
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    @JsonIgnore
+    public boolean isRequireBundling() {
+        try {
+            return getJSON().getBoolean("require_bundling");
         } catch (JSONException e) {
             e.printStackTrace();
             return false;
@@ -249,5 +261,38 @@ public class AbstractItem implements RemoteObject {
             }
         }
         return null;
+    }
+
+    public List<ItemAddOn> getAddons() throws JSONException {
+        List<ItemAddOn> l = new ArrayList<>();
+        JSONArray objects = getJSON().getJSONArray("addons");
+        for (int i = 0; i < objects.length(); i++) {
+            JSONObject obj = objects.getJSONObject(i);
+            ItemAddOn v = new ItemAddOn();
+            v.setAddonCategoryId(obj.getLong("addon_category"));
+            v.setMinCount(obj.getInt("min_count"));
+            v.setMaxCount(obj.getInt("max_count"));
+            v.setPosition(obj.getInt("position"));
+            v.setMultiAllowed(obj.getBoolean("multi_allowed"));
+            v.setPriceIncluded(obj.getBoolean("price_included"));
+            l.add(v);
+        }
+        Collections.sort(l, Comparator.comparingInt(ItemAddOn::getPosition));
+        return l;
+    }
+
+    public List<ItemBundle> getBundles() throws JSONException {
+        List<ItemBundle> l = new ArrayList<>();
+        JSONArray objects = getJSON().getJSONArray("bundles");
+        for (int i = 0; i < objects.length(); i++) {
+            JSONObject obj = objects.getJSONObject(i);
+            ItemBundle v = new ItemBundle();
+            v.setBundledItemId(obj.getLong("bundled_item"));
+            v.setBundledVariationId(obj.getLong("bundled_variation"));
+            v.setCount(obj.getInt("count"));
+            v.setDesignatedPrice(obj.isNull("designated_price") ? null : new BigDecimal(obj.getString("designated_price")));
+            l.add(v);
+        }
+        return l;
     }
 }
