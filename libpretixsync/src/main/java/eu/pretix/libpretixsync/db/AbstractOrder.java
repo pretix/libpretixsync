@@ -17,6 +17,7 @@ public class AbstractOrder implements RemoteObject {
     @Key
     public Long id;
 
+    @Index
     public String event_slug;
 
     @Index

@@ -45,6 +45,7 @@ import eu.pretix.libpretixsync.utils.JSONUtils;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
 import io.requery.RollbackException;
+import io.requery.query.Result;
 import io.requery.query.Scalar;
 import io.requery.query.Tuple;
 import io.requery.util.CloseableIterator;
@@ -290,17 +291,18 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
         obj.setStatus(jsonobj.getString("status"));
         obj.setEmail(jsonobj.optString("email"));
         obj.setCheckin_attention(jsonobj.optBoolean("checkin_attention"));
-        obj.setJson_data(jsonobj.toString());
+        boolean jsonSet = false;
         obj.setDeleteAfterTimestamp(0L);
 
         if (obj.getId() == null) {
+            obj.setJson_data(jsonobj.toString());
+            jsonSet = true;
             store.insert(obj);
         }
 
         Map<Long, OrderPosition> known = new HashMap<>();
-        List<OrderPosition> allPos = store.select(OrderPosition.class)
-                .leftJoin(Order.class).on(Order.ID.eq(OrderPosition.ORDER_ID))
-                .where(OrderPosition.ORDER_ID.eq(obj.getId())).get().toList();
+        Result<OrderPosition> allPos = store.select(OrderPosition.class)
+                .where(OrderPosition.ORDER_ID.eq(obj.getId())).get();
         for (OrderPosition op : allPos) {
             known.put(op.getServer_id(), op);
         }
@@ -323,6 +325,10 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
                 old = posobj.getJSON();
             } else {
                 posobj = new OrderPosition();
+                if (!jsonSet) {
+                    obj.setJson_data(jsonobj.toString());
+                    jsonSet = true;
+                }
                 posobj.setOrder(obj);
             }
             JSONObject parent = null;

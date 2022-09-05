@@ -140,8 +140,6 @@ public abstract class BaseDownloadSyncAdapter<T extends RemoteObject & Persistab
 
                 for (int i = 0; i < l; i++) {
                     JSONObject jsonobj = preprocessObject(data.getJSONObject(i));
-                    jsonobj.put("__libpretixsync_dbversion", Migrations.CURRENT_VERSION);
-                    jsonobj.put("__libpretixsync_syncCycleId", syncCycleId);
                     K jsonid = getId(jsonobj);
                     T obj;
                     JSONObject old = null;
@@ -153,6 +151,8 @@ public abstract class BaseDownloadSyncAdapter<T extends RemoteObject & Persistab
                     } else {
                         obj = newEmptyObject();
                     }
+                    jsonobj.put("__libpretixsync_dbversion", Migrations.CURRENT_VERSION);
+                    jsonobj.put("__libpretixsync_syncCycleId", syncCycleId);
                     if (known.containsKey(jsonid)) {
                         known.remove(jsonid);
                         knownIDs.remove(jsonid);
