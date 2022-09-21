@@ -26,14 +26,14 @@ class EventManager(private val store: BlockingEntityStore<Persistable>, private 
 
         val endsAfterUrl = URLEncoder.encode(endsAfter.toString())
         val resp_events = api.fetchResource(api.organizerResourceUrl("events") +
-                "?${avail}ends_after=$endsAfterUrl" + (if (require_live) "&live=true" else "") + (if (requireChannel != null) "&sales_channel=$requireChannel" else ""))
+                "?${avail}ends_after=$endsAfterUrl&ordering=date_from" + (if (require_live) "&live=true" else "") + (if (requireChannel != null) "&sales_channel=$requireChannel" else ""))
         if (resp_events.response.code != 200) {
             throw IOException()
         }
         var events = parseEvents(resp_events.data!!, maxDepth=maxPages)
 
         val resp_subevents = api.fetchResource(api.organizerResourceUrl("subevents")
-                + "?${avail}ends_after=$endsAfterUrl" + (if (require_live) "&active=true&event__live=true" else "") + (if (requireChannel != null) "&sales_channel=$requireChannel" else ""))
+                + "?${avail}ends_after=$endsAfterUrl&ordering=date_from" + (if (require_live) "&active=true&event__live=true" else "") + (if (requireChannel != null) "&sales_channel=$requireChannel" else ""))
         if (resp_subevents.response.code != 200) {
             throw IOException()
         }
