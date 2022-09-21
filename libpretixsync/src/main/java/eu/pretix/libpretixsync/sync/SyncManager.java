@@ -334,8 +334,22 @@ public class SyncManager {
 
         try {
             try {
-                PretixApi.ApiResponse vresp = api.fetchResource(api.apiURL("version"));
-                configStore.setKnownPretixVersion(vresp.getData().getLong("pretix_numeric"));
+                try {
+                    PretixApi.ApiResponse vresp = api.fetchResource(api.apiURL("device/info"));
+                    JSONObject vdata = vresp.getData();
+                    configStore.setKnownPretixVersion(vdata.getJSONObject("server").getJSONObject("version").getLong("pretix_numeric"));
+
+                    configStore.setDeviceKnownName(vdata.getJSONObject("device").getString("name"));
+                    String gate = null;
+                    if (vdata.getJSONObject("device").has("gate") && !vdata.getJSONObject("device").isNull("gate")) {
+                        gate = vdata.getJSONObject("device").getJSONObject("gate").getString("name");
+                    }
+                    configStore.setDeviceKnownGateName(gate);
+                } catch (NotFoundApiException e) {
+                    // pretix pre 4.13
+                    PretixApi.ApiResponse vresp = api.fetchResource(api.apiURL("version"));
+                    configStore.setKnownPretixVersion(vresp.getData().getLong("pretix_numeric"));
+                }
             } catch (ApiException | JSONException | ResourceNotModified e) {
                 // ignore
                 e.printStackTrace();
