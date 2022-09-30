@@ -159,9 +159,9 @@ public class AbstractReceiptLine implements LocalObject {
         jo.put("canceled", canceled);
         jo.put("canceled_because_of_receipt", canceled_because_of_receipt);
         jo.put("price_calculated_from_net", price_calculated_from_net);
-        jo.put("listed_price", listed_price.setScale(2, RoundingMode.HALF_UP));
-        jo.put("price_after_voucher", price_after_voucher.setScale(2, RoundingMode.HALF_UP));
-        jo.put("custom_price_input", custom_price_input.setScale(2, RoundingMode.HALF_UP));
+        jo.put("listed_price", listed_price != null ? listed_price.setScale(2, RoundingMode.HALF_UP) : null);
+        jo.put("price_after_voucher", price_after_voucher != null ? price_after_voucher.setScale(2, RoundingMode.HALF_UP) : null);
+        jo.put("custom_price_input", custom_price_input != null ? custom_price_input.setScale(2, RoundingMode.HALF_UP) : null);
         jo.put("voucher_code", voucher_code);
         jo.put("price", price.setScale(2, RoundingMode.HALF_UP));
         jo.put("tax_rate", tax_rate != null ? tax_rate.setScale(2, RoundingMode.HALF_UP) : "0.00");
