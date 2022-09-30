@@ -4,6 +4,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Date;
 import java.util.List;
 
@@ -158,13 +159,13 @@ public class AbstractReceiptLine implements LocalObject {
         jo.put("canceled", canceled);
         jo.put("canceled_because_of_receipt", canceled_because_of_receipt);
         jo.put("price_calculated_from_net", price_calculated_from_net);
-        jo.put("listed_price", listed_price);
-        jo.put("price_after_voucher", price_after_voucher);
-        jo.put("custom_price_input", custom_price_input);
+        jo.put("listed_price", listed_price.setScale(2, RoundingMode.HALF_UP));
+        jo.put("price_after_voucher", price_after_voucher.setScale(2, RoundingMode.HALF_UP));
+        jo.put("custom_price_input", custom_price_input.setScale(2, RoundingMode.HALF_UP));
         jo.put("voucher_code", voucher_code);
-        jo.put("price", price);
-        jo.put("tax_rate", tax_rate != null ? tax_rate : "0.00");
-        jo.put("tax_value", tax_value != null ? tax_value : "0.00");
+        jo.put("price", price.setScale(2, RoundingMode.HALF_UP));
+        jo.put("tax_rate", tax_rate != null ? tax_rate.setScale(2, RoundingMode.HALF_UP) : "0.00");
+        jo.put("tax_value", tax_value != null ? tax_value.setScale(2, RoundingMode.HALF_UP) : "0.00");
         jo.put("tax_rule", tax_rule != null ? tax_rule : JSONObject.NULL);
         jo.put("secret", secret);
         jo.put("seat", seat_guid != null ? seat_guid : JSONObject.NULL);
