@@ -3,6 +3,7 @@ package eu.pretix.libpretixsync.db;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Date;
@@ -123,6 +124,9 @@ public class AbstractReceiptLine implements LocalObject {
     @Index
     public ReceiptLine addon_to;
 
+    @Column(value = BuildConfig.BOOLEAN_FALSE)
+    public boolean is_bundled;
+
     @OneToMany
     public List<ReceiptLine> addons;
 
@@ -177,7 +181,13 @@ public class AbstractReceiptLine implements LocalObject {
         jo.put("variation", variation_id);
         jo.put("answers", answers);
         jo.put("sale_text", sale_text);
-        jo.put("addon_to", JSONObject.NULL);
+        try {
+            AbstractReceiptLine addon_to = (AbstractReceiptLine) this.getClass().getMethod("getAddon_to", null).invoke(this);  // Accessing addon_to directly does not always work because … requery sucks
+            jo.put("addon_to", addon_to != null ? addon_to.positionid : JSONObject.NULL);
+        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+            e.printStackTrace();
+        }
+        jo.put("is_bundled", is_bundled);
         jo.put("attendee_name", attendee_name);
         jo.put("attendee_email", attendee_email);
         jo.put("attendee_company", attendee_company);
