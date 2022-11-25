@@ -16,24 +16,33 @@ class EventManager(private val store: BlockingEntityStore<Persistable>, private 
 
     fun getAvailableEvents() : List<RemoteEvent> {
         val oneDayAgo = DateTime.now() - Hours.hours(24)
-        return getAvailableEvents(oneDayAgo, 5, null, null)
+        return getAvailableEvents(oneDayAgo, 5, null, null, null)
     }
 
-    fun getAvailableEvents(endsAfter: DateTime, maxPages: Int, availabilityForChannel: String?, requireChannel: String?) : List<RemoteEvent> {
+    fun getAvailableEvents(endsAfter: DateTime, maxPages: Int, availabilityForChannel: String?, requireChannel: String?, searchQuery: String?) : List<RemoteEvent> {
         eventMap.clear()
 
         val avail = if (availabilityForChannel != null) "with_availability_for=${availabilityForChannel}&" else ""
 
         val endsAfterUrl = URLEncoder.encode(endsAfter.toString())
-        val resp_events = api.fetchResource(api.organizerResourceUrl("events") +
-                "?${avail}ends_after=$endsAfterUrl&ordering=date_from" + (if (require_live) "&live=true" else "") + (if (requireChannel != null) "&sales_channel=$requireChannel" else ""))
+
+        var eventsUrl = api.organizerResourceUrl("events") + "?${avail}ends_after=$endsAfterUrl&ordering=date_from"
+        if (require_live) eventsUrl += "&live=true"
+        if (requireChannel != null) eventsUrl += "&sales_channel=$requireChannel"
+        if (!searchQuery.isNullOrBlank()) eventsUrl += "&search=" + URLEncoder.encode(searchQuery)
+
+        val resp_events = api.fetchResource(eventsUrl)
         if (resp_events.response.code != 200) {
             throw IOException()
         }
         var events = parseEvents(resp_events.data!!, maxDepth=maxPages)
 
-        val resp_subevents = api.fetchResource(api.organizerResourceUrl("subevents")
-                + "?${avail}ends_after=$endsAfterUrl&ordering=date_from" + (if (require_live) "&active=true&event__live=true" else "") + (if (requireChannel != null) "&sales_channel=$requireChannel" else ""))
+        var subeventsUrl = api.organizerResourceUrl("subevents") + "?${avail}ends_after=$endsAfterUrl&ordering=date_from"
+        if (require_live) subeventsUrl += "&active=true&event__live=true"
+        if (requireChannel != null) subeventsUrl += "&sales_channel=$requireChannel"
+        if (!searchQuery.isNullOrBlank()) subeventsUrl += "&search=" + URLEncoder.encode(searchQuery)
+
+        val resp_subevents = api.fetchResource(subeventsUrl)
         if (resp_subevents.response.code != 200) {
             throw IOException()
         }
