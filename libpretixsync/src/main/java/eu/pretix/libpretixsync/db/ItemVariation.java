@@ -137,8 +137,7 @@ public class ItemVariation implements Serializable {
         this.hide_without_voucher = hide_without_voucher;
     }
 
-    private void writeObject(java.io.ObjectOutputStream out)
-            throws IOException {
+    public JSONObject toJSON() {
         JSONObject jsonObject = new JSONObject();
         try {
             jsonObject.put("server_id", server_id);
@@ -156,7 +155,12 @@ public class ItemVariation implements Serializable {
         } catch (JSONException e) {
             e.printStackTrace();
         }
-        out.writeObject(jsonObject.toString());
+        return jsonObject;
+    }
+
+    private void writeObject(java.io.ObjectOutputStream out)
+            throws IOException {
+        out.writeObject(toJSON().toString());
         out.close();
     }
 
