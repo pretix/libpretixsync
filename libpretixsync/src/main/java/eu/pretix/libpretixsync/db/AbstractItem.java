@@ -65,6 +65,21 @@ public class AbstractItem implements RemoteObject {
     }
 
     @JsonIgnore
+    public boolean isPersonalized() {
+        try {
+            JSONObject j = getJSON();
+            if (j.has("personalized")) {
+                return j.getBoolean("personalized");
+            } else {
+                return admission;
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return true;
+        }
+    }
+
+    @JsonIgnore
     public String getInternalName() {
         try {
             String internal = getJSON().optString("internal_name");
