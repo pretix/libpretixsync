@@ -38,7 +38,7 @@ class EventManager(private val store: BlockingEntityStore<Persistable>, private 
         var events = parseEvents(resp_events.data!!, maxDepth=maxPages)
 
         var subeventsUrl = api.organizerResourceUrl("subevents") + "?${avail}ends_after=$endsAfterUrl&ordering=date_from"
-        if (require_live) subeventsUrl += "&active=true&event__live=true"
+        if (require_live) subeventsUrl += "&active=true&event__live=true" else subeventsUrl += "&active=true"
         if (requireChannel != null) subeventsUrl += "&sales_channel=$requireChannel"
         if (!searchQuery.isNullOrBlank()) subeventsUrl += "&search=" + URLEncoder.encode(searchQuery)
 
