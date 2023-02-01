@@ -166,6 +166,19 @@ public class AbstractItem implements RemoteObject {
     }
 
     @JsonIgnore
+    public boolean hasFreePrice() {
+        try {
+            if (getJSON().isNull("free_price")) {
+                return false;
+            }
+            return getJSON().getBoolean("free_price");
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    @JsonIgnore
     public boolean isGenerateTickets() {
         try {
             if (getJSON().isNull("generate_tickets")) {
