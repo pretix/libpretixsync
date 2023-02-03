@@ -69,6 +69,10 @@ class OnlineCheckProvider(private val config: ConfigStore, httpClientFactory: Ht
                         res.type = TicketCheckProvider.CheckResult.Type.USED
                     } else if ("unknown_ticket" == reason) {
                         res.type = TicketCheckProvider.CheckResult.Type.INVALID
+                    } else if ("invalid_time" == reason) {
+                        res.type = TicketCheckProvider.CheckResult.Type.INVALID_TIME
+                    } else if ("blocked" == reason) {
+                        res.type = TicketCheckProvider.CheckResult.Type.BLOCKED
                     } else if ("canceled" == reason) {
                         res.type = TicketCheckProvider.CheckResult.Type.CANCELED
                     } else if ("rules" == reason) {

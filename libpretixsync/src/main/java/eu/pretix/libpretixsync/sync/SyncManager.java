@@ -399,6 +399,11 @@ public class SyncManager {
                     } catch (NotFoundApiException e) {
                         // ignore, this is only supported from pretix 3.12.
                     }
+                    try {
+                        download(new BlockedTicketSecretSyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
+                    } catch (NotFoundApiException e) {
+                        // ignore, this is only supported from pretix 4.17.
+                    }
                 }
                 if (profile == Profile.PRETIXSCAN && !skip_orders) {
                     OrderSyncAdapter osa = new OrderSyncAdapter(dataStore, fileStorage, eventSlug, configStore.getSelectedSubeventForEvent(eventSlug), with_pdf_data, false, api, configStore.getSyncCycleId(), feedback);

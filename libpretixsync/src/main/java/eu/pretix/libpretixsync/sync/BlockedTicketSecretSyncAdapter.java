@@ -12,19 +12,24 @@ import java.util.concurrent.ExecutionException;
 import eu.pretix.libpretixsync.api.ApiException;
 import eu.pretix.libpretixsync.api.PretixApi;
 import eu.pretix.libpretixsync.api.ResourceNotModified;
+import eu.pretix.libpretixsync.db.BlockedTicketSecret;
 import eu.pretix.libpretixsync.db.ResourceSyncStatus;
-import eu.pretix.libpretixsync.db.RevokedTicketSecret;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
 import io.requery.query.Tuple;
 import io.requery.util.CloseableIterator;
 
-public class RevokedTicketSecretSyncAdapter extends BaseDownloadSyncAdapter<RevokedTicketSecret, Long> {
+public class BlockedTicketSecretSyncAdapter extends BaseDownloadSyncAdapter<BlockedTicketSecret, Long> {
     private String firstResponseTimestamp;
     private ResourceSyncStatus rlm;
 
-    public RevokedTicketSecretSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, PretixApi api, String syncCycleId, SyncManager.ProgressFeedback feedback) {
+    public BlockedTicketSecretSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, PretixApi api, String syncCycleId, SyncManager.ProgressFeedback feedback) {
         super(store, fileStorage, eventSlug, api, syncCycleId, feedback);
+    }
+
+    @Override
+    protected boolean autoPersist() {
+        return false;
     }
 
     @Override
@@ -68,6 +73,9 @@ public class RevokedTicketSecretSyncAdapter extends BaseDownloadSyncAdapter<Revo
             }
             firstResponseTimestamp = null;
         }
+
+        // We clean up unblocked records after the sync
+        store.delete(BlockedTicketSecret.class).where(BlockedTicketSecret.BLOCKED.eq(false));
     }
 
     protected boolean deleteUnseen() {
@@ -76,17 +84,27 @@ public class RevokedTicketSecretSyncAdapter extends BaseDownloadSyncAdapter<Revo
 
     @Override
     CloseableIterator<Tuple> getKnownIDsIterator() {
-        return store.select(RevokedTicketSecret.SERVER_ID)
-                .where(RevokedTicketSecret.EVENT_SLUG.eq(eventSlug))
+        return store.select(BlockedTicketSecret.SERVER_ID)
+                .where(BlockedTicketSecret.EVENT_SLUG.eq(eventSlug))
                 .get().iterator();
     }
 
     @Override
-    public void updateObject(RevokedTicketSecret obj, JSONObject jsonobj) throws JSONException {
+    public void updateObject(BlockedTicketSecret obj, JSONObject jsonobj) throws JSONException {
+        obj.setEvent_slug(eventSlug);
         obj.setServer_id(jsonobj.getLong("id"));
-        obj.setCreated(jsonobj.getString("created"));
+        obj.setUpdated(jsonobj.getString("updated"));
+        obj.setBlocked(jsonobj.getBoolean("blocked"));
         obj.setSecret(jsonobj.getString("secret"));
         obj.setJson_data(jsonobj.toString());
+
+        if (obj.getId() == null && obj.isBlocked()) {
+            // If not blocked and not yet in our database, we don't need to save it, as we only care
+            // about blocked entries.
+            store.insert(obj);
+        } else {
+
+        }
     }
 
     @Override
@@ -96,7 +114,7 @@ public class RevokedTicketSecretSyncAdapter extends BaseDownloadSyncAdapter<Revo
 
     @Override
     String getResourceName() {
-        return "revokedsecrets";
+        return "blockedsecrets";
     }
 
     @Override
@@ -105,20 +123,20 @@ public class RevokedTicketSecretSyncAdapter extends BaseDownloadSyncAdapter<Revo
     }
 
     @Override
-    Long getId(RevokedTicketSecret obj) {
+    Long getId(BlockedTicketSecret obj) {
         return obj.getServer_id();
     }
 
     @Override
-    RevokedTicketSecret newEmptyObject() {
-        return new RevokedTicketSecret();
+    BlockedTicketSecret newEmptyObject() {
+        return new BlockedTicketSecret();
     }
 
     @Override
-    public CloseableIterator<RevokedTicketSecret> runBatch(List<Long> parameterBatch) {
-        return store.select(RevokedTicketSecret.class)
-                .where(RevokedTicketSecret.SERVER_ID.in(parameterBatch))
-                .and(RevokedTicketSecret.EVENT_SLUG.eq(eventSlug))
+    public CloseableIterator<BlockedTicketSecret> runBatch(List<Long> parameterBatch) {
+        return store.select(BlockedTicketSecret.class)
+                .where(BlockedTicketSecret.SERVER_ID.in(parameterBatch))
+                .and(BlockedTicketSecret.EVENT_SLUG.eq(eventSlug))
                 .get().iterator();
     }
 
@@ -147,13 +165,13 @@ public class RevokedTicketSecretSyncAdapter extends BaseDownloadSyncAdapter<Revo
             // but the next sync will fix it since we always fetch our diff compared to the time
             // of the first page.
             try {
-                if (!url.contains("created_since")) {
+                if (!url.contains("updated_since")) {
                     if (url.contains("?")) {
                         url += "&";
                     } else {
                         url += "?";
                     }
-                    url += "ordering=-created&created_since=" + URLEncoder.encode(rlm.getLast_modified(), "UTF-8");
+                    url += "ordering=-updated&updated_since=" + URLEncoder.encode(rlm.getLast_modified(), "UTF-8");
                 }
             } catch (UnsupportedEncodingException e) {
                 e.printStackTrace();
@@ -165,7 +183,7 @@ public class RevokedTicketSecretSyncAdapter extends BaseDownloadSyncAdapter<Revo
             try {
                 JSONArray results = apiResponse.getData().getJSONArray("results");
                 if (results.length() > 0) {
-                    firstResponseTimestamp = results.getJSONObject(0).getString("created");
+                    firstResponseTimestamp = results.getJSONObject(0).getString("updated");
                 }
             } catch (JSONException | NullPointerException e) {
                 e.printStackTrace();

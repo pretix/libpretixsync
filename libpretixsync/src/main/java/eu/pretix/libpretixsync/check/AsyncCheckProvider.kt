@@ -42,7 +42,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
     private fun storeFailedCheckin(eventSlug: String, listId: Long, error_reason: String, raw_barcode: String, type: TicketCheckProvider.CheckInType, position: Long? = null, item: Long? = null, variation: Long? = null, subevent: Long? = null) {
         /*
            :<json boolean error_reason: One of ``canceled``, ``invalid``, ``unpaid``, ``product``, ``rules``, ``revoked``,
-                                        ``incomplete``, ``already_redeemed``, or ``error``. Required.
+                                        ``incomplete``, ``already_redeemed``, ``blocked``, ``invalid_time``, or ``error``. Required.
            :<json raw_barcode: The raw barcode you scanned. Required.
            :<json datetime: Internal ID of an order position you matched. Optional.
            :<json type: Type of scan, defaults to ``"entry"``.
@@ -140,7 +140,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
         return jsonLogic
     }
 
-    private data class SignedTicketData(val seed: String, val item: Long, val variation: Long?, val subevent: Long?)
+    private data class SignedTicketData(val seed: String, val item: Long, val variation: Long?, val subevent: Long?, val validFrom: DateTime?, val validUntil: DateTime?)
 
     @ExperimentalUnsignedTypes
     private fun decodePretixSig1(event: Event, qrcode: String): SignedTicketData? {
@@ -171,7 +171,9 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
                         ticket.seed,
                         ticket.item,
                         ticket.variation,
-                        ticket.subevent
+                        ticket.subevent,
+                        if (ticket.hasValidFromUnixTime() && ticket.validFromUnixTime > 0) DateTime(ticket.validFromUnixTime * 1000) else null,
+                        if (ticket.hasValidUntilUnixTime() && ticket.validUntilUnixTime > 0) DateTime(ticket.validUntilUnixTime * 1000) else null
                 )
             }
         }
@@ -204,11 +206,31 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
                 ?: return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.ERROR, "Check-in list not found")
 
         val is_revoked = dataStore.count(RevokedTicketSecret::class.java)
-                .where(RevokedTicketSecret.SECRET.eq(ticketid))
-                .get().value()
+            .where(RevokedTicketSecret.SECRET.eq(ticketid))
+            .get().value()
         if (is_revoked > 0) {
             storeFailedCheckin(eventSlug, listId, "revoked", ticketid, type)
             return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.REVOKED)
+        }
+
+        val is_blocked = dataStore.count(BlockedTicketSecret::class.java)
+                .where(BlockedTicketSecret.SECRET.eq(ticketid))
+                .and(BlockedTicketSecret.BLOCKED.eq(true))
+                .get().value()
+        if (is_blocked > 0) {
+            storeFailedCheckin(eventSlug, listId, "blocked", ticketid, type)
+            return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.BLOCKED)
+        }
+
+        if (type != TicketCheckProvider.CheckInType.EXIT) {
+            if (decoded.validFrom?.isAfterNow == true) {
+                storeFailedCheckin(eventSlug, listId, "invalid_time", ticketid, type, item = decoded.item, variation = decoded.variation, subevent = decoded.subevent)
+                return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.INVALID_TIME)
+            }
+            if (decoded.validUntil?.isBeforeNow == true) {
+                storeFailedCheckin(eventSlug, listId, "invalid_time", ticketid, type, item = decoded.item, variation = decoded.variation, subevent = decoded.subevent)
+                return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.INVALID_TIME)
+            }
         }
 
         if (!list.all_items) {
@@ -240,15 +262,16 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
         val res = TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.ERROR)
         res.scanType = type
         res.ticket = item.internalName
-        if (decoded.variation != null && decoded.variation!! > 0L) {
+        val variation = if (decoded.variation != null && decoded.variation!! > 0L) {
             try {
-                val `var` = item.getVariation(decoded.variation)
-                if (`var` != null) {
-                    res.variation = `var`.stringValue
-                }
+                item.getVariation(decoded.variation) ?: null
             } catch (e: JSONException) {
                 sentry.captureException(e)
+                null
             }
+        } else { null }
+        if (variation != null) {
+            res.variation = variation.stringValue
         }
         var require_attention = false
         try {
@@ -256,7 +279,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
         } catch (e: JSONException) {
             sentry.captureException(e)
         }
-        res.isRequireAttention = require_attention
+        res.isRequireAttention = require_attention || (variation?.isCheckin_attention == true)
 
         val queuedCheckIns = dataStore.select(QueuedCheckIn::class.java)
                 .where(QueuedCheckIn.SECRET.eq(ticketid))
@@ -462,16 +485,18 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
         res.scanType = type
         res.ticket = position.getItem().internalName
         val varid = position.variationId
-        if (varid != null) {
+        val variation = if (varid != null) {
             try {
-                val `var` = item.getVariation(varid)
-                if (`var` != null) {
-                    res.variation = `var`.stringValue
-                }
+                item.getVariation(varid)
             } catch (e: JSONException) {
                 sentry.captureException(e)
+                null
             }
+        } else { null }
+        if (variation != null) {
+            res.variation = variation.stringValue
         }
+
         res.attendee_name = position.attendee_name
         res.seat = position.seatName
         res.orderCode = position.getOrder().getCode()
@@ -484,7 +509,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
         } catch (e: JSONException) {
             sentry.captureException(e)
         }
-        res.isRequireAttention = require_attention
+        res.isRequireAttention = require_attention || variation?.isCheckin_attention == true
 
         val storedCheckIns = dataStore.select(CheckIn::class.java)
                 .where(CheckIn.POSITION_ID.eq(position.getId()))
@@ -498,6 +523,30 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
             res.isCheckinAllowed = false
             storeFailedCheckin(eventSlug, list.getServer_id(), "canceled", ticketid, type, position = position.getServer_id(), item = position.getItem().getServer_id(), variation = position.getVariation_id(), subevent = position.getSubevent_id())
             return res
+        }
+
+        if (position.isBlocked) {
+            res.type = TicketCheckProvider.CheckResult.Type.BLOCKED
+            res.isCheckinAllowed = false
+            storeFailedCheckin(eventSlug, list.getServer_id(), "blocked", ticketid, type, position = position.getServer_id(), item = position.getItem().getServer_id(), variation = position.getVariation_id(), subevent = position.getSubevent_id())
+            return res
+        }
+
+        if (type != TicketCheckProvider.CheckInType.EXIT) {
+            val validFrom = position.validFrom
+            if (validFrom != null && validFrom.isAfterNow) {
+                res.type = TicketCheckProvider.CheckResult.Type.INVALID_TIME
+                res.isCheckinAllowed = false
+                storeFailedCheckin(eventSlug, list.getServer_id(), "invalid_time", ticketid, type, position = position.getServer_id(), item = position.getItem().getServer_id(), variation = position.getVariation_id(), subevent = position.getSubevent_id())
+                return res
+            }
+            val validUntil = position.validUntil
+            if (validUntil != null && validUntil.isBeforeNow) {
+                res.type = TicketCheckProvider.CheckResult.Type.INVALID_TIME
+                res.isCheckinAllowed = false
+                storeFailedCheckin(eventSlug, list.getServer_id(), "invalid_time", ticketid, type, position = position.getServer_id(), item = position.getItem().getServer_id(), variation = position.getVariation_id(), subevent = position.getSubevent_id())
+                return res
+            }
         }
 
         if (!list.all_items) {
@@ -516,9 +565,9 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
             return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.INVALID)
         }
 
-        if (order.getStatus() != "p" && !(ignore_unpaid && list.include_pending)) {
+        if (!order.isValidStatus && !(ignore_unpaid && list.include_pending)) {
             res.type = TicketCheckProvider.CheckResult.Type.UNPAID
-            res.isCheckinAllowed = list.include_pending
+            res.isCheckinAllowed = list.include_pending && !order.isValid_if_pending
             storeFailedCheckin(eventSlug, list.getServer_id(), "unpaid", ticketid, type, position = position.getServer_id(), item = position.getItem().getServer_id(), variation = position.getVariation_id(), subevent = position.getSubevent_id())
             return res
         }
@@ -697,12 +746,18 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
             val order = position.getOrder()
             val sr = TicketCheckProvider.SearchResult()
             sr.ticket = item.internalName
-            try {
+            val variation = try {
                 if (position.variationId != null && position.variationId > 0) {
-                    sr.variation = item.getVariation(position.variationId)?.stringValue
+                    item.getVariation(position.variationId)
+                } else {
+                    null
                 }
             } catch (e: JSONException) {
                 sentry.captureException(e)
+                null
+            }
+            if (variation != null) {
+                sr.variation = variation.stringValue
             }
             sr.attendee_name = position.attendee_name
             sr.seat = position.seatName
@@ -730,7 +785,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
             }
             var require_attention = position.getOrder().isCheckin_attention
             try {
-                require_attention = require_attention || item.json.optBoolean("checkin_attention", false)
+                require_attention = require_attention || item.json.optBoolean("checkin_attention", false) || variation?.isCheckin_attention == true
             } catch (e: JSONException) {
                 sentry.captureException(e)
             }
@@ -748,12 +803,12 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
                 .where(OrderPosition.SERVER_ID.eq(-1))  // stupid logic node just so we can dynamically add .or() below
 
         for (list in lists) {
-            val status: MutableList<String> = ArrayList()
-            status.add("p")
+            var lq: Logical<*, *> = Order.EVENT_SLUG.eq(list.getEvent_slug())
             if (list.include_pending) {
-                status.add("n")
+                lq = lq.and(Order.STATUS.`in`(listOf("p", "n")))
+            } else {
+                lq = lq.and(Order.STATUS.eq("p").or(Order.STATUS.eq("n").and(Order.VALID_IF_PENDING.eq(true))))
             }
-            var lq = Order.EVENT_SLUG.eq(list.getEvent_slug()).and(Order.STATUS.`in`(status))
 
             if (list.getSubevent_id() != null && list.getSubevent_id() > 0) {
                 lq = lq.and(OrderPosition.SUBEVENT_ID.eq(list.getSubevent_id()))
