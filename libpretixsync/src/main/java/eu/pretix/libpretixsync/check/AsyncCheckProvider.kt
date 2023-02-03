@@ -223,11 +223,11 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
         }
 
         if (type != TicketCheckProvider.CheckInType.EXIT) {
-            if (decoded.validFrom?.isAfterNow == true) {
+            if (decoded.validFrom?.isAfter(now()) == true) {
                 storeFailedCheckin(eventSlug, listId, "invalid_time", ticketid, type, item = decoded.item, variation = decoded.variation, subevent = decoded.subevent)
                 return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.INVALID_TIME)
             }
-            if (decoded.validUntil?.isBeforeNow == true) {
+            if (decoded.validUntil?.isBefore(now()) == true) {
                 storeFailedCheckin(eventSlug, listId, "invalid_time", ticketid, type, item = decoded.item, variation = decoded.variation, subevent = decoded.subevent)
                 return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.INVALID_TIME)
             }
@@ -534,14 +534,14 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
 
         if (type != TicketCheckProvider.CheckInType.EXIT) {
             val validFrom = position.validFrom
-            if (validFrom != null && validFrom.isAfterNow) {
+            if (validFrom != null && validFrom.isAfter(now())) {
                 res.type = TicketCheckProvider.CheckResult.Type.INVALID_TIME
                 res.isCheckinAllowed = false
                 storeFailedCheckin(eventSlug, list.getServer_id(), "invalid_time", ticketid, type, position = position.getServer_id(), item = position.getItem().getServer_id(), variation = position.getVariation_id(), subevent = position.getSubevent_id())
                 return res
             }
             val validUntil = position.validUntil
-            if (validUntil != null && validUntil.isBeforeNow) {
+            if (validUntil != null && validUntil.isBefore(now())) {
                 res.type = TicketCheckProvider.CheckResult.Type.INVALID_TIME
                 res.isCheckinAllowed = false
                 storeFailedCheckin(eventSlug, list.getServer_id(), "invalid_time", ticketid, type, position = position.getServer_id(), item = position.getItem().getServer_id(), variation = position.getVariation_id(), subevent = position.getSubevent_id())

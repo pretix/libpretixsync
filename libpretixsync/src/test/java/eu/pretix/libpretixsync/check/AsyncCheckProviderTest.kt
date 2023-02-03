@@ -48,6 +48,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         osa.standaloneRefreshFromJSON(jsonResource("orders/order6.json"))
         osa.standaloneRefreshFromJSON(jsonResource("orders/order7.json"))
         osa.standaloneRefreshFromJSON(jsonResource("orders/order8.json"))
+        osa.standaloneRefreshFromJSON(jsonResource("orders/order9.json"))
         val osa2 = OrderSyncAdapter(dataStore, FakeFileStorage(), "demo2", 0, true, false, fakeApi, "", null)
         osa2.standaloneRefreshFromJSON(jsonResource("orders/event2-order1.json"))
     }
@@ -106,6 +107,39 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
     }
 
     @Test
+    fun testSimpleBlocked() {
+        var r = p!!.check(mapOf("demo" to 1L), "TlPpWEHW6NUG2QkDYJlN")
+        assertEquals(TicketCheckProvider.CheckResult.Type.BLOCKED, r.type)
+        assertEquals("Merch", r.ticket)
+    }
+
+    @Test
+    fun testSimpleValidUntil() {
+        val p2 = AsyncCheckProvider(configStore!!, dataStore)
+
+        p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2023-03-04T00:00:01.000Z"))
+        var r = p2.check(mapOf("demo" to 1L), "dz4OBvVsTDSJ6T1nY1dD")
+        assertEquals(TicketCheckProvider.CheckResult.Type.INVALID_TIME, r.type)
+
+        p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2023-03-03T23:59:59.000Z"))
+        r = p2.check(mapOf("demo" to 1L), "dz4OBvVsTDSJ6T1nY1dD")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+    }
+
+    @Test
+    fun testSimpleValidFrom() {
+        val p2 = AsyncCheckProvider(configStore!!, dataStore)
+
+        p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2023-03-03T23:59:59.000Z"))
+        var r = p2.check(mapOf("demo" to 1L), "uG3H4hgRYEIrw4YNclyH")
+        assertEquals(TicketCheckProvider.CheckResult.Type.INVALID_TIME, r.type)
+
+        p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2023-03-04T00:00:01.000Z"))
+        r = p2.check(mapOf("demo" to 1L), "uG3H4hgRYEIrw4YNclyH")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+    }
+
+    @Test
     fun testSimpleUnpaidIgnoreWithoutIncludePending() {
         var r = p!!.check(mapOf("demo" to 2L), "h4t6w9ykuea4n5zaapy648y2dcfg8weq")
         assertEquals(TicketCheckProvider.CheckResult.Type.UNPAID, r.type)
@@ -115,9 +149,22 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
     }
 
     @Test
+    fun testSimpleUnpaidIgnoreWithoutIncludePendingButValidSetOnOrder() {
+        var r = p!!.check(mapOf("demo" to 2L), "6BT7mkCwbVnIbrKZ5X8I")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+    }
+
+    @Test
     fun testInvalidProduct() {
         val r = p!!.check(mapOf("demo" to 2L), "g2sc5ym78h5q5y5sbswses2b5h8pp6kt")
         assertEquals(TicketCheckProvider.CheckResult.Type.PRODUCT, r.type)
+    }
+
+    @Test
+    fun testSimpleUnpaidAllowedIfSetOnOrder() {
+        var r = p!!.check(mapOf("demo" to 1L), "6BT7mkCwbVnIbrKZ5X8I")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+        assertEquals("Regular ticket", r.ticket)
     }
 
     // TODO: invalid subevent
@@ -679,12 +726,12 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
     fun testStatusInfo() {
         val sr = p!!.status("demo", 1L)
         assertEquals("All", sr.eventName)
-        assertEquals(13, sr.totalTickets)
+        assertEquals(17, sr.totalTickets)
         assertEquals(2, sr.alreadyScanned)
         assertEquals(2, sr.items!!.size)
         val i = sr.items!![0]
         assertEquals(1, i.id)
-        assertEquals(6, i.total)
+        assertEquals(7, i.total)
         assertEquals(1, i.checkins)
         assertEquals(true, i.isAdmission)
         assertEquals(0, i.variations!!.size)
@@ -694,6 +741,36 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
     fun testSignedAndValid() {
         val r = p!!.check(mapOf("demo" to 1L), "E4BibyTSylQOgeKjuMPiTDxi5HXPuTVsx1qCli3IL0143gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKAEAPAQA")
         assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+        assertEquals(dataStore.count(QueuedCheckIn::class.java).get().value(), 1)
+    }
+
+    @Test
+    fun testSignedAndNotYetValid() {
+        val p2 = AsyncCheckProvider(configStore!!, dataStore)
+        p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2023-02-03T22:59:59.000Z"))
+
+        val r = p2.check(mapOf("demo" to 1L), "Ok4EsqDRCr2cL6yDRtqeP7j5Usr1Vj1Db7J0izOuRGx6Qn0BS1ISW2nxlW8PXkYRk7PJhIBmsK1V1ucq5obBoBAMG4p9jCPKBAheRdFV0REVDZUCKAEAVAQA")
+        assertEquals(TicketCheckProvider.CheckResult.Type.INVALID_TIME, r.type)
+
+        p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2023-02-03T23:01:01.000Z"))
+
+        val r2 = p2.check(mapOf("demo" to 1L), "Ok4EsqDRCr2cL6yDRtqeP7j5Usr1Vj1Db7J0izOuRGx6Qn0BS1ISW2nxlW8PXkYRk7PJhIBmsK1V1ucq5obBoBAMG4p9jCPKBAheRdFV0REVDZUCKAEAVAQA")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r2.type)
+        assertEquals(dataStore.count(QueuedCheckIn::class.java).get().value(), 1)
+    }
+
+    @Test
+    fun testSignedAndNotLongerValid() {
+        val p2 = AsyncCheckProvider(configStore!!, dataStore)
+        p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2023-02-03T11:01:01.000Z"))
+
+        val r = p2.check(mapOf("demo" to 1L), "EU9dJn3k5jzwfY4JQAKrTOVFmo+BvZKwH6UAIFOz3XTxABa7tmjU5UoLD8hJr3440uY7IFEHzau1DVk0sP994bgnzLNswAAKBARdUdGMmNVSHVUCKAEAVAQA")
+        assertEquals(TicketCheckProvider.CheckResult.Type.INVALID_TIME, r.type)
+
+        p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2023-02-03T10:59:59.000Z"))
+
+        val r2 = p2.check(mapOf("demo" to 1L), "EU9dJn3k5jzwfY4JQAKrTOVFmo+BvZKwH6UAIFOz3XTxABa7tmjU5UoLD8hJr3440uY7IFEHzau1DVk0sP994bgnzLNswAAKBARdUdGMmNVSHVUCKAEAVAQA")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r2.type)
         assertEquals(dataStore.count(QueuedCheckIn::class.java).get().value(), 1)
     }
 
@@ -708,6 +785,21 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
         val r = p!!.check(mapOf("demo" to 1L), "E4BibyTSylQOgeKjuMPiTDxi5HXPuTVsx1qCli3IL0143gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKAEAPAQA")
         assertEquals(TicketCheckProvider.CheckResult.Type.REVOKED, r.type)
+        assertEquals(dataStore.count(QueuedCheckIn::class.java).get().value(), 0)
+    }
+
+    @Test
+    fun testSignedAndBlocked() {
+        val rev = BlockedTicketSecret()
+        rev.setEvent_slug(configStore!!.eventSlug)
+        rev.setUpdated("2020-10-19T10:00:00+00:00")
+        rev.setSecret("E4BibyTSylQOgeKjuMPiTDxi5HXPuTVsx1qCli3IL0143gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKAEAPAQA")
+        rev.isBlocked = true
+        rev.setJson_data("{}")
+        dataStore.insert(rev)
+
+        val r = p!!.check(mapOf("demo" to 1L), "E4BibyTSylQOgeKjuMPiTDxi5HXPuTVsx1qCli3IL0143gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKAEAPAQA")
+        assertEquals(TicketCheckProvider.CheckResult.Type.BLOCKED, r.type)
         assertEquals(dataStore.count(QueuedCheckIn::class.java).get().value(), 0)
     }
 
