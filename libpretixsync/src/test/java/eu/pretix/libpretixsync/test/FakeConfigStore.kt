@@ -136,4 +136,11 @@ class FakeConfigStore : ConfigStore {
     override fun getSelectedCheckinListForEvent(event: String): Long {
         return 1L
     }
+
+    override fun getKnownLiveEventSlugs(): Set<String> {
+        return emptySet<String>()
+    }
+
+    override fun setKnownLiveEventSlugs(slugs: Set<String>?) {
+    }
 }

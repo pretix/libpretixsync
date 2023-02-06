@@ -11,6 +11,7 @@ import org.json.JSONObject
 import java.io.IOException
 import java.net.URLEncoder
 
+
 class EventManager(private val store: BlockingEntityStore<Persistable>, private val api: PretixApi, private val conf: ConfigStore, private val require_live: Boolean) {
     val eventMap = HashMap<String, PretixApi.ApiResponse>()
 
@@ -46,7 +47,16 @@ class EventManager(private val store: BlockingEntityStore<Persistable>, private 
         if (resp_subevents.response.code != 200) {
             throw IOException()
         }
-        events += parseEvents(resp_subevents.data!!, subevents=true, maxDepth=maxPages)
+        events = events + parseEvents(resp_subevents.data!!, subevents=true, maxDepth=maxPages)
+
+        // We keep a cache of event slugs that we know to be "live" to prevent fetching them every
+        // time the list is accessed again.
+        // This is obviously not always correct, as live can be disabled again as well, but we also
+        // don't block users who currently selected an event that has been disabled again, so there's
+        // not much additional risk here.
+        conf.knownLiveEventSlugs = (if (conf.knownLiveEventSlugs.size > 1000) emptySet() else conf.knownLiveEventSlugs)
+            // Make sure cache des not grow infinitely
+            .plus(eventMap.values.filter { it.data!!.getBoolean("live") }.map { it.data!!.getString("slug") })
 
         return events.sortedBy {
             return@sortedBy it.date_from
@@ -56,6 +66,7 @@ class EventManager(private val store: BlockingEntityStore<Persistable>, private 
     private fun parseEvents(data: JSONObject, maxDepth: Int, subevents: Boolean = false, depth: Int=1): List<RemoteEvent> {
         val events = ArrayList<RemoteEvent>()
 
+        val knownLiveSlugs = conf.knownLiveEventSlugs
         val results = data.getJSONArray("results")
         for (i in 0 until results.length()) {
             val json = results.getJSONObject(i)
@@ -76,22 +87,25 @@ class EventManager(private val store: BlockingEntityStore<Persistable>, private 
                     },
                     live=if (subevents && !require_live) {
                         val eventSlug = json.getString("event")
-                        var event = eventMap[eventSlug]
-                        if (event == null) {
-                            event = api.fetchResource(api.organizerResourceUrl("events/" + eventSlug))
+                        val eventLive = if (knownLiveSlugs.contains(eventSlug)) { true } else {
+                            var event = eventMap[eventSlug]
+                            if (event == null) {
+                                event =
+                                    api.fetchResource(api.organizerResourceUrl("events/" + eventSlug))
 
-                            if (event.response.code != 200) {
-                                throw IOException()
+                                if (event.response.code != 200) {
+                                    throw IOException()
+                                }
+                                eventMap[eventSlug] = event
                             }
-                            eventMap[eventSlug] = event
+                            event.data!!.getBoolean("live")
                         }
 
-                        event.data!!.getBoolean("live") && json.getBoolean("active")
+                        eventLive && json.getBoolean("active")
                     } else if (require_live) { true } else {
                         json.getBoolean("live")
                     }))
         }
-
 
         if (!data.isNull("next") && depth < maxDepth) {
             val next = data.getString("next")

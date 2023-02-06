@@ -3,6 +3,7 @@ package eu.pretix.libpretixsync.config;
 import org.json.JSONObject;
 
 import java.util.List;
+import java.util.Set;
 
 public interface ConfigStore {
 
@@ -69,4 +70,8 @@ public interface ConfigStore {
     public Long getKnownPretixVersion();
 
     public Boolean getAutoSwitchRequested();
+
+    public Set<String> getKnownLiveEventSlugs();
+
+    public void setKnownLiveEventSlugs(Set<String> slugs);
 }
