@@ -359,7 +359,8 @@ public class Migrations {
             updateVersionTable(c, 89);
         }
         if (db_version < 91) {
-            execIgnore(c, "ALTER TABLE Order ADD valid_if_pending " + BuildConfig.BOOLEAN_TYPE + " DEFAULT(" + BuildConfig.BOOLEAN_FALSE + ");", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            execIgnore(c, "ALTER TABLE orders ADD valid_if_pending " + BuildConfig.BOOLEAN_TYPE + " DEFAULT(" + BuildConfig.BOOLEAN_FALSE + ");", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            new SchemaModifier(dataSource, model).createTables(TableCreationMode.CREATE_NOT_EXISTS);
             updateVersionTable(c, 91);
         }
 
