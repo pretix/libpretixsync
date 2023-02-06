@@ -26,6 +26,7 @@ public class AbstractQuota implements RemoteObject {
 
     public String event_slug;
 
+    @Index
     public Long subevent_id;
 
     @Column(definition = "TEXT")
