@@ -76,6 +76,6 @@
     }
   ],
   "refunds": [],
-  "require_approval": false,
+  "require_approval": true,
   "sales_channel": "web"
 }

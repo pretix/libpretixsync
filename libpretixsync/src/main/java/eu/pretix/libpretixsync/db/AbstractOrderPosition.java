@@ -3,6 +3,8 @@ package eu.pretix.libpretixsync.db;
 import eu.pretix.libpretixsync.check.TicketCheckProvider;
 import io.requery.*;
 
+import org.joda.time.DateTime;
+import org.joda.time.format.ISODateTimeFormat;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -52,6 +54,45 @@ public class AbstractOrderPosition implements RemoteObject {
 
     @OneToMany
     public List<CheckIn> checkins;
+
+    public boolean isBlocked() {
+        try {
+            JSONObject j = getJSON();
+            if (!j.has("blocked") || j.isNull("blocked")) {
+                return false;
+            }
+            return true;
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public DateTime getValidFrom() {
+        try {
+            JSONObject j = getJSON();
+            if (!j.has("valid_from") || j.isNull("valid_from")) {
+                return null;
+            }
+            return ISODateTimeFormat.dateTimeParser().parseDateTime(j.getString("valid_from"));
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public DateTime getValidUntil() {
+        try {
+            JSONObject j = getJSON();
+            if (!j.has("valid_until") || j.isNull("valid_until")) {
+                return null;
+            }
+            return ISODateTimeFormat.dateTimeParser().parseDateTime(j.getString("valid_until"));
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
 
     public BigDecimal getPrice() {
         try {

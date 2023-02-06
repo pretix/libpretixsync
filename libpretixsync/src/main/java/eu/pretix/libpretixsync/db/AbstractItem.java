@@ -277,6 +277,7 @@ public class AbstractItem implements RemoteObject {
             v.setAvailable_until(variation.optString("available_until"));
             v.setSales_channels(variation.optJSONArray("sales_channels"));
             v.setHide_without_voucher(variation.optBoolean("hide_without_voucher", false));
+            v.setCheckin_attention(variation.optBoolean("checkin_attention", false));
             l.add(v);
         }
         return l;

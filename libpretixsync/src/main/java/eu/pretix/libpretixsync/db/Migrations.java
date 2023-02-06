@@ -15,7 +15,7 @@ import io.requery.sql.TableCreationMode;
 
 public class Migrations {
     private static EntityModel model = Models.DEFAULT;
-    public static int CURRENT_VERSION = 89;
+    public static int CURRENT_VERSION = 91;
 
     private static void createVersionTable(Connection c, int version) throws SQLException {
         Statement s2 = c.createStatement();
@@ -353,6 +353,14 @@ public class Migrations {
                 exec(c, "ALTER TABLE settings ALTER COLUMN covid_certificates_combination_rules TYPE TEXT");
             }
             updateVersionTable(c, 88);
+        }
+        if (db_version < 89) {
+            execIgnore(c, "ALTER TABLE receiptline ADD is_bundled " + BuildConfig.BOOLEAN_TYPE + " DEFAULT(" + BuildConfig.BOOLEAN_FALSE + ");", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            updateVersionTable(c, 89);
+        }
+        if (db_version < 91) {
+            execIgnore(c, "ALTER TABLE Order ADD valid_if_pending " + BuildConfig.BOOLEAN_TYPE + " DEFAULT(" + BuildConfig.BOOLEAN_FALSE + ");", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            updateVersionTable(c, 91);
         }
 
         // Note that the Android app currently does not use these queries!
