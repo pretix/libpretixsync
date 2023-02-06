@@ -72,9 +72,16 @@ public class QuotaSyncAdapter extends BaseDownloadSyncAdapter<Quota, Long> {
 
     @Override
     CloseableIterator<Tuple> getKnownIDsIterator() {
-        return store.select(Quota.SERVER_ID)
-                .where(Quota.EVENT_SLUG.eq(eventSlug))
-                .get().iterator();
+        if (subeventId != null && subeventId > 0L) {
+            return store.select(Quota.SERVER_ID)
+                    .where(Quota.EVENT_SLUG.eq(eventSlug))
+                    .and(Quota.SUBEVENT_ID.eq(subeventId))
+                    .get().iterator();
+        } else {
+            return store.select(Quota.SERVER_ID)
+                    .where(Quota.EVENT_SLUG.eq(eventSlug))
+                    .get().iterator();
+        }
     }
 
     @Override
