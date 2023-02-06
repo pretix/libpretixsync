@@ -565,6 +565,13 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
             return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.INVALID)
         }
 
+        if (order.status != "p" && order.isRequireApproval) {
+            res.type = TicketCheckProvider.CheckResult.Type.UNPAID
+            res.isCheckinAllowed = false
+            storeFailedCheckin(eventSlug, list.getServer_id(), "unpaid", ticketid, type, position = position.getServer_id(), item = position.getItem().getServer_id(), variation = position.getVariation_id(), subevent = position.getSubevent_id())
+            return res
+        }
+
         if (!order.isValidStatus && !(ignore_unpaid && list.include_pending)) {
             res.type = TicketCheckProvider.CheckResult.Type.UNPAID
             res.isCheckinAllowed = list.include_pending && !order.isValid_if_pending

@@ -48,6 +48,15 @@ public class AbstractOrder implements RemoteObject {
         }
     }
 
+    public boolean isRequireApproval() {
+        try {
+            return getJSON().getBoolean("require_approval");
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
     public boolean isValidStatus() {
         if ("p".equals(status)) {
             return true;

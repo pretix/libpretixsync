@@ -45,6 +45,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         osa.standaloneRefreshFromJSON(jsonResource("orders/order2.json"))
         osa.standaloneRefreshFromJSON(jsonResource("orders/order3.json"))
         osa.standaloneRefreshFromJSON(jsonResource("orders/order4.json"))
+        osa.standaloneRefreshFromJSON(jsonResource("orders/order5.json"))
         osa.standaloneRefreshFromJSON(jsonResource("orders/order6.json"))
         osa.standaloneRefreshFromJSON(jsonResource("orders/order7.json"))
         osa.standaloneRefreshFromJSON(jsonResource("orders/order8.json"))
@@ -104,6 +105,13 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         assertEquals(null, r.variation)
         assertEquals("Emily Scott", r.attendee_name)
         assertEquals(true, r.isRequireAttention)
+    }
+
+    @Test
+    fun testRequireApproval() {
+        var r = p!!.check(mapOf("demo" to 1L), "jugeme335ggtc88tnt9pj853fu4wrf2s")
+        assertEquals(TicketCheckProvider.CheckResult.Type.UNPAID, r.type)
+        assertEquals(false, r.isCheckinAllowed)
     }
 
     @Test
@@ -726,12 +734,12 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
     fun testStatusInfo() {
         val sr = p!!.status("demo", 1L)
         assertEquals("All", sr.eventName)
-        assertEquals(17, sr.totalTickets)
+        assertEquals(19, sr.totalTickets)
         assertEquals(2, sr.alreadyScanned)
         assertEquals(2, sr.items!!.size)
         val i = sr.items!![0]
         assertEquals(1, i.id)
-        assertEquals(7, i.total)
+        assertEquals(8, i.total)
         assertEquals(1, i.checkins)
         assertEquals(true, i.isAdmission)
         assertEquals(0, i.variations!!.size)
