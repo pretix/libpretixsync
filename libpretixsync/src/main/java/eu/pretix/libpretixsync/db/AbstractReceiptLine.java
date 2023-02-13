@@ -155,6 +155,9 @@ public class AbstractReceiptLine implements LocalObject {
     @Nullable
     public String attendee_country;
 
+    @Nullable
+    public String requested_valid_from;
+
     @Override
     public JSONObject toJSON() throws JSONException {
         JSONObject jo = new JSONObject();
@@ -196,6 +199,7 @@ public class AbstractReceiptLine implements LocalObject {
         jo.put("attendee_zipcode", attendee_zipcode);
         jo.put("attendee_city", attendee_city);
         jo.put("attendee_country", attendee_country);
+        jo.put("requested_valid_from", requested_valid_from);
         return jo;
     }
 }

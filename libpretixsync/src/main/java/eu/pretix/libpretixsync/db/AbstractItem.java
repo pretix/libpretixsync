@@ -221,6 +221,49 @@ public class AbstractItem implements RemoteObject {
         }
     }
 
+    @JsonIgnore
+    public boolean hasDynamicValidityWithCustomStart() {
+        try {
+            JSONObject jo = getJSON();
+            if (!jo.optString("validity_mode", "").equals("dynamic")) {
+                return false;
+            }
+            return jo.optBoolean("validity_dynamic_start_choice", false);
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    @JsonIgnore
+    public boolean hasDynamicValidityWithTimeOfDay() {
+        try {
+            JSONObject jo = getJSON();
+            if ((!jo.isNull("validity_dynamic_duration_months") && jo.optLong("validity_dynamic_duration_months", 0) > 0) || (!jo.isNull("validity_dynamic_duration_days") && jo.optLong("validity_dynamic_duration_days", 0) > 0)) {
+                return false;
+            }
+            return true;
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    @JsonIgnore
+    public Long dynamicValidityDayLimit() {
+        try {
+            JSONObject jo = getJSON();
+            if (jo.has("validity_dynamic_start_choice_day_limit") && !jo.isNull("validity_dynamic_start_choice_day_limit")) {
+                return jo.getLong("validity_dynamic_start_choice_day_limit");
+            }
+            return null;
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+
     public boolean availableByTime() {
         try {
             JSONObject jo = getJSON();
