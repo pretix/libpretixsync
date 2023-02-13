@@ -32,6 +32,14 @@ public abstract class QuestionLike {
         return null;
     }
 
+    public Long getValid_date_min() { return null; }
+
+    public Long getValid_date_max() { return null; }
+
+    public Long getValid_datetime_min() { return null; }
+
+    public Long getValid_datetime_max() { return null; }
+
     public String clean_answer(String answer, List<QuestionOption> opts) throws AbstractQuestion.ValidationException {
         QuestionType type = getType();
         if (requiresAnswer()) {

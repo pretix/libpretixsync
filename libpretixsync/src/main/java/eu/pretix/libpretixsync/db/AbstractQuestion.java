@@ -1,5 +1,6 @@
 package eu.pretix.libpretixsync.db;
 
+import org.joda.time.format.ISODateTimeFormat;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -93,6 +94,54 @@ public class AbstractQuestion extends QuestionLike implements RemoteObject {
             e.printStackTrace();
             return false;
         }
+    }
+
+    public Long getValid_date_min() {
+        try {
+            if (!getJSON().isNull("valid_date_min")) {
+                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+                dateFormat.setLenient(false);
+                return dateFormat.parse(getJSON().getString("valid_date_min")).getTime();
+            }
+        } catch (JSONException | ParseException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public Long getValid_date_max() {
+        try {
+            if (!getJSON().isNull("valid_date_max")) {
+                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+                dateFormat.setLenient(false);
+                return dateFormat.parse(getJSON().getString("valid_date_max")).getTime();
+            }
+        } catch (JSONException | ParseException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public Long getValid_datetime_min() {
+        try {
+            if (!getJSON().isNull("valid_datetime_min")) {
+                return ISODateTimeFormat.dateTimeNoMillis().parseDateTime(getJSON().getString("valid_datetime_min")).toDateTime().toDate().getTime();
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public Long getValid_datetime_max() {
+        try {
+            if (!getJSON().isNull("valid_datetime_max")) {
+                return ISODateTimeFormat.dateTimeNoMillis().parseDateTime(getJSON().getString("valid_datetime_max")).toDateTime().toDate().getTime();
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     @Override
