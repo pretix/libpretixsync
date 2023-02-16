@@ -3,6 +3,7 @@ package eu.pretix.libpretixsync.db;
 import java.math.BigDecimal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -39,6 +40,10 @@ public abstract class QuestionLike {
     public Long getValid_datetime_min() { return null; }
 
     public Long getValid_datetime_max() { return null; }
+
+    public QuestionLike getDependency() { return null; }
+
+    public List<String> getDependencyValues() { return new ArrayList<>(); }
 
     public String clean_answer(String answer, List<QuestionOption> opts) throws AbstractQuestion.ValidationException {
         QuestionType type = getType();

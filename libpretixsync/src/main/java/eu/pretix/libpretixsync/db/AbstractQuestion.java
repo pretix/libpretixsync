@@ -15,6 +15,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 @Entity(cacheable = false)
@@ -38,6 +39,12 @@ public class AbstractQuestion extends QuestionLike implements RemoteObject {
     @ManyToMany(cascade = CascadeAction.NONE)
     @JunctionTable
     List<Item> items;
+
+    @Transient
+    QuestionLike _resolvedDependency;
+
+    @Transient
+    boolean _resolveDependencyCalled;
 
     @Override
     public JSONObject getJSON() throws JSONException {
@@ -93,6 +100,54 @@ public class AbstractQuestion extends QuestionLike implements RemoteObject {
         } catch (JSONException e) {
             e.printStackTrace();
             return false;
+        }
+    }
+
+    public Long getDependencyQuestionId() {
+        try {
+            return getJSON().optLong("dependency_question");
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public void resolveDependency(List<AbstractQuestion> all) {
+        Long id = getDependencyQuestionId();
+        _resolveDependencyCalled = true;
+        if (id == null) {
+            _resolvedDependency = null;
+            return;
+        }
+        for (AbstractQuestion q : all) {
+            if (Objects.equals(q.server_id, id)) {
+                _resolvedDependency = q;
+                break;
+            }
+        }
+    }
+
+    @Override
+    public QuestionLike getDependency() {
+        if (!_resolveDependencyCalled) {
+            throw new IllegalStateException("Question dependencies not resolved");
+        }
+        return _resolvedDependency;
+    }
+
+    public List<String> getDependencyValues() {
+        try {
+            List<String> l = new ArrayList<>();
+            JSONArray a = getJSON().optJSONArray("dependency_values");
+            if (a != null) {
+                for (int i = 0; i < a.length(); i++) {
+                    l.add(a.getString(i));
+                }
+            }
+            return l;
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return new ArrayList<>();
         }
     }
 
