@@ -89,7 +89,7 @@ public class AbstractQuestion extends QuestionLike implements RemoteObject {
 
     public boolean isDependentOnOtherQuestion() {
         try {
-            return getJSON().has("dependency_question") && getJSON().isNull("dependency_question");
+            return getJSON().has("dependency_question") && !getJSON().isNull("dependency_question");
         } catch (JSONException e) {
             e.printStackTrace();
             return false;
