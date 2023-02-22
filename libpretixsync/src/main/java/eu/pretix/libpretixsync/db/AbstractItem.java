@@ -12,9 +12,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import eu.pretix.libpretixsync.utils.I18nString;
 
@@ -366,5 +364,41 @@ public class AbstractItem implements RemoteObject {
             l.add(v);
         }
         return l;
+    }
+
+    public enum MediaPolicy {
+        NONE,
+        REUSE,
+        NEW,
+        REUSE_OR_NEW,
+    }
+
+    @JsonIgnore
+    public MediaPolicy getMediaPolicy() {
+        try {
+            String mp = getJSON().optString("media_policy");
+            if (mp == null) return MediaPolicy.NONE;
+            if (mp.equals("reuse")) return MediaPolicy.REUSE;
+            if (mp.equals("new")) return MediaPolicy.NEW;
+            if (mp.equals("reuse_or_new")) return MediaPolicy.REUSE_OR_NEW;
+            return MediaPolicy.NONE;
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return MediaPolicy.NONE;
+        }
+    }
+
+    @JsonIgnore
+    public ReusableMediaType getMediaType() {
+        try {
+            String mp = getJSON().optString("media_type");
+            if (mp == null) return ReusableMediaType.NONE;
+            if (mp.equals("barcode")) return ReusableMediaType.BARCODE;
+            if (mp.equals("ntag_password_pretix1")) return ReusableMediaType.NTAG_PASSWORD_PRETIX1;
+            return ReusableMediaType.UNSUPPORTED;
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return ReusableMediaType.NONE;
+        }
     }
 }
