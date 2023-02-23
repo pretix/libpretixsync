@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 @Entity(cacheable = false)
-public class AbstractOrderPosition implements RemoteObject {
+public class AbstractOrderPosition implements OrderPositionLike {
 
     @Generated
     @Key
@@ -246,4 +246,12 @@ public class AbstractOrderPosition implements RemoteObject {
         json_data = data.toString();
     }
 
+    @Override
+    public String getAttendeeName() {
+        return attendee_name;
+    }
+
+    public String getAttendeeEmail() {
+        return attendee_email;
+    }
 }
