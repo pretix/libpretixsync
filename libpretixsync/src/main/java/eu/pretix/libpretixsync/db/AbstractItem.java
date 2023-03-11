@@ -394,7 +394,7 @@ public class AbstractItem implements RemoteObject {
             String mp = getJSON().optString("media_type");
             if (mp == null) return ReusableMediaType.NONE;
             if (mp.equals("barcode")) return ReusableMediaType.BARCODE;
-            if (mp.equals("ntag_password_pretix1")) return ReusableMediaType.NTAG_PASSWORD_PRETIX1;
+            if (mp.equals("nfc_uid")) return ReusableMediaType.NFC_UID;
             return ReusableMediaType.UNSUPPORTED;
         } catch (JSONException e) {
             e.printStackTrace();
