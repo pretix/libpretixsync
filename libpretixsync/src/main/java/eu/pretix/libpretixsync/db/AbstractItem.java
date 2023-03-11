@@ -395,6 +395,7 @@ public class AbstractItem implements RemoteObject {
             if (mp == null) return ReusableMediaType.NONE;
             if (mp.equals("barcode")) return ReusableMediaType.BARCODE;
             if (mp.equals("nfc_uid")) return ReusableMediaType.NFC_UID;
+            if (mp.equals("ntag_pretix1")) return ReusableMediaType.NTAG_PRETIX1;
             return ReusableMediaType.UNSUPPORTED;
         } catch (JSONException e) {
             e.printStackTrace();
