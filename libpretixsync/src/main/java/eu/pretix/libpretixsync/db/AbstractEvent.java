@@ -1,5 +1,6 @@
 package eu.pretix.libpretixsync.db;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -45,6 +46,20 @@ public class AbstractEvent implements RemoteObject {
         } catch (JSONException e) {
             return false;
         }
+    }
+
+    public boolean hasPlugin(String plugin) {
+        try {
+            JSONArray plugins = getJSON().optJSONArray("plugins");
+            for (int i = 0; i < plugins.length(); i++) {
+                if (plugins.getString(i).equals(plugin)) {
+                    return true;
+                }
+            }
+        } catch (JSONException e) {
+            return false;
+        }
+        return false;
     }
 
     public boolean isInTestmode() {
