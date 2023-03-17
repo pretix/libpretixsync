@@ -74,6 +74,7 @@ public class AbstractCashier implements RemoteObject, CashierLike {
         Map<String, Boolean> defaults = new HashMap<>();
         defaults.put("can_open_drawer", true);
         defaults.put("can_top_up_gift_cards", true);
+        defaults.put("can_check_in_tickets", true);
         if (!this.active) {
             return false;
         }
