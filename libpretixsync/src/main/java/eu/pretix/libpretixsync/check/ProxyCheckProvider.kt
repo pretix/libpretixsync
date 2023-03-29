@@ -95,13 +95,22 @@ class ProxyCheckProvider(private val config: ConfigStore, httpClientFactory: Htt
         return body
     }
 
-    override fun check(eventsAndCheckinLists: Map<String, Long>, ticketid: String, answers: List<Answer>?, ignore_unpaid: Boolean, with_badge_data: Boolean, type: TicketCheckProvider.CheckInType): TicketCheckProvider.CheckResult {
+    override fun check(
+        eventsAndCheckinLists: Map<String, Long>,
+        ticketid: String,
+        source_type: String,
+        answers: List<Answer>?,
+        ignore_unpaid: Boolean,
+        with_badge_data: Boolean,
+        type: TicketCheckProvider.CheckInType
+    ): TicketCheckProvider.CheckResult {
         val data: MutableMap<String, Any> = HashMap()
         data["events_and_checkin_lists"] = eventsAndCheckinLists
         data["ticketid"] = ticketid
         data["answers"] = answers ?: emptyList<Answer>()
         data["ignore_unpaid"] = ignore_unpaid
         data["with_badge_data"] = with_badge_data
+        data["source_type"] = source_type
         data["type"] = type
         return try {
             val request = Request.Builder()
@@ -126,7 +135,7 @@ class ProxyCheckProvider(private val config: ConfigStore, httpClientFactory: Htt
     }
 
     override fun check(eventsAndCheckinLists: Map<String, Long>, ticketid: String): TicketCheckProvider.CheckResult {
-        return check(eventsAndCheckinLists, ticketid, ArrayList(), false, true, TicketCheckProvider.CheckInType.ENTRY)
+        return check(eventsAndCheckinLists, ticketid, "barcode", ArrayList(), false, true, TicketCheckProvider.CheckInType.ENTRY)
     }
 
     @Throws(CheckException::class)

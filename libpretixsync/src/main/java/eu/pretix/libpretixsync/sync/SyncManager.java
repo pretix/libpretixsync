@@ -1,5 +1,6 @@
 package eu.pretix.libpretixsync.sync;
 
+import eu.pretix.libpretixsync.db.ReusableMedium;
 import eu.pretix.libpretixsync.utils.JSONUtils;
 import io.requery.sql.StatementExecutionException;
 import org.json.JSONArray;
@@ -408,6 +409,11 @@ public class SyncManager {
                 if (profile == Profile.PRETIXSCAN && !skip_orders) {
                     OrderSyncAdapter osa = new OrderSyncAdapter(dataStore, fileStorage, eventSlug, configStore.getSelectedSubeventForEvent(eventSlug), with_pdf_data, false, api, configStore.getSyncCycleId(), feedback);
                     download(osa);
+                    try {
+                        download(new ReusableMediaSyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
+                    } catch (NotFoundApiException e) {
+                        // ignore, this is only supported from pretix 4.19.
+                    }
                 }
 
                 // We used to only Sync the settings for pretixPOS, but for COVID-certificate validation, we need the Settings, too.
@@ -450,6 +456,7 @@ public class SyncManager {
             deleted += dataStore.delete(CheckIn.class).get().value();
             deleted += dataStore.delete(OrderPosition.class).get().value();
             deleted += dataStore.delete(Order.class).get().value();
+            deleted += dataStore.delete(ReusableMedium.class).get().value();
             deleted += dataStore.delete(ResourceSyncStatus.class).get().value();
             throw new SyncException(e.getMessage());
         } catch (JSONException e) {
@@ -680,11 +687,15 @@ public class SyncManager {
 
                 PretixApi.ApiResponse ar;
                 Long startedAt = System.currentTimeMillis();
+                String st = "barcode";
+                if (qci.getSource_type() != null) {
+                    st = qci.getSource_type();
+                }
                 if (qci.getDatetime_string() == null || qci.getDatetime_string().equals("")) {
                     // Backwards compatibility
-                    ar = api.redeem(qci.getEvent_slug(), qci.getSecret(), qci.getDatetime(), true, qci.getNonce(), answers, qci.checkinListId, false, false, qci.getType());
+                    ar = api.redeem(qci.getEvent_slug(), qci.getSecret(), qci.getDatetime(), true, qci.getNonce(), answers, qci.checkinListId, false, false, qci.getType(), st);
                 } else {
-                    ar = api.redeem(qci.getEvent_slug(), qci.getSecret(), qci.getDatetime_string(), true, qci.getNonce(), answers, qci.checkinListId, false, false, qci.getType());
+                    ar = api.redeem(qci.getEvent_slug(), qci.getSecret(), qci.getDatetime_string(), true, qci.getNonce(), answers, qci.checkinListId, false, false, qci.getType(), st);
                 }
                 if (connectivityFeedback != null) {
                     connectivityFeedback.recordSuccess(System.currentTimeMillis() - startedAt);
