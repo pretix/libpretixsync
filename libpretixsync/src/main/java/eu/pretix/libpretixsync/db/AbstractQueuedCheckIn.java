@@ -12,6 +12,7 @@ import java.util.TimeZone;
 import io.requery.Entity;
 import io.requery.Generated;
 import io.requery.Key;
+import io.requery.Nullable;
 
 @Entity(cacheable = false)
 public abstract class AbstractQueuedCheckIn {
@@ -35,6 +36,9 @@ public abstract class AbstractQueuedCheckIn {
     public String answers;
 
     public String type;
+
+    @Nullable
+    public String source_type;
 
     public Long checkinListId;
 

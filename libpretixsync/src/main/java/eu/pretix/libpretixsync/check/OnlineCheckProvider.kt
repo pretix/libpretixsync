@@ -30,7 +30,15 @@ class OnlineCheckProvider(private val config: ConfigStore, httpClientFactory: Ht
         api.sentry = sentry
     }
 
-    override fun check(eventsAndCheckinLists: Map<String, Long>, ticketid_: String, answers: List<Answer>?, ignore_unpaid: Boolean, with_badge_data: Boolean, type: TicketCheckProvider.CheckInType): TicketCheckProvider.CheckResult {
+    override fun check(
+        eventsAndCheckinLists: Map<String, Long>,
+        ticketid_: String,
+        source_type: String,
+        answers: List<Answer>?,
+        ignore_unpaid: Boolean,
+        with_badge_data: Boolean,
+        type: TicketCheckProvider.CheckInType
+    ): TicketCheckProvider.CheckResult {
         val ticketid = ticketid_.replace(Regex("[\\p{C}]"), "�")  // remove unprintable characters
 
         sentry.addBreadcrumb("provider.check", "started")
@@ -41,7 +49,7 @@ class OnlineCheckProvider(private val config: ConfigStore, httpClientFactory: Ht
                 api.redeem(eventsAndCheckinLists.values.toList(), ticketid, null as String?, false, null, answers, ignore_unpaid, with_badge_data, type.toString().lowercase(Locale.getDefault()))
             } else {
                 if (eventsAndCheckinLists.size != 1) throw CheckException("Multi-event scan not supported by server.")
-                api.redeem(eventsAndCheckinLists.keys.first(), ticketid, null as String?, false, null, answers, eventsAndCheckinLists.values.first(), ignore_unpaid, with_badge_data, type.toString().lowercase(Locale.getDefault()))
+                api.redeem(eventsAndCheckinLists.keys.first(), ticketid, null as String?, false, null, answers, eventsAndCheckinLists.values.first(), ignore_unpaid, with_badge_data, type.toString().lowercase(Locale.getDefault()), source_type)
             }
             if (responseObj.response.code == 404) {
                 res.type = TicketCheckProvider.CheckResult.Type.INVALID
@@ -176,7 +184,7 @@ class OnlineCheckProvider(private val config: ConfigStore, httpClientFactory: Ht
     }
 
     override fun check(eventsAndCheckinLists: Map<String, Long>, ticketid: String): TicketCheckProvider.CheckResult {
-        return check(eventsAndCheckinLists, ticketid, ArrayList(), false, true, TicketCheckProvider.CheckInType.ENTRY)
+        return check(eventsAndCheckinLists, ticketid, "barcode", ArrayList(), false, true, TicketCheckProvider.CheckInType.ENTRY)
     }
 
     @Throws(CheckException::class)

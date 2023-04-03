@@ -40,16 +40,16 @@ open class PretixApi(url: String, key: String, orgaSlug: String, version: Int, h
     inner class ApiResponse(val data: JSONObject?, val response: Response)
 
     @Throws(ApiException::class, JSONException::class)
-    fun redeem(eventSlug: String, secret: String, datetime: Date?, force: Boolean, nonce: String?, answers: List<Answer>?, listId: Long, ignore_unpaid: Boolean, pdf_data: Boolean, type: String?): ApiResponse {
+    fun redeem(eventSlug: String, secret: String, datetime: Date?, force: Boolean, nonce: String?, answers: List<Answer>?, listId: Long, ignore_unpaid: Boolean, pdf_data: Boolean, type: String?, source_type: String?): ApiResponse {
         var dt: String? = null
         if (datetime != null) {
             dt = QueuedCheckIn.formatDatetime(datetime)
         }
-        return redeem(eventSlug, secret, dt, force, nonce, answers, listId, ignore_unpaid, pdf_data, type)
+        return redeem(eventSlug, secret, dt, force, nonce, answers, listId, ignore_unpaid, pdf_data, type, source_type)
     }
 
     @Throws(ApiException::class, JSONException::class)
-    open fun redeem(eventSlug: String, secret: String, datetime: String?, force: Boolean, nonce: String?, answers: List<Answer>?, listId: Long, ignore_unpaid: Boolean, pdf_data: Boolean, type: String?): ApiResponse {
+    open fun redeem(eventSlug: String, secret: String, datetime: String?, force: Boolean, nonce: String?, answers: List<Answer>?, listId: Long, ignore_unpaid: Boolean, pdf_data: Boolean, type: String?, source_type: String?): ApiResponse {
         val body = JSONObject()
         if (datetime != null) {
             body.put("datetime", datetime)
@@ -58,6 +58,7 @@ open class PretixApi(url: String, key: String, orgaSlug: String, version: Int, h
         body.put("ignore_unpaid", ignore_unpaid)
         body.put("nonce", nonce)
         body.put("type", type)
+        body.put("source_type", source_type ?: "barcode")
         val answerbody = JSONObject()
         if (answers != null) {
             for (a in answers) {
