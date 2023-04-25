@@ -30,6 +30,7 @@ public class AbstractReceiptLine implements LocalObject {
     public static String TYPE_CHANGE_DIFF = "CHANGE_DIFF";
     public static String TYPE_GIFTCARD_SALE = "GIFTCARD_SALE";
     public static String TYPE_GIFTCARD_REDEMPTION = "GIFTCARD_REDEMPTION";
+    public static String TYPE_GIFTCARD_PAYOUT = "GIFTCARD_PAYOUT";
     public static String TYPE_PAY_ORDER = "PAY_ORDER";
     public static String TYPE_PAY_ORDER_REVERSE = "PAY_ORDER_REVERSE";
     public static String TYPE_REFUND_ORDER = "REFUND_ORDER";
