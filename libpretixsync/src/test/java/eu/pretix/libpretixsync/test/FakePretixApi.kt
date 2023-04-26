@@ -42,7 +42,7 @@ class FakePretixApi : PretixApi("http://1.1.1.1/", "a", "demo", 1, DefaultHttpCl
         return redeemResponses.removeAt(0)()
     }
 
-    override fun redeem(eventSlug: String, secret: String, datetime: String?, force: Boolean, nonce: String?, answers: List<Answer>?, listId: Long, ignore_unpaid: Boolean, pdf_data: Boolean, type: String?): ApiResponse {
+    override fun redeem(eventSlug: String, secret: String, datetime: String?, force: Boolean, nonce: String?, answers: List<Answer>?, listId: Long, ignore_unpaid: Boolean, pdf_data: Boolean, type: String?, source_type: String?): ApiResponse {
         redeemRequestSecret = secret
         redeemRequestDatetime = datetime
         redeemRequestForce = force
