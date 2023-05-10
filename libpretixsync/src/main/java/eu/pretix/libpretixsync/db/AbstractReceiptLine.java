@@ -115,6 +115,12 @@ public class AbstractReceiptLine implements LocalObject {
     public String cart_id;
 
     @Nullable
+    public Long gift_card_id;
+
+    @Nullable
+    public String gift_card_secret;
+
+    @Nullable
     public String remote_error;
 
     @Nullable
@@ -205,6 +211,8 @@ public class AbstractReceiptLine implements LocalObject {
         jo.put("attendee_country", attendee_country);
         jo.put("requested_valid_from", requested_valid_from);
         jo.put("use_reusable_medium", use_reusable_medium);
+        jo.put("gift_card", gift_card_id);
+        jo.put("gift_card_secret", gift_card_secret);
         return jo;
     }
 }
