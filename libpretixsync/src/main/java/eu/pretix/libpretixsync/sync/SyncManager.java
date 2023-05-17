@@ -57,6 +57,7 @@ public class SyncManager {
     protected String os_version;
     protected String software_brand;
     protected String software_version;
+    protected String rsa_pubkey;
     protected CheckConnectivityFeedback connectivityFeedback;
 
     public class CanceledState {
@@ -111,6 +112,7 @@ public class SyncManager {
             String os_version,
             String software_brand,
             String software_version,
+            String rsa_pubkey,
             CheckConnectivityFeedback connectivityFeedback
     ) {
         this.configStore = configStore;
@@ -131,6 +133,7 @@ public class SyncManager {
         this.os_version = os_version;
         this.software_brand = software_brand;
         this.software_version = software_version;
+        this.rsa_pubkey = rsa_pubkey;
         this.connectivityFeedback = connectivityFeedback;
     }
 
@@ -260,7 +263,7 @@ public class SyncManager {
     private void bumpKnownVersion() {
         try {
             JSONObject newInfo = app_info != null ? app_info : configStore.getDeviceKnownInfo();
-            if (app_version != configStore.getDeviceKnownVersion() || !JSONUtils.similar(newInfo, configStore.getDeviceKnownInfo())) {
+            if (app_version != configStore.getDeviceKnownVersion() || !JSONUtils.similar(newInfo, configStore.getDeviceKnownInfo()) || true) {
                 JSONObject apiBody = new JSONObject();
                 apiBody.put("hardware_brand", hardware_brand);
                 apiBody.put("hardware_model", hardware_model);
@@ -268,6 +271,9 @@ public class SyncManager {
                 apiBody.put("os_version", os_version);
                 apiBody.put("software_brand", software_brand);
                 apiBody.put("software_version", software_version);
+                if (rsa_pubkey != null) {
+                    apiBody.put("rsa_pubkey", rsa_pubkey);
+                }
                 if (newInfo != null) {
                     apiBody.put("info", newInfo);
                 }
@@ -338,27 +344,38 @@ public class SyncManager {
         canceled.setCanceled(true);
     }
 
+    protected void fetchDeviceInfo() throws ApiException, JSONException, ResourceNotModified, ExecutionException, InterruptedException {
+        try {
+            PretixApi.ApiResponse vresp = api.fetchResource(api.apiURL("device/info"));
+            JSONObject vdata = vresp.getData();
+            configStore.setKnownPretixVersion(vdata.getJSONObject("server").getJSONObject("version").getLong("pretix_numeric"));
+
+            configStore.setDeviceKnownName(vdata.getJSONObject("device").getString("name"));
+            String gate = null;
+            if (vdata.getJSONObject("device").has("gate") && !vdata.getJSONObject("device").isNull("gate")) {
+                gate = vdata.getJSONObject("device").getJSONObject("gate").getString("name");
+            }
+            configStore.setDeviceKnownGateName(gate);
+
+            if (vdata.has("medium_key_sets")) {
+                MediumKeySetSyncAdapter mkssa = new MediumKeySetSyncAdapter(dataStore, fileStorage, api, configStore.getSyncCycleId(), null, vdata.getJSONArray("medium_key_sets"));
+                mkssa.download();
+            }
+
+        } catch (NotFoundApiException e) {
+            // pretix pre 4.13
+            PretixApi.ApiResponse vresp = api.fetchResource(api.apiURL("version"));
+            configStore.setKnownPretixVersion(vresp.getData().getLong("pretix_numeric"));
+        }
+    }
+
+
     protected void downloadData(ProgressFeedback feedback, Boolean skip_orders, String overrideEventSlug, Long overrideSubeventId) throws SyncException {
         sentry.addBreadcrumb("sync.queue", "Start download");
 
         try {
             try {
-                try {
-                    PretixApi.ApiResponse vresp = api.fetchResource(api.apiURL("device/info"));
-                    JSONObject vdata = vresp.getData();
-                    configStore.setKnownPretixVersion(vdata.getJSONObject("server").getJSONObject("version").getLong("pretix_numeric"));
-
-                    configStore.setDeviceKnownName(vdata.getJSONObject("device").getString("name"));
-                    String gate = null;
-                    if (vdata.getJSONObject("device").has("gate") && !vdata.getJSONObject("device").isNull("gate")) {
-                        gate = vdata.getJSONObject("device").getJSONObject("gate").getString("name");
-                    }
-                    configStore.setDeviceKnownGateName(gate);
-                } catch (NotFoundApiException e) {
-                    // pretix pre 4.13
-                    PretixApi.ApiResponse vresp = api.fetchResource(api.apiURL("version"));
-                    configStore.setKnownPretixVersion(vresp.getData().getLong("pretix_numeric"));
-                }
+                fetchDeviceInfo();
             } catch (ApiException | JSONException | ResourceNotModified e) {
                 // ignore
                 e.printStackTrace();
