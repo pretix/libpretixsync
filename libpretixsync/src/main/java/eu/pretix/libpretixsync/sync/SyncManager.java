@@ -167,7 +167,7 @@ public class SyncManager {
                 if (feedback != null) {
                     feedback.postFeedback("Downloading data…");
                 }
-                downloadData(feedback, false, null);
+                downloadData(feedback, false, null, 0L);
                 configStore.setLastDownload(System.currentTimeMillis());
             }
 
@@ -196,11 +196,11 @@ public class SyncManager {
     /**
      * Like sync(), but without order data and with setting the sync state to "unsynced"
      */
-    public SyncResult syncMinimalEventSet(String overrideEventSlug, SyncManager.ProgressFeedback feedback) {
+    public SyncResult syncMinimalEventSet(String overrideEventSlug, long overrideSubeventId, ProgressFeedback feedback) {
         bumpKnownVersion();
         try {
             upload(feedback);
-            downloadData(feedback, true, overrideEventSlug);
+            downloadData(feedback, true, overrideEventSlug, overrideSubeventId);
             configStore.setLastDownload(0);
             configStore.setLastSync(0);
         } catch (SyncException e) {
@@ -211,7 +211,7 @@ public class SyncManager {
     }
 
     public SyncResult syncMinimalEventSet(SyncManager.ProgressFeedback feedback) {
-        return syncMinimalEventSet(null, feedback);
+        return syncMinimalEventSet(null, 0L, feedback);
     }
 
     private void checkEventSelection(Long listId) throws EventSwitchRequested {
@@ -330,7 +330,7 @@ public class SyncManager {
         canceled.setCanceled(true);
     }
 
-    protected void downloadData(SyncManager.ProgressFeedback feedback, Boolean skip_orders, String overrideEventSlug) throws SyncException {
+    protected void downloadData(ProgressFeedback feedback, Boolean skip_orders, String overrideEventSlug, Long overrideSubeventId) throws SyncException {
         sentry.addBreadcrumb("sync.queue", "Start download");
 
         try {
@@ -377,12 +377,16 @@ public class SyncManager {
                 slugs = configStore.getSynchronizedEvents();
             }
             for (String eventSlug : slugs) {
+                long subEvent = configStore.getSelectedSubeventForEvent(eventSlug);
+                if (overrideSubeventId > 0L) {
+                    subEvent = overrideSubeventId;
+                }
                 download(new EventSyncAdapter(dataStore, eventSlug, eventSlug, api, configStore.getSyncCycleId(), feedback));
                 download(new ItemCategorySyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
                 download(new ItemSyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
                 download(new QuestionSyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
                 if (profile == Profile.PRETIXPOS) {
-                    download(new QuotaSyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback, configStore.getSelectedSubeventForEvent(eventSlug)));
+                    download(new QuotaSyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback, subEvent));
                     download(new TaxRuleSyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
                     download(new TicketLayoutSyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
                 }
@@ -392,7 +396,7 @@ public class SyncManager {
                 } catch (ApiException e) {
                     // ignore, this is only supported from pretix 2.5. We have legacy code in BadgeLayoutSyncAdapter to fall back to
                 }
-                download(new CheckInListSyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback, configStore.getSelectedSubeventForEvent(eventSlug)));
+                download(new CheckInListSyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback, subEvent));
                 if (profile == Profile.PRETIXSCAN || profile == Profile.PRETIXSCAN_ONLINE) {
                     // We don't need these on pretixPOS, so we can save some traffic
                     try {
@@ -407,7 +411,7 @@ public class SyncManager {
                     }
                 }
                 if (profile == Profile.PRETIXSCAN && !skip_orders) {
-                    OrderSyncAdapter osa = new OrderSyncAdapter(dataStore, fileStorage, eventSlug, configStore.getSelectedSubeventForEvent(eventSlug), with_pdf_data, false, api, configStore.getSyncCycleId(), feedback);
+                    OrderSyncAdapter osa = new OrderSyncAdapter(dataStore, fileStorage, eventSlug, subEvent, with_pdf_data, false, api, configStore.getSyncCycleId(), feedback);
                     download(osa);
                     try {
                         download(new ReusableMediaSyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
@@ -432,7 +436,7 @@ public class SyncManager {
                 OrderCleanup oc = new OrderCleanup(dataStore, fileStorage, api, configStore.getSyncCycleId(), feedback);
                 if ((System.currentTimeMillis() - configStore.getLastCleanup()) > 3600 * 1000 * 12) {
                     for (String eventSlug : configStore.getSynchronizedEvents()) {
-                        oc.deleteOldSubevents(eventSlug, configStore.getSelectedSubeventForEvent(eventSlug));
+                        oc.deleteOldSubevents(eventSlug, overrideSubeventId > 0L ? overrideSubeventId : configStore.getSelectedSubeventForEvent(eventSlug));
                     }
                     oc.deleteOldEvents(configStore.getSynchronizedEvents());
                     oc.deleteOldPdfImages();
