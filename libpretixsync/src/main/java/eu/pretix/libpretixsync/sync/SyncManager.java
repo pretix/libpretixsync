@@ -377,7 +377,7 @@ public class SyncManager {
                 slugs = configStore.getSynchronizedEvents();
             }
             for (String eventSlug : slugs) {
-                long subEvent = configStore.getSelectedSubeventForEvent(eventSlug);
+                Long subEvent = configStore.getSelectedSubeventForEvent(eventSlug);
                 if (overrideSubeventId > 0L) {
                     subEvent = overrideSubeventId;
                 }
