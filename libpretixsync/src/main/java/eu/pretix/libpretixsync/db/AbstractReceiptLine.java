@@ -34,6 +34,7 @@ public class AbstractReceiptLine implements LocalObject {
     public static String TYPE_PAY_ORDER = "PAY_ORDER";
     public static String TYPE_PAY_ORDER_REVERSE = "PAY_ORDER_REVERSE";
     public static String TYPE_REFUND_ORDER = "REFUND_ORDER";
+    public static String TYPE_NULL = "NULL";
 
     @Generated
     @Key
