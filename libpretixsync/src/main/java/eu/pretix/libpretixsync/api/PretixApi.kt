@@ -394,7 +394,7 @@ open class PretixApi(url: String, key: String, orgaSlug: String, version: Int, h
         } catch (e: JSONException) {
             e.printStackTrace()
             sentry.captureException(e)
-            throw ApiException("Invalid JSON received: " + body.substring(0, 100), e)
+            throw ApiException("Invalid JSON received: " + body.take(100), e)
         }
     }
 
