@@ -18,13 +18,23 @@ class SetupBadResponseException(override var message: String?) : SetupException(
 
 data class SetupResult(val url: String, val api_token: String, val organizer: String, val device_id: Long, val unique_serial: String, val security_profile: String, val device_name: String, val gate_name: String?)
 
-class SetupManager(private val hardware_brand: String, private val hardware_model: String, private val software_brand: String, private val software_version: String, private val http_factory: HttpClientFactory) {
+class SetupManager(
+    private val hardware_brand: String,
+    private val hardware_model: String,
+    private val os_name: String,
+    private val os_version: String,
+    private val software_brand: String,
+    private val software_version: String,
+    private val http_factory: HttpClientFactory
+) {
     fun initialize(url: String, token: String): SetupResult {
         val client = http_factory.buildClient(NetUtils.ignoreSSLforURL(url));
         val apiBody = JSONObject()
         apiBody.put("token", token)
         apiBody.put("hardware_brand", hardware_brand)
         apiBody.put("hardware_model", hardware_model)
+        apiBody.put("os_name", os_name)
+        apiBody.put("os_version", os_version)
         apiBody.put("software_brand", software_brand)
         apiBody.put("software_version", software_version)
 
