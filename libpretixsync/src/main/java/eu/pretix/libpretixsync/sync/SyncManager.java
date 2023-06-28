@@ -53,6 +53,8 @@ public class SyncManager {
     protected JSONObject app_info;
     protected String hardware_brand;
     protected String hardware_model;
+    protected String os_name;
+    protected String os_version;
     protected String software_brand;
     protected String software_version;
     protected CheckConnectivityFeedback connectivityFeedback;
@@ -105,6 +107,8 @@ public class SyncManager {
             JSONObject app_info,
             String hardware_brand,
             String hardware_model,
+            String os_name,
+            String os_version,
             String software_brand,
             String software_version,
             CheckConnectivityFeedback connectivityFeedback
@@ -123,6 +127,8 @@ public class SyncManager {
         this.app_info = app_info;
         this.hardware_brand = hardware_brand;
         this.hardware_model = hardware_model;
+        this.os_name = os_name;
+        this.os_version = os_version;
         this.software_brand = software_brand;
         this.software_version = software_version;
         this.connectivityFeedback = connectivityFeedback;
@@ -258,6 +264,8 @@ public class SyncManager {
                 JSONObject apiBody = new JSONObject();
                 apiBody.put("hardware_brand", hardware_brand);
                 apiBody.put("hardware_model", hardware_model);
+                apiBody.put("os_name", os_name);
+                apiBody.put("os_version", os_version);
                 apiBody.put("software_brand", software_brand);
                 apiBody.put("software_version", software_version);
                 if (newInfo != null) {
