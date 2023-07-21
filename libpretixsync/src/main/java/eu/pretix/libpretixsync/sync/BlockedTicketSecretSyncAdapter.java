@@ -1,6 +1,6 @@
 package eu.pretix.libpretixsync.sync;
 
-import org.joda.time.format.ISODateTimeFormat;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -12,19 +12,24 @@ import java.util.concurrent.ExecutionException;
 import eu.pretix.libpretixsync.api.ApiException;
 import eu.pretix.libpretixsync.api.PretixApi;
 import eu.pretix.libpretixsync.api.ResourceNotModified;
+import eu.pretix.libpretixsync.db.BlockedTicketSecret;
 import eu.pretix.libpretixsync.db.ResourceSyncStatus;
-import eu.pretix.libpretixsync.db.SubEvent;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
 import io.requery.query.Tuple;
 import io.requery.util.CloseableIterator;
 
-public class AllSubEventsSyncAdapter extends BaseDownloadSyncAdapter<SubEvent, Long> {
+public class BlockedTicketSecretSyncAdapter extends BaseDownloadSyncAdapter<BlockedTicketSecret, Long> {
     private String firstResponseTimestamp;
     private ResourceSyncStatus rlm;
 
-    public AllSubEventsSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, PretixApi api, String syncCycleId, SyncManager.ProgressFeedback feedback) {
-        super(store, fileStorage, "__all__", api, syncCycleId, feedback);
+    public BlockedTicketSecretSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, PretixApi api, String syncCycleId, SyncManager.ProgressFeedback feedback) {
+        super(store, fileStorage, eventSlug, api, syncCycleId, feedback);
+    }
+
+    @Override
+    protected boolean autoPersist() {
+        return false;
     }
 
     @Override
@@ -35,8 +40,8 @@ public class AllSubEventsSyncAdapter extends BaseDownloadSyncAdapter<SubEvent, L
             completed = true;
         } finally {
             ResourceSyncStatus resourceSyncStatus = store.select(ResourceSyncStatus.class)
-                    .where(ResourceSyncStatus.RESOURCE.eq("subevents"))
-                    .and(ResourceSyncStatus.EVENT_SLUG.eq("__all__"))
+                    .where(ResourceSyncStatus.RESOURCE.eq(getResourceName()))
+                    .and(ResourceSyncStatus.EVENT_SLUG.eq(eventSlug))
                     .limit(1)
                     .get().firstOrNull();
 
@@ -49,8 +54,8 @@ public class AllSubEventsSyncAdapter extends BaseDownloadSyncAdapter<SubEvent, L
             if (firstResponseTimestamp != null) {
                 if (resourceSyncStatus == null) {
                     resourceSyncStatus = new ResourceSyncStatus();
-                    resourceSyncStatus.setResource("subevents");
-                    resourceSyncStatus.setEvent_slug("__all__");
+                    resourceSyncStatus.setResource(getResourceName());
+                    resourceSyncStatus.setEvent_slug(eventSlug);
                     if (completed) {
                         resourceSyncStatus.setStatus("complete");
                         resourceSyncStatus.setLast_modified(firstResponseTimestamp);
@@ -68,6 +73,9 @@ public class AllSubEventsSyncAdapter extends BaseDownloadSyncAdapter<SubEvent, L
             }
             firstResponseTimestamp = null;
         }
+
+        // We clean up unblocked records after the sync
+        store.delete(BlockedTicketSecret.class).where(BlockedTicketSecret.BLOCKED.eq(false));
     }
 
     protected boolean deleteUnseen() {
@@ -76,30 +84,37 @@ public class AllSubEventsSyncAdapter extends BaseDownloadSyncAdapter<SubEvent, L
 
     @Override
     CloseableIterator<Tuple> getKnownIDsIterator() {
-        return store.select(SubEvent.SERVER_ID)
+        return store.select(BlockedTicketSecret.SERVER_ID)
+                .where(BlockedTicketSecret.EVENT_SLUG.eq(eventSlug))
                 .get().iterator();
     }
 
     @Override
-    public void updateObject(SubEvent obj, JSONObject jsonobj) throws JSONException {
+    public void updateObject(BlockedTicketSecret obj, JSONObject jsonobj) throws JSONException {
+        obj.setEvent_slug(eventSlug);
         obj.setServer_id(jsonobj.getLong("id"));
-        obj.setEvent_slug(jsonobj.getString("event"));
-        obj.setDate_from(ISODateTimeFormat.dateTimeParser().parseDateTime(jsonobj.getString("date_from")).toDate());
-        if (!jsonobj.isNull("date_to")) {
-            obj.setDate_to(ISODateTimeFormat.dateTimeParser().parseDateTime(jsonobj.getString("date_to")).toDate());
-        }
-        obj.setActive(jsonobj.getBoolean("active"));
+        obj.setUpdated(jsonobj.getString("updated"));
+        obj.setBlocked(jsonobj.getBoolean("blocked"));
+        obj.setSecret(jsonobj.getString("secret"));
         obj.setJson_data(jsonobj.toString());
+
+        if (obj.getId() == null && obj.isBlocked()) {
+            // If not blocked and not yet in our database, we don't need to save it, as we only care
+            // about blocked entries.
+            store.insert(obj);
+        } else {
+
+        }
     }
 
     @Override
     protected String getUrl() {
-        return api.organizerResourceUrl(getResourceName());
+        return api.eventResourceUrl(eventSlug, getResourceName());
     }
 
     @Override
     String getResourceName() {
-        return "subevents";
+        return "blockedsecrets";
     }
 
     @Override
@@ -108,19 +123,20 @@ public class AllSubEventsSyncAdapter extends BaseDownloadSyncAdapter<SubEvent, L
     }
 
     @Override
-    Long getId(SubEvent obj) {
+    Long getId(BlockedTicketSecret obj) {
         return obj.getServer_id();
     }
 
     @Override
-    SubEvent newEmptyObject() {
-        return new SubEvent();
+    BlockedTicketSecret newEmptyObject() {
+        return new BlockedTicketSecret();
     }
 
     @Override
-    public CloseableIterator<SubEvent> runBatch(List<Long> parameterBatch) {
-        return store.select(SubEvent.class)
-                .where(SubEvent.SERVER_ID.in(parameterBatch))
+    public CloseableIterator<BlockedTicketSecret> runBatch(List<Long> parameterBatch) {
+        return store.select(BlockedTicketSecret.class)
+                .where(BlockedTicketSecret.SERVER_ID.in(parameterBatch))
+                .and(BlockedTicketSecret.EVENT_SLUG.eq(eventSlug))
                 .get().iterator();
     }
 
@@ -128,7 +144,8 @@ public class AllSubEventsSyncAdapter extends BaseDownloadSyncAdapter<SubEvent, L
     protected JSONObject downloadPage(String url, boolean isFirstPage) throws ApiException, ResourceNotModified {
         if (isFirstPage) {
             rlm = store.select(ResourceSyncStatus.class)
-                    .where(ResourceSyncStatus.RESOURCE.eq("subevents"))
+                    .where(ResourceSyncStatus.RESOURCE.eq(getResourceName()))
+                    .and(ResourceSyncStatus.EVENT_SLUG.eq(eventSlug))
                     .limit(1)
                     .get().firstOrNull();
         }
@@ -148,13 +165,13 @@ public class AllSubEventsSyncAdapter extends BaseDownloadSyncAdapter<SubEvent, L
             // but the next sync will fix it since we always fetch our diff compared to the time
             // of the first page.
             try {
-                if (!url.contains("modified_since")) {
+                if (!url.contains("updated_since")) {
                     if (url.contains("?")) {
                         url += "&";
                     } else {
                         url += "?";
                     }
-                    url += "ordering=-last_modified&modified_since=" + URLEncoder.encode(rlm.getLast_modified(), "UTF-8");
+                    url += "ordering=-updated&updated_since=" + URLEncoder.encode(rlm.getLast_modified(), "UTF-8");
                 }
             } catch (UnsupportedEncodingException e) {
                 e.printStackTrace();
@@ -163,7 +180,14 @@ public class AllSubEventsSyncAdapter extends BaseDownloadSyncAdapter<SubEvent, L
 
         PretixApi.ApiResponse apiResponse = api.fetchResource(url);
         if (isFirstPage) {
-            firstResponseTimestamp = apiResponse.getResponse().header("X-Page-Generated");
+            try {
+                JSONArray results = apiResponse.getData().getJSONArray("results");
+                if (results.length() > 0) {
+                    firstResponseTimestamp = results.getJSONObject(0).getString("updated");
+                }
+            } catch (JSONException | NullPointerException e) {
+                e.printStackTrace();
+            }
         }
         return apiResponse.getData();
     }

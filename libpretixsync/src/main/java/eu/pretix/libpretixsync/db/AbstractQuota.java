@@ -26,6 +26,7 @@ public class AbstractQuota implements RemoteObject {
 
     public String event_slug;
 
+    @Index
     public Long subevent_id;
 
     @Column(definition = "TEXT")
@@ -67,11 +68,11 @@ public class AbstractQuota implements RemoteObject {
         return new JSONObject(json_data);
     }
 
-    public static boolean appliesToVariation(JSONObject quotaJson, ItemVariation var) {
+    public static boolean appliesToVariation(JSONObject quotaJson, Long varId) {
         try {
             JSONArray ja = quotaJson.getJSONArray("variations");
             for (int i = 0; i < ja.length(); i++) {
-                if (ja.getLong(i) == var.getServer_id()) {
+                if (ja.getLong(i) == varId) {
                     return true;
                 }
             }
@@ -80,5 +81,9 @@ public class AbstractQuota implements RemoteObject {
             e.printStackTrace();
             return false;
         }
+    }
+
+    public static boolean appliesToVariation(JSONObject quotaJson, ItemVariation var) {
+        return appliesToVariation(quotaJson, var.getServer_id());
     }
 }

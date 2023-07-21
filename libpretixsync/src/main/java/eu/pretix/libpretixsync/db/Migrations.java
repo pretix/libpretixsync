@@ -15,7 +15,7 @@ import io.requery.sql.TableCreationMode;
 
 public class Migrations {
     private static EntityModel model = Models.DEFAULT;
-    public static int CURRENT_VERSION = 86;
+    public static int CURRENT_VERSION = 96;
 
     private static void createVersionTable(Connection c, int version) throws SQLException {
         Statement s2 = c.createStatement();
@@ -335,6 +335,55 @@ public class Migrations {
             execIgnore(c, "ALTER TABLE receiptline ADD voucher_code TEXT NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
             updateVersionTable(c, 86);
         }
+        if (db_version < 87) {
+            execIgnore(c, "CREATE INDEX receiptline_receipt ON receiptline (receipt);", new String[] {"already exists", "existiert bereits"});
+            execIgnore(c, "CREATE INDEX receiptline_addon_to ON receiptline (addon_to);", new String[] {"already exists", "existiert bereits"});
+            execIgnore(c, "CREATE INDEX receiptpayment_receipt ON receiptpayment (receipt);", new String[] {"already exists", "existiert bereits"});
+            if (BuildConfig.BOOLEAN_TYPE.equals("boolean")) {
+                execIgnore(c, "CREATE INDEX receipt_open ON receipt (open) WHERE open = true;", new String[]{"already exists", "existiert bereits"});
+            } else {
+                execIgnore(c, "CREATE INDEX receipt_open ON receipt (open) WHERE open = 1;", new String[]{"already exists", "existiert bereits"});
+            }
+            updateVersionTable(c, 87);
+        }
+        if (db_version < 88) {
+            if (BuildConfig.BOOLEAN_TYPE.equals("boolean")) {  // Postgres only
+                exec(c, "ALTER TABLE settings ALTER COLUMN pretixpos_additional_receipt_text TYPE TEXT");
+                exec(c, "ALTER TABLE settings ALTER COLUMN covid_certificates_allow_vaccinated_products TYPE TEXT");
+                exec(c, "ALTER TABLE settings ALTER COLUMN covid_certificates_combination_rules TYPE TEXT");
+            }
+            updateVersionTable(c, 88);
+        }
+        if (db_version < 89) {
+            execIgnore(c, "ALTER TABLE receiptline ADD is_bundled " + BuildConfig.BOOLEAN_TYPE + " DEFAULT(" + BuildConfig.BOOLEAN_FALSE + ");", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            updateVersionTable(c, 89);
+        }
+        if (db_version < 91) {
+            execIgnore(c, "ALTER TABLE orders ADD valid_if_pending " + BuildConfig.BOOLEAN_TYPE + " DEFAULT(" + BuildConfig.BOOLEAN_FALSE + ");", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            new SchemaModifier(dataSource, model).createTables(TableCreationMode.CREATE_NOT_EXISTS);
+            updateVersionTable(c, 91);
+        }
+        if (db_version < 92) {
+            execIgnore(c, "ALTER TABLE receiptline ADD requested_valid_from TEXT NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            updateVersionTable(c, 92);
+        }
+        if (db_version < 93) {
+            execIgnore(c, "ALTER TABLE receiptline ADD use_reusable_medium NUMERIC NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            updateVersionTable(c, 93);
+        }
+        if (db_version < 94) {
+            create_notexists(dataSource);
+            updateVersionTable(c, 94);
+        }
+        if (db_version < 95) {
+            execIgnore(c, "ALTER TABLE queuedcheckin ADD source_type TEXT NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            updateVersionTable(c, 95);
+        }
+        if (db_version < 96) {
+            execIgnore(c, "ALTER TABLE receiptline ADD gift_card_id NUMERIC NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            execIgnore(c, "ALTER TABLE receiptline ADD gift_card_secret TEXT NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            updateVersionTable(c, 96);
+        }
 
         // Note that the Android app currently does not use these queries!
 
@@ -342,6 +391,12 @@ public class Migrations {
             exec(c, "DELETE FROM ResourceSyncStatus;");
         }
         updateVersionTable(c, CURRENT_VERSION);
+    }
+
+    public static void android_manual_migrations(Connection c, int oldVersion, int newVersion) throws SQLException {
+        if (oldVersion < 87 && newVersion >= 87) {
+            execIgnore(c, "CREATE INDEX receipt_open ON receipt (open) WHERE open = 1;", new String[] {"already exists", "existiert bereits"});
+        }
     }
 
     private static void create_drop(DataSource dataSource) {

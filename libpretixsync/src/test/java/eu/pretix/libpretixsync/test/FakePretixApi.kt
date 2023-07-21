@@ -7,11 +7,8 @@ import okhttp3.MediaType
 import org.json.JSONException
 import org.json.JSONObject
 import java.io.File
-import java.io.InputStream
-import java.util.*
-import kotlin.collections.ArrayList
 
-class FakePretixApi : PretixApi("http://1.1.1.1/", "a", "demo", "demo", 1, DefaultHttpClientFactory()) {
+class FakePretixApi : PretixApi("http://1.1.1.1/", "a", "demo", 1, DefaultHttpClientFactory()) {
     val redeemResponses: MutableList<(() -> ApiResponse)> = ArrayList()
     val statusResponses: MutableList<(() -> ApiResponse)> = ArrayList()
     val searchResponses: MutableList<(() -> ApiResponse)> = ArrayList()
@@ -24,34 +21,52 @@ class FakePretixApi : PretixApi("http://1.1.1.1/", "a", "demo", "demo", 1, Defau
     var redeemRequestForce = false
     var redeemRequestNonce: String? = null
     var redeemRequestAnswers: List<Answer>? = null
-    var redeemRequestListId: Long? = null
+    var redeemRequestLists: List<Long>? = null
     var redeemRequestIgnoreUnpaid = false
     var redeemRequestPdfData = false
     var statusRequestListId: Long? = null
-    var searchRequestListId: Long? = null
+    var searchRequestLists: List<Long>? = null
     var searchRequestQuery: String? = null
     var lastRequestUrl: String? = null
     var lastRequestBody: JSONObject? = null
 
-    override fun redeem(secret: String, datetime: String?, force: Boolean, nonce: String?, answers: List<Answer>?, listId: Long, ignore_unpaid: Boolean, pdf_data: Boolean, type: String?): ApiResponse {
+    override fun redeem(lists: List<Long>, secret: String, datetime: String?, force: Boolean, nonce: String?, answers: List<Answer>?, ignore_unpaid: Boolean, pdf_data: Boolean, type: String?): ApiResponse {
         redeemRequestSecret = secret
         redeemRequestDatetime = datetime
         redeemRequestForce = force
         redeemRequestNonce = nonce
         redeemRequestAnswers = answers
-        redeemRequestListId = listId
+        redeemRequestLists = lists
         redeemRequestIgnoreUnpaid = ignore_unpaid
         redeemRequestPdfData = pdf_data
         return redeemResponses.removeAt(0)()
     }
 
-    override fun status(listId: Long): ApiResponse {
+    override fun redeem(eventSlug: String, secret: String, datetime: String?, force: Boolean, nonce: String?, answers: List<Answer>?, listId: Long, ignore_unpaid: Boolean, pdf_data: Boolean, type: String?, source_type: String?): ApiResponse {
+        redeemRequestSecret = secret
+        redeemRequestDatetime = datetime
+        redeemRequestForce = force
+        redeemRequestNonce = nonce
+        redeemRequestAnswers = answers
+        redeemRequestLists = listOf(listId)
+        redeemRequestIgnoreUnpaid = ignore_unpaid
+        redeemRequestPdfData = pdf_data
+        return redeemResponses.removeAt(0)()
+    }
+
+    override fun status(eventSlug: String, listId: Long): ApiResponse {
         statusRequestListId = listId
         return statusResponses.removeAt(0)()
     }
 
-    override fun search(listId: Long, query: String?, page: Int): ApiResponse {
-        searchRequestListId = listId
+    override fun search(eventSlug: String, listId: Long, query: String?, page: Int): ApiResponse {
+        searchRequestLists = listOf(listId)
+        searchRequestQuery = query
+        return searchResponses.removeAt(0)()
+    }
+
+    override fun search(lists: List<Long>, query: String?, page: Int): ApiResponse {
+        searchRequestLists = lists
         searchRequestQuery = query
         return searchResponses.removeAt(0)()
     }
@@ -78,7 +93,7 @@ class FakePretixApi : PretixApi("http://1.1.1.1/", "a", "demo", "demo", 1, Defau
         return fetchResponses.removeAt(0)()
     }
 
-    override fun downloadFile(full_url: String): ApiResponse? {
+    override fun downloadFile(full_url: String): ApiResponse {
         lastRequestUrl = full_url
         lastRequestBody = null
         return downloadResponses.removeAt(0)()

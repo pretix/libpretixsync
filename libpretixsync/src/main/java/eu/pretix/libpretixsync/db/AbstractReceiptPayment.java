@@ -12,6 +12,7 @@ import io.requery.Column;
 import io.requery.Entity;
 import io.requery.ForeignKey;
 import io.requery.Generated;
+import io.requery.Index;
 import io.requery.Key;
 import io.requery.ManyToOne;
 import io.requery.Nullable;
@@ -25,6 +26,7 @@ public class AbstractReceiptPayment implements LocalObject {
 
     @ForeignKey
     @ManyToOne
+    @Index
     public Receipt receipt;
 
     public String payment_type;

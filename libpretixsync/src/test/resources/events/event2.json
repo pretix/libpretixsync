@@ -1,8 +1,8 @@
 {
   "name": {
-    "en": "Large Testevent 0"
+    "en": "Small Testevent 1"
   },
-  "slug": "demo",
+  "slug": "demo2",
   "live": true,
   "testmode": false,
   "currency": "EUR",
@@ -23,9 +23,6 @@
     "pretix.plugins.ticketoutputpdf"
   ],
   "valid_keys": {
-    "pretix_sig1": [
-      "LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUNvd0JRWURLMlZ3QXlFQTdBRDcvdkZBMzNFc1k0ejJQSHI3aVpQc1o4bjVkaDBhalA4Z3l6Tm1tSXM9Ci0tLS0tRU5EIFBVQkxJQyBLRVktLS0tLQo=",
-      "LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUNvd0JRWURLMlZ3QXlFQVlNSnNPbkxwNUFXR3BKK2RGSkUycjlET1hlUUlaZ1ZyQ3Q5M0xBbDVCTjg9Ci0tLS0tRU5EIFBVQkxJQyBLRVktLS0tLQo="
-    ]
+    "pretix_sig1": ["LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUNvd0JRWURLMlZ3QXlFQWJWYmZxZGdtaFZzSFFmTk15eko5eUYxbGdWeWdkcE5oS29vdlE1NHhDWTQ9Ci0tLS0tRU5EIFBVQkxJQyBLRVktLS0tLQo="]
   }
 }

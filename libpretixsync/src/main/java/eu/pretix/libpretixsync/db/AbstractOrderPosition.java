@@ -1,20 +1,20 @@
 package eu.pretix.libpretixsync.db;
 
-import eu.pretix.libpretixsync.check.TicketCheckProvider;
 import io.requery.*;
 
+import org.joda.time.DateTime;
+import org.joda.time.format.ISODateTimeFormat;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 @Entity(cacheable = false)
-public class AbstractOrderPosition implements RemoteObject {
+public class AbstractOrderPosition implements OrderPositionLike {
 
     @Generated
     @Key
@@ -52,6 +52,45 @@ public class AbstractOrderPosition implements RemoteObject {
 
     @OneToMany
     public List<CheckIn> checkins;
+
+    public boolean isBlocked() {
+        try {
+            JSONObject j = getJSON();
+            if (!j.has("blocked") || j.isNull("blocked")) {
+                return false;
+            }
+            return true;
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public DateTime getValidFrom() {
+        try {
+            JSONObject j = getJSON();
+            if (!j.has("valid_from") || j.isNull("valid_from")) {
+                return null;
+            }
+            return ISODateTimeFormat.dateTimeParser().parseDateTime(j.getString("valid_from"));
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public DateTime getValidUntil() {
+        try {
+            JSONObject j = getJSON();
+            if (!j.has("valid_until") || j.isNull("valid_until")) {
+                return null;
+            }
+            return ISODateTimeFormat.dateTimeParser().parseDateTime(j.getString("valid_until"));
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
 
     public BigDecimal getPrice() {
         try {
@@ -140,6 +179,33 @@ public class AbstractOrderPosition implements RemoteObject {
         }
     }
 
+    public Map<Long, String> getAnswersWithOptionIds() {
+        try {
+            JSONArray arr = getJSON().getJSONArray("answers");
+            Map<Long, String> res = new HashMap<>();
+            for (int i = 0; i < arr.length(); i ++) {
+                JSONObject a = arr.getJSONObject(i);
+                JSONArray opts = a.getJSONArray("options");
+                if (opts.length() > 0) {
+                    StringBuilder aw = new StringBuilder();
+                    for (int j = 0; j < opts.length(); j ++) {
+                        if (aw.length() > 0) {
+                            aw.append(",");
+                        }
+                        aw.append(opts.getLong(j));
+                    }
+                    res.put(a.getLong("question"), aw.toString());
+                } else {
+                    res.put(a.getLong("question"), a.getString("answer"));
+                }
+            }
+            return res;
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
     public Long getSubeventId() {
         try {
             long var = getJSON().optLong("subevent", 0L);
@@ -180,4 +246,12 @@ public class AbstractOrderPosition implements RemoteObject {
         json_data = data.toString();
     }
 
+    @Override
+    public String getAttendeeName() {
+        return attendee_name;
+    }
+
+    public String getAttendeeEmail() {
+        return attendee_email;
+    }
 }

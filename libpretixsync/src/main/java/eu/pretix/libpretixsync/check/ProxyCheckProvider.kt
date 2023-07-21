@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.JsonMappingException
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.module.SimpleModule
+import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.readValue
 import eu.pretix.libpretixsync.DummySentryImplementation
 import eu.pretix.libpretixsync.SentryInterface
@@ -18,28 +19,33 @@ import eu.pretix.libpretixsync.serialization.JSONArraySerializer
 import eu.pretix.libpretixsync.serialization.JSONObjectDeserializer
 import eu.pretix.libpretixsync.serialization.JSONObjectSerializer
 import eu.pretix.libpretixsync.utils.NetUtils
-import io.requery.BlockingEntityStore
-import io.requery.Persistable
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
-import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Response
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
 import java.io.IOException
-import java.util.*
 import javax.net.ssl.SSLException
 
-class ProxyCheckProvider(private val config: ConfigStore, httpClientFactory: HttpClientFactory, dataStore: BlockingEntityStore<Persistable>, listId: Long) : TicketCheckProvider {
-    private var sentry: SentryInterface
-    private val listId: Long
+class ProxyCheckProvider(private val config: ConfigStore, httpClientFactory: HttpClientFactory) : TicketCheckProvider {
+    private var sentry: SentryInterface = DummySentryImplementation()
     private val client: OkHttpClient
     private val mapper: ObjectMapper
 
-    fun getSentry(): SentryInterface {
-        return sentry
+    init {
+        client = httpClientFactory.buildClient(NetUtils.ignoreSSLforURL(config.apiUrl))
+        mapper = ObjectMapper()
+        val m = SimpleModule()
+        m.addDeserializer(JSONObject::class.java, JSONObjectDeserializer())
+        m.addDeserializer(JSONArray::class.java, JSONArrayDeserializer())
+        m.addSerializer(JSONObject::class.java, JSONObjectSerializer())
+        m.addSerializer(JSONArray::class.java, JSONArraySerializer())
+        mapper.registerModule(m)
+        mapper.registerModule(KotlinModule())
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
     }
 
     override fun setSentry(sentry: SentryInterface) {
@@ -89,16 +95,26 @@ class ProxyCheckProvider(private val config: ConfigStore, httpClientFactory: Htt
         return body
     }
 
-    override fun check(ticketid: String, answers: List<Answer>?, ignore_unpaid: Boolean, with_badge_data: Boolean, type: TicketCheckProvider.CheckInType): TicketCheckProvider.CheckResult {
+    override fun check(
+        eventsAndCheckinLists: Map<String, Long>,
+        ticketid: String,
+        source_type: String,
+        answers: List<Answer>?,
+        ignore_unpaid: Boolean,
+        with_badge_data: Boolean,
+        type: TicketCheckProvider.CheckInType
+    ): TicketCheckProvider.CheckResult {
         val data: MutableMap<String, Any> = HashMap()
+        data["events_and_checkin_lists"] = eventsAndCheckinLists
         data["ticketid"] = ticketid
         data["answers"] = answers ?: emptyList<Answer>()
         data["ignore_unpaid"] = ignore_unpaid
         data["with_badge_data"] = with_badge_data
+        data["source_type"] = source_type
         data["type"] = type
         return try {
             val request = Request.Builder()
-                    .url(config.apiUrl + "/proxyapi/v1/rpc/" + config.eventSlug + "/" + listId + "/check/")
+                    .url(config.apiUrl + "/proxyapi/v1/rpc/check/")  // todo: does not yet exist
                     .post(mapper.writeValueAsString(data).toRequestBody("application/json".toMediaType()))
                     .header("Authorization", "Device " + config.apiKey)
                     .build()
@@ -118,18 +134,19 @@ class ProxyCheckProvider(private val config: ConfigStore, httpClientFactory: Htt
         }
     }
 
-    override fun check(ticketid: String): TicketCheckProvider.CheckResult {
-        return check(ticketid, ArrayList(), false, true, TicketCheckProvider.CheckInType.ENTRY)
+    override fun check(eventsAndCheckinLists: Map<String, Long>, ticketid: String): TicketCheckProvider.CheckResult {
+        return check(eventsAndCheckinLists, ticketid, "barcode", ArrayList(), false, true, TicketCheckProvider.CheckInType.ENTRY)
     }
 
     @Throws(CheckException::class)
-    override fun search(query: String, page: Int): List<TicketCheckProvider.SearchResult> {
+    override fun search(eventsAndCheckinLists: Map<String, Long>, query: String, page: Int): List<TicketCheckProvider.SearchResult> {
         val data: MutableMap<String, Any> = HashMap()
+        data["events_and_checkin_lists"] = eventsAndCheckinLists
         data["query"] = query
         data["page"] = page
         return try {
             val request = Request.Builder()
-                    .url(config.apiUrl + "/proxyapi/v1/rpc/" + config.eventSlug + "/" + listId + "/search/")
+                    .url(config.apiUrl + "/proxyapi/v1/rpc/search/")
                     .post(mapper.writeValueAsString(data).toRequestBody("application/json".toMediaType()))
                     .header("Authorization", "Device " + config.apiKey)
                     .build()
@@ -148,9 +165,9 @@ class ProxyCheckProvider(private val config: ConfigStore, httpClientFactory: Htt
     }
 
     @Throws(CheckException::class)
-    override fun status(): TicketCheckProvider.StatusResult {
+    override fun status(eventSlug: String, listId: Long): TicketCheckProvider.StatusResult? {
         val request = Request.Builder()
-                .url(config.apiUrl + "/proxyapi/v1/rpc/" + config.eventSlug + "/" + listId + "/status/")
+                .url(config.apiUrl + "/proxyapi/v1/rpc/" + eventSlug + "/" + listId + "/status/")
                 .header("Authorization", "Device " + config.apiKey)
                 .build()
         return try {
@@ -169,19 +186,5 @@ class ProxyCheckProvider(private val config: ConfigStore, httpClientFactory: Htt
             e.printStackTrace()
             throw CheckException(e.message, e)
         }
-    }
-
-    init {
-        sentry = DummySentryImplementation()
-        this.listId = listId
-        client = httpClientFactory.buildClient(NetUtils.ignoreSSLforURL(config.apiUrl))
-        mapper = ObjectMapper()
-        val m = SimpleModule()
-        m.addDeserializer(JSONObject::class.java, JSONObjectDeserializer())
-        m.addDeserializer(JSONArray::class.java, JSONArrayDeserializer())
-        m.addSerializer(JSONObject::class.java, JSONObjectSerializer())
-        m.addSerializer(JSONArray::class.java, JSONArraySerializer())
-        mapper.registerModule(m)
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
     }
 }

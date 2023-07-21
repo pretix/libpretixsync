@@ -30,6 +30,9 @@ public class AbstractOrder implements RemoteObject {
 
     public boolean checkin_attention;
 
+    @Column(value = "false")
+    public boolean valid_if_pending;
+
     @Column(definition = "TEXT")
     public String json_data;
 
@@ -43,6 +46,24 @@ public class AbstractOrder implements RemoteObject {
             e.printStackTrace();
             return false;
         }
+    }
+
+    public boolean isRequireApproval() {
+        try {
+            return getJSON().getBoolean("require_approval");
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean isValidStatus() {
+        if ("p".equals(status)) {
+            return true;
+        } else if ("n".equals(status)) {
+            return valid_if_pending;
+        }
+        return false;
     }
 
     public String getPaymentProvider() {

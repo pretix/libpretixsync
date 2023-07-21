@@ -55,30 +55,39 @@ public class AbstractTaxRule implements RemoteObject {
         }
     }
 
-    public BigDecimal calculateTax(BigDecimal price) {
+    public BigDecimal calculateTaxFromNet(BigDecimal price) {
         MathContext mc = new MathContext(10, RoundingMode.HALF_UP);
+        BigDecimal gross = price
+                .multiply(getRate().divide(new BigDecimal("100.00", mc), mc).add(new BigDecimal("1.00", mc), mc), mc)
+                .setScale(2, RoundingMode.HALF_UP);
+        return gross.subtract(price);
+    }
+
+    public BigDecimal calculateTaxFromGross(BigDecimal price) {
+        MathContext mc = new MathContext(10, RoundingMode.HALF_UP);
+        BigDecimal net = price
+                .subtract(
+                        price.multiply(
+                                new BigDecimal("1.00", mc).subtract(
+                                        (new BigDecimal("100.00", mc)).divide(
+                                                new BigDecimal("100.00", mc).add(getRate(), mc),
+                                                mc
+                                        ),
+                                        mc
+                                ),
+                                mc
+                        ),
+                        mc
+                )
+                .setScale(2, RoundingMode.HALF_UP);
+        return price.subtract(net);
+    }
+
+    public BigDecimal calculateTax(BigDecimal price) {
         if (includesTax()) {
-            BigDecimal net = price
-                    .subtract(
-                            price.multiply(
-                                    new BigDecimal("1.00", mc).subtract(
-                                            (new BigDecimal("100.00", mc)).divide(
-                                                    new BigDecimal("100.00", mc).add(getRate(), mc),
-                                                    mc
-                                            ),
-                                            mc
-                                    ),
-                                    mc
-                            ),
-                            mc
-                    )
-                    .setScale(2, RoundingMode.HALF_UP);
-            return price.subtract(net);
+            return calculateTaxFromGross(price);
         } else {
-            BigDecimal gross = price
-                    .multiply(getRate().divide(new BigDecimal("100.00", mc), mc).add(new BigDecimal("1.00", mc), mc), mc)
-                    .setScale(2, RoundingMode.HALF_UP);
-            return gross.subtract(price);
+            return calculateTaxFromNet(price);
         }
     }
 

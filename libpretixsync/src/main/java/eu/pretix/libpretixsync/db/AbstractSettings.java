@@ -33,6 +33,7 @@ public abstract class AbstractSettings implements RemoteObject {
     public String vat_id;
 
     @Nullable
+    @Column(definition = "TEXT")
     public String pretixpos_additional_receipt_text;
 
     @Nullable
@@ -48,6 +49,7 @@ public abstract class AbstractSettings implements RemoteObject {
     public int covid_certificates_allow_vaccinated_max;
 
     @Nullable
+    @Column(definition = "TEXT")
     public String covid_certificates_allow_vaccinated_products;
 
     @Nullable
@@ -105,6 +107,7 @@ public abstract class AbstractSettings implements RemoteObject {
     public boolean covid_certificates_accept_manual;
 
     @Nullable
+    @Column(definition = "TEXT")
     public String covid_certificates_combination_rules;
 
     @Column(definition = "TEXT")

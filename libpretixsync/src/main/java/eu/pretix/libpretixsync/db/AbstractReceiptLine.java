@@ -3,7 +3,9 @@ package eu.pretix.libpretixsync.db;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Date;
 import java.util.List;
 
@@ -12,11 +14,11 @@ import io.requery.Column;
 import io.requery.Entity;
 import io.requery.ForeignKey;
 import io.requery.Generated;
+import io.requery.Index;
 import io.requery.Key;
 import io.requery.ManyToOne;
 import io.requery.Nullable;
 import io.requery.OneToMany;
-import io.requery.OneToOne;
 
 @Entity(cacheable = false)
 public class AbstractReceiptLine implements LocalObject {
@@ -28,8 +30,11 @@ public class AbstractReceiptLine implements LocalObject {
     public static String TYPE_CHANGE_DIFF = "CHANGE_DIFF";
     public static String TYPE_GIFTCARD_SALE = "GIFTCARD_SALE";
     public static String TYPE_GIFTCARD_REDEMPTION = "GIFTCARD_REDEMPTION";
+    public static String TYPE_GIFTCARD_PAYOUT = "GIFTCARD_PAYOUT";
     public static String TYPE_PAY_ORDER = "PAY_ORDER";
     public static String TYPE_PAY_ORDER_REVERSE = "PAY_ORDER_REVERSE";
+    public static String TYPE_REFUND_ORDER = "REFUND_ORDER";
+    public static String TYPE_NULL = "NULL";
 
     @Generated
     @Key
@@ -37,6 +42,7 @@ public class AbstractReceiptLine implements LocalObject {
 
     @ForeignKey
     @ManyToOne
+    @Index
     public Receipt receipt;
 
     public String type;
@@ -110,6 +116,12 @@ public class AbstractReceiptLine implements LocalObject {
     public String cart_id;
 
     @Nullable
+    public Long gift_card_id;
+
+    @Nullable
+    public String gift_card_secret;
+
+    @Nullable
     public String remote_error;
 
     @Nullable
@@ -118,7 +130,11 @@ public class AbstractReceiptLine implements LocalObject {
     @ForeignKey
     @ManyToOne
     @Nullable
+    @Index
     public ReceiptLine addon_to;
+
+    @Column(value = BuildConfig.BOOLEAN_FALSE)
+    public boolean is_bundled;
 
     @OneToMany
     public List<ReceiptLine> addons;
@@ -147,6 +163,12 @@ public class AbstractReceiptLine implements LocalObject {
     @Nullable
     public String attendee_country;
 
+    @Nullable
+    public String requested_valid_from;
+
+    @Column(nullable = true)
+    public Long use_reusable_medium;
+
     @Override
     public JSONObject toJSON() throws JSONException {
         JSONObject jo = new JSONObject();
@@ -156,13 +178,13 @@ public class AbstractReceiptLine implements LocalObject {
         jo.put("canceled", canceled);
         jo.put("canceled_because_of_receipt", canceled_because_of_receipt);
         jo.put("price_calculated_from_net", price_calculated_from_net);
-        jo.put("listed_price", listed_price);
-        jo.put("price_after_voucher", price_after_voucher);
-        jo.put("custom_price_input", custom_price_input);
+        jo.put("listed_price", listed_price != null ? listed_price.setScale(2, RoundingMode.HALF_UP) : null);
+        jo.put("price_after_voucher", price_after_voucher != null ? price_after_voucher.setScale(2, RoundingMode.HALF_UP) : null);
+        jo.put("custom_price_input", custom_price_input != null ? custom_price_input.setScale(2, RoundingMode.HALF_UP) : null);
         jo.put("voucher_code", voucher_code);
-        jo.put("price", price);
-        jo.put("tax_rate", tax_rate != null ? tax_rate : "0.00");
-        jo.put("tax_value", tax_value != null ? tax_value : "0.00");
+        jo.put("price", price.setScale(2, RoundingMode.HALF_UP));
+        jo.put("tax_rate", tax_rate != null ? tax_rate.setScale(2, RoundingMode.HALF_UP) : "0.00");
+        jo.put("tax_value", tax_value != null ? tax_value.setScale(2, RoundingMode.HALF_UP) : "0.00");
         jo.put("tax_rule", tax_rule != null ? tax_rule : JSONObject.NULL);
         jo.put("secret", secret);
         jo.put("seat", seat_guid != null ? seat_guid : JSONObject.NULL);
@@ -174,7 +196,13 @@ public class AbstractReceiptLine implements LocalObject {
         jo.put("variation", variation_id);
         jo.put("answers", answers);
         jo.put("sale_text", sale_text);
-        jo.put("addon_to", JSONObject.NULL);
+        try {
+            AbstractReceiptLine addon_to = (AbstractReceiptLine) this.getClass().getMethod("getAddon_to", null).invoke(this);  // Accessing addon_to directly does not always work because … requery sucks
+            jo.put("addon_to", addon_to != null ? addon_to.positionid : JSONObject.NULL);
+        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+            e.printStackTrace();
+        }
+        jo.put("is_bundled", is_bundled);
         jo.put("attendee_name", attendee_name);
         jo.put("attendee_email", attendee_email);
         jo.put("attendee_company", attendee_company);
@@ -182,6 +210,10 @@ public class AbstractReceiptLine implements LocalObject {
         jo.put("attendee_zipcode", attendee_zipcode);
         jo.put("attendee_city", attendee_city);
         jo.put("attendee_country", attendee_country);
+        jo.put("requested_valid_from", requested_valid_from);
+        jo.put("use_reusable_medium", use_reusable_medium);
+        jo.put("gift_card", gift_card_id);
+        jo.put("gift_card_secret", gift_card_secret);
         return jo;
     }
 }

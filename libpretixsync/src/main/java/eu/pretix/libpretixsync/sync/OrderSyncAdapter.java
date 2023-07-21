@@ -215,12 +215,12 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
             JSONObject pdfdata = jsonobj.getJSONObject("pdf_data");
             if (pdfdata.has("images")) {
                 JSONObject images = pdfdata.getJSONObject("images");
-                updatePdfImages(obj.getServer_id(), images);
+                updatePdfImages(store, fileStorage, api, obj.getServer_id(), images);
             }
         }
     }
 
-    public void updatePdfImages(Long serverId, JSONObject images) {
+    public static void updatePdfImages(BlockingEntityStore<Persistable> store, FileStorage fileStorage, PretixApi api, Long serverId, JSONObject images) {
         Set<String> seen_etags = new HashSet<>();
         for (Iterator it = images.keys(); it.hasNext(); ) {
             String k = (String) it.next();
@@ -290,6 +290,7 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
         obj.setStatus(jsonobj.getString("status"));
         obj.setEmail(jsonobj.optString("email"));
         obj.setCheckin_attention(jsonobj.optBoolean("checkin_attention"));
+        obj.setValid_if_pending(jsonobj.optBoolean("valid_if_pending", false));
         obj.setJson_data(jsonobj.toString());
         obj.setDeleteAfterTimestamp(0L);
 
@@ -300,7 +301,7 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
         Map<Long, OrderPosition> known = new HashMap<>();
         List<OrderPosition> allPos = store.select(OrderPosition.class)
                 .leftJoin(Order.class).on(Order.ID.eq(OrderPosition.ORDER_ID))
-                .where(Order.ID.eq(obj.getId())).get().toList();
+                .where(OrderPosition.ORDER_ID.eq(obj.getId())).get().toList();
         for (OrderPosition op : allPos) {
             known.put(op.getServer_id(), op);
         }
@@ -541,199 +542,5 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
         }
         store.insert(checkinCreateCache);
         checkinCreateCache.clear();
-    }
-
-    Map<Long, Long> subeventsDeletionDate = new HashMap<>();
-
-    private Long deletionTimeForSubevent(long sid) {
-        if (subeventsDeletionDate.containsKey(sid)) {
-            return subeventsDeletionDate.get(sid);
-        }
-
-        try {
-            new SubEventSyncAdapter(store, eventSlug, String.valueOf(sid), api, syncCycleId, current_action -> {
-            }).download();
-        } catch (RollbackException | JSONException | ApiException e) {
-            subeventsDeletionDate.put(sid, null);
-            return null;
-        }
-
-        SubEvent se = store.select(SubEvent.class).where(SubEvent.SERVER_ID.eq(sid)).get().firstOrNull();
-        if (se == null) {
-            subeventsDeletionDate.put(sid, null);
-            return null;
-        }
-
-        DateTime d = new DateTime(se.getDate_to() != null ? se.getDate_to() : se.getDate_from());
-        long v = d.plus(Duration.standardDays(14)).getMillis();
-        subeventsDeletionDate.put(sid, v);
-        return v;
-    }
-
-    public void deleteOldSubevents() {
-        if (this.subeventId == null || this.subeventId < 1) {
-            return;
-        }
-
-        // To keep the local database small in large event series, we clean out orders that only
-        // affect subevents more than 14 days in the past. However, doing so is not quite simple since
-        // we need to take care of orders changing what subevents they effect. Therefore, we only
-        // filter this server-side on an initial sync (see above). For every subsequent sync,
-        // we still get a full diff of all orders.
-        // After the diff fetch, we iterate over all orders and assign them a deletion date if they
-        // currently do not have one.
-        // Since we don't sync all subevents routinely, we fetch all subevents that we see for current
-        // information and cache it in the subeventsDeletionDate map.
-        // We then delete everything that is past its deletion date.
-        // Further above, in updateObject(), we *always* reset the deletion date to 0 for anything
-        // that's in the diff. This way, we can be sure to "un-delete" orders when they are changed
-        // -- or when the subevent date is changed, which triggers all orders to be in the diff.
-        int ordercount = store.count(Order.class)
-                .where(Order.EVENT_SLUG.eq(eventSlug))
-                .and(Order.DELETE_AFTER_TIMESTAMP.isNull().or(Order.DELETE_AFTER_TIMESTAMP.lt(1L)))
-                .get().value();
-
-        int done = 0;
-
-        if (feedback != null) {
-            feedback.postFeedback("Checking for old " + getResourceName() + " (" + done + "/" + ordercount + ") …");
-        }
-
-        while (true) {
-            List<Order> orders = store.select(Order.class)
-                    .where(Order.EVENT_SLUG.eq(eventSlug))
-                    .and(Order.DELETE_AFTER_TIMESTAMP.isNull().or(Order.DELETE_AFTER_TIMESTAMP.lt(1L)))
-                    .limit(100)
-                    .get().toList();
-            if (orders.size() == 0) {
-                break;
-            }
-
-            for (Order o : orders) {
-
-                Long deltime = null;
-                try {
-                    JSONArray pos = o.getJSON().getJSONArray("positions");
-                    if (pos.length() == 0) {
-                        deltime = System.currentTimeMillis();
-                    }
-                    for (int i = 0; i < pos.length(); i++) {
-                        JSONObject p = pos.getJSONObject(i);
-                        if (p.isNull("subevent")) {
-                            deltime = System.currentTimeMillis() + 1000 * 3600 * 24 * 365 * 20;  // should never happen, if it does, don't delete this any time soon
-                            break;
-                        }
-                        Long thisDeltime = deletionTimeForSubevent(p.getLong("subevent"));
-                        if (thisDeltime != null) {
-                            if (deltime == null) {
-                                deltime = thisDeltime;
-                            } else {
-                                deltime = Math.max(deltime, thisDeltime);
-                            }
-                        }
-                    }
-                } catch (JSONException e) {
-                    break;
-                }
-                if (deltime == null) {
-                    continue;
-                }
-                o.setDeleteAfterTimestamp(deltime);
-                store.update(o);
-                done++;
-                if (done % 50 == 0) {
-                    if (feedback != null) {
-                        feedback.postFeedback("Checking for old " + getResourceName() + " (" + done + "/" + ordercount + ") …");
-                    }
-                }
-            }
-        }
-
-        if (feedback != null) {
-            feedback.postFeedback("Deleting old " + getResourceName() + "…");
-        }
-        int deleted = 0;
-        while (true) {
-            List<Tuple> ordersToDelete = store.select(Order.ID).where(Order.DELETE_AFTER_TIMESTAMP.lt(System.currentTimeMillis()).and(Order.DELETE_AFTER_TIMESTAMP.gt(1L))).and(Order.ID.notIn(store.select(OrderPosition.ORDER_ID).from(OrderPosition.class).where(OrderPosition.SUBEVENT_ID.eq(this.subeventId)))).limit(200).get().toList();
-            if (ordersToDelete.size() == 0) {
-                break;
-            }
-            List<Long> idsToDelete = new ArrayList<>();
-            for (Tuple t : ordersToDelete) {
-                idsToDelete.add(t.get(0));
-            }
-            // sqlite foreign keys are created with `on delete cascade`, so order positions and checkins are handled automatically
-            deleted += store.delete(Order.class).where(Order.ID.in(idsToDelete)).get().value();
-            if (feedback != null) {
-                feedback.postFeedback("Deleting old " + getResourceName() + " (" + deleted + ")…");
-            }
-        }
-    }
-
-    Map<String, Long> eventsDeletionDate = new HashMap<>();
-
-    private Long deletionTimeForEvent(String slug) {
-        if (eventsDeletionDate.containsKey(slug)) {
-            return eventsDeletionDate.get(slug);
-        }
-
-        Event e = store.select(Event.class).where(Event.SLUG.eq(slug)).get().firstOrNull();
-        if (e == null) {
-            return null;
-        }
-
-        DateTime d = new DateTime(e.getDate_to() != null ? e.getDate_to() : e.getDate_from());
-        long v = d.plus(Duration.standardDays(14)).getMillis();
-        eventsDeletionDate.put(slug, v);
-        return v;
-    }
-
-    public void deleteOldEvents(List<String> keepSlugs) {
-        if (feedback != null) {
-            feedback.postFeedback("Deleting " + getResourceName() + " of old events…");
-        }
-
-        List<Tuple> tuples = store.select(Order.EVENT_SLUG)
-                .from(Order.class)
-                .where(Order.EVENT_SLUG.notIn(keepSlugs))
-                .groupBy(Order.EVENT_SLUG)
-                .orderBy(Order.EVENT_SLUG)
-                .get().toList();
-        int deleted = 0;
-        for (Tuple t : tuples) {
-            String slug = t.get(0);
-            Long deletionDate = deletionTimeForEvent(slug);
-            if (deletionDate == null || deletionDate < System.currentTimeMillis()) {
-                store.delete(ResourceSyncStatus.class).where(ResourceSyncStatus.RESOURCE.like("order%")).and(ResourceSyncStatus.EVENT_SLUG.eq(slug));
-                while (true) {
-                    List<Tuple> ordersToDelete = store.select(Order.ID).where(Order.EVENT_SLUG.eq(slug)).limit(200).get().toList();
-                    if (ordersToDelete.size() == 0) {
-                        break;
-                    }
-                    List<Long> idsToDelete = new ArrayList<>();
-                    for (Tuple t2 : ordersToDelete) {
-                        idsToDelete.add(t2.get(0));
-                    }
-                    // sqlite foreign keys are created with `on delete cascade`, so order positions and checkins are handled automatically
-                    deleted += store.delete(Order.class).where(Order.ID.in(idsToDelete)).get().value();
-                    if (feedback != null) {
-                        feedback.postFeedback("Deleting " + getResourceName() + " of old events (" + deleted + ")…");
-                    }
-                }
-            }
-        }
-    }
-
-    public void deleteOldPdfImages() {
-        store.delete(CachedPdfImage.class).where(
-                CachedPdfImage.ORDERPOSITION_ID.notIn(store.select(OrderPosition.SERVER_ID).from(OrderPosition.class))
-        );
-        for (String filename : fileStorage.listFiles((file, s) -> s.startsWith("pdfimage_"))) {
-            String namebase = filename.split("\\.")[0];
-            String etag = namebase.split("_")[1];
-            if (store.count(CachedPdfImage.class).where(CachedPdfImage.ETAG.eq(etag)).get().value() == 0) {
-                fileStorage.delete(filename);
-            }
-        }
     }
 }

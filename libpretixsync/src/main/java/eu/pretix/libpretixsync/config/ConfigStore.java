@@ -2,6 +2,9 @@ package eu.pretix.libpretixsync.config;
 
 import org.json.JSONObject;
 
+import java.util.List;
+import java.util.Set;
+
 public interface ConfigStore {
 
     public boolean isDebug();
@@ -32,11 +35,13 @@ public interface ConfigStore {
 
     public String getOrganizerSlug();
 
-    public String getEventSlug();
-
     public String getSyncCycleId();
 
-    public Long getSubEventId();
+    public List<String> getSynchronizedEvents();
+
+    public Long getSelectedSubeventForEvent(String event);
+
+    public Long getSelectedCheckinListForEvent(String event);
 
     public long getLastDownload();
 
@@ -65,4 +70,8 @@ public interface ConfigStore {
     public Long getKnownPretixVersion();
 
     public Boolean getAutoSwitchRequested();
+
+    public Set<String> getKnownLiveEventSlugs();
+
+    public void setKnownLiveEventSlugs(Set<String> slugs);
 }

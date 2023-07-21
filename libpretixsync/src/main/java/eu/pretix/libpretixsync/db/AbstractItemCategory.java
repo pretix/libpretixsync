@@ -1,5 +1,8 @@
 package eu.pretix.libpretixsync.db;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import eu.pretix.libpretixsync.utils.I18nString;
 import io.requery.Column;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -28,5 +31,15 @@ public class AbstractItemCategory implements RemoteObject {
     @Override
     public JSONObject getJSON() throws JSONException {
         return new JSONObject(json_data);
+    }
+
+    @JsonIgnore
+    public String getName() {
+        try {
+            return I18nString.toString(getJSON().getJSONObject("name"));
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return "";
+        }
     }
 }

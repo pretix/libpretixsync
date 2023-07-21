@@ -10,9 +10,9 @@ import org.json.JSONObject;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
-import java.util.Set;
 
 import eu.pretix.libpretixsync.utils.I18nString;
 
@@ -63,6 +63,21 @@ public class AbstractItem implements RemoteObject {
     }
 
     @JsonIgnore
+    public boolean isPersonalized() {
+        try {
+            JSONObject j = getJSON();
+            if (j.has("personalized")) {
+                return j.getBoolean("personalized");
+            } else {
+                return admission;
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return true;
+        }
+    }
+
+    @JsonIgnore
     public String getInternalName() {
         try {
             String internal = getJSON().optString("internal_name");
@@ -90,6 +105,16 @@ public class AbstractItem implements RemoteObject {
     public boolean isGiftcard() {
         try {
             return getJSON().getBoolean("issue_giftcard");
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    @JsonIgnore
+    public boolean isRequireBundling() {
+        try {
+            return getJSON().getBoolean("require_bundling");
         } catch (JSONException e) {
             e.printStackTrace();
             return false;
@@ -139,6 +164,19 @@ public class AbstractItem implements RemoteObject {
     }
 
     @JsonIgnore
+    public boolean hasFreePrice() {
+        try {
+            if (getJSON().isNull("free_price")) {
+                return false;
+            }
+            return getJSON().getBoolean("free_price");
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    @JsonIgnore
     public boolean isGenerateTickets() {
         try {
             if (getJSON().isNull("generate_tickets")) {
@@ -180,6 +218,49 @@ public class AbstractItem implements RemoteObject {
             return true;
         }
     }
+
+    @JsonIgnore
+    public boolean hasDynamicValidityWithCustomStart() {
+        try {
+            JSONObject jo = getJSON();
+            if (!jo.optString("validity_mode", "").equals("dynamic")) {
+                return false;
+            }
+            return jo.optBoolean("validity_dynamic_start_choice", false);
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    @JsonIgnore
+    public boolean hasDynamicValidityWithTimeOfDay() {
+        try {
+            JSONObject jo = getJSON();
+            if ((!jo.isNull("validity_dynamic_duration_months") && jo.optLong("validity_dynamic_duration_months", 0) > 0) || (!jo.isNull("validity_dynamic_duration_days") && jo.optLong("validity_dynamic_duration_days", 0) > 0)) {
+                return false;
+            }
+            return true;
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    @JsonIgnore
+    public Long dynamicValidityDayLimit() {
+        try {
+            JSONObject jo = getJSON();
+            if (jo.has("validity_dynamic_start_choice_day_limit") && !jo.isNull("validity_dynamic_start_choice_day_limit")) {
+                return jo.getLong("validity_dynamic_start_choice_day_limit");
+            }
+            return null;
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
 
     public boolean availableByTime() {
         try {
@@ -237,6 +318,7 @@ public class AbstractItem implements RemoteObject {
             v.setAvailable_until(variation.optString("available_until"));
             v.setSales_channels(variation.optJSONArray("sales_channels"));
             v.setHide_without_voucher(variation.optBoolean("hide_without_voucher", false));
+            v.setCheckin_attention(variation.optBoolean("checkin_attention", false));
             l.add(v);
         }
         return l;
@@ -249,5 +331,74 @@ public class AbstractItem implements RemoteObject {
             }
         }
         return null;
+    }
+
+    public List<ItemAddOn> getAddons() throws JSONException {
+        List<ItemAddOn> l = new ArrayList<>();
+        JSONArray objects = getJSON().getJSONArray("addons");
+        for (int i = 0; i < objects.length(); i++) {
+            JSONObject obj = objects.getJSONObject(i);
+            ItemAddOn v = new ItemAddOn();
+            v.setAddonCategoryId(obj.getLong("addon_category"));
+            v.setMinCount(obj.getInt("min_count"));
+            v.setMaxCount(obj.getInt("max_count"));
+            v.setPosition(obj.getInt("position"));
+            v.setMultiAllowed(obj.getBoolean("multi_allowed"));
+            v.setPriceIncluded(obj.getBoolean("price_included"));
+            l.add(v);
+        }
+        Collections.sort(l, Comparator.comparingInt(ItemAddOn::getPosition));
+        return l;
+    }
+
+    public List<ItemBundle> getBundles() throws JSONException {
+        List<ItemBundle> l = new ArrayList<>();
+        JSONArray objects = getJSON().getJSONArray("bundles");
+        for (int i = 0; i < objects.length(); i++) {
+            JSONObject obj = objects.getJSONObject(i);
+            ItemBundle v = new ItemBundle();
+            v.setBundledItemId(obj.getLong("bundled_item"));
+            v.setBundledVariationId(obj.isNull("bundled_variation") ? null : obj.getLong("bundled_variation"));
+            v.setCount(obj.getInt("count"));
+            v.setDesignatedPrice(obj.isNull("designated_price") ? null : new BigDecimal(obj.getString("designated_price")));
+            l.add(v);
+        }
+        return l;
+    }
+
+    public enum MediaPolicy {
+        NONE,
+        REUSE,
+        NEW,
+        REUSE_OR_NEW,
+    }
+
+    @JsonIgnore
+    public MediaPolicy getMediaPolicy() {
+        try {
+            String mp = getJSON().optString("media_policy");
+            if (mp == null) return MediaPolicy.NONE;
+            if (mp.equals("reuse")) return MediaPolicy.REUSE;
+            if (mp.equals("new")) return MediaPolicy.NEW;
+            if (mp.equals("reuse_or_new")) return MediaPolicy.REUSE_OR_NEW;
+            return MediaPolicy.NONE;
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return MediaPolicy.NONE;
+        }
+    }
+
+    @JsonIgnore
+    public ReusableMediaType getMediaType() {
+        try {
+            String mp = getJSON().optString("media_type");
+            if (mp == null) return ReusableMediaType.NONE;
+            if (mp.equals("barcode")) return ReusableMediaType.BARCODE;
+            if (mp.equals("nfc_uid")) return ReusableMediaType.NFC_UID;
+            return ReusableMediaType.UNSUPPORTED;
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return ReusableMediaType.NONE;
+        }
     }
 }

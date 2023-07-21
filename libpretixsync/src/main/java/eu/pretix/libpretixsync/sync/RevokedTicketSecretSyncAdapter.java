@@ -1,6 +1,5 @@
 package eu.pretix.libpretixsync.sync;
 
-import org.joda.time.format.ISODateTimeFormat;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -15,7 +14,6 @@ import eu.pretix.libpretixsync.api.PretixApi;
 import eu.pretix.libpretixsync.api.ResourceNotModified;
 import eu.pretix.libpretixsync.db.ResourceSyncStatus;
 import eu.pretix.libpretixsync.db.RevokedTicketSecret;
-import eu.pretix.libpretixsync.db.SubEvent;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
 import io.requery.query.Tuple;
@@ -93,7 +91,7 @@ public class RevokedTicketSecretSyncAdapter extends BaseDownloadSyncAdapter<Revo
 
     @Override
     protected String getUrl() {
-        return api.eventResourceUrl(getResourceName());
+        return api.eventResourceUrl(eventSlug, getResourceName());
     }
 
     @Override

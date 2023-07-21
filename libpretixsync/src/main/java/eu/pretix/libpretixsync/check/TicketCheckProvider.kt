@@ -30,8 +30,8 @@ interface TicketCheckProvider {
 
     class CheckResult {
         enum class Type {
-            INVALID, VALID, USED, ERROR, UNPAID, CANCELED, PRODUCT, RULES, ANSWERS_REQUIRED,
-            AMBIGUOUS, REVOKED
+            INVALID, VALID, USED, ERROR, UNPAID, BLOCKED, INVALID_TIME, CANCELED, PRODUCT, RULES,
+            ANSWERS_REQUIRED, AMBIGUOUS, REVOKED
         }
 
         var type: Type? = null
@@ -50,6 +50,7 @@ interface TicketCheckProvider {
         var isCheckinAllowed = false
         var requiredAnswers: List<RequiredAnswer>? = null
         var position: JSONObject? = null
+        var eventSlug: String? = null
 
         constructor(type: Type?, message: String?) {
             this.type = type
@@ -125,13 +126,13 @@ interface TicketCheckProvider {
     class StatusResult(var eventName: String?, var totalTickets: Int, var alreadyScanned: Int, var currentlyInside: Int?, var items: List<StatusResultItem>?) {
     }
 
-    fun check(ticketid: String, answers: List<Answer>?, ignore_unpaid: Boolean, with_badge_data: Boolean, type: CheckInType): CheckResult
-    fun check(ticketid: String): CheckResult
+    fun check(eventsAndCheckinLists: Map<String, Long>, ticketid: String, source_type: String, answers: List<Answer>?, ignore_unpaid: Boolean, with_badge_data: Boolean, type: CheckInType): CheckResult
+    fun check(eventsAndCheckinLists: Map<String, Long>, ticketid: String): CheckResult
     @Throws(CheckException::class)
-    fun search(query: String, page: Int): List<SearchResult>
+    fun search(eventsAndCheckinLists: Map<String, Long>, query: String, page: Int): List<SearchResult>
 
     @Throws(CheckException::class)
-    fun status(): StatusResult?
+    fun status(eventSlug: String, listId: Long): StatusResult?
 
     fun setSentry(sentry: SentryInterface)
 }

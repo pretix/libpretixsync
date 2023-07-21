@@ -5,6 +5,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -80,9 +81,9 @@ public class AbstractClosing implements LocalObject {
         jo.put("closing_id", id);
         jo.put("first_receipt", first_receipt);
         jo.put("last_receipt", last_receipt);
-        jo.put("payment_sum", payment_sum);
-        jo.put("payment_sum_cash", payment_sum_cash);
-        jo.put("cash_counted", cash_counted);
+        jo.put("payment_sum", payment_sum.setScale(2, RoundingMode.HALF_UP));
+        jo.put("payment_sum_cash", payment_sum_cash.setScale(2, RoundingMode.HALF_UP));
+        jo.put("cash_counted", cash_counted.setScale(2, RoundingMode.HALF_UP));
         jo.put("datetime", df.format(datetime));
         jo.put("invoice_settings", invoice_settings);
         jo.put("cashier", cashier_numericid);

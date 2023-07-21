@@ -41,7 +41,7 @@ public abstract class BaseSingleObjectSyncAdapter<T extends RemoteObject & Persi
     @Override
     public void download() throws JSONException, ApiException {
         if (feedback != null) {
-            feedback.postFeedback("Downloading " + getResourceName() + "…");
+            feedback.postFeedback("Downloading " + getResourceName() + " ["+ eventSlug + "] …");
         }
         try {
             JSONObject data = downloadRawData();
@@ -87,7 +87,7 @@ public abstract class BaseSingleObjectSyncAdapter<T extends RemoteObject & Persi
     public abstract void updateObject(T obj, JSONObject jsonobj) throws JSONException;
 
     protected String getUrl() {
-        return api.eventResourceUrl(getResourceName() + "/" + key);
+        return api.eventResourceUrl(eventSlug, getResourceName() + "/" + key);
     }
 
     protected JSONObject downloadRawData() throws ApiException, ResourceNotModified {
