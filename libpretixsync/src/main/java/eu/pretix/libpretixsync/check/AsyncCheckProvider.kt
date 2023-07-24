@@ -341,7 +341,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
                 if (answerMap.containsKey(q.getServer_id())) {
                     answer = answerMap[q.getServer_id()]
                     try {
-                        answer = q.clean_answer(answer, q.options)
+                        answer = q.clean_answer(answer, q.options, false)
                         val jo = JSONObject()
                         jo.put("answer", answer)
                         jo.put("question", q.getServer_id())
@@ -675,7 +675,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
                 if (answerMap.containsKey(q.getServer_id())) {
                     answer = answerMap[q.getServer_id()]
                     try {
-                        answer = q.clean_answer(answer, q.options)
+                        answer = q.clean_answer(answer, q.options, false)
                         val jo = JSONObject()
                         jo.put("answer", answer)
                         jo.put("question", q.getServer_id())
