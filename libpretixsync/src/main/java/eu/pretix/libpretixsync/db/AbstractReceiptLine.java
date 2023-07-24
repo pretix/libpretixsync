@@ -163,6 +163,16 @@ public class AbstractReceiptLine implements LocalObject {
     @Nullable
     public String attendee_country;
 
+    public boolean hasAttendeeData() {
+        return (attendee_name != null && !attendee_name.isEmpty())
+            || (attendee_email != null && !attendee_email.isEmpty())
+            || (attendee_company != null && !attendee_company.isEmpty())
+            || (attendee_street != null && !attendee_street.isEmpty())
+            || (attendee_zipcode != null && !attendee_zipcode.isEmpty())
+            || (attendee_city != null && !attendee_city.isEmpty())
+            || (attendee_country != null && !attendee_country.isEmpty());
+    }
+
     @Nullable
     public String requested_valid_from;
 
