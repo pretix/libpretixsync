@@ -263,7 +263,7 @@ public class SyncManager {
     private void bumpKnownVersion() {
         try {
             JSONObject newInfo = app_info != null ? app_info : configStore.getDeviceKnownInfo();
-            if (app_version != configStore.getDeviceKnownVersion() || !JSONUtils.similar(newInfo, configStore.getDeviceKnownInfo()) || true) {
+            if (app_version != configStore.getDeviceKnownVersion() || !JSONUtils.similar(newInfo, configStore.getDeviceKnownInfo())) {
                 JSONObject apiBody = new JSONObject();
                 apiBody.put("hardware_brand", hardware_brand);
                 apiBody.put("hardware_model", hardware_model);
