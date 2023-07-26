@@ -45,9 +45,9 @@ public abstract class QuestionLike {
 
     public List<String> getDependencyValues() { return new ArrayList<>(); }
 
-    public String clean_answer(String answer, List<QuestionOption> opts) throws AbstractQuestion.ValidationException {
+    public String clean_answer(String answer, List<QuestionOption> opts, boolean allAnswersAreOptional) throws ValidationException {
         QuestionType type = getType();
-        if (requiresAnswer()) {
+        if (!allAnswersAreOptional && requiresAnswer()) {
             if (type == QuestionType.B) {
                 if (!answer.equals("True") && !answer.equals("true")) {
                     throw new ValidationException("Question is required");
