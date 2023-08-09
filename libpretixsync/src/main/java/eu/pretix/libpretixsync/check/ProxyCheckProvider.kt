@@ -102,7 +102,8 @@ class ProxyCheckProvider(private val config: ConfigStore, httpClientFactory: Htt
         answers: List<Answer>?,
         ignore_unpaid: Boolean,
         with_badge_data: Boolean,
-        type: TicketCheckProvider.CheckInType
+        type: TicketCheckProvider.CheckInType,
+        nonce: String?
     ): TicketCheckProvider.CheckResult {
         val data: MutableMap<String, Any> = HashMap()
         data["events_and_checkin_lists"] = eventsAndCheckinLists
@@ -112,6 +113,9 @@ class ProxyCheckProvider(private val config: ConfigStore, httpClientFactory: Htt
         data["with_badge_data"] = with_badge_data
         data["source_type"] = source_type
         data["type"] = type
+        if (nonce != null) {
+            data["nonce"] = nonce
+        }
         return try {
             val request = Request.Builder()
                     .url(config.apiUrl + "/proxyapi/v1/rpc/check/")  // todo: does not yet exist
