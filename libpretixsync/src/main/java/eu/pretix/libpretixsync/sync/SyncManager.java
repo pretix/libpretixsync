@@ -722,9 +722,9 @@ public class SyncManager {
                 }
                 if (qci.getDatetime_string() == null || qci.getDatetime_string().equals("")) {
                     // Backwards compatibility
-                    ar = api.redeem(qci.getEvent_slug(), qci.getSecret(), qci.getDatetime(), true, qci.getNonce(), answers, qci.checkinListId, false, false, qci.getType(), st);
+                    ar = api.redeem(qci.getEvent_slug(), qci.getSecret(), qci.getDatetime(), true, qci.getNonce(), answers, qci.checkinListId, false, false, qci.getType(), st, null);
                 } else {
-                    ar = api.redeem(qci.getEvent_slug(), qci.getSecret(), qci.getDatetime_string(), true, qci.getNonce(), answers, qci.checkinListId, false, false, qci.getType(), st);
+                    ar = api.redeem(qci.getEvent_slug(), qci.getSecret(), qci.getDatetime_string(), true, qci.getNonce(), answers, qci.checkinListId, false, false, qci.getType(), st, null);
                 }
                 if (connectivityFeedback != null) {
                     connectivityFeedback.recordSuccess(System.currentTimeMillis() - startedAt);

@@ -21,12 +21,15 @@ import org.json.JSONException
 import org.json.JSONObject
 import java.io.File
 import java.io.IOException
+import java.io.InterruptedIOException
 import java.io.UnsupportedEncodingException
 import java.net.MalformedURLException
+import java.net.SocketTimeoutException
 import java.net.URL
 import java.net.URLEncoder
 import java.nio.charset.Charset
 import java.util.*
+import java.util.concurrent.TimeUnit
 import javax.net.ssl.SSLPeerUnverifiedException
 
 open class PretixApi(url: String, key: String, orgaSlug: String, version: Int, httpClientFactory: HttpClientFactory, val acceptLanguage: String? = null) {
@@ -40,16 +43,16 @@ open class PretixApi(url: String, key: String, orgaSlug: String, version: Int, h
     inner class ApiResponse(val data: JSONObject?, val response: Response)
 
     @Throws(ApiException::class, JSONException::class)
-    fun redeem(eventSlug: String, secret: String, datetime: Date?, force: Boolean, nonce: String?, answers: List<Answer>?, listId: Long, ignore_unpaid: Boolean, pdf_data: Boolean, type: String?, source_type: String?): ApiResponse {
+    fun redeem(eventSlug: String, secret: String, datetime: Date?, force: Boolean, nonce: String?, answers: List<Answer>?, listId: Long, ignore_unpaid: Boolean, pdf_data: Boolean, type: String?, source_type: String?, callTimeout: Long? = null): ApiResponse {
         var dt: String? = null
         if (datetime != null) {
             dt = QueuedCheckIn.formatDatetime(datetime)
         }
-        return redeem(eventSlug, secret, dt, force, nonce, answers, listId, ignore_unpaid, pdf_data, type, source_type)
+        return redeem(eventSlug, secret, dt, force, nonce, answers, listId, ignore_unpaid, pdf_data, type, source_type, callTimeout)
     }
 
     @Throws(ApiException::class, JSONException::class)
-    open fun redeem(eventSlug: String, secret: String, datetime: String?, force: Boolean, nonce: String?, answers: List<Answer>?, listId: Long, ignore_unpaid: Boolean, pdf_data: Boolean, type: String?, source_type: String?): ApiResponse {
+    open fun redeem(eventSlug: String, secret: String, datetime: String?, force: Boolean, nonce: String?, answers: List<Answer>?, listId: Long, ignore_unpaid: Boolean, pdf_data: Boolean, type: String?, source_type: String?, callTimeout: Long? = null): ApiResponse {
         val body = JSONObject()
         if (datetime != null) {
             body.put("datetime", datetime)
@@ -83,20 +86,20 @@ open class PretixApi(url: String, key: String, orgaSlug: String, version: Int, h
         if (pdf_data) {
             pd = "?pdf_data=true"
         }
-        return postResource(eventResourceUrl(eventSlug, "checkinlists/" + listId + "/positions/" + URLFragmentEncoder.STRICT.encode(secret, Charset.forName("UTF-8")) + "/redeem") + pd, body)
+        return postResource(eventResourceUrl(eventSlug, "checkinlists/" + listId + "/positions/" + URLFragmentEncoder.STRICT.encode(secret, Charset.forName("UTF-8")) + "/redeem") + pd, body, null, callTimeout = callTimeout)
     }
 
     @Throws(ApiException::class, JSONException::class)
-    fun redeem(lists: List<Long>, secret: String, datetime: Date?, force: Boolean, nonce: String?, answers: List<Answer>?, ignore_unpaid: Boolean, pdf_data: Boolean, type: String?): ApiResponse {
+    fun redeem(lists: List<Long>, secret: String, datetime: Date?, force: Boolean, nonce: String?, answers: List<Answer>?, ignore_unpaid: Boolean, pdf_data: Boolean, type: String?, callTimeout: Long? = null): ApiResponse {
         var dt: String? = null
         if (datetime != null) {
             dt = QueuedCheckIn.formatDatetime(datetime)
         }
-        return redeem(lists, secret, dt, force, nonce, answers, ignore_unpaid, pdf_data, type)
+        return redeem(lists, secret, dt, force, nonce, answers, ignore_unpaid, pdf_data, type, callTimeout)
     }
 
     @Throws(ApiException::class, JSONException::class)
-    open fun redeem(lists: List<Long>, secret: String, datetime: String?, force: Boolean, nonce: String?, answers: List<Answer>?, ignore_unpaid: Boolean, pdf_data: Boolean, type: String?): ApiResponse {
+    open fun redeem(lists: List<Long>, secret: String, datetime: String?, force: Boolean, nonce: String?, answers: List<Answer>?, ignore_unpaid: Boolean, pdf_data: Boolean, type: String?, callTimeout: Long? = null): ApiResponse {
         val body = JSONObject()
         if (datetime != null) {
             body.put("datetime", datetime)
@@ -135,7 +138,7 @@ open class PretixApi(url: String, key: String, orgaSlug: String, version: Int, h
         if (pdf_data) {
             pd = "?pdf_data=true"
         }
-        return postResource(organizerResourceUrl("checkinrpc/redeem") + pd, body)
+        return postResource(organizerResourceUrl("checkinrpc/redeem") + pd, body, null, callTimeout = callTimeout)
     }
 
     @Throws(ApiException::class)
@@ -226,7 +229,7 @@ open class PretixApi(url: String, key: String, orgaSlug: String, version: Int, h
     }
 
     @Throws(ApiException::class)
-    open fun patchResource(full_url: String?, data: JSONObject, idempotency_key: String?): ApiResponse {
+    open fun patchResource(full_url: String?, data: JSONObject, idempotency_key: String?, callTimeout: Long? = null): ApiResponse {
         var request = Request.Builder()
                 .url(full_url!!)
                 .patch(data.toString().toRequestBody("application/json".toMediaType()))
@@ -238,7 +241,7 @@ open class PretixApi(url: String, key: String, orgaSlug: String, version: Int, h
             request = request.header("X-Idempotency-Key", idempotency_key)
         }
         return try {
-            apiCall(request.build())
+            apiCall(request.build(), callTimeout = callTimeout)
         } catch (resourceNotModified: ResourceNotModified) {
             resourceNotModified.printStackTrace()
             throw FinalApiException("Resource not modified")
@@ -256,12 +259,22 @@ open class PretixApi(url: String, key: String, orgaSlug: String, version: Int, h
     }
 
     @Throws(ApiException::class)
-    fun postResource(full_url: String, data: JSONObject, idempotency_key: String?): ApiResponse {
-        return postResource(full_url, data.toString(), idempotency_key)
+    fun postResource(full_url: String, data: JSONObject, idempotency_key: String?, callTimeout: Long? = null): ApiResponse {
+        return postResource(full_url, data.toString(), idempotency_key, callTimeout)
     }
 
     @Throws(ApiException::class)
-    open fun postResource(full_url: String, data: String, idempotency_key: String?): ApiResponse {
+    fun postResource(full_url: String, data: JSONObject, idempotency_key: String?): ApiResponse {
+        return postResource(full_url, data.toString(), idempotency_key, null)
+    }
+
+    @Throws(ApiException::class)
+    fun postResource(full_url: String, data: String, idempotency_key: String?): ApiResponse {
+        return postResource(full_url, data, idempotency_key, null)
+    }
+
+    @Throws(ApiException::class)
+    open fun postResource(full_url: String, data: String, idempotency_key: String?, callTimeout: Long? = null): ApiResponse {
         var request = Request.Builder()
                 .url(full_url)
                 .post(data.toRequestBody("application/json".toMediaType()))
@@ -273,7 +286,7 @@ open class PretixApi(url: String, key: String, orgaSlug: String, version: Int, h
             request = request.header("X-Idempotency-Key", idempotency_key)
         }
         return try {
-            apiCall(request.build())
+            apiCall(request.build(), callTimeout = callTimeout)
         } catch (resourceNotModified: ResourceNotModified) {
             resourceNotModified.printStackTrace()
             throw FinalApiException("Resource not modified")
@@ -316,21 +329,42 @@ open class PretixApi(url: String, key: String, orgaSlug: String, version: Int, h
     }
 
     @Throws(ApiException::class, ResourceNotModified::class)
-    private fun apiCall(request: Request, json: Boolean = true, is_retry: Boolean=false): ApiResponse {
+    private fun apiCall(
+        request: Request,
+        json: Boolean = true,
+        is_retry: Boolean = false,
+        callTimeout: Long? = null
+    ): ApiResponse {
         val response: Response
+        val httpClient = if (callTimeout != null) {
+            client.newBuilder()
+                .connectTimeout(callTimeout, TimeUnit.MILLISECONDS)
+                .readTimeout(callTimeout, TimeUnit.MILLISECONDS)
+                .writeTimeout(callTimeout, TimeUnit.MILLISECONDS)
+                .callTimeout(callTimeout, TimeUnit.MILLISECONDS)
+                .build()
+        } else {
+            client
+        }
         response = try {
-            client.newCall(request).execute()
+            httpClient.newCall(request).execute()
         } catch (e: SSLPeerUnverifiedException) {
             if (!is_retry) {
                 // On Windows, we occasionally see SSL errors after a long period of idle. We didn't fully figure
                 // it out, but it seems to be because it tries to reuse a SSL socket that the server already closed.
                 // We assume it's safe to retry in all cases since the verification happens before any payload
                 // reaches the server.
-                client.connectionPool.evictAll()
-                return apiCall(request, json, is_retry)
+                httpClient.connectionPool.evictAll()
+                return apiCall(request, json, is_retry, callTimeout)
             }
             e.printStackTrace()
             throw ApiException("Error while creating a secure connection.", e)
+        } catch (e: SocketTimeoutException) {
+            e.printStackTrace()
+            throw TimeoutApiException("Connection error: " + e.message, e)
+        } catch (e: InterruptedIOException) {
+            e.printStackTrace()
+            throw TimeoutApiException("Connection error: " + e.message, e)
         } catch (e: IOException) {
             e.printStackTrace()
             throw ApiException("Connection error: " + e.message, e)

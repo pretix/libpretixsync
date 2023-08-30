@@ -51,14 +51,17 @@ interface TicketCheckProvider {
         var requiredAnswers: List<RequiredAnswer>? = null
         var position: JSONObject? = null
         var eventSlug: String? = null
+        var offline: Boolean = false
 
-        constructor(type: Type?, message: String?) {
+        constructor(type: Type?, message: String?, offline: Boolean = false) {
             this.type = type
             this.message = message
+            this.offline = offline
         }
 
-        constructor(type: Type?) {
+        constructor(type: Type?, offline: Boolean = false) {
             this.type = type
+            this.offline = offline
         }
 
         constructor() {  // required for de-serialization
@@ -126,7 +129,7 @@ interface TicketCheckProvider {
     class StatusResult(var eventName: String?, var totalTickets: Int, var alreadyScanned: Int, var currentlyInside: Int?, var items: List<StatusResultItem>?) {
     }
 
-    fun check(eventsAndCheckinLists: Map<String, Long>, ticketid: String, source_type: String, answers: List<Answer>?, ignore_unpaid: Boolean, with_badge_data: Boolean, type: CheckInType): CheckResult
+    fun check(eventsAndCheckinLists: Map<String, Long>, ticketid: String, source_type: String, answers: List<Answer>?, ignore_unpaid: Boolean, with_badge_data: Boolean, type: CheckInType, nonce: String? = null): CheckResult
     fun check(eventsAndCheckinLists: Map<String, Long>, ticketid: String): CheckResult
     @Throws(CheckException::class)
     fun search(eventsAndCheckinLists: Map<String, Long>, query: String, page: Int): List<SearchResult>

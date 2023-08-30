@@ -30,7 +30,18 @@ class FakePretixApi : PretixApi("http://1.1.1.1/", "a", "demo", 1, DefaultHttpCl
     var lastRequestUrl: String? = null
     var lastRequestBody: JSONObject? = null
 
-    override fun redeem(lists: List<Long>, secret: String, datetime: String?, force: Boolean, nonce: String?, answers: List<Answer>?, ignore_unpaid: Boolean, pdf_data: Boolean, type: String?): ApiResponse {
+    override fun redeem(
+        lists: List<Long>,
+        secret: String,
+        datetime: String?,
+        force: Boolean,
+        nonce: String?,
+        answers: List<Answer>?,
+        ignore_unpaid: Boolean,
+        pdf_data: Boolean,
+        type: String?,
+        callTimeout: Long?
+    ): ApiResponse {
         redeemRequestSecret = secret
         redeemRequestDatetime = datetime
         redeemRequestForce = force
@@ -42,7 +53,20 @@ class FakePretixApi : PretixApi("http://1.1.1.1/", "a", "demo", 1, DefaultHttpCl
         return redeemResponses.removeAt(0)()
     }
 
-    override fun redeem(eventSlug: String, secret: String, datetime: String?, force: Boolean, nonce: String?, answers: List<Answer>?, listId: Long, ignore_unpaid: Boolean, pdf_data: Boolean, type: String?, source_type: String?): ApiResponse {
+    override fun redeem(
+        eventSlug: String,
+        secret: String,
+        datetime: String?,
+        force: Boolean,
+        nonce: String?,
+        answers: List<Answer>?,
+        listId: Long,
+        ignore_unpaid: Boolean,
+        pdf_data: Boolean,
+        type: String?,
+        source_type: String?,
+        callTimeout: Long?
+    ): ApiResponse {
         redeemRequestSecret = secret
         redeemRequestDatetime = datetime
         redeemRequestForce = force
@@ -77,7 +101,12 @@ class FakePretixApi : PretixApi("http://1.1.1.1/", "a", "demo", 1, DefaultHttpCl
         return deleteResponses.removeAt(0)()
     }
 
-    override fun postResource(full_url: String, data: String, idempotency_key: String?): ApiResponse {
+    override fun postResource(
+        full_url: String,
+        data: String,
+        idempotency_key: String?,
+        callTimeout: Long?
+    ): ApiResponse {
         lastRequestUrl = full_url
         try {
             lastRequestBody = JSONObject(data)

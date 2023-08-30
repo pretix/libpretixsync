@@ -5,10 +5,12 @@ import eu.pretix.libpretixsync.SentryInterface
 import eu.pretix.libpretixsync.api.ApiException
 import eu.pretix.libpretixsync.api.HttpClientFactory
 import eu.pretix.libpretixsync.api.PretixApi
+import eu.pretix.libpretixsync.api.TimeoutApiException
 import eu.pretix.libpretixsync.config.ConfigStore
 import eu.pretix.libpretixsync.db.Answer
 import eu.pretix.libpretixsync.db.CheckInList
 import eu.pretix.libpretixsync.db.Item
+import eu.pretix.libpretixsync.db.NonceGenerator
 import eu.pretix.libpretixsync.db.Question
 import eu.pretix.libpretixsync.sync.FileStorage
 import eu.pretix.libpretixsync.sync.OrderSyncAdapter
@@ -20,7 +22,14 @@ import org.json.JSONObject
 import java.lang.Exception
 import java.util.*
 
-class OnlineCheckProvider(private val config: ConfigStore, httpClientFactory: HttpClientFactory?, private val dataStore: BlockingEntityStore<Persistable>, private val fileStore: FileStorage) : TicketCheckProvider {
+class OnlineCheckProvider(
+    private val config: ConfigStore,
+    httpClientFactory: HttpClientFactory?,
+    private val dataStore: BlockingEntityStore<Persistable>,
+    private val fileStore: FileStorage,
+    private val fallback: TicketCheckProvider? = null,
+    private val fallbackTimeout: Int = 30000
+) : TicketCheckProvider {
     private var sentry: SentryInterface = DummySentryImplementation()
     private val api = PretixApi.fromConfig(config, httpClientFactory)
     private val parser = ISODateTimeFormat.dateTimeParser()
@@ -32,24 +41,50 @@ class OnlineCheckProvider(private val config: ConfigStore, httpClientFactory: Ht
 
     override fun check(
         eventsAndCheckinLists: Map<String, Long>,
-        ticketid_: String,
+        ticketid: String,
         source_type: String,
         answers: List<Answer>?,
         ignore_unpaid: Boolean,
         with_badge_data: Boolean,
-        type: TicketCheckProvider.CheckInType
+        type: TicketCheckProvider.CheckInType,
+        nonce: String?
     ): TicketCheckProvider.CheckResult {
-        val ticketid = ticketid_.replace(Regex("[\\p{C}]"), "�")  // remove unprintable characters
+        val ticketid_cleaned = ticketid.replace(Regex("[\\p{C}]"), "�")  // remove unprintable characters
+        val nonce_cleaned = nonce ?: NonceGenerator.nextNonce()
 
         sentry.addBreadcrumb("provider.check", "started")
         return try {
             val res = TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.ERROR)
             res.scanType = type
             val responseObj = if (config.knownPretixVersion >= 40120001001) { // >= 4.12.0.dev1
-                api.redeem(eventsAndCheckinLists.values.toList(), ticketid, null as String?, false, null, answers, ignore_unpaid, with_badge_data, type.toString().lowercase(Locale.getDefault()))
+                api.redeem(
+                    eventsAndCheckinLists.values.toList(),
+                    ticketid_cleaned,
+                    null as String?,
+                    false,
+                    nonce_cleaned,
+                    answers,
+                    ignore_unpaid,
+                    with_badge_data,
+                    type.toString().lowercase(Locale.getDefault()),
+                    callTimeout = if (fallback != null) fallbackTimeout.toLong() else null,
+                )
             } else {
                 if (eventsAndCheckinLists.size != 1) throw CheckException("Multi-event scan not supported by server.")
-                api.redeem(eventsAndCheckinLists.keys.first(), ticketid, null as String?, false, null, answers, eventsAndCheckinLists.values.first(), ignore_unpaid, with_badge_data, type.toString().lowercase(Locale.getDefault()), source_type)
+                api.redeem(
+                    eventsAndCheckinLists.keys.first(),
+                    ticketid_cleaned,
+                    null as String?,
+                    false,
+                    nonce_cleaned,
+                    answers,
+                    eventsAndCheckinLists.values.first(),
+                    ignore_unpaid,
+                    with_badge_data,
+                    type.toString().lowercase(Locale.getDefault()),
+                    source_type,
+                    callTimeout = if (fallback != null) fallbackTimeout.toLong() else null,
+                )
             }
             if (responseObj.response.code == 404) {
                 res.type = TicketCheckProvider.CheckResult.Type.INVALID
@@ -176,10 +211,67 @@ class OnlineCheckProvider(private val config: ConfigStore, httpClientFactory: Ht
             if (e.cause != null) cr.ticket = e.cause!!.message
             cr
         } catch (e: ApiException) {
-            sentry.addBreadcrumb("provider.check", "API Error: " + e.message)
-            val cr = TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.ERROR, e.message)
-            if (e.cause != null) cr.ticket = e.cause!!.message
-            cr
+            if (e is TimeoutApiException && fallback != null && nonce_cleaned != null) {
+                /*
+                We are in the following situation: The user configured the app to automatically decide between
+                online and offline mode, and the user has decided that they want to switch to offline mode if
+                scans take longer than `fallbackTimeout`.
+
+                With this fallback option, we allow to enforce this timeout even on the very first scan:
+                If we scan a ticket and the server does not respond within `fallbackTimeout`, we re-try
+                the same scan using our fallback method ("offline scan").
+
+                Now, the following scenarios are relevant:
+
+                1) Our original scan attempt has never reached the server or has never been processed there.
+                   Therefore, our offline scan will be the only scan recorded. This is acceptable, since
+                   it's not worse than if the scanner would have auto-switched to offline mode a minute ago.
+
+                2) Our original scan attempt has been processed on the server but we never received the
+                   response. The outcome depends on the processing result:
+
+                   a) The scan was successful both on the server as well as with our fallback method:
+                      Everything is fine. Since both scans carry the same "nonce", only one scan will
+                      be in the database since the server ignores our upload of the offline scan later.
+
+                   b) The scan failed on the server as well as with our fallback method:
+                      Everything is fine. Since both scans carry the same "nonce", only one scan will
+                      be in the database since the server ignores our upload of the offline scan later.
+
+                   c) The scan failed on the server, but our fallback method recorded a successful scan:
+                      This is not great, because someone got in who shouldn't have, but it's no worse than
+                      if the scanner would have auto-switched to offline mode a minute ago, so it's
+                      acceptable by any user who configured our app like this. The database will later
+                      show both a failed and a successful scan (since nonces of failed scans do not block
+                      further scans), but that's also the most sensible description of what happened to
+                      a user who looks at the process in the backend, so we consider it acceptable. It's
+                      also no different to a user manually quickly retrying the scan after a failure.
+
+                   d) The scan succeeded on the server, but failed with our fallback method. This is the
+                      worst situation since a valid scan is recorded and the ticket is now marked as used,
+                      even though the ticket holder did not get in. This risk always existed as it can
+                      happen in any situation where the request reached the server but the response did
+                      not reach the scanner, but it becomes a more likely situation with a lower timeout.
+                 */
+                fallback.check(
+                    eventsAndCheckinLists,
+                    ticketid_cleaned,
+                    source_type,
+                    answers,
+                    ignore_unpaid,
+                    with_badge_data,
+                    type,
+                    nonce_cleaned
+                )
+            } else {
+                sentry.addBreadcrumb("provider.check", "API Error: " + e.message)
+                val cr = TicketCheckProvider.CheckResult(
+                    TicketCheckProvider.CheckResult.Type.ERROR,
+                    e.message
+                )
+                if (e.cause != null) cr.ticket = e.cause!!.message
+                cr
+            }
         }
     }
 
