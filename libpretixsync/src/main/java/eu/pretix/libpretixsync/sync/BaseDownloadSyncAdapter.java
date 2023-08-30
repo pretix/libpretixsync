@@ -68,11 +68,14 @@ public abstract class BaseDownloadSyncAdapter<T extends RemoteObject & Persistab
             total = 0;
             inserted = 0;
             knownIDs = getKnownIDs();
-            sizeBefore = knownIDs.size();
+            sizeBefore = getKnownCount();
             seenIDs = new HashSet<>();
             downloadData();
 
             if (deleteUnseen()) {
+                if (knownIDs == null) {
+                    throw new RuntimeException("getKnownIDsIterator() must not return null if deleteUnseen() returns true.");
+                }
                 for (Map.Entry<K, T> obj : getKnownObjects(knownIDs).entrySet()) {
                     prepareDelete(obj.getValue());
                     store.delete(obj.getValue());
@@ -89,8 +92,18 @@ public abstract class BaseDownloadSyncAdapter<T extends RemoteObject & Persistab
 
     abstract CloseableIterator<Tuple> getKnownIDsIterator();
 
+    protected int getKnownCount() {
+        if (knownIDs == null) {
+            throw new RuntimeException("getKnownIDsIterator() must be overridden if deleteUnseen() returns true.");
+        }
+        return knownIDs.size();
+    }
+
     protected Set<K> getKnownIDs() {
         CloseableIterator<Tuple> it = getKnownIDsIterator();
+        if (it == null) {
+            return null;
+        }
         Set<K> known = new HashSet<>();
         while (it.hasNext()) {
             Tuple obj = it.next();
@@ -155,7 +168,7 @@ public abstract class BaseDownloadSyncAdapter<T extends RemoteObject & Persistab
                     }
                     if (known.containsKey(jsonid)) {
                         known.remove(jsonid);
-                        knownIDs.remove(jsonid);
+                        if (knownIDs != null) knownIDs.remove(jsonid);
                         if (!JSONUtils.similar(jsonobj, old)) {
                             updateObject(obj, jsonobj);
                             store.update(obj);

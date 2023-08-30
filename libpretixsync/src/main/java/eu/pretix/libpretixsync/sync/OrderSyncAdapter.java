@@ -461,7 +461,17 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
         List<CheckIn> allCheckins = store.select(CheckIn.class)
                 .leftJoin(OrderPosition.class).on(OrderPosition.ID.eq(CheckIn.POSITION_ID))
                 .leftJoin(Order.class).on(Order.ID.eq(OrderPosition.ORDER_ID))
-                .where(Order.CODE.in(ids)).get().toList();
+                // Doing this WHERE IN even though we have a JOIN is entirely redundant.
+                // But we know that ``ids`` is of small size and this will trick SQLite into a
+                // more efficient query plan that avoids a full table scan :)
+                .where(CheckIn.POSITION_ID.in(
+                        store.select(OrderPosition.ID)
+                                .where(OrderPosition.ORDER_ID.in(
+                                        store.select(Order.ID)
+                                                .where(Order.CODE.in(ids))
+                                ))
+                ))
+                .get().toList();
         for (CheckIn c : allCheckins) {
             Long pk = c.getPosition().getId();
             if (checkinCache.containsKey(pk)) {
@@ -479,16 +489,24 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
     @Override
     public CloseableIterator<Order> runBatch(List<String> ids) {
         return store.select(Order.class)
-                .where(Order.EVENT_SLUG.eq(eventSlug))
-                .and(Order.CODE.in(ids))
+                // pretix guarantees uniqueness of CODE within an organizer account, so we don't need
+                // to filter by EVENT_SLUG. This is good, because SQLite tends to build a very stupid
+                // query plan otherwise if statistics are not up to date (using the EVENT_SLUG index
+                // instead of using the CODE index)
+                .where(Order.CODE.in(ids))
                 .get().iterator();
     }
 
     @Override
     CloseableIterator<Tuple> getKnownIDsIterator() {
-        return store.select(Order.CODE)
-                .where(Item.EVENT_SLUG.eq(eventSlug))
-                .get().iterator();
+        return null;
+    }
+
+    @Override
+    protected int getKnownCount() {
+        return store.count(Order.class)
+                .where(Order.EVENT_SLUG.eq(eventSlug))
+                .get().value();
     }
 
     @Override
