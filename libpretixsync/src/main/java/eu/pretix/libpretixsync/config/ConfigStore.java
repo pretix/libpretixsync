@@ -23,6 +23,10 @@ public interface ConfigStore {
 
     public void setDeviceKnownGateName(String value);
 
+    public Long getDeviceKnownGateID();
+
+    public void setDeviceKnownGateID(Long value);
+
     public int getDeviceKnownVersion();
 
     public void setDeviceKnownVersion(int value);
