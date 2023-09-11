@@ -88,6 +88,20 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
                     l.getOrNull(0)
             )
         }
+        jsonLogic.addOperation("entries_since") { l, d ->
+            ((d as Map<*, *>)["entries_since"] as ((DateTime) -> Int)).invoke(
+                l?.getOrNull(
+                    0
+                ) as DateTime
+            )
+        }
+        jsonLogic.addOperation("entries_before") { l, d ->
+            ((d as Map<*, *>)["entries_before"] as ((DateTime) -> Int)).invoke(
+                l?.getOrNull(
+                    0
+                ) as DateTime
+            )
+        }
         jsonLogic.addOperation("isAfter") { l, d ->
             if (l?.size == 2 || (l?.size == 3 && l.getOrNull(2) == null)) {
                 (l.getOrNull(0) as DateTime).isAfter(l.getOrNull(1) as DateTime)
@@ -299,12 +313,23 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
             } else {
                 ""
             })
+            data.put("gate", config.deviceKnownGateID.toString())
             data.put("now", dt)
             data.put("now_isoweekday", dt.withZone(tz).dayOfWeek().get())
             data.put("entries_number", queuedCheckIns.filter { it.type == "entry" }.size)
             data.put("entries_today", queuedCheckIns.filter {
                 DateTime(it.fullDatetime).withZone(tz).toLocalDate() == dt.withZone(tz).toLocalDate() && it.type == "entry"
             }.size)
+            data.put("entries_since", { cutoff: DateTime ->
+                queuedCheckIns.filter {
+                    DateTime(it.fullDatetime).withZone(tz).isAfter(cutoff.minus(Duration.millis(1))) && it.type == "entry"
+                }.size
+            })
+            data.put("entries_before", { cutoff: DateTime ->
+                queuedCheckIns.filter {
+                    DateTime(it.fullDatetime).withZone(tz).isBefore(cutoff) && it.type == "entry"
+                }.size
+            })
             data.put("entries_days", queuedCheckIns.filter { it.type == "entry" }.map {
                 DateTime(it.fullDatetime).withZone(tz).toLocalDate()
             }.toHashSet().size)
@@ -643,12 +668,23 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
             val jsonLogic = initJsonLogic(event, position.getSubevent_id(), tz)
             data.put("product", position.getItem().getServer_id().toString())
             data.put("variation", position.getVariation_id().toString())
+            data.put("gate", config.deviceKnownGateID.toString())
             data.put("now", dt)
             data.put("now_isoweekday", dt.withZone(tz).dayOfWeek().get())
             data.put("entries_number", checkIns.filter { it.type == "entry" }.size)
             data.put("entries_today", checkIns.filter {
                 DateTime(it.fullDatetime).withZone(tz).toLocalDate() == dt.withZone(tz).toLocalDate() && it.type == "entry"
             }.size)
+            data.put("entries_since", { cutoff: DateTime ->
+                checkIns.filter {
+                    DateTime(it.fullDatetime).withZone(tz).isAfter(cutoff.minus(Duration.millis(1))) && it.type == "entry"
+                }.size
+            })
+            data.put("entries_before", { cutoff: DateTime ->
+                checkIns.filter {
+                    DateTime(it.fullDatetime).withZone(tz).isBefore(cutoff) && it.type == "entry"
+                }.size
+            })
             data.put("entries_days", checkIns.filter { it.type == "entry" }.map {
                 DateTime(it.fullDatetime).withZone(tz).toLocalDate()
             }.toHashSet().size)

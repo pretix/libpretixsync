@@ -354,6 +354,44 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
     }
 
     @Test
+    fun testRulesGate() {
+        setRuleOnList2("{\n" +
+                "        \"inList\": [\n" +
+                "            {\"var\": \"gate\"}, {\n" +
+                "                \"objectList\": [\n" +
+                "                    {\"lookup\": [\"gate\", \"1\", \"Gate 1\"]},\n" +
+                "                ]\n" +
+                "            }\n" +
+                "        ]\n" +
+                "    }")
+        configStore!!.deviceKnownGateID = 0
+        var r = p!!.check(mapOf("demo" to 2L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.RULES, r.type)
+
+        configStore!!.deviceKnownGateID = 2
+        r = p!!.check(mapOf("demo" to 2L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.RULES, r.type)
+
+        r = p!!.check(mapOf("demo" to 2L), "E4BibyTSylQOgeKjuMPiTDxi5HXPuTVsx1qCli3IL0143gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKAEAPAQA")
+        assertEquals(TicketCheckProvider.CheckResult.Type.RULES, r.type)
+
+        setRuleOnList2("{\n" +
+                "        \"inList\": [\n" +
+                "            {\"var\": \"gate\"}, {\n" +
+                "                \"objectList\": [\n" +
+                "                    {\"lookup\": [\"gate\", \"1\", \"Gate 1\"]},\n" +
+                "                    {\"lookup\": [\"gate\", \"2\", \"Gate 2\"]},\n" +
+                "                ]\n" +
+                "            }\n" +
+                "        ]\n" +
+                "    }")
+        r = p!!.check(mapOf("demo" to 2L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+        r = p!!.check(mapOf("demo" to 2L), "E4BibyTSylQOgeKjuMPiTDxi5HXPuTVsx1qCli3IL0143gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKAEAPAQA")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+    }
+
+    @Test
     fun testRulesEntriesNumber() {
         setRuleOnList2("{\"<\": [{\"var\": \"entries_number\"}, 3]}")
         var r = p!!.check(mapOf("demo" to 2L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj")
@@ -434,6 +472,102 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2020-01-03T15:10:00.000Z"))
         r = p2.check(mapOf("demo" to 2L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj")
         assertEquals(TicketCheckProvider.CheckResult.Type.RULES, r.type)
+        r = p2.check(mapOf("demo" to 2L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.RULES, r.type)
+    }
+
+    @Test
+    fun testRulesEntriesSince() {
+        val p2 = AsyncCheckProvider(configStore!!, dataStore)
+
+        // Ticket is valid once before X and once after X
+        setRuleOnList2("{\n" +
+                "        \"or\": [\n" +
+                "            {\"<=\": [{\"var\": \"entries_number\"}, 0]},\n" +
+                "            {\"and\": [\n" +
+                "                {\"isAfter\": [{\"var\": \"now\"}, {\"buildTime\": [\"custom\", \"2020-01-01T23:00:00.000+01:00\"]}, 0]},\n" +
+                "                {\"<=\": [{\"entries_since\": [{\"buildTime\": [\"custom\", \"2020-01-01T23:00:00.000+01:00\"]}]}, 0]},\n" +
+                "            ]},\n" +
+                "        ],\n" +
+                "    }")
+
+        p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2020-01-01T21:00:00.000Z"))
+
+        var r = p2.check(mapOf("demo" to 2L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+
+        r = p2.check(mapOf("demo" to 2L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.RULES, r.type)
+
+        p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2020-01-01T22:10:00.000Z"))
+
+        r = p2.check(mapOf("demo" to 2L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+
+        r = p2.check(mapOf("demo" to 2L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.RULES, r.type)
+    }
+
+    @Test
+    fun testRulesEntriesSinceTimeOfDay() {
+        val p2 = AsyncCheckProvider(configStore!!, dataStore)
+
+        // Ticket is valid once before X and once after X
+        setRuleOnList2("{\n" +
+                "        \"or\": [\n" +
+                "            {\"<=\": [{\"var\": \"entries_today\"}, 0]},\n" +
+                "            {\"and\": [\n" +
+                "                {\"isAfter\": [{\"var\": \"now\"}, {\"buildTime\": [\"customtime\", \"23:00:00\"]}, 0]},\n" +
+                "                {\"<=\": [{\"entries_since\": [{\"buildTime\": [\"customtime\", \"23:00:00\"]}]}, 0]},\n" +
+                "            ]},\n" +
+                "        ],\n" +
+                "    }")
+
+        val times = listOf(
+            "2020-01-01T22:00:00.000+09:00",
+            "2020-01-01T23:01:00.000+09:00",
+            "2020-01-02T22:00:00.000+09:00",
+            "2020-01-02T23:01:00.000+09:00"
+        )
+
+        for (t in times) {
+            p2.setNow(ISODateTimeFormat.dateTime().parseDateTime(t))
+
+            var r = p2.check(mapOf("demo" to 2L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+            assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+
+            r = p2.check(mapOf("demo" to 2L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+            assertEquals(TicketCheckProvider.CheckResult.Type.RULES, r.type)
+        }
+    }
+
+    @Test
+    fun testRulesEntriesBefore() {
+        val p2 = AsyncCheckProvider(configStore!!, dataStore)
+
+        // Ticket is valid after 23:00 only if people already showed up before
+        setRuleOnList2("{\n" +
+                "        \"or\": [\n" +
+                "            {\"isBefore\": [{\"var\": \"now\"}, {\"buildTime\": [\"custom\", \"2020-01-01T23:00:00.000+01:00\"]}, 0]},\n" +
+                "            {\"and\": [\n" +
+                "                {\"isAfter\": [{\"var\": \"now\"}, {\"buildTime\": [\"custom\", \"2020-01-01T23:00:00.000+01:00\"]}, 0]},\n" +
+                "                {\">=\": [{\"entries_before\": [{\"buildTime\": [\"custom\", \"2020-01-01T23:00:00.000+01:00\"]}]}, 1]},\n" +
+                "            ]},\n" +
+                "        ],\n" +
+                "    }")
+
+        p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2020-01-01T21:00:00.000Z"))
+
+        var r = p2.check(mapOf("demo" to 2L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+
+        p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2020-01-01T22:10:00.000Z"))
+
+        r = p2.check(mapOf("demo" to 2L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+
+        dataStore.delete(CheckIn::class.java).get().value()
+
         r = p2.check(mapOf("demo" to 2L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj")
         assertEquals(TicketCheckProvider.CheckResult.Type.RULES, r.type)
     }

@@ -12,6 +12,7 @@ class FakeConfigStore : ConfigStore {
     private var last_failed_sync_msg: String? = null
     private val last_status_data: String? = null
     private var allow_search = false
+    private var gate_id: Long = 0
     fun setAllow_search(allow_search: Boolean) {
         this.allow_search = allow_search
     }
@@ -55,6 +56,15 @@ class FakeConfigStore : ConfigStore {
     }
 
     override fun setDeviceKnownGateName(value: String) {}
+
+    override fun getDeviceKnownGateID(): Long {
+        return gate_id
+    }
+
+    override fun setDeviceKnownGateID(value: Long?) {
+        gate_id = value ?: 0
+    }
+
     override fun getApiKey(): String {
         return "12345"
     }

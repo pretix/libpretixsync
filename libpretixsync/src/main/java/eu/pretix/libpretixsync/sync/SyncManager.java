@@ -284,11 +284,14 @@ public class SyncManager {
                 configStore.setDeviceKnownVersion(app_version);
                 configStore.setDeviceKnownInfo(app_info);
                 configStore.setDeviceKnownName(resp.getData().getString("name"));
-                String gate = null;
+                String gateName = null;
+                long gateID = 0;
                 if (resp.getData().has("gate") && !resp.getData().isNull("gate")) {
-                    gate = resp.getData().getJSONObject("gate").getString("name");
+                    gateName = resp.getData().getJSONObject("gate").getString("name");
+                    gateID = resp.getData().getJSONObject("gate").getLong("id");
                 }
-                configStore.setDeviceKnownGateName(gate);
+                configStore.setDeviceKnownGateName(gateName);
+                configStore.setDeviceKnownGateID(gateID);
             }
         } catch (ApiException | JSONException e) {
             configStore.setLastFailedSync(System.currentTimeMillis());
@@ -351,11 +354,14 @@ public class SyncManager {
             configStore.setKnownPretixVersion(vdata.getJSONObject("server").getJSONObject("version").getLong("pretix_numeric"));
 
             configStore.setDeviceKnownName(vdata.getJSONObject("device").getString("name"));
-            String gate = null;
+            String gateName = null;
+            long gateID = 0;
             if (vdata.getJSONObject("device").has("gate") && !vdata.getJSONObject("device").isNull("gate")) {
-                gate = vdata.getJSONObject("device").getJSONObject("gate").getString("name");
+                gateName = vdata.getJSONObject("device").getJSONObject("gate").getString("name");
+                gateID = vdata.getJSONObject("device").getJSONObject("gate").getLong("id");
             }
-            configStore.setDeviceKnownGateName(gate);
+            configStore.setDeviceKnownGateName(gateName);
+            configStore.setDeviceKnownGateID(gateID);
 
             if (vdata.has("medium_key_sets")) {
                 MediumKeySetSyncAdapter mkssa = new MediumKeySetSyncAdapter(dataStore, fileStorage, api, configStore.getSyncCycleId(), null, vdata.getJSONArray("medium_key_sets"));
