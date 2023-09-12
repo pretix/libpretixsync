@@ -389,7 +389,7 @@ public class Migrations {
             updateVersionTable(c, 97);
         }
         if (db_version < 98) {
-            execIgnore(c, "CREATE INDEX order_event_slug ON order (event_slug);", new String[] {"already exists", "existiert bereits"});
+            execIgnore(c, "CREATE INDEX order_event_slug ON orders (event_slug);", new String[] {"already exists", "existiert bereits"});
             updateVersionTable(c, 98);
         }
 
