@@ -28,6 +28,7 @@ import org.json.JSONObject
 import java.lang.Exception
 import java.nio.charset.Charset
 import java.util.*
+import kotlin.collections.ArrayList
 
 class AsyncCheckProvider(private val config: ConfigStore, private val dataStore: BlockingEntityStore<Persistable>) : TicketCheckProvider {
     private var sentry: SentryInterface = DummySentryImplementation()
@@ -357,11 +358,12 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
             }
         }
         val givenAnswers = JSONArray()
-        val required_answers: MutableList<TicketCheckProvider.RequiredAnswer> = ArrayList()
+        val shown_answers: MutableList<TicketCheckProvider.QuestionAnswer> = ArrayList()
+        val required_answers: MutableList<TicketCheckProvider.QuestionAnswer> = ArrayList()
         var ask_questions = false
         if (type != TicketCheckProvider.CheckInType.EXIT) {
             for (q in questions) {
-                if (!q.isAskDuringCheckin) {
+                if (!q.isShowDuringCheckin && !q.isAskDuringCheckin) {
                     continue
                 }
                 var answer: String? = ""
@@ -369,21 +371,34 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
                     answer = answerMap[q.getServer_id()]
                     try {
                         answer = q.clean_answer(answer, q.options, false)
-                        val jo = JSONObject()
-                        jo.put("answer", answer)
-                        jo.put("question", q.getServer_id())
-                        givenAnswers.put(jo)
+                        if (q.isAskDuringCheckin) {
+                            val jo = JSONObject()
+                            jo.put("answer", answer)
+                            jo.put("question", q.getServer_id())
+                            givenAnswers.put(jo)
+                        }
                     } catch (e: QuestionLike.ValidationException) {
                         answer = ""
-                        ask_questions = true
+                        if (q.isAskDuringCheckin) {
+                            ask_questions = true
+                        }
                     } catch (e: JSONException) {
                         answer = ""
-                        ask_questions = true
+                        if (q.isAskDuringCheckin) {
+                            ask_questions = true
+                        }
                     }
                 } else {
-                    ask_questions = true
+                    if (q.isAskDuringCheckin) {
+                        ask_questions = true
+                    }
                 }
-                required_answers.add(TicketCheckProvider.RequiredAnswer(q, answer))
+                if (q.isShowDuringCheckin) {
+                    shown_answers.add(TicketCheckProvider.QuestionAnswer(q, answer))
+                }
+                if (q.isAskDuringCheckin) {
+                    required_answers.add(TicketCheckProvider.QuestionAnswer(q, answer))
+                }
             }
         }
 
@@ -392,6 +407,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
             res.type = TicketCheckProvider.CheckResult.Type.ANSWERS_REQUIRED
             res.requiredAnswers = required_answers
         } else {
+            res.shownAnswers = shown_answers
             val entry_allowed = (
                     type == TicketCheckProvider.CheckInType.EXIT ||
                             list.isAllowMultipleEntries ||
@@ -714,11 +730,12 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
             }
         }
         val givenAnswers = JSONArray()
-        val required_answers: MutableList<TicketCheckProvider.RequiredAnswer> = ArrayList()
+        val shown_answers: MutableList<TicketCheckProvider.QuestionAnswer> = ArrayList()
+        val required_answers: MutableList<TicketCheckProvider.QuestionAnswer> = ArrayList()
         var ask_questions = false
         if (type != TicketCheckProvider.CheckInType.EXIT) {
             for (q in questions) {
-                if (!q.isAskDuringCheckin) {
+                if (!q.isShowDuringCheckin && !q.isAskDuringCheckin) {
                     continue
                 }
                 var answer: String? = ""
@@ -726,21 +743,34 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
                     answer = answerMap[q.getServer_id()]
                     try {
                         answer = q.clean_answer(answer, q.options, false)
-                        val jo = JSONObject()
-                        jo.put("answer", answer)
-                        jo.put("question", q.getServer_id())
-                        givenAnswers.put(jo)
+                        if (q.isAskDuringCheckin) {
+                            val jo = JSONObject()
+                            jo.put("answer", answer)
+                            jo.put("question", q.getServer_id())
+                            givenAnswers.put(jo)
+                        }
                     } catch (e: QuestionLike.ValidationException) {
                         answer = ""
-                        ask_questions = true
+                        if (q.isAskDuringCheckin) {
+                            ask_questions = true
+                        }
                     } catch (e: JSONException) {
                         answer = ""
-                        ask_questions = true
+                        if (q.isAskDuringCheckin) {
+                            ask_questions = true
+                        }
                     }
                 } else {
-                    ask_questions = true
+                    if (q.isAskDuringCheckin) {
+                        ask_questions = true
+                    }
                 }
-                required_answers.add(TicketCheckProvider.RequiredAnswer(q, answer))
+                if (q.isShowDuringCheckin) {
+                    shown_answers.add(TicketCheckProvider.QuestionAnswer(q, answer))
+                }
+                if (q.isAskDuringCheckin) {
+                    required_answers.add(TicketCheckProvider.QuestionAnswer(q, answer))
+                }
             }
         }
 
@@ -751,6 +781,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
             res.type = TicketCheckProvider.CheckResult.Type.ANSWERS_REQUIRED
             res.requiredAnswers = required_answers
         } else {
+            res.shownAnswers = shown_answers
             val entry_allowed = (
                     type == TicketCheckProvider.CheckInType.EXIT ||
                             list.isAllowMultipleEntries ||

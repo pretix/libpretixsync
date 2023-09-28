@@ -91,11 +91,8 @@ class OnlineCheckProvider(
             } else {
                 val response = responseObj.data!!
                 val status = response.getString("status")
-                if ("ok" == status) {
-                    res.type = TicketCheckProvider.CheckResult.Type.VALID
-                } else if ("incomplete" == status) {
-                    res.type = TicketCheckProvider.CheckResult.Type.ANSWERS_REQUIRED
-                    val required_answers: MutableList<TicketCheckProvider.RequiredAnswer> = ArrayList()
+                val questions: MutableList<Question> = ArrayList()
+                if (response.has("questions")) {
                     for (i in 0 until response.getJSONArray("questions").length()) {
                         val q = response.getJSONArray("questions").getJSONObject(i)
                         val question = Question()
@@ -103,9 +100,26 @@ class OnlineCheckProvider(
                         question.isRequired = q.getBoolean("required")
                         question.setPosition(q.getLong("position"))
                         question.setJson_data(q.toString())
-                        required_answers.add(TicketCheckProvider.RequiredAnswer(question, ""))
+                        questions.add(question)
                     }
-                    res.requiredAnswers = required_answers
+                }
+                if (response.has("position")) {
+                    val shownAnswers: MutableList<TicketCheckProvider.QuestionAnswer> = ArrayList()
+                    for (i in 0 until (response.getJSONObject("position").getJSONArray("answers").length())) {
+                        val a = response.getJSONObject("position").getJSONArray("answers").getJSONObject(i)
+                        val value = a.getString("answer")
+                        val question = questions.find { it.server_id == a.getLong("question") }
+                        if (question != null && question.isShowDuringCheckin) {
+                            shownAnswers.add(TicketCheckProvider.QuestionAnswer(question, value))
+                        }
+                    }
+                    res.shownAnswers = shownAnswers
+                }
+                if ("ok" == status) {
+                    res.type = TicketCheckProvider.CheckResult.Type.VALID
+                } else if ("incomplete" == status) {
+                    res.type = TicketCheckProvider.CheckResult.Type.ANSWERS_REQUIRED
+                    res.requiredAnswers = questions.map { TicketCheckProvider.QuestionAnswer(it, "") }
                 } else {
                     val reason = response.optString("reason")
                     if ("already_redeemed" == reason) {
