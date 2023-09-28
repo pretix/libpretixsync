@@ -894,7 +894,6 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
                 sentry.captureException(e)
             }
             sr.isRequireAttention = require_attention
-            sr.checkinTexts = listOfNotNull(order.checkin_text.trim(), variation?.checkin_text?.trim(), item.checkin_text.trim())
             sr.position = position.json
             results.add(sr)
         }

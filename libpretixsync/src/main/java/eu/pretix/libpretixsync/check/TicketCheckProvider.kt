@@ -93,7 +93,6 @@ interface TicketCheckProvider {
         var status: Status? = null
         var isRedeemed = false
         var isRequireAttention = false
-        var checkinTexts: List<String>? = null
         var position: JSONObject? = null
 
         constructor() {}
@@ -108,7 +107,6 @@ interface TicketCheckProvider {
             status = r.status
             isRedeemed = r.isRedeemed
             isRequireAttention = r.isRequireAttention
-            checkinTexts = r.checkinTexts
             addonText = r.addonText
             position = r.position
         }

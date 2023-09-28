@@ -331,7 +331,6 @@ class OnlineCheckProvider(
                     sr.status = TicketCheckProvider.SearchResult.Status.CANCELED
                 }
                 sr.isRequireAttention = res.optBoolean("require_attention", false)
-                // FIXME: can we get get checkinTexts from search result?
                 sr.position = res
                 results.add(sr)
             }
