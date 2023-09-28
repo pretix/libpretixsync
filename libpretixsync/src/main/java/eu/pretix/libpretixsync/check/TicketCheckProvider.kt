@@ -46,6 +46,7 @@ interface TicketCheckProvider {
         var firstScanned: Date? = null
         var addonText: String? = null
         var reasonExplanation: String? = null
+        var checkinTexts: List<String>? = null
         var isRequireAttention = false
         var isCheckinAllowed = false
         var requiredAnswers: List<RequiredAnswer>? = null
@@ -92,6 +93,7 @@ interface TicketCheckProvider {
         var status: Status? = null
         var isRedeemed = false
         var isRequireAttention = false
+        var checkinTexts: List<String>? = null
         var position: JSONObject? = null
 
         constructor() {}
@@ -106,6 +108,7 @@ interface TicketCheckProvider {
             status = r.status
             isRedeemed = r.isRedeemed
             isRequireAttention = r.isRequireAttention
+            checkinTexts = r.checkinTexts
             addonText = r.addonText
             position = r.position
         }

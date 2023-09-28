@@ -295,6 +295,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
             sentry.captureException(e)
         }
         res.isRequireAttention = require_attention || (variation?.isCheckin_attention == true)
+        res.checkinTexts = listOfNotNull(variation?.checkin_text?.trim(), item.checkin_text.trim())
 
         val queuedCheckIns = dataStore.select(QueuedCheckIn::class.java)
                 .where(QueuedCheckIn.SECRET.eq(ticketid))
@@ -588,6 +589,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
             sentry.captureException(e)
         }
         res.isRequireAttention = require_attention || variation?.isCheckin_attention == true
+        res.checkinTexts = listOfNotNull(order.checkin_text.trim(), variation?.checkin_text?.trim(), item.checkin_text.trim())
 
         val storedCheckIns = dataStore.select(CheckIn::class.java)
                 .where(CheckIn.POSITION_ID.eq(position.getId()))
@@ -885,13 +887,14 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
             } else {
                 sr.status = TicketCheckProvider.SearchResult.Status.CANCELED
             }
-            var require_attention = position.getOrder().isCheckin_attention
+            var require_attention = order.isCheckin_attention
             try {
                 require_attention = require_attention || item.json.optBoolean("checkin_attention", false) || variation?.isCheckin_attention == true
             } catch (e: JSONException) {
                 sentry.captureException(e)
             }
             sr.isRequireAttention = require_attention
+            sr.checkinTexts = listOfNotNull(order.checkin_text.trim(), variation?.checkin_text?.trim(), item.checkin_text.trim())
             sr.position = position.json
             results.add(sr)
         }

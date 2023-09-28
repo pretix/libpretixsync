@@ -34,6 +34,7 @@ public class ItemSyncAdapter extends BaseConditionalSyncAdapter<Item, Long> {
         obj.setCategory_id(jsonobj.optLong("category"));
         obj.setAdmission(jsonobj.optBoolean("admission", false));
         obj.setActive(jsonobj.optBoolean("active", true));
+        obj.setCheckin_text(jsonobj.optString("checkin_text"));
         obj.setJson_data(jsonobj.toString());
 
         String remote_filename = jsonobj.optString("picture");

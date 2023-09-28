@@ -203,6 +203,12 @@ class OnlineCheckProvider(
 
                 }
                 res.isRequireAttention = response.optBoolean("require_attention", false)
+                if (response.has("checkin_texts")) {
+                    val checkinTexts = response.getJSONArray("checkin_texts")
+                    res.checkinTexts = List(checkinTexts.length()) {
+                        checkinTexts.getString(it)
+                    }
+                }
             }
             res
         } catch (e: JSONException) {
@@ -325,6 +331,7 @@ class OnlineCheckProvider(
                     sr.status = TicketCheckProvider.SearchResult.Status.CANCELED
                 }
                 sr.isRequireAttention = res.optBoolean("require_attention", false)
+                // FIXME: can we get get checkinTexts from search result?
                 sr.position = res
                 results.add(sr)
             }

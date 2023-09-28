@@ -15,7 +15,7 @@ import io.requery.sql.TableCreationMode;
 
 public class Migrations {
     private static EntityModel model = Models.DEFAULT;
-    public static int CURRENT_VERSION = 98;
+    public static int CURRENT_VERSION = 99;
 
     private static void createVersionTable(Connection c, int version) throws SQLException {
         Statement s2 = c.createStatement();
@@ -391,6 +391,11 @@ public class Migrations {
         if (db_version < 98) {
             execIgnore(c, "CREATE INDEX order_event_slug ON orders (event_slug);", new String[] {"already exists", "existiert bereits"});
             updateVersionTable(c, 98);
+        }
+        if (db_version < 99) {
+            execIgnore(c, "ALTER TABLE orders ADD checkin_text TEXT NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            execIgnore(c, "ALTER TABLE Item ADD checkin_text TEXT NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            updateVersionTable(c, 99);
         }
 
         // Note that the Android app currently does not use these queries!
