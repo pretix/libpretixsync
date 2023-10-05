@@ -85,15 +85,6 @@ public class AbstractQuestion extends QuestionLike implements RemoteObject {
         }
     }
 
-    public boolean isShowDuringCheckin() {
-        try {
-            return getJSON().getBoolean("show_during_checkin");
-        } catch (JSONException e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
     public boolean isHidden() {
         try {
             return getJSON().getBoolean("hidden");

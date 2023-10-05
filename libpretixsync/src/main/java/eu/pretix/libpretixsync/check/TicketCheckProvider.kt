@@ -11,7 +11,7 @@ interface TicketCheckProvider {
         ENTRY, EXIT
     }
 
-    class QuestionAnswer {
+    class RequiredAnswer {
         lateinit var question: Question
         var currentValue: String? = null
 
@@ -49,8 +49,7 @@ interface TicketCheckProvider {
         var checkinTexts: List<String>? = null
         var isRequireAttention = false
         var isCheckinAllowed = false
-        var requiredAnswers: List<QuestionAnswer>? = null
-        var shownAnswers: List<QuestionAnswer>? = null
+        var requiredAnswers: List<RequiredAnswer>? = null
         var position: JSONObject? = null
         var eventSlug: String? = null
         var offline: Boolean = false
