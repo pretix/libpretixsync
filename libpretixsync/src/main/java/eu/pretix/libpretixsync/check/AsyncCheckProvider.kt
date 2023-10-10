@@ -357,7 +357,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
             }
         }
         val givenAnswers = JSONArray()
-        val required_answers: MutableList<TicketCheckProvider.RequiredAnswer> = ArrayList()
+        val required_answers: MutableList<TicketCheckProvider.QuestionAnswer> = ArrayList()
         var ask_questions = false
         if (type != TicketCheckProvider.CheckInType.EXIT) {
             for (q in questions) {
@@ -383,7 +383,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
                 } else {
                     ask_questions = true
                 }
-                required_answers.add(TicketCheckProvider.RequiredAnswer(q, answer))
+                required_answers.add(TicketCheckProvider.QuestionAnswer(q, answer))
             }
         }
 
@@ -714,7 +714,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
             }
         }
         val givenAnswers = JSONArray()
-        val required_answers: MutableList<TicketCheckProvider.RequiredAnswer> = ArrayList()
+        val required_answers: MutableList<TicketCheckProvider.QuestionAnswer> = ArrayList()
         var ask_questions = false
         if (type != TicketCheckProvider.CheckInType.EXIT) {
             for (q in questions) {
@@ -740,7 +740,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
                 } else {
                     ask_questions = true
                 }
-                required_answers.add(TicketCheckProvider.RequiredAnswer(q, answer))
+                required_answers.add(TicketCheckProvider.QuestionAnswer(q, answer))
             }
         }
 
