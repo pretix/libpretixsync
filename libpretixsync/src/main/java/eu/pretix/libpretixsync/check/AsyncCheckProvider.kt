@@ -195,6 +195,60 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
         return null
     }
 
+    data class RSAResult(
+        val givenAnswers: JSONArray,
+        val requiredAnswers:  MutableList<TicketCheckProvider.QuestionAnswer>,
+        val shownAnswers: MutableList<TicketCheckProvider.QuestionAnswer>,
+        val askQuestions: Boolean,
+    )
+    private fun extractRequiredShownAnswers(questions: List<Question>, answerMap: Map<Long, String>): RSAResult {
+        val givenAnswers = JSONArray()
+        val requiredAnswers: MutableList<TicketCheckProvider.QuestionAnswer> = ArrayList()
+        val shownAnswers: MutableList<TicketCheckProvider.QuestionAnswer> = ArrayList()
+        var askQuestions = false
+
+        for (q in questions) {
+            if (!q.isAskDuringCheckin && !q.isShowDuringCheckin) {
+                continue
+            }
+            var answer: String? = ""
+            if (answerMap.containsKey(q.getServer_id())) {
+                answer = answerMap[q.getServer_id()]
+                try {
+                    answer = q.clean_answer(answer, q.options, false)
+                    val jo = JSONObject()
+                    jo.put("answer", answer)
+                    jo.put("question", q.getServer_id())
+                    if (q.isAskDuringCheckin) {
+                        givenAnswers.put(jo)
+                    }
+                    if (q.isShowDuringCheckin) {
+                        shownAnswers.add(TicketCheckProvider.QuestionAnswer(q, answer))
+                    }
+                } catch (e: QuestionLike.ValidationException) {
+                    answer = ""
+                    if (q.isAskDuringCheckin) {
+                        askQuestions = true
+                    }
+                } catch (e: JSONException) {
+                    answer = ""
+                    if (q.isAskDuringCheckin) {
+                        askQuestions = true
+                    }
+                }
+            } else {
+                if (q.isAskDuringCheckin) {
+                    askQuestions = true
+                }
+            }
+            if (q.isAskDuringCheckin) {
+                requiredAnswers.add(TicketCheckProvider.QuestionAnswer(q, answer))
+            }
+        }
+
+        return RSAResult(givenAnswers, requiredAnswers, shownAnswers, askQuestions)
+    }
+
     private fun checkOfflineWithoutData(eventsAndCheckinLists: Map<String, Long>, ticketid: String, type: TicketCheckProvider.CheckInType, answers: List<Answer>?, nonce: String?): TicketCheckProvider.CheckResult {
         val dt = now()
         val events = dataStore.select(Event::class.java)
@@ -356,36 +410,18 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
                 answerMap[(a.question as Question).getServer_id()] = a.value
             }
         }
-        val givenAnswers = JSONArray()
-        val required_answers: MutableList<TicketCheckProvider.QuestionAnswer> = ArrayList()
+        var givenAnswers = JSONArray()
+        var required_answers: MutableList<TicketCheckProvider.QuestionAnswer> = ArrayList()
+        var shown_answers: MutableList<TicketCheckProvider.QuestionAnswer> = ArrayList()
         var ask_questions = false
         if (type != TicketCheckProvider.CheckInType.EXIT) {
-            for (q in questions) {
-                if (!q.isAskDuringCheckin) {
-                    continue
-                }
-                var answer: String? = ""
-                if (answerMap.containsKey(q.getServer_id())) {
-                    answer = answerMap[q.getServer_id()]
-                    try {
-                        answer = q.clean_answer(answer, q.options, false)
-                        val jo = JSONObject()
-                        jo.put("answer", answer)
-                        jo.put("question", q.getServer_id())
-                        givenAnswers.put(jo)
-                    } catch (e: QuestionLike.ValidationException) {
-                        answer = ""
-                        ask_questions = true
-                    } catch (e: JSONException) {
-                        answer = ""
-                        ask_questions = true
-                    }
-                } else {
-                    ask_questions = true
-                }
-                required_answers.add(TicketCheckProvider.QuestionAnswer(q, answer))
-            }
+            val rsa = extractRequiredShownAnswers(questions, answerMap)
+            givenAnswers = rsa.givenAnswers
+            required_answers = rsa.requiredAnswers
+            shown_answers = rsa.shownAnswers
+            ask_questions = rsa.askQuestions
         }
+        res.shownAnswers = shown_answers
 
         if (ask_questions && required_answers.size > 0) {
             res.isCheckinAllowed = true
@@ -713,36 +749,18 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
                 answerMap[(a.question as Question).getServer_id()] = a.value
             }
         }
-        val givenAnswers = JSONArray()
-        val required_answers: MutableList<TicketCheckProvider.QuestionAnswer> = ArrayList()
+        var givenAnswers = JSONArray()
+        var required_answers: MutableList<TicketCheckProvider.QuestionAnswer> = ArrayList()
+        var shown_answers: MutableList<TicketCheckProvider.QuestionAnswer> = ArrayList()
         var ask_questions = false
         if (type != TicketCheckProvider.CheckInType.EXIT) {
-            for (q in questions) {
-                if (!q.isAskDuringCheckin) {
-                    continue
-                }
-                var answer: String? = ""
-                if (answerMap.containsKey(q.getServer_id())) {
-                    answer = answerMap[q.getServer_id()]
-                    try {
-                        answer = q.clean_answer(answer, q.options, false)
-                        val jo = JSONObject()
-                        jo.put("answer", answer)
-                        jo.put("question", q.getServer_id())
-                        givenAnswers.put(jo)
-                    } catch (e: QuestionLike.ValidationException) {
-                        answer = ""
-                        ask_questions = true
-                    } catch (e: JSONException) {
-                        answer = ""
-                        ask_questions = true
-                    }
-                } else {
-                    ask_questions = true
-                }
-                required_answers.add(TicketCheckProvider.QuestionAnswer(q, answer))
-            }
+            val rsa = extractRequiredShownAnswers(questions, answerMap)
+            givenAnswers = rsa.givenAnswers
+            required_answers = rsa.requiredAnswers
+            shown_answers = rsa.shownAnswers
+            ask_questions = rsa.askQuestions
         }
+        res.shownAnswers = shown_answers
 
         // !!! When extending this, also extend checkOfflineWithoutData !!!
 
