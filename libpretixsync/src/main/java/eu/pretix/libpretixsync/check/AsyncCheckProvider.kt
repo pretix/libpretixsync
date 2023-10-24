@@ -625,7 +625,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
             sentry.captureException(e)
         }
         res.isRequireAttention = require_attention || variation?.isCheckin_attention == true
-        res.checkinTexts = listOfNotNull(order.checkin_text?.trim(), variation?.checkin_text?.trim(), item.checkin_text?.trim())
+        res.checkinTexts = listOfNotNull(order.checkin_text?.trim(), variation?.checkin_text?.trim(), item.checkin_text?.trim()).filterNot { it.isBlank() || it == "null" }
 
         val storedCheckIns = dataStore.select(CheckIn::class.java)
                 .where(CheckIn.POSITION_ID.eq(position.getId()))
