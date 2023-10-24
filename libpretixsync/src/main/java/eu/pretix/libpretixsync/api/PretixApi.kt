@@ -136,7 +136,7 @@ open class PretixApi(url: String, key: String, orgaSlug: String, version: Int, h
         body.put("lists", jlists)
         var pd = "?expand=answers.question"
         if (pdf_data) {
-            pd = "&pdf_data=true"
+            pd += "&pdf_data=true"
         }
         return postResource(organizerResourceUrl("checkinrpc/redeem") + pd, body, null, callTimeout = callTimeout)
     }
