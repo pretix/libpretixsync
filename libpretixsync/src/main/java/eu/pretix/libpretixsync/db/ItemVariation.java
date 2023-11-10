@@ -32,6 +32,8 @@ public class ItemVariation implements Serializable {
     private boolean hide_without_voucher;
     private boolean checkin_attention;
 
+    private String checkin_text;
+
     public void setServer_id(Long server_id) {
         this.server_id = server_id;
     }
@@ -150,6 +152,14 @@ public class ItemVariation implements Serializable {
         this.checkin_attention = checkin_attention;
     }
 
+    public String getCheckin_text() {
+        return checkin_text;
+    }
+
+    public void setCheckin_text(String checkin_text) {
+        this.checkin_text = checkin_text;
+    }
+
     public JSONObject toJSON() {
         JSONObject jsonObject = new JSONObject();
         try {
@@ -167,6 +177,7 @@ public class ItemVariation implements Serializable {
             jsonObject.put("hide_without_voucher", hide_without_voucher);
             jsonObject.put("listed_price", listed_price);
             jsonObject.put("checkin_attention", checkin_attention);
+            jsonObject.put("checkin_text", checkin_text);
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -199,6 +210,7 @@ public class ItemVariation implements Serializable {
             sales_channels = jsonObject.optJSONArray("sales_channels");
             hide_without_voucher = jsonObject.getBoolean("hide_without_voucher");
             checkin_attention = jsonObject.getBoolean("checkin_attention");
+            checkin_text = jsonObject.optString("checkin_text");
             listed_price = !jsonObject.isNull("listed_price") ? new BigDecimal(jsonObject.getString("listed_price")) : null;
         } catch (JSONException e) {
             e.printStackTrace();

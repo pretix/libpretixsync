@@ -31,6 +31,9 @@ public class AbstractOrder implements RemoteObject {
 
     public boolean checkin_attention;
 
+    @Column(definition = "TEXT")
+    public String checkin_text;
+
     @Column(value = "false")
     public boolean valid_if_pending;
 

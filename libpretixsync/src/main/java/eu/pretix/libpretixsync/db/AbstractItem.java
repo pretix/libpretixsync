@@ -57,6 +57,9 @@ public class AbstractItem implements RemoteObject {
 
     public String picture_filename;
 
+    @Column(definition = "TEXT")
+    public String checkin_text;
+
     @Override
     public JSONObject getJSON() throws JSONException {
         return new JSONObject(json_data);
@@ -319,6 +322,7 @@ public class AbstractItem implements RemoteObject {
             v.setSales_channels(variation.optJSONArray("sales_channels"));
             v.setHide_without_voucher(variation.optBoolean("hide_without_voucher", false));
             v.setCheckin_attention(variation.optBoolean("checkin_attention", false));
+            v.setCheckin_text(variation.optString("checkin_text"));
             l.add(v);
         }
         return l;

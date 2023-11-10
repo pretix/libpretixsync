@@ -95,7 +95,7 @@ class OnlineCheckProvider(
                     res.type = TicketCheckProvider.CheckResult.Type.VALID
                 } else if ("incomplete" == status) {
                     res.type = TicketCheckProvider.CheckResult.Type.ANSWERS_REQUIRED
-                    val required_answers: MutableList<TicketCheckProvider.RequiredAnswer> = ArrayList()
+                    val required_answers: MutableList<TicketCheckProvider.QuestionAnswer> = ArrayList()
                     for (i in 0 until response.getJSONArray("questions").length()) {
                         val q = response.getJSONArray("questions").getJSONObject(i)
                         val question = Question()
@@ -103,7 +103,7 @@ class OnlineCheckProvider(
                         question.isRequired = q.getBoolean("required")
                         question.setPosition(q.getLong("position"))
                         question.setJson_data(q.toString())
-                        required_answers.add(TicketCheckProvider.RequiredAnswer(question, ""))
+                        required_answers.add(TicketCheckProvider.QuestionAnswer(question, ""))
                     }
                     res.requiredAnswers = required_answers
                 } else {
@@ -201,8 +201,32 @@ class OnlineCheckProvider(
                         // ignore, we don't want the whole thing to fail because of this
                     }
 
+                    if (posjson.has("answers") && posjson.getJSONArray("answers").length() > 0) {
+                        val shownAnswers: MutableList<TicketCheckProvider.QuestionAnswer> = ArrayList()
+                        for (i in 0 until (posjson.getJSONArray("answers").length())) {
+                            val a = posjson.getJSONArray("answers").getJSONObject(i)
+                            val value = a.getString("answer")
+                            val q = a.getJSONObject("question")
+                            val question = Question()
+                            question.setServer_id(q.getLong("id"))
+                            question.isRequired = q.getBoolean("required")
+                            question.setPosition(q.getLong("position"))
+                            question.setJson_data(q.toString())
+                            if (question.isShowDuringCheckin) {
+                                shownAnswers.add(TicketCheckProvider.QuestionAnswer(question, value))
+                            }
+                        }
+                        res.shownAnswers = shownAnswers
+                    }
                 }
+
                 res.isRequireAttention = response.optBoolean("require_attention", false)
+                if (response.has("checkin_texts")) {
+                    val checkinTexts = response.getJSONArray("checkin_texts")
+                    res.checkinTexts = List(checkinTexts.length()) {
+                        checkinTexts.getString(it)
+                    }
+                }
             }
             res
         } catch (e: JSONException) {
