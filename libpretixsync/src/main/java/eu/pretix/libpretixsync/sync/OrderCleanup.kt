@@ -78,17 +78,19 @@ class OrderCleanup(val store: BlockingEntityStore<Persistable>, val fileStorage:
             for (o in orders) {
                 var deltime: Long? = null
                 try {
-                    val pos = o.json.getJSONArray("positions")
-                    if (pos.length() == 0) {
+                    val subeventIds = store.select(OrderPosition.SUBEVENT_ID)
+                        .from(OrderPosition::class.java)
+                        .where(OrderPosition.ORDER_ID.eq(o.id))
+                        .get().toList().map { it.get(0) as Long? }.distinct()
+                    if (subeventIds.isEmpty()) {
                         deltime = System.currentTimeMillis()
                     }
-                    for (i in 0 until pos.length()) {
-                        val p = pos.getJSONObject(i)
-                        if (p.isNull("subevent")) {
+                    for (sId in subeventIds) {
+                        if (sId == null) {
                             deltime = System.currentTimeMillis() + 1000L * 3600 * 24 * 365 * 20 // should never happen, if it does, don't delete this any time soon
                             break
                         }
-                        val thisDeltime = deletionTimeForSubevent(p.getLong("subevent"), eventSlug)
+                        val thisDeltime = deletionTimeForSubevent(sId, eventSlug)
                         if (thisDeltime != null) {
                             deltime = if (deltime == null) {
                                 thisDeltime

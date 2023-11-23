@@ -291,7 +291,9 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
         obj.setEmail(jsonobj.optString("email"));
         obj.setCheckin_attention(jsonobj.optBoolean("checkin_attention"));
         obj.setValid_if_pending(jsonobj.optBoolean("valid_if_pending", false));
-        obj.setJson_data(jsonobj.toString());
+        JSONObject json_data = new JSONObject(jsonobj.toString());
+        json_data.remove("positions");
+        obj.setJson_data(json_data.toString());
         obj.setDeleteAfterTimestamp(0L);
 
         if (obj.getId() == null) {
