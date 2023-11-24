@@ -31,7 +31,7 @@ interface TicketCheckProvider {
     class CheckResult {
         enum class Type {
             INVALID, VALID, USED, ERROR, UNPAID, BLOCKED, INVALID_TIME, CANCELED, PRODUCT, RULES,
-            ANSWERS_REQUIRED, AMBIGUOUS, REVOKED
+            ANSWERS_REQUIRED, AMBIGUOUS, REVOKED, UNAPPROVED
         }
 
         var type: Type? = null

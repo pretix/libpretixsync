@@ -110,7 +110,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
     @Test
     fun testRequireApproval() {
         var r = p!!.check(mapOf("demo" to 1L), "jugeme335ggtc88tnt9pj853fu4wrf2s")
-        assertEquals(TicketCheckProvider.CheckResult.Type.UNPAID, r.type)
+        assertEquals(TicketCheckProvider.CheckResult.Type.UNAPPROVED, r.type)
         assertEquals(false, r.isCheckinAllowed)
     }
 

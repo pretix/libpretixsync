@@ -648,6 +648,13 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
             return res
         }
 
+        if (order.status != "p" && order.isRequireApproval) {
+            res.type = TicketCheckProvider.CheckResult.Type.UNAPPROVED
+            res.isCheckinAllowed = false
+            storeFailedCheckin(eventSlug, list.getServer_id(), "unapproved", position.secret, type, position = position.getServer_id(), item = position.getItem().getServer_id(), variation = position.getVariation_id(), subevent = position.getSubevent_id(), nonce = nonce)
+            return res
+        }
+
         if (type != TicketCheckProvider.CheckInType.EXIT) {
             val validFrom = position.validFrom
             if (validFrom != null && validFrom.isAfter(now())) {
@@ -681,13 +688,6 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
         if (list.getSubevent_id() != null && list.getSubevent_id() > 0 && list.getSubevent_id() != position.subeventId) {
             storeFailedCheckin(eventSlug, list.getServer_id(), "invalid", position.secret, type, position = position.getServer_id(), item = position.getItem().getServer_id(), variation = position.getVariation_id(), subevent = position.getSubevent_id(), nonce = nonce)
             return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.INVALID, offline = true)
-        }
-
-        if (order.status != "p" && order.isRequireApproval) {
-            res.type = TicketCheckProvider.CheckResult.Type.UNPAID
-            res.isCheckinAllowed = false
-            storeFailedCheckin(eventSlug, list.getServer_id(), "unpaid", position.secret, type, position = position.getServer_id(), item = position.getItem().getServer_id(), variation = position.getVariation_id(), subevent = position.getSubevent_id(), nonce = nonce)
-            return res
         }
 
         if (!order.isValidStatus && !(ignore_unpaid && list.include_pending)) {

@@ -124,6 +124,8 @@ class OnlineCheckProvider(
                         res.type = TicketCheckProvider.CheckResult.Type.AMBIGUOUS
                     } else if ("revoked" == reason) {
                         res.type = TicketCheckProvider.CheckResult.Type.REVOKED
+                    } else if ("unapproved" == reason) {
+                        res.type = TicketCheckProvider.CheckResult.Type.UNAPPROVED
                     } else if ("unpaid" == reason) {
                         res.type = TicketCheckProvider.CheckResult.Type.UNPAID
                         // Decide whether the user is allowed to "try again" with "ignore_unpaid"
@@ -143,6 +145,8 @@ class OnlineCheckProvider(
                         res.isCheckinAllowed = includePending && response.has("position") && response.getJSONObject("position").optString("order__status", "n") == "n"
                     } else if ("product" == reason) {
                         res.type = TicketCheckProvider.CheckResult.Type.PRODUCT
+                    } else {
+                        res.type = TicketCheckProvider.CheckResult.Type.ERROR
                     }
                     if (response.has("reason_explanation") && !response.isNull("reason_explanation")) {
                         res.reasonExplanation = response.getString("reason_explanation")
