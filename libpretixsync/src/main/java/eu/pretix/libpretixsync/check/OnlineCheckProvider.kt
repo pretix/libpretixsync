@@ -210,14 +210,21 @@ class OnlineCheckProvider(
                         for (i in 0 until (posjson.getJSONArray("answers").length())) {
                             val a = posjson.getJSONArray("answers").getJSONObject(i)
                             val value = a.getString("answer")
-                            val q = a.getJSONObject("question")
-                            val question = Question()
-                            question.setServer_id(q.getLong("id"))
-                            question.isRequired = q.getBoolean("required")
-                            question.setPosition(q.getLong("position"))
-                            question.setJson_data(q.toString())
-                            if (question.isShowDuringCheckin) {
-                                shownAnswers.add(TicketCheckProvider.QuestionAnswer(question, value))
+                            val q = a.get("question")
+                            if (q is JSONObject) {  // pretix version supports the expand parameter
+                                val question = Question()
+                                question.setServer_id(q.getLong("id"))
+                                question.isRequired = q.getBoolean("required")
+                                question.setPosition(q.getLong("position"))
+                                question.setJson_data(q.toString())
+                                if (question.isShowDuringCheckin) {
+                                    shownAnswers.add(
+                                        TicketCheckProvider.QuestionAnswer(
+                                            question,
+                                            value
+                                        )
+                                    )
+                                }
                             }
                         }
                         res.shownAnswers = shownAnswers
