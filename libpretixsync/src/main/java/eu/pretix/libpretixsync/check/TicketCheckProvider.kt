@@ -70,7 +70,7 @@ interface TicketCheckProvider {
         }
 
         fun orderCodeAndPositionId(): String? {
-            if (orderCode != null && positionId != null && positionId!! > 0) {
+            if (!orderCode.isNullOrBlank() && positionId != null && positionId!! > 0) {
                 return "${orderCode}-${positionId}"
             } else {
                 return orderCode

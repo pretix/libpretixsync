@@ -25,7 +25,6 @@ import org.joda.time.format.ISODateTimeFormat
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
-import java.lang.Exception
 import java.nio.charset.Charset
 import java.util.*
 
@@ -39,7 +38,8 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
         this.sentry = sentry
     }
 
-    private fun storeFailedCheckin(eventSlug: String, listId: Long, error_reason: String, raw_barcode: String, type: TicketCheckProvider.CheckInType, position: Long? = null, item: Long? = null, variation: Long? = null, subevent: Long? = null, nonce: String?) {
+    private fun storeFailedCheckin(eventSlug: String, listId: Long, error_reason: String, raw_barcode: String, type: TicketCheckProvider.CheckInType, position: Long? = null, item: Long? = null, variation: Long? = null, subevent: Long? = null, nonce: String?,
+                                   debug_data: JSONObject? = null) {
         /*
            :<json boolean error_reason: One of ``canceled``, ``invalid``, ``unpaid``, ``product``, ``rules``, ``revoked``,
                                         ``incomplete``, ``already_redeemed``, ``blocked``, ``invalid_time``, or ``error``. Required.
@@ -70,6 +70,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
         if (item != null && item > 0) jdoc.put("item", item)
         if (variation != null && variation > 0) jdoc.put("variation", variation)
         if (subevent != null && subevent > 0) jdoc.put("subevent", subevent)
+        if (debug_data != null) jdoc.put("debug_data", debug_data)
 
         val qo = QueuedCall()
         val api = PretixApi.fromConfig(config)  // todo: uses wrong http client
@@ -397,7 +398,18 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
             if (!jsonLogic.applyString(rules.toString(), data, safe = true).truthy) {
                 res.type = TicketCheckProvider.CheckResult.Type.RULES
                 res.isCheckinAllowed = false
-                storeFailedCheckin(eventSlug, listId, "rules", ticketid, type, item = decoded.item, variation = decoded.variation, subevent = decoded.subevent, nonce = nonce)
+                val debug_data = JSONObject()
+                val rules_payload = JSONObject()
+                data.forEach { key, value ->
+                    try {
+                        rules_payload.put(key, value)
+                    } catch (e: Exception) {
+                        rules_payload.put(key, "(exception: $e)")
+                    }
+                }
+                debug_data.put("rules_payload", rules_payload)
+                storeFailedCheckin(eventSlug, listId, "rules", ticketid, type, item = decoded.item, variation = decoded.variation, subevent = decoded.subevent, nonce = nonce,
+                    debug_data = debug_data)
                 return res
             }
         }
@@ -735,7 +747,18 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
             if (!jsonLogic.applyString(rules.toString(), data, safe = true).truthy) {
                 res.type = TicketCheckProvider.CheckResult.Type.RULES
                 res.isCheckinAllowed = false
-                storeFailedCheckin(eventSlug, list.getServer_id(), "rules", position.secret, type, position = position.getServer_id(), item = position.getItem().getServer_id(), variation = position.getVariation_id(), subevent = position.getSubevent_id(), nonce = nonce)
+                val debug_data = JSONObject()
+                val rules_payload = JSONObject()
+                data.forEach { key, value ->
+                    try {
+                        rules_payload.put(key, value)
+                    } catch (e: Exception) {
+                        rules_payload.put(key, "(exception: $e)")
+                    }
+                }
+                debug_data.put("rules_payload", rules_payload)
+                storeFailedCheckin(eventSlug, list.getServer_id(), "rules", position.secret, type, position = position.getServer_id(), item = position.getItem().getServer_id(), variation = position.getVariation_id(), subevent = position.getSubevent_id(), nonce = nonce,
+                    debug_data = debug_data)
                 return res
             }
         }
