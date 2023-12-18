@@ -544,6 +544,13 @@ public class OrderSyncAdapter extends BaseDownloadSyncAdapter<Order, String> {
         JSONObject old = null;
         if (order.getId() != null) {
             old = order.getJSON();
+            if (!old.has("positions")) {
+                JSONArray pos = new JSONArray();
+                for (OrderPosition p : order.getPositions()) {
+                    pos.put(p.getJSON());
+                }
+                old.put("positions", pos);
+            }
         }
 
         // Warm up cache

@@ -125,5 +125,4 @@ public class AbstractOrder implements RemoteObject {
     public JSONObject getJSON() throws JSONException {
         return new JSONObject(json_data);
     }
-
 }
