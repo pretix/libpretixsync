@@ -329,6 +329,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
         }
 
         val res = TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.ERROR, offline = true)
+        res.eventSlug = eventSlug
         res.scanType = type
         res.ticket = item.internalName
         val variation = if (decoded.variation != null && decoded.variation!! > 0L) {
