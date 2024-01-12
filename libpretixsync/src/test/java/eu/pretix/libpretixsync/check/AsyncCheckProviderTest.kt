@@ -573,6 +573,82 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
     }
 
     @Test
+    fun testRulesEntriesDaysSince() {
+        val p2 = AsyncCheckProvider(configStore!!, dataStore)
+
+        // Ticket is valid once before X and on one day after X
+        setRuleOnList2("{" +
+                "        \"or\": [\n" +
+                "            {\"<=\": [{\"var\": \"entries_number\"}, 0]},\n" +
+                "            {\"and\": [\n" +
+                "                {\"isAfter\": [{\"var\": \"now\"}, {\"buildTime\": [\"custom\", \"2020-01-01T23:00:00.000+01:00\"]}, 0]},\n" +
+                "                {\"or\": [\n" +
+                "                    {\">\": [{\"var\": \"entries_today\"}, 0]},\n" +
+                "                    {\"<=\": [{\"entries_days_since\": [{\"buildTime\": [\"custom\", \"2020-01-01T23:00:00.000+01:00\"]}]}, 0]},\n" +
+                "                ]}\n" +
+                "            ]},\n" +
+                "        ],\n" +
+                "    }")
+
+        p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2020-01-01T21:00:00.000Z"))
+
+        var r = p2.check(mapOf("demo" to 2L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+
+        r = p2.check(mapOf("demo" to 2L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.RULES, r.type)
+
+        p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2020-01-02T22:10:00.000Z"))
+
+        r = p2.check(mapOf("demo" to 2L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+
+        r = p2.check(mapOf("demo" to 2L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+
+        p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2020-01-03T22:10:00.000Z"))
+
+        r = p2.check(mapOf("demo" to 2L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.RULES, r.type)
+    }
+
+    @Test
+    fun testRulesEntriesDaysBefore() {
+        val p2 = AsyncCheckProvider(configStore!!, dataStore)
+
+        // Ticket is valid after 23:00 only if people already showed up on two days before
+        setRuleOnList2("{" +
+                "        \"or\": [\n" +
+                "            {\"isBefore\": [{\"var\": \"now\"}, {\"buildTime\": [\"custom\", \"2020-01-01T23:00:00.000+01:00\"]}, 0]},\n" +
+                "            {\"and\": [\n" +
+                "                {\"isAfter\": [{\"var\": \"now\"}, {\"buildTime\": [\"custom\", \"2020-01-01T23:00:00.000+01:00\"]}, 0]},\n" +
+                "                {\">=\": [{\"entries_days_before\": [{\"buildTime\": [\"custom\", \"2020-01-01T23:00:00.000+01:00\"]}]}, 2]},\n" +
+                "            ]},\n" +
+                "        ],\n" +
+                "    }")
+
+        p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2019-12-30T21:00:00.000Z"))
+
+        var r = p2.check(mapOf("demo" to 2L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+
+        p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2020-01-02T22:10:00.000Z"))
+
+        r = p2.check(mapOf("demo" to 2L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.RULES, r.type)
+
+        p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2019-12-31T21:00:00.000Z"))
+
+        r = p2.check(mapOf("demo" to 2L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+
+        p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2020-01-02T22:10:00.000Z"))
+
+        r = p2.check(mapOf("demo" to 2L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+    }
+
+    @Test
     fun testRulesMinutesSinceLastEntry() {
         val p2 = AsyncCheckProvider(configStore!!, dataStore)
         setRuleOnList2("{\"or\": [{\"<=\": [{\"var\": \"minutes_since_last_entry\"}, -1]}, {\">\": [{\"var\": \"minutes_since_last_entry\"}, 180]}]}")

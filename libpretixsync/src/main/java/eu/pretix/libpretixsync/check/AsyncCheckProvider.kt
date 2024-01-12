@@ -102,6 +102,20 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
                 ) as DateTime
             )
         }
+        jsonLogic.addOperation("entries_days_since") { l, d ->
+            ((d as Map<*, *>)["entries_days_since"] as ((DateTime) -> Int)).invoke(
+                l?.getOrNull(
+                    0
+                ) as DateTime
+            )
+        }
+        jsonLogic.addOperation("entries_days_before") { l, d ->
+            ((d as Map<*, *>)["entries_days_before"] as ((DateTime) -> Int)).invoke(
+                l?.getOrNull(
+                    0
+                ) as DateTime
+            )
+        }
         jsonLogic.addOperation("isAfter") { l, d ->
             if (l?.size == 2 || (l?.size == 3 && l.getOrNull(2) == null)) {
                 (l.getOrNull(0) as DateTime).isAfter(l.getOrNull(1) as DateTime)
@@ -719,10 +733,24 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
                     DateTime(it.fullDatetime).withZone(tz).isAfter(cutoff.minus(Duration.millis(1))) && it.type == "entry"
                 }.size
             })
+            data.put("entries_days_since", { cutoff: DateTime ->
+                checkIns.filter {
+                    DateTime(it.fullDatetime).withZone(tz).isAfter(cutoff.minus(Duration.millis(1))) && it.type == "entry"
+                }.map {
+                    DateTime(it.fullDatetime).withZone(tz).toLocalDate()
+                }.toHashSet().size
+            })
             data.put("entries_before", { cutoff: DateTime ->
                 checkIns.filter {
                     DateTime(it.fullDatetime).withZone(tz).isBefore(cutoff) && it.type == "entry"
                 }.size
+            })
+            data.put("entries_days_before", { cutoff: DateTime ->
+                checkIns.filter {
+                    DateTime(it.fullDatetime).withZone(tz).isBefore(cutoff) && it.type == "entry"
+                }.map {
+                    DateTime(it.fullDatetime).withZone(tz).toLocalDate()
+                }.toHashSet().size
             })
             data.put("entries_days", checkIns.filter { it.type == "entry" }.map {
                 DateTime(it.fullDatetime).withZone(tz).toLocalDate()
