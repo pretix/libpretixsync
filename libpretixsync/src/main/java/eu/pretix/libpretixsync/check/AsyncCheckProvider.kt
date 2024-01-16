@@ -409,10 +409,38 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
             data.put("minutes_since_last_entry", minutes_since_entries.minOrNull() ?: -1)
             data.put("minutes_since_first_entry", minutes_since_entries.maxOrNull() ?: -1)
 
-            if (!jsonLogic.applyString(rules.toString(), data, safe = true).truthy) {
+            try {
+                if (!jsonLogic.applyString(rules.toString(), data, safe = false).truthy) {
+                    res.type = TicketCheckProvider.CheckResult.Type.RULES
+                    res.isCheckinAllowed = false
+                    storeFailedCheckin(
+                        eventSlug,
+                        listId,
+                        "rules",
+                        ticketid,
+                        type,
+                        item = decoded.item,
+                        variation = decoded.variation,
+                        subevent = decoded.subevent,
+                        nonce = nonce
+                    )
+                    return res
+                }
+            } catch (e: Throwable) {
                 res.type = TicketCheckProvider.CheckResult.Type.RULES
                 res.isCheckinAllowed = false
-                storeFailedCheckin(eventSlug, listId, "rules", ticketid, type, item = decoded.item, variation = decoded.variation, subevent = decoded.subevent, nonce = nonce)
+                res.reasonExplanation = "Custom rule evaluation failed ($e)"
+                storeFailedCheckin(
+                    eventSlug,
+                    listId,
+                    "rules",
+                    ticketid,
+                    type,
+                    item = decoded.item,
+                    variation = decoded.variation,
+                    subevent = decoded.subevent,
+                    nonce = nonce,
+                )
                 return res
             }
         }
@@ -761,10 +789,40 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
             data.put("minutes_since_last_entry", minutes_since_entries.minOrNull() ?: -1)
             data.put("minutes_since_first_entry", minutes_since_entries.maxOrNull() ?: -1)
 
-            if (!jsonLogic.applyString(rules.toString(), data, safe = true).truthy) {
+            try {
+                if (!jsonLogic.applyString(rules.toString(), data, safe = false).truthy) {
+                    res.type = TicketCheckProvider.CheckResult.Type.RULES
+                    res.isCheckinAllowed = false
+                    storeFailedCheckin(
+                        eventSlug,
+                        list.getServer_id(),
+                        "rules",
+                        position.secret,
+                        type,
+                        position = position.getServer_id(),
+                        item = position.getItem().getServer_id(),
+                        variation = position.getVariation_id(),
+                        subevent = position.getSubevent_id(),
+                        nonce = nonce
+                    )
+                    return res
+                }
+            } catch (e: Throwable) {
                 res.type = TicketCheckProvider.CheckResult.Type.RULES
                 res.isCheckinAllowed = false
-                storeFailedCheckin(eventSlug, list.getServer_id(), "rules", position.secret, type, position = position.getServer_id(), item = position.getItem().getServer_id(), variation = position.getVariation_id(), subevent = position.getSubevent_id(), nonce = nonce)
+                res.reasonExplanation = "Custom rule evaluation failed ($e)"
+                storeFailedCheckin(
+                    eventSlug,
+                    list.getServer_id(),
+                    "rules",
+                    position.secret,
+                    type,
+                    position = position.getServer_id(),
+                    item = position.getItem().getServer_id(),
+                    variation = position.getVariation_id(),
+                    subevent = position.getSubevent_id(),
+                    nonce = nonce
+                )
                 return res
             }
         }
