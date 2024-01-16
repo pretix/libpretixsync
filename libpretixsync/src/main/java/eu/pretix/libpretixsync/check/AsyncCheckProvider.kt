@@ -400,6 +400,20 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
                     DateTime(it.fullDatetime).withZone(tz).isBefore(cutoff) && it.type == "entry"
                 }.size
             })
+            data.put("entries_days_since", { cutoff: DateTime ->
+                queuedCheckIns.filter {
+                    DateTime(it.fullDatetime).withZone(tz).isAfter(cutoff.minus(Duration.millis(1))) && it.type == "entry"
+                }.map {
+                    DateTime(it.fullDatetime).withZone(tz).toLocalDate()
+                }.toHashSet().size
+            })
+            data.put("entries_days_before", { cutoff: DateTime ->
+                queuedCheckIns.filter {
+                    DateTime(it.fullDatetime).withZone(tz).isBefore(cutoff) && it.type == "entry"
+                }.map {
+                    DateTime(it.fullDatetime).withZone(tz).toLocalDate()
+                }.toHashSet().size
+            })
             data.put("entries_days", queuedCheckIns.filter { it.type == "entry" }.map {
                 DateTime(it.fullDatetime).withZone(tz).toLocalDate()
             }.toHashSet().size)
