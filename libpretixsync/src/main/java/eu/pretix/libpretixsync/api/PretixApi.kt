@@ -411,7 +411,7 @@ open class PretixApi(url: String, key: String, orgaSlug: String, version: Int, h
             }
         }
         return try {
-            if (json) {
+            if (json && response.code != 204) {
                 if (body.startsWith("[")) {
                     body = "{\"content\": $body}"
                 }
