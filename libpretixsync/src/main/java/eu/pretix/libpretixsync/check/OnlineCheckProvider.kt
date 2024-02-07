@@ -47,7 +47,8 @@ class OnlineCheckProvider(
         ignore_unpaid: Boolean,
         with_badge_data: Boolean,
         type: TicketCheckProvider.CheckInType,
-        nonce: String?
+        nonce: String?,
+        allowQuestions: Boolean
     ): TicketCheckProvider.CheckResult {
         val ticketid_cleaned = ticketid.replace(Regex("[\\p{C}]"), "�")  // remove unprintable characters
         val nonce_cleaned = nonce ?: NonceGenerator.nextNonce()
@@ -68,6 +69,7 @@ class OnlineCheckProvider(
                     with_badge_data,
                     type.toString().lowercase(Locale.getDefault()),
                     callTimeout = if (fallback != null) fallbackTimeout.toLong() else null,
+                    questions_supported = allowQuestions,
                 )
             } else {
                 if (eventsAndCheckinLists.size != 1) throw CheckException("Multi-event scan not supported by server.")
@@ -84,6 +86,7 @@ class OnlineCheckProvider(
                     type.toString().lowercase(Locale.getDefault()),
                     source_type,
                     callTimeout = if (fallback != null) fallbackTimeout.toLong() else null,
+                    questions_supported = allowQuestions,
                 )
             }
             if (responseObj.response.code == 404) {
