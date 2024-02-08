@@ -69,8 +69,10 @@ class QuestionAnswerValidationTest(private val questionType: QuestionType, priva
                 arrayOf(QuestionType.W, "2016-02-29T14:30", "2016-02-29T14:30"),
                 arrayOf(QuestionType.W, "2016-02-29T25:59", null),
                 arrayOf(QuestionType.W, "2017-02-01", null),
-                arrayOf(QuestionType.W, "fooobar", null)
-                // TODO: Date, time, datetime
+                arrayOf(QuestionType.W, "fooobar", null),
+                arrayOf(QuestionType.EMAIL, "foobar@example.org", "foobar@example.org"),
+                arrayOf(QuestionType.EMAIL, "foobar", null),
+                arrayOf(QuestionType.EMAIL, "foobar@example.com.k", null)
         )
     }
 }

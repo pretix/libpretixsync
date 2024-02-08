@@ -10,6 +10,7 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 import eu.pretix.libpretixsync.check.QuestionType;
+import eu.pretix.libpretixsync.utils.EmailValidator;
 import eu.pretix.libpretixsync.utils.Patterns;
 
 public abstract class QuestionLike {
@@ -74,7 +75,7 @@ public abstract class QuestionLike {
                 throw new ValidationException("Invalid file path supplied");
             }
         } else if (type == QuestionType.EMAIL) {
-            if (!Patterns.EMAIL_ADDRESS.matcher(answer).matches()) {
+            if (!(new EmailValidator()).isValidEmail(answer)) {
                 throw new ValidationException("Invalid email address supplied");
             }
         } else if (type == QuestionType.B) {
