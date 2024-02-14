@@ -853,6 +853,14 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
     }
 
     @Test
+    fun testQuestionsIgnored() {
+        QuestionSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null).standaloneRefreshFromJSON(jsonResource("questions/question1.json"))
+
+        var r = p!!.check(mapOf("demo" to 1L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj", "barcode", ArrayList(), false, true, TicketCheckProvider.CheckInType.ENTRY, allowQuestions = false)
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+    }
+
+    @Test
     fun testQuestionsRequired() {
         QuestionSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null).standaloneRefreshFromJSON(jsonResource("questions/question1.json"))
 

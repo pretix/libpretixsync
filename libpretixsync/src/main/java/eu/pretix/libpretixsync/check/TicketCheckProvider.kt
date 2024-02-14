@@ -131,7 +131,7 @@ interface TicketCheckProvider {
     class StatusResult(var eventName: String?, var totalTickets: Int, var alreadyScanned: Int, var currentlyInside: Int?, var items: List<StatusResultItem>?) {
     }
 
-    fun check(eventsAndCheckinLists: Map<String, Long>, ticketid: String, source_type: String, answers: List<Answer>?, ignore_unpaid: Boolean, with_badge_data: Boolean, type: CheckInType, nonce: String? = null): CheckResult
+    fun check(eventsAndCheckinLists: Map<String, Long>, ticketid: String, source_type: String, answers: List<Answer>?, ignore_unpaid: Boolean, with_badge_data: Boolean, type: CheckInType, nonce: String? = null, allowQuestions: Boolean = true): CheckResult
     fun check(eventsAndCheckinLists: Map<String, Long>, ticketid: String): CheckResult
     @Throws(CheckException::class)
     fun search(eventsAndCheckinLists: Map<String, Long>, query: String, page: Int): List<SearchResult>

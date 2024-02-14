@@ -263,7 +263,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
         return RSAResult(givenAnswers, requiredAnswers, shownAnswers, askQuestions)
     }
 
-    private fun checkOfflineWithoutData(eventsAndCheckinLists: Map<String, Long>, ticketid: String, type: TicketCheckProvider.CheckInType, answers: List<Answer>?, nonce: String?): TicketCheckProvider.CheckResult {
+    private fun checkOfflineWithoutData(eventsAndCheckinLists: Map<String, Long>, ticketid: String, type: TicketCheckProvider.CheckInType, answers: List<Answer>?, nonce: String?, allowQuestions: Boolean): TicketCheckProvider.CheckResult {
         val dt = now()
         val events = dataStore.select(Event::class.java)
                 .where(Event.SLUG.`in`(eventsAndCheckinLists.keys.toList()))
@@ -471,7 +471,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
         var required_answers: MutableList<TicketCheckProvider.QuestionAnswer> = ArrayList()
         var shown_answers: MutableList<TicketCheckProvider.QuestionAnswer> = ArrayList()
         var ask_questions = false
-        if (type != TicketCheckProvider.CheckInType.EXIT) {
+        if (type != TicketCheckProvider.CheckInType.EXIT && allowQuestions) {
             val rsa = extractRequiredShownAnswers(questions, answerMap)
             givenAnswers = rsa.givenAnswers
             required_answers = rsa.requiredAnswers
@@ -533,6 +533,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
         with_badge_data: Boolean,
         type: TicketCheckProvider.CheckInType,
         nonce: String?,
+        allowQuestions: Boolean,
     ): TicketCheckProvider.CheckResult {
         sentry.addBreadcrumb("provider.check", "offline check started")
 
@@ -563,6 +564,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
                     ignore_unpaid,
                     type,
                     nonce,
+                    allowQuestions,
                 )
             }
 
@@ -572,6 +574,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
                 type,
                 answers ?: emptyList(),
                 nonce,
+                allowQuestions,
             )
         } else if (tickets.size > 1) {
             val eventSlug = tickets[0].getOrder().getEvent_slug()
@@ -593,10 +596,10 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
             )
             return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.AMBIGUOUS)
         }
-        return checkOfflineWithData(eventsAndCheckinLists, ticketid, tickets, answers, ignore_unpaid, type, nonce = nonce)
+        return checkOfflineWithData(eventsAndCheckinLists, ticketid, tickets, answers, ignore_unpaid, type, nonce = nonce, allowQuestions = allowQuestions)
     }
 
-    private fun checkOfflineWithData(eventsAndCheckinLists: Map<String, Long>, secret: String, tickets: List<OrderPosition>, answers: List<Answer>?, ignore_unpaid: Boolean, type: TicketCheckProvider.CheckInType, nonce: String?): TicketCheckProvider.CheckResult {
+    private fun checkOfflineWithData(eventsAndCheckinLists: Map<String, Long>, secret: String, tickets: List<OrderPosition>, answers: List<Answer>?, ignore_unpaid: Boolean, type: TicketCheckProvider.CheckInType, nonce: String?, allowQuestions: Boolean): TicketCheckProvider.CheckResult {
         // !!! When extending this, also extend checkOfflineWithoutData !!!
         val dt = now()
         val eventSlug = tickets[0].getOrder().getEvent_slug()
@@ -854,7 +857,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
         var required_answers: MutableList<TicketCheckProvider.QuestionAnswer> = ArrayList()
         var shown_answers: MutableList<TicketCheckProvider.QuestionAnswer> = ArrayList()
         var ask_questions = false
-        if (type != TicketCheckProvider.CheckInType.EXIT) {
+        if (type != TicketCheckProvider.CheckInType.EXIT && allowQuestions) {
             val rsa = extractRequiredShownAnswers(questions, answerMap)
             givenAnswers = rsa.givenAnswers
             required_answers = rsa.requiredAnswers

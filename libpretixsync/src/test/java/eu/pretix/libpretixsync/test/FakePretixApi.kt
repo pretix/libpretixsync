@@ -40,7 +40,8 @@ class FakePretixApi : PretixApi("http://1.1.1.1/", "a", "demo", 1, DefaultHttpCl
         ignore_unpaid: Boolean,
         pdf_data: Boolean,
         type: String?,
-        callTimeout: Long?
+        callTimeout: Long?,
+        questions_supported: Boolean
     ): ApiResponse {
         redeemRequestSecret = secret
         redeemRequestDatetime = datetime
@@ -65,7 +66,8 @@ class FakePretixApi : PretixApi("http://1.1.1.1/", "a", "demo", 1, DefaultHttpCl
         pdf_data: Boolean,
         type: String?,
         source_type: String?,
-        callTimeout: Long?
+        callTimeout: Long?,
+        questions_supported: Boolean
     ): ApiResponse {
         redeemRequestSecret = secret
         redeemRequestDatetime = datetime

@@ -103,7 +103,8 @@ class ProxyCheckProvider(private val config: ConfigStore, httpClientFactory: Htt
         ignore_unpaid: Boolean,
         with_badge_data: Boolean,
         type: TicketCheckProvider.CheckInType,
-        nonce: String?
+        nonce: String?,
+        allowQuestions: Boolean
     ): TicketCheckProvider.CheckResult {
         val data: MutableMap<String, Any> = HashMap()
         data["events_and_checkin_lists"] = eventsAndCheckinLists
@@ -113,6 +114,7 @@ class ProxyCheckProvider(private val config: ConfigStore, httpClientFactory: Htt
         data["with_badge_data"] = with_badge_data
         data["source_type"] = source_type
         data["type"] = type
+        data["allowQuestions"] = allowQuestions
         if (nonce != null) {
             data["nonce"] = nonce
         }
