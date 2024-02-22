@@ -1,20 +1,19 @@
 package eu.pretix.libpretixsync.sync
 
 import eu.pretix.libpretixsync.api.ApiException
-import eu.pretix.libpretixsync.api.PretixApi
 import eu.pretix.libpretixsync.db.*
 import eu.pretix.libpretixsync.sync.*
-import eu.pretix.libpretixsync.test.*
+import eu.pretix.pretixscan.scanproxy.tests.db.BaseDatabaseTest
+import eu.pretix.pretixscan.scanproxy.tests.test.FakeConfigStore
+import eu.pretix.pretixscan.scanproxy.tests.test.FakeFileStorage
+import eu.pretix.pretixscan.scanproxy.tests.test.FakePretixApi
+import eu.pretix.pretixscan.scanproxy.tests.test.jsonResource
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import org.json.JSONArray
-import org.json.JSONException
 import org.json.JSONObject
 import org.junit.Before
 import org.junit.Test
-
-import java.util.ArrayList
-import java.util.Date
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.fail
@@ -30,7 +29,9 @@ class OrderSyncTest : BaseDatabaseTest() {
         fakeApi = FakePretixApi()
         osa = OrderSyncAdapter(dataStore, FakeFileStorage(), "demo", 0, true, false, fakeApi, "", null)
 
-        CheckInListSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null, 0).standaloneRefreshFromJSON(jsonResource("checkinlists/list1.json"))
+        CheckInListSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null, 0).standaloneRefreshFromJSON(
+            jsonResource("checkinlists/list1.json")
+        )
     }
 
     private fun response(data: JSONObject, generated: String): Response {

@@ -1,7 +1,7 @@
 package eu.pretix.libpretixsync.utils
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import eu.pretix.libpretixsync.test.readResource
+import eu.pretix.pretixscan.scanproxy.tests.test.readResource
 import eu.pretix.libpretixsync.utils.logic.*
 import org.junit.Assert.assertEquals
 import org.junit.Test

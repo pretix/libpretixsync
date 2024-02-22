@@ -1,4 +1,4 @@
-package eu.pretix.libpretixsync.test
+package eu.pretix.pretixscan.scanproxy.tests.test
 
 import eu.pretix.libpretixsync.api.DefaultHttpClientFactory
 import eu.pretix.libpretixsync.api.PretixApi

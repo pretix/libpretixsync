@@ -2,7 +2,11 @@ package eu.pretix.libpretixsync.check
 
 import eu.pretix.libpretixsync.db.*
 import eu.pretix.libpretixsync.sync.*
-import eu.pretix.libpretixsync.test.*
+import eu.pretix.pretixscan.scanproxy.tests.db.BaseDatabaseTest
+import eu.pretix.pretixscan.scanproxy.tests.test.FakeConfigStore
+import eu.pretix.pretixscan.scanproxy.tests.test.FakeFileStorage
+import eu.pretix.pretixscan.scanproxy.tests.test.FakePretixApi
+import eu.pretix.pretixscan.scanproxy.tests.test.jsonResource
 import org.joda.time.format.ISODateTimeFormat
 import org.json.JSONException
 import org.json.JSONObject
@@ -31,13 +35,27 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         ItemSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null).standaloneRefreshFromJSON(jsonResource("items/item1.json"))
         ItemSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null).standaloneRefreshFromJSON(jsonResource("items/item2.json"))
         ItemSyncAdapter(dataStore, FakeFileStorage(), "demo2", fakeApi, "", null).standaloneRefreshFromJSON(jsonResource("items/event2-item3.json"))
-        CheckInListSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null, 0).standaloneRefreshFromJSON(jsonResource("checkinlists/list1.json"))
-        CheckInListSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null, 0).standaloneRefreshFromJSON(jsonResource("checkinlists/list2.json"))
-        CheckInListSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null, 0).standaloneRefreshFromJSON(jsonResource("checkinlists/list3.json"))
-        CheckInListSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null, 0).standaloneRefreshFromJSON(jsonResource("checkinlists/list4.json"))
-        CheckInListSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null, 0).standaloneRefreshFromJSON(jsonResource("checkinlists/list5.json"))
-        CheckInListSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null, 0).standaloneRefreshFromJSON(jsonResource("checkinlists/list6.json"))
-        CheckInListSyncAdapter(dataStore, FakeFileStorage(), "demo2", fakeApi, "", null, 0).standaloneRefreshFromJSON(jsonResource("checkinlists/event2-list7.json"))
+        CheckInListSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null, 0).standaloneRefreshFromJSON(
+            jsonResource("checkinlists/list1.json")
+        )
+        CheckInListSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null, 0).standaloneRefreshFromJSON(
+            jsonResource("checkinlists/list2.json")
+        )
+        CheckInListSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null, 0).standaloneRefreshFromJSON(
+            jsonResource("checkinlists/list3.json")
+        )
+        CheckInListSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null, 0).standaloneRefreshFromJSON(
+            jsonResource("checkinlists/list4.json")
+        )
+        CheckInListSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null, 0).standaloneRefreshFromJSON(
+            jsonResource("checkinlists/list5.json")
+        )
+        CheckInListSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null, 0).standaloneRefreshFromJSON(
+            jsonResource("checkinlists/list6.json")
+        )
+        CheckInListSyncAdapter(dataStore, FakeFileStorage(), "demo2", fakeApi, "", null, 0).standaloneRefreshFromJSON(
+            jsonResource("checkinlists/event2-list7.json")
+        )
         SubEventSyncAdapter(dataStore, "demo", "14", fakeApi, "", null).standaloneRefreshFromJSON(jsonResource("subevents/subevent1.json"))
 
         val osa = OrderSyncAdapter(dataStore, FakeFileStorage(), "demo", 0, true, false, fakeApi, "", null)
@@ -830,7 +848,9 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testQuestionsForOtherItem() {
-        QuestionSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null).standaloneRefreshFromJSON(jsonResource("questions/question1.json"))
+        QuestionSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null).standaloneRefreshFromJSON(
+            jsonResource("questions/question1.json")
+        )
 
         val r = p!!.check(mapOf("demo" to 1L), "fem3hggggag8q38qkx35c2panqr5xjq8")
         assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
@@ -838,7 +858,9 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testQuestionNotDuringCheckin() {
-        QuestionSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null).standaloneRefreshFromJSON(jsonResource("questions/question3.json"))
+        QuestionSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null).standaloneRefreshFromJSON(
+            jsonResource("questions/question3.json")
+        )
 
         val r = p!!.check(mapOf("demo" to 1L), "fem3hggggag8q38qkx35c2panqr5xjq8")
         assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
@@ -846,7 +868,9 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testQuestionsFilled() {
-        QuestionSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null).standaloneRefreshFromJSON(jsonResource("questions/question1.json"))
+        QuestionSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null).standaloneRefreshFromJSON(
+            jsonResource("questions/question1.json")
+        )
 
         val r = p!!.check(mapOf("demo" to 1L), "kc855mh2e4cp6ye7xvpg3b4ye7n7xyma")
         assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
@@ -854,7 +878,9 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testQuestionsIgnored() {
-        QuestionSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null).standaloneRefreshFromJSON(jsonResource("questions/question1.json"))
+        QuestionSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null).standaloneRefreshFromJSON(
+            jsonResource("questions/question1.json")
+        )
 
         var r = p!!.check(mapOf("demo" to 1L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj", "barcode", ArrayList(), false, true, TicketCheckProvider.CheckInType.ENTRY, allowQuestions = false)
         assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
@@ -862,7 +888,9 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testQuestionsRequired() {
-        QuestionSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null).standaloneRefreshFromJSON(jsonResource("questions/question1.json"))
+        QuestionSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null).standaloneRefreshFromJSON(
+            jsonResource("questions/question1.json")
+        )
 
         var r = p!!.check(mapOf("demo" to 1L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj")
         assertEquals(TicketCheckProvider.CheckResult.Type.ANSWERS_REQUIRED, r.type)
@@ -884,7 +912,9 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testQuestionsInvalidInput() {
-        QuestionSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null).standaloneRefreshFromJSON(jsonResource("questions/question2.json"))
+        QuestionSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null).standaloneRefreshFromJSON(
+            jsonResource("questions/question2.json")
+        )
 
         var r = p!!.check(mapOf("demo" to 1L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj")
         assertEquals(TicketCheckProvider.CheckResult.Type.ANSWERS_REQUIRED, r.type)
