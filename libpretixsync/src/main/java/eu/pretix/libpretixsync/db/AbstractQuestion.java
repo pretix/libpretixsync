@@ -1,5 +1,6 @@
 package eu.pretix.libpretixsync.db;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.joda.time.format.ISODateTimeFormat;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -38,6 +39,7 @@ public class AbstractQuestion extends QuestionLike implements RemoteObject {
 
     @ManyToMany(cascade = CascadeAction.NONE)
     @JunctionTable
+    @JsonIgnore
     List<Item> items;
 
     @Transient
