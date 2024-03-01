@@ -133,4 +133,15 @@ class FakePretixApi : PretixApi("http://1.1.1.1/", "a", "demo", 1, DefaultHttpCl
     override fun uploadFile(file: File, mediaType: MediaType, filename: String): String {
         return "file:abcd"
     }
+
+
+    fun reset() {
+        postResponses.clear()
+        deleteResponses.clear()
+        downloadResponses.clear()
+        fetchResponses.clear()
+        redeemResponses.clear()
+        statusResponses.clear()
+        searchResponses.clear()
+    }
 }
