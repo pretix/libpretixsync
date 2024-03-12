@@ -92,7 +92,7 @@ public class AbstractCashier implements RemoteObject, CashierLike {
     }
 
     @Override
-    public long getNumericId() {
+    public Long getNumericId() {
         return this.server_id;
     }
 

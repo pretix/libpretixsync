@@ -7,7 +7,7 @@ public interface CashierLike {
 
     boolean hasPermission(String permission);
 
-    long getNumericId();
+    Long getNumericId();
 
     String getUserId();
 
