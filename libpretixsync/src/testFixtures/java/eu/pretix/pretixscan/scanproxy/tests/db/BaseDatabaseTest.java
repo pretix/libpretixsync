@@ -1,4 +1,4 @@
-package eu.pretix.libpretixsync.db;
+package eu.pretix.pretixscan.scanproxy.tests.db;
 
 import eu.pretix.libpretixsync.db.*;
 import eu.pretix.libpretixsync.Models;

@@ -1,4 +1,4 @@
-package eu.pretix.libpretixsync.test
+package eu.pretix.pretixscan.scanproxy.tests.test
 
 import org.json.JSONObject
 
