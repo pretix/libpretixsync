@@ -46,6 +46,10 @@ public abstract class QuestionLike {
 
     public List<String> getDependencyValues() { return new ArrayList<>(); }
 
+    public void warn_answer(String answer, List<QuestionOption> opts, boolean allAnswersAreOptional) throws ValidationException {
+
+    }
+
     public String clean_answer(String answer, List<QuestionOption> opts, boolean allAnswersAreOptional) throws ValidationException {
         QuestionType type = getType();
         if (!allAnswersAreOptional && requiresAnswer()) {
