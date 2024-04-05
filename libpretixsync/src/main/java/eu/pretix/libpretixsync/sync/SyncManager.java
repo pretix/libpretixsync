@@ -1,5 +1,6 @@
 package eu.pretix.libpretixsync.sync;
 
+import eu.pretix.libpretixsync.api.*;
 import eu.pretix.libpretixsync.db.ReusableMedium;
 import eu.pretix.libpretixsync.utils.JSONUtils;
 import io.requery.sql.StatementExecutionException;
@@ -12,11 +13,6 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import eu.pretix.libpretixsync.SentryInterface;
-import eu.pretix.libpretixsync.api.ApiException;
-import eu.pretix.libpretixsync.api.DeviceAccessRevokedException;
-import eu.pretix.libpretixsync.api.NotFoundApiException;
-import eu.pretix.libpretixsync.api.PretixApi;
-import eu.pretix.libpretixsync.api.ResourceNotModified;
 import eu.pretix.libpretixsync.config.ConfigStore;
 import eu.pretix.libpretixsync.db.Answer;
 import eu.pretix.libpretixsync.db.CheckIn;
@@ -149,14 +145,14 @@ public class SyncManager {
      */
     public SyncResult sync(boolean force, SyncManager.ProgressFeedback feedback) throws EventSwitchRequested {
         if (!configStore.isConfigured()) {
-            return new SyncResult(false, false);
+            return new SyncResult(false, false, null);
         }
 
         if (!force && (System.currentTimeMillis() - configStore.getLastSync()) < upload_interval) {
-            return new SyncResult(false, false);
+            return new SyncResult(false, false, null);
         }
         if (!force && (System.currentTimeMillis() - configStore.getLastFailedSync()) < 30000) {
-            return new SyncResult(false, false);
+            return new SyncResult(false, false, null);
         }
 
         bumpKnownVersion();
@@ -192,14 +188,16 @@ public class SyncManager {
             if (e.getCause() != null && e.getCause().getMessage().contains("SQLITE_BUSY")) {
                 configStore.setLastFailedSync(System.currentTimeMillis());
                 configStore.setLastFailedSyncMsg("Local database was locked");
+                return new SyncResult(true, download, e);
             } else {
                 throw e;
             }
         } catch (SyncException e) {
             configStore.setLastFailedSync(System.currentTimeMillis());
             configStore.setLastFailedSyncMsg(e.getMessage());
+            return new SyncResult(true, download, e);
         }
-        return new SyncResult(true, download);
+        return new SyncResult(true, download, null);
     }
 
     /**
@@ -215,8 +213,9 @@ public class SyncManager {
         } catch (SyncException e) {
             configStore.setLastFailedSync(System.currentTimeMillis());
             configStore.setLastFailedSyncMsg(e.getMessage());
+            return new SyncResult(true, true, e);
         }
-        return new SyncResult(true, true);
+        return new SyncResult(true, true, null);
     }
 
     public SyncResult syncMinimalEventSet(SyncManager.ProgressFeedback feedback) {
@@ -412,7 +411,12 @@ public class SyncManager {
                 if (overrideSubeventId > 0L) {
                     subEvent = overrideSubeventId;
                 }
-                download(new EventSyncAdapter(dataStore, eventSlug, eventSlug, api, configStore.getSyncCycleId(), feedback));
+                try {
+                    download(new EventSyncAdapter(dataStore, eventSlug, eventSlug, api, configStore.getSyncCycleId(), feedback));
+                } catch (PermissionDeniedApiException e) {
+                    e.eventSlug = eventSlug;
+                    throw e;
+                }
                 download(new ItemCategorySyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
                 download(new ItemSyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
                 download(new QuestionSyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
@@ -499,7 +503,7 @@ public class SyncManager {
             throw new SyncException("Unknown server response: " + e.getMessage());
         } catch (ApiException e) {
             sentry.addBreadcrumb("sync.tickets", "API Error: " + e.getMessage());
-            throw new SyncException(e.getMessage());
+            throw new SyncException(e.getMessage(), e);
         } catch (ExecutionException e) {
             sentry.captureException(e);
             throw new SyncException(e.getMessage());
@@ -767,10 +771,12 @@ public class SyncManager {
     public class SyncResult {
         private boolean dataUploaded;
         private boolean dataDownloaded;
+        private Throwable exception;
 
-        public SyncResult(boolean dataUploaded, boolean dataDownloaded) {
+        public SyncResult(boolean dataUploaded, boolean dataDownloaded, Throwable exception) {
             this.dataUploaded = dataUploaded;
             this.dataDownloaded = dataDownloaded;
+            this.exception = exception;
         }
 
         public boolean isDataUploaded() {
@@ -779,6 +785,10 @@ public class SyncManager {
 
         public boolean isDataDownloaded() {
             return dataDownloaded;
+        }
+
+        public Throwable getException() {
+            return exception;
         }
     }
 }
