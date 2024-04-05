@@ -390,7 +390,7 @@ open class PretixApi(url: String, key: String, orgaSlug: String, version: Int, h
             throw ResourceNotModified()
         } else if (response.code == 403) {
             response.close()
-            throw FinalApiException("Server error: Permission denied.")
+            throw PermissionDeniedApiException("Server error: Permission denied.")
         } else if (response.code == 409) {
             response.close()
             throw ConflictApiException("Server error: " + response.code + ": " + body)
