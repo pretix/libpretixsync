@@ -407,6 +407,24 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
     }
 
     @Test
+    fun testRulesEntryStatus() {
+        setRuleOnList2("{\n" +
+                "        \"or\": [\n" +
+                "            {\"==\": [{\"var\": \"entry_status\"}, \"absent\"]},\n" +
+                "            {\"<\": [{\"var\": \"entries_number\"}, 1]}\n" +
+                "        ]\n" +
+                "    }")
+        var r = p!!.check(mapOf("demo" to 2L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+        r = p!!.check(mapOf("demo" to 2L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.RULES, r.type)
+        r = p!!.check(mapOf("demo" to 2L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj", "barcode", null, false, false, TicketCheckProvider.CheckInType.EXIT)
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+        r = p!!.check(mapOf("demo" to 2L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+    }
+
+    @Test
     fun testRulesEntriesToday() {
         val p2 = AsyncCheckProvider(configStore!!, dataStore)
 
