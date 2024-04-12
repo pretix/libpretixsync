@@ -69,6 +69,12 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
     }
 
     @Test
+    fun testEciClean() {
+        val r = p!!.check(mapOf("demo" to 1L), "\\000001kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+    }
+
+    @Test
     fun testSimpleInvalid() {
         val r = p!!.check(mapOf("demo" to 1L), "abc")
         assertEquals(TicketCheckProvider.CheckResult.Type.INVALID, r.type)
