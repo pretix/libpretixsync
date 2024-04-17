@@ -14,6 +14,7 @@ import eu.pretix.libpretixsync.db.NonceGenerator
 import eu.pretix.libpretixsync.db.Question
 import eu.pretix.libpretixsync.sync.FileStorage
 import eu.pretix.libpretixsync.sync.OrderSyncAdapter
+import eu.pretix.libpretixsync.utils.cleanInput
 import io.requery.BlockingEntityStore
 import io.requery.Persistable
 import org.joda.time.format.ISODateTimeFormat
@@ -50,7 +51,7 @@ class OnlineCheckProvider(
         nonce: String?,
         allowQuestions: Boolean
     ): TicketCheckProvider.CheckResult {
-        val ticketid_cleaned = ticketid.replace(Regex("[\\p{C}]"), "�")  // remove unprintable characters
+        val ticketid_cleaned = cleanInput(ticketid, source_type)
         val nonce_cleaned = nonce ?: NonceGenerator.nextNonce()
 
         sentry.addBreadcrumb("provider.check", "started")

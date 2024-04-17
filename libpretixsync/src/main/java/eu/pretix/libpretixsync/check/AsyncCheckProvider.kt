@@ -9,6 +9,7 @@ import eu.pretix.libpretixsync.crypto.readPubkeyFromPem
 import eu.pretix.libpretixsync.crypto.sig1.TicketProtos
 import eu.pretix.libpretixsync.db.*
 import eu.pretix.libpretixsync.db.Order
+import eu.pretix.libpretixsync.utils.cleanInput
 import eu.pretix.libpretixsync.utils.codec.binary.Base64
 import eu.pretix.libpretixsync.utils.codec.binary.Base64.decodeBase64
 import eu.pretix.libpretixsync.utils.logic.JsonLogic
@@ -535,18 +536,20 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
         nonce: String?,
         allowQuestions: Boolean,
     ): TicketCheckProvider.CheckResult {
+        val ticketid_cleaned = cleanInput(ticketid, source_type)
+
         sentry.addBreadcrumb("provider.check", "offline check started")
 
         val tickets = dataStore.select(OrderPosition::class.java)
             .leftJoin(Order::class.java).on(Order.ID.eq(OrderPosition.ORDER_ID))
-            .where(OrderPosition.SECRET.eq(ticketid))
+            .where(OrderPosition.SECRET.eq(ticketid_cleaned))
             .and(Order.EVENT_SLUG.`in`(eventsAndCheckinLists.keys.toList()))
             .get().toList()
         if (tickets.size == 0) {
             val medium = dataStore.select(ReusableMedium::class.java)
                 .leftJoin(OrderPosition::class.java).on(OrderPosition.SERVER_ID.eq(ReusableMedium.LINKED_ORDERPOSITION_ID))
                 .leftJoin(Order::class.java).on(Order.ID.eq(OrderPosition.ORDER_ID))
-                .where(ReusableMedium.IDENTIFIER.eq(ticketid))
+                .where(ReusableMedium.IDENTIFIER.eq(ticketid_cleaned))
                 .and(ReusableMedium.TYPE.eq(source_type))
                 .and(Order.EVENT_SLUG.`in`(eventsAndCheckinLists.keys.toList()))
                 .get().firstOrNull()
@@ -558,7 +561,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
                     .get().toList()
                 return checkOfflineWithData(
                     eventsAndCheckinLists,
-                    ticketid,
+                    ticketid_cleaned,
                     tickets,
                     answers,
                     ignore_unpaid,
@@ -570,7 +573,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
 
             return checkOfflineWithoutData(
                 eventsAndCheckinLists,
-                ticketid,
+                ticketid_cleaned,
                 type,
                 answers ?: emptyList(),
                 nonce,
@@ -586,7 +589,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
                     offline = true
                 ),
                 "ambiguous",
-                ticketid,
+                ticketid_cleaned,
                 type,
                 position = tickets[0].getServer_id(),
                 item = tickets[0].getItem().getServer_id(),
@@ -596,7 +599,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
             )
             return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.AMBIGUOUS)
         }
-        return checkOfflineWithData(eventsAndCheckinLists, ticketid, tickets, answers, ignore_unpaid, type, nonce = nonce, allowQuestions = allowQuestions)
+        return checkOfflineWithData(eventsAndCheckinLists, ticketid_cleaned, tickets, answers, ignore_unpaid, type, nonce = nonce, allowQuestions = allowQuestions)
     }
 
     private fun checkOfflineWithData(eventsAndCheckinLists: Map<String, Long>, secret: String, tickets: List<OrderPosition>, answers: List<Answer>?, ignore_unpaid: Boolean, type: TicketCheckProvider.CheckInType, nonce: String?, allowQuestions: Boolean): TicketCheckProvider.CheckResult {
