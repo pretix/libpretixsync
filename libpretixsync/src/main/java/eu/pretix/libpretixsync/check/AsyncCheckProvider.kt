@@ -423,6 +423,11 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
             }
             data.put("minutes_since_last_entry", minutes_since_entries.minOrNull() ?: -1)
             data.put("minutes_since_first_entry", minutes_since_entries.maxOrNull() ?: -1)
+            data.put("entry_status", if (queuedCheckIns.lastOrNull()?.getType() == "entry") {
+                "present"
+            } else {
+                "absent"
+            })
 
             try {
                 if (!jsonLogic.applyString(rules.toString(), data, safe = false).truthy) {
@@ -808,6 +813,11 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
             }
             data.put("minutes_since_last_entry", minutes_since_entries.minOrNull() ?: -1)
             data.put("minutes_since_first_entry", minutes_since_entries.maxOrNull() ?: -1)
+            data.put("entry_status", if (checkIns.lastOrNull()?.getType() == "entry") {
+                "present"
+            } else {
+                "absent"
+            })
 
             try {
                 if (!jsonLogic.applyString(rules.toString(), data, safe = false).truthy) {
