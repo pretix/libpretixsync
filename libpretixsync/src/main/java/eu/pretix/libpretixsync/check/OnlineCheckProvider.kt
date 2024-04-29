@@ -97,6 +97,7 @@ class OnlineCheckProvider(
                 val status = response.getString("status")
                 if ("ok" == status) {
                     res.type = TicketCheckProvider.CheckResult.Type.VALID
+                    res.isCheckinAllowed = true
                 } else if ("incomplete" == status) {
                     res.type = TicketCheckProvider.CheckResult.Type.ANSWERS_REQUIRED
                     val required_answers: MutableList<TicketCheckProvider.QuestionAnswer> = ArrayList()
