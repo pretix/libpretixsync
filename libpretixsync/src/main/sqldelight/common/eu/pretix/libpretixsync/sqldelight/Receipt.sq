@@ -1,0 +1,4 @@
+selectById:
+SELECT *
+FROM Receipt
+WHERE id = ?;

@@ -1,0 +1,4 @@
+selectBySlug:
+SELECT *
+FROM Settings
+WHERE slug = ?;

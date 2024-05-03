@@ -1,0 +1,28 @@
+import java.util.Date;
+
+CREATE TABLE Receipt (
+    id serial PRIMARY KEY,
+    additional_text character varying(255),
+    canceled boolean NOT NULL,
+    cashier_name character varying(255),
+    cashier_numericid bigint,
+    cashier_userid character varying(255),
+    chosen_cart_id character varying(255),
+    currency character varying(255) DEFAULT 'EUR' NOT NULL,
+    datetime_closed DATE AS Date,
+    datetime_opened DATE AS Date,
+    email_to character varying(255),
+    event_slug character varying(255),
+    fiscalisation_data character varying(255),
+    fiscalisation_qr character varying(255),
+    fiscalisation_text character varying(255),
+    open boolean DEFAULT FALSE,
+    order_code character varying(255),
+    payment_data character varying(255),
+    payment_type character varying(255),
+    printed boolean DEFAULT FALSE NOT NULL,
+    server_id bigint,
+    started boolean DEFAULT FALSE,
+    training boolean DEFAULT FALSE NOT NULL,
+    closing bigint
+);

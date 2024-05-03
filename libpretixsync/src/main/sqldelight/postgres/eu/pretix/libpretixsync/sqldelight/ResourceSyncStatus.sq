@@ -1,0 +1,8 @@
+CREATE TABLE ResourceSyncStatus (
+    id serial PRIMARY KEY,
+    event_slug character varying(255),
+    last_modified character varying(255),
+    meta character varying(255),
+    resource character varying(255),
+    status character varying(255)
+);

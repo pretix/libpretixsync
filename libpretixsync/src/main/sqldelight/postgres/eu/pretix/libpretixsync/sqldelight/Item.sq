@@ -1,0 +1,15 @@
+CREATE TABLE Item (
+    id serial PRIMARY KEY,
+    active boolean NOT NULL,
+    admission boolean NOT NULL,
+    badge_layout_id bigint,
+    category_id bigint,
+    checkin_text text,
+    event_slug character varying(255),
+    json_data text,
+    picture_filename character varying(255),
+    "position" bigint,
+    server_id bigint,
+    ticket_layout_id bigint,
+    ticket_layout_pretixpos_id bigint
+);
