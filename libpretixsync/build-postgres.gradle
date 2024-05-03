@@ -9,6 +9,7 @@ plugins {
     id 'com.google.protobuf' version '0.9.4'
     id 'com.github.gmazzo.buildconfig' version "5.3.5"
     id 'org.gradle.idea'
+    id 'app.cash.sqldelight'
 }
 apply from: 'versions.gradle'
 
@@ -107,6 +108,8 @@ dependencies {
     implementation "net.i2p.crypto:eddsa:$eddsa_version"
     implementation "com.google.protobuf:protobuf-javalite:$protobuf_version"
 
+    implementation "app.cash.sqldelight:jdbc-driver:$sqldelight_version"
+
     kapt "io.requery:requery-processor:$requery_version"
     annotationProcessor "javax.annotation:jsr250-api:$jsr250_version"
 
@@ -121,3 +124,13 @@ task copyTestResources(type: Copy) {
     into "${buildDir}/classes/test"
 }
 processTestResources.dependsOn copyTestResources
+
+sqldelight {
+    databases {
+        SyncDatabase {
+            packageName = "eu.pretix.libpretixsync.sqldelight"
+            dialect "app.cash.sqldelight:postgresql-dialect:$sqldelight_version"
+            srcDirs('src/main/sqldelight/postgres', 'src/main/sqldelight/common')
+        }
+    }
+}
