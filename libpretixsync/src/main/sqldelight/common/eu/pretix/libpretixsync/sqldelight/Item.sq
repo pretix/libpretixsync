@@ -1,0 +1,62 @@
+selectByServerId:
+SELECT *
+FROM Item
+WHERE server_id = ?;
+
+selectByServerIdList:
+SELECT *
+FROM Item
+WHERE server_id IN ?;
+
+selectServerIdsByEventSlug:
+SELECT server_id
+FROM Item
+WHERE event_slug = ?;
+
+deleteByServerId:
+DELETE FROM Item
+WHERE server_id = ?;
+
+insert:
+INSERT INTO Item
+(
+    active,
+    admission,
+    badge_layout_id,
+    category_id,
+    checkin_text,
+    event_slug,
+    json_data,
+    picture_filename,
+    position,
+    server_id,
+    ticket_layout_id,
+    ticket_layout_pretixpos_id
+)
+VALUES (
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?
+);
+
+updateFromJson:
+UPDATE Item
+SET
+    active = ?,
+    admission = ?,
+    category_id = ?,
+    checkin_text = ?,
+    event_slug = ?,
+    json_data = ?,
+    picture_filename = ?,
+    position = ?
+WHERE server_id = ?;

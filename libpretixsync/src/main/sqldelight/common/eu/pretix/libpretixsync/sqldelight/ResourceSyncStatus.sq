@@ -1,0 +1,33 @@
+selectByResourceAndEventSlug:
+SELECT *
+FROM ResourceSyncStatus
+WHERE resource = ? AND event_slug = ?
+LIMIT 1;
+
+deleteById:
+DELETE FROM ResourceSyncStatus
+WHERE id = ?;
+
+insert:
+INSERT INTO ResourceSyncStatus
+(
+    event_slug,
+    last_modified,
+    meta,
+    resource,
+    status
+)
+VALUES (
+    ?,
+    ?,
+    ?,
+    ?,
+    ?
+);
+
+updateLastModifiedAndMeta:
+UPDATE ResourceSyncStatus
+SET
+    last_modified = ?,
+    meta = ?
+WHERE id = ?;
