@@ -2,6 +2,7 @@ package eu.pretix.libpretixsync.sync;
 
 import eu.pretix.libpretixsync.api.*;
 import eu.pretix.libpretixsync.db.ReusableMedium;
+import eu.pretix.libpretixsync.sqldelight.SyncDatabase;
 import eu.pretix.libpretixsync.utils.JSONUtils;
 import io.requery.sql.StatementExecutionException;
 import org.json.JSONArray;
@@ -41,6 +42,7 @@ public class SyncManager {
     protected long upload_interval;
     protected long download_interval;
     protected BlockingEntityStore<Persistable> dataStore;
+    protected SyncDatabase db;
     protected FileStorage fileStorage;
     protected Profile profile;
     protected boolean with_pdf_data;
@@ -95,6 +97,7 @@ public class SyncManager {
             PretixApi api,
             SentryInterface sentry,
             BlockingEntityStore<Persistable> dataStore,
+            SyncDatabase db,
             FileStorage fileStorage,
             long upload_interval,
             long download_interval,
@@ -117,6 +120,7 @@ public class SyncManager {
         this.upload_interval = upload_interval;
         this.download_interval = download_interval;
         this.dataStore = dataStore;
+        this.db = db;
         this.fileStorage = fileStorage;
         this.profile = profile;
         this.with_pdf_data = with_pdf_data;
