@@ -399,7 +399,7 @@ public class SyncManager {
 
             if (profile == Profile.PRETIXPOS) {
                 try {
-                    download(new CashierSyncAdapter(dataStore, fileStorage, api, configStore.getSyncCycleId(), feedback));
+                    download(new CashierSyncAdapter(db, fileStorage, api, configStore.getSyncCycleId(), feedback));
                 } catch (NotFoundApiException e) {
                     // ignore, this is only supported from a later pretixpos-backend version
                 }
