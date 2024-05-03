@@ -314,7 +314,7 @@ open class PretixApi(url: String, key: String, orgaSlug: String, version: Int, h
     }
 
     @Throws(ApiException::class)
-    open fun downloadFile(full_url: String): ApiResponse? {
+    open fun downloadFile(full_url: String): ApiResponse {
         var request = Request.Builder()
                 .url(full_url)
                 .header("Authorization", "Device $key")
