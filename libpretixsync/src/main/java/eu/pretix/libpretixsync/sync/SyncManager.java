@@ -572,10 +572,13 @@ public class SyncManager {
                     feedback.postFeedback("Uploading receipts (" + i + "/" + receipts.size() + ") …");
                 }
                 i++;
+
+
                 JSONObject data = receipt.toJSON();
                 JSONArray lines = new JSONArray();
                 JSONArray payments = new JSONArray();
                 for (ReceiptLine line : receipt.getLines()) {
+                    // TODO: Manually add addon_to.positionid when switching to SQLDelight
                     lines.put(line.toJSON());
                 }
                 for (ReceiptPayment payment : receipt.getPayments()) {

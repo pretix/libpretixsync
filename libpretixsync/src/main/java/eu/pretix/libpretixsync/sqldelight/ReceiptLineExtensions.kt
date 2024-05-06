@@ -4,7 +4,7 @@ import org.json.JSONObject
 import java.math.BigDecimal
 import java.math.RoundingMode
 
-fun ReceiptLine.toJSON(addonToPositionId: Long?): JSONObject {
+fun ReceiptLine.toJSON(): JSONObject {
     val jo = JSONObject()
     jo.put("id", id)
     jo.put("type", type)
@@ -39,7 +39,7 @@ fun ReceiptLine.toJSON(addonToPositionId: Long?): JSONObject {
     jo.put("variation", variation_id)
     jo.put("answers", answers)
     jo.put("sale_text", sale_text)
-    jo.put("addon_to", addonToPositionId ?: JSONObject.NULL)
+    jo.put("addon_to", addon_to ?: JSONObject.NULL)
     jo.put("is_bundled", is_bundled)
     jo.put("attendee_name", attendee_name)
     jo.put("attendee_email", attendee_email)
