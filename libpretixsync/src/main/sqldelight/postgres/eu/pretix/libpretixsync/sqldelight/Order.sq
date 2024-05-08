@@ -1,0 +1,12 @@
+CREATE TABLE orders (
+    id serial PRIMARY KEY NOT NULL,
+    checkin_attention boolean NOT NULL,
+    checkin_text text,
+    code character varying(255),
+    deleteaftertimestamp bigint,
+    email character varying(255),
+    event_slug character varying(255),
+    json_data text,
+    status character varying(255),
+    valid_if_pending boolean DEFAULT FALSE
+);

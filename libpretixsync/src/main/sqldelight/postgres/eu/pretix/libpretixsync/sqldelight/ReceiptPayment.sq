@@ -1,0 +1,9 @@
+CREATE TABLE ReceiptPayment (
+    id serial PRIMARY KEY NOT NULL,
+    amount numeric,
+    detailsjson character varying(255),
+    payment_type character varying(255),
+    status character varying(255),
+    receipt bigint,
+    FOREIGN KEY (receipt) REFERENCES Receipt (id) ON DELETE CASCADE
+);

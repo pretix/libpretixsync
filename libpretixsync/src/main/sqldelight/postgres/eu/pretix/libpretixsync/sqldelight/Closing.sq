@@ -1,0 +1,19 @@
+import java.time.ZonedDateTime;
+
+CREATE TABLE Closing (
+    id serial PRIMARY KEY NOT NULL,
+    cash_counted numeric,
+    cashier_name character varying(255),
+    cashier_numericid bigint,
+    cashier_userid character varying(255),
+    datetime DATE AS ZonedDateTime,
+    dsfinvk_uploaded boolean,
+    first_receipt bigint,
+    invoice_settings character varying(255),
+    json_data character varying(255),
+    last_receipt bigint,
+    open boolean NOT NULL,
+    payment_sum numeric,
+    payment_sum_cash numeric,
+    server_id bigint
+);

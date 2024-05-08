@@ -1,0 +1,9 @@
+CREATE TABLE BadgeLayoutItem (
+    id serial PRIMARY KEY NOT NULL,
+    json_data text,
+    server_id bigint,
+    item bigint,
+    layout bigint,
+    FOREIGN KEY (item) REFERENCES Item (id) ON DELETE CASCADE,
+    FOREIGN KEY (layout) REFERENCES BadgeLayout (id) ON DELETE CASCADE
+);

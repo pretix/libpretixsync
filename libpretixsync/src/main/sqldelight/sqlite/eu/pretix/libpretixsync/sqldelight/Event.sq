@@ -1,0 +1,13 @@
+import java.util.Date;
+import kotlin.Boolean;
+
+CREATE TABLE Event (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    currency TEXT,
+    date_from TEXT AS Date,
+    date_to TEXT AS Date,
+    has_subevents INTEGER AS Boolean NOT NULL,
+    json_data TEXT,
+    live INTEGER AS Boolean NOT NULL,
+    slug TEXT
+);

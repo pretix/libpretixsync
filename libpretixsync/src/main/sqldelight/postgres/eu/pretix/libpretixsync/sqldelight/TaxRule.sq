@@ -1,0 +1,6 @@
+CREATE TABLE TaxRule (
+    id serial PRIMARY KEY NOT NULL,
+    event_slug character varying(255),
+    json_data text,
+    server_id bigint
+);

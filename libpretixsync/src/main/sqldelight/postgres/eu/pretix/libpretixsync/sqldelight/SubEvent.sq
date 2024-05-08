@@ -1,0 +1,11 @@
+import java.util.Date;
+
+CREATE TABLE SubEvent (
+    id serial PRIMARY KEY NOT NULL,
+    active boolean NOT NULL,
+    date_from DATE AS Date,
+    date_to DATE AS Date,
+    event_slug character varying(255),
+    json_data text,
+    server_id bigint
+);

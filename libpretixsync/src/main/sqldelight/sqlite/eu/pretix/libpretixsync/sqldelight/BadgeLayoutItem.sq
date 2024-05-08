@@ -1,0 +1,9 @@
+CREATE TABLE BadgeLayoutItem (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    item INTEGER,
+    json_data TEXT,
+    layout INTEGER ,
+    server_id INTEGER ,
+    FOREIGN KEY (item) REFERENCES Item (id) ON DELETE CASCADE,
+    FOREIGN KEY (layout) REFERENCES BadgeLayout (id) ON DELETE CASCADE
+);
