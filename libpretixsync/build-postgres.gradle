@@ -1,5 +1,5 @@
 buildscript {
-    ext.kotlin_version = '1.5.30'
+    ext.kotlin_version = '1.9.23'
 
     repositories {
         google()
@@ -109,7 +109,7 @@ dependencies {
     implementation "org.json:json:$json_version"
     testFixturesImplementation "org.json:json:$json_version"
 
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
     implementation "net.sourceforge.streamsupport:streamsupport-cfuture:$cfuture_version"
     implementation "com.fasterxml.jackson.core:jackson-databind:$jackson_core_version"
     implementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jackson_kotlin_version"
