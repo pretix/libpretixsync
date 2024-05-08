@@ -1,0 +1,10 @@
+import kotlin.Boolean;
+
+CREATE TABLE Question (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    event_slug TEXT,
+    json_data TEXT,
+    position INTEGER,
+    required INTEGER AS Boolean NOT NULL,
+    server_id INTEGER
+);

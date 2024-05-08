@@ -1,0 +1,8 @@
+CREATE TABLE Question (
+    id serial PRIMARY KEY NOT NULL,
+    event_slug character varying(255),
+    json_data text,
+    "position" bigint,
+    required boolean NOT NULL,
+    server_id bigint
+);

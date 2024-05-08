@@ -1,0 +1,14 @@
+import kotlin.Boolean;
+
+CREATE TABLE orders (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    checkin_attention INTEGER AS Boolean NOT NULL,
+    checkin_text TEXT,
+    code TEXT,
+    deleteAfterTimestamp INTEGER,
+    email TEXT,
+    event_slug TEXT ,
+    json_data TEXT,
+    status TEXT,
+    valid_if_pending INTEGER AS Boolean DEFAULT FALSE
+);

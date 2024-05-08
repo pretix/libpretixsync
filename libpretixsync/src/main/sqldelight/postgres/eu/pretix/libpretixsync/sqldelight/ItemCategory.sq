@@ -1,0 +1,8 @@
+CREATE TABLE ItemCategory (
+    id serial PRIMARY KEY NOT NULL,
+    event_slug character varying(255),
+    is_addon boolean NOT NULL,
+    json_data text,
+    "position" bigint,
+    server_id bigint
+);

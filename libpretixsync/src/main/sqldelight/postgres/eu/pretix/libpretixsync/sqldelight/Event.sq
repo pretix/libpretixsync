@@ -1,0 +1,12 @@
+import java.util.Date;
+
+CREATE TABLE Event (
+    id serial PRIMARY KEY NOT NULL,
+    currency character varying(255),
+    date_from DATE AS Date,
+    date_to DATE AS Date,
+    has_subevents boolean NOT NULL,
+    json_data text,
+    live boolean NOT NULL,
+    slug character varying(255)
+);
