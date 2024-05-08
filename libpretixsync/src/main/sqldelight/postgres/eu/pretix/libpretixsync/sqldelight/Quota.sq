@@ -1,0 +1,10 @@
+CREATE TABLE Quota (
+    id serial PRIMARY KEY NOT NULL,
+    available bigint,
+    available_number bigint,
+    event_slug character varying(255),
+    json_data text,
+    server_id bigint,
+    size bigint,
+    subevent_id bigint
+);

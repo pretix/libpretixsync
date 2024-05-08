@@ -1,0 +1,7 @@
+CREATE TABLE Question_Item (
+    ItemId bigint NOT NULL,
+    QuestionId bigint NOT NULL,
+    FOREIGN KEY (ItemId) REFERENCES Item (id) ON DELETE CASCADE,
+    FOREIGN KEY (QuestionId) REFERENCES Question (id) ON DELETE CASCADE,
+    PRIMARY KEY (ItemId, QuestionId)
+);

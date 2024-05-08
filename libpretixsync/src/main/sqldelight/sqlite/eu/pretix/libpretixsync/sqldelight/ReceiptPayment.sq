@@ -1,0 +1,11 @@
+import java.math.BigDecimal;
+
+CREATE TABLE ReceiptPayment (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    amount REAL AS BigDecimal,
+    detailsJson TEXT,
+    payment_type TEXT,
+    receipt INTEGER,
+    status TEXT,
+    FOREIGN KEY (receipt) REFERENCES Receipt (id) ON DELETE CASCADE
+);

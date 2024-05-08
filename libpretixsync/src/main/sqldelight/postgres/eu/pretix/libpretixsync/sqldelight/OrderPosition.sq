@@ -1,0 +1,15 @@
+CREATE TABLE OrderPosition (
+    id serial PRIMARY KEY NOT NULL,
+    attendee_email character varying(255),
+    attendee_name character varying(255),
+    json_data text,
+    positionid bigint,
+    secret character varying(255),
+    server_id bigint,
+    subevent_id bigint,
+    variation_id bigint,
+    item bigint,
+    order_ref bigint,
+    FOREIGN KEY (item) REFERENCES Item (id) ON DELETE CASCADE,
+    FOREIGN KEY (order_ref) REFERENCES orders (id) ON DELETE CASCADE
+);

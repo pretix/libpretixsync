@@ -1,0 +1,6 @@
+CREATE TABLE CachedPdfImage (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    etag TEXT,
+    key TEXT,
+    orderposition_id INTEGER
+);

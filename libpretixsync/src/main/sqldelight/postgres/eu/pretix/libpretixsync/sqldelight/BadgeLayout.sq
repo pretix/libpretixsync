@@ -1,0 +1,8 @@
+CREATE TABLE BadgeLayout (
+    id serial PRIMARY KEY NOT NULL,
+    background_filename character varying(255),
+    event_slug character varying(255),
+    is_default boolean NOT NULL,
+    json_data text,
+    server_id bigint
+);

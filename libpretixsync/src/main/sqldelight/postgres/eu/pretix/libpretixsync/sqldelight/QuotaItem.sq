@@ -1,0 +1,7 @@
+CREATE TABLE Quota_Item (
+    QuotaId bigint NOT NULL,
+    ItemId bigint NOT NULL,
+    FOREIGN KEY (QuotaId) REFERENCES Quota (id) ON DELETE CASCADE,
+    FOREIGN KEY (ItemId) REFERENCES Item (id) ON DELETE CASCADE,
+    PRIMARY KEY (QuotaId, ItemId)
+);
