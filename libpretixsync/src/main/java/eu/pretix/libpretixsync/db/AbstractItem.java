@@ -47,9 +47,6 @@ public class AbstractItem implements RemoteObject {
     List<Quota> quotas;
 
     @Nullable
-    public Long badge_layout_id;
-
-    @Nullable
     public Long ticket_layout_id;
 
     @Nullable
