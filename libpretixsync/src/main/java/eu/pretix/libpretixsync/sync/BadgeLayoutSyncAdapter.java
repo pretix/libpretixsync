@@ -34,37 +34,6 @@ public class BadgeLayoutSyncAdapter extends BaseDownloadSyncAdapter<BadgeLayout,
         obj.setServer_id(jsonobj.getLong("id"));
         obj.setJson_data(jsonobj.toString());
 
-        /* Legacy mechanism: Keep around until pretix 2.5 is end of life */
-        JSONArray assignmentarr = jsonobj.getJSONArray("item_assignments");
-        List<Long> itemids = new ArrayList<>();
-        for (int i = 0; i < assignmentarr.length(); i++) {
-            itemids.add(assignmentarr.getJSONObject(i).getLong("item"));
-        }
-        List<Item> items_to_remove;
-        if (!itemids.isEmpty()) {
-            List<Item> items = store.select(Item.class).where(
-                    Item.SERVER_ID.in(itemids)
-            ).get().toList();
-            for (Item item : items) {
-                item.setBadge_layout_id(obj.getServer_id());
-                store.update(item, Item.BADGE_LAYOUT_ID);
-            }
-            items_to_remove = store.select(Item.class).where(
-                    Item.SERVER_ID.notIn(itemids).and(
-                            Item.BADGE_LAYOUT_ID.eq(obj.getServer_id())
-                    )
-            ).get().toList();
-        } else {
-            items_to_remove = store.select(Item.class).where(
-                    Item.BADGE_LAYOUT_ID.eq(obj.getServer_id())
-            ).get().toList();
-        }
-        for (Item item : items_to_remove) {
-            item.setBadge_layout_id(null);
-            store.update(item, Item.BADGE_LAYOUT_ID);
-        }
-        /* End of legacy mechanism: Keep around until pretix 2.5 is end of life */
-
         String remote_filename = jsonobj.optString("background");
         if (remote_filename != null && remote_filename.startsWith("http")) {
             String hash = HashUtils.toSHA1(remote_filename.getBytes());
