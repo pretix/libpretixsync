@@ -1,9 +1,9 @@
 selectById:
 SELECT *
-FROM Settings
+FROM Event
 WHERE id = ?;
 
 selectBySlug:
 SELECT *
-FROM Settings
+FROM Event
 WHERE slug = ?;

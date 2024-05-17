@@ -2,3 +2,57 @@ selectById:
 SELECT *
 FROM Receipt
 WHERE id = ?;
+
+insert:
+INSERT INTO Receipt (
+    id,
+    additional_text,
+    canceled,
+    cashier_name,
+    cashier_numericid,
+    cashier_userid,
+    chosen_cart_id,
+    closing,
+    currency,
+    datetime_closed,
+    datetime_opened,
+    email_to,
+    event_slug,
+    fiscalisation_data,
+    fiscalisation_qr,
+    fiscalisation_text,
+    open,
+    order_code,
+    payment_data,
+    payment_type,
+    printed,
+    server_id,
+    started,
+    training
+)
+VALUES (
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?
+);
