@@ -3,6 +3,11 @@ SELECT *
 FROM Item
 WHERE server_id = ?;
 
+selectById:
+SELECT *
+FROM Item
+WHERE id = ?;
+
 selectByServerIdList:
 SELECT *
 FROM Item

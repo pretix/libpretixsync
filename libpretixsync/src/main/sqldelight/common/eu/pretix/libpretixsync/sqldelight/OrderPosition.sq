@@ -1,0 +1,9 @@
+selectById:
+SELECT *
+FROM OrderPosition
+WHERE id = ?;
+
+selectForOrder:
+SELECT *
+FROM OrderPosition
+WHERE order_ref = ?;

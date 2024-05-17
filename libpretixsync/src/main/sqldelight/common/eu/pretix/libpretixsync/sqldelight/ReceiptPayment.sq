@@ -1,0 +1,19 @@
+selectById:
+SELECT *
+FROM ReceiptPayment
+WHERE id = ?;
+
+insert:
+INSERT INTO ReceiptPayment (
+    amount,
+    detailsJson,
+    payment_type,
+    receipt,
+    status
+) VALUES (
+    ?,
+    ?,
+    ?,
+    ?,
+    ?
+);

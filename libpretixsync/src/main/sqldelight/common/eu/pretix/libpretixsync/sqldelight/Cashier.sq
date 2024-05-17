@@ -1,3 +1,13 @@
+selectByServerId:
+SELECT *
+FROM Cashier
+WHERE server_id = ?;
+
+selectById:
+SELECT *
+FROM Cashier
+WHERE id = ?;
+
 selectByServerIdList:
 SELECT *
 FROM Cashier
