@@ -128,7 +128,7 @@ sqldelight {
             packageName = "eu.pretix.libpretixsync.sqldelight"
             srcDirs('src/main/sqldelight/sqlite', 'src/main/sqldelight/common', 'src/main/sqldelight/migrations')
 
-            version = 99
+            version = 100
 
             // Oldest dialect supported by SQLDelight 2.0.2
             // In Android projects, it will auto-select based on SDK
