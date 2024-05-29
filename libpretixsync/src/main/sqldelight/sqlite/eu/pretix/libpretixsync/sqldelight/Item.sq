@@ -4,7 +4,6 @@ CREATE TABLE Item (
     id INTEGER PRIMARY KEY AUTOINCREMENT ,
     active INTEGER AS Boolean NOT NULL,
     admission INTEGER AS Boolean NOT NULL,
-    badge_layout_id INTEGER,
     category_id INTEGER,
     checkin_text TEXT,
     event_slug TEXT,

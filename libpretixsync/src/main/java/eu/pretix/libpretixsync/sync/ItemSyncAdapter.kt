@@ -60,7 +60,6 @@ class ItemSyncAdapter(
         db.itemQueries.insert(
             active = jsonobj.optBoolean("active", true),
             admission = jsonobj.optBoolean("admission", false),
-            badge_layout_id = null,
             category_id = jsonobj.optLong("category"),
             checkin_text = jsonobj.optString("checkin_text"),
             event_slug = eventSlug,
