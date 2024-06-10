@@ -1,0 +1,9 @@
+selectById:
+SELECT *
+FROM SubEvent
+WHERE id = ?;
+
+selectByServerId:
+SELECT *
+FROM SubEvent
+WHERE server_id = ?;
