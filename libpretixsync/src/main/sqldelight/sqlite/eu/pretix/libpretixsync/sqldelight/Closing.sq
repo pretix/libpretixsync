@@ -1,20 +1,21 @@
-import java.time.ZonedDateTime;
+import java.math.BigDecimal;
+import java.util.Date;
 import kotlin.Boolean;
 
 CREATE TABLE Closing (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    cash_counted REAL,
+    cash_counted REAL AS BigDecimal,
     cashier_name TEXT,
     cashier_numericid INTEGER,
     cashier_userid TEXT,
-    datetime TEXT AS ZonedDateTime,
+    datetime TEXT AS Date,
     dsfinvk_uploaded INTEGER AS Boolean,
     first_receipt INTEGER,
     invoice_settings TEXT,
     json_data TEXT,
     last_receipt INTEGER,
     open INTEGER AS Boolean NOT NULL,
-    payment_sum REAL,
-    payment_sum_cash REAL,
-    server_id integer
+    payment_sum REAL AS BigDecimal,
+    payment_sum_cash REAL AS BigDecimal,
+    server_id INTEGER
 );
