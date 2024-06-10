@@ -1,0 +1,9 @@
+selectById:
+SELECT *
+FROM ItemCategory
+WHERE id = ?;
+
+selectByServerId:
+SELECT *
+FROM ItemCategory
+WHERE server_id = ?;

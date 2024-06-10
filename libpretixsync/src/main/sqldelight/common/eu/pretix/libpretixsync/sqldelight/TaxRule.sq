@@ -1,0 +1,9 @@
+selectById:
+SELECT *
+FROM TaxRule
+WHERE id = ?;
+
+selectByServerId:
+SELECT *
+FROM TaxRule
+WHERE server_id = ?;
