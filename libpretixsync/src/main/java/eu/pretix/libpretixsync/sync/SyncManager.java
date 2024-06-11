@@ -451,7 +451,6 @@ public class SyncManager {
                     }
                 }
 
-                // We used to only Sync the settings for pretixPOS, but for COVID-certificate validation, we need the Settings, too.
                 try {
                     download(new SettingsSyncAdapter(dataStore, eventSlug, eventSlug, api, configStore.getSyncCycleId(), feedback));
                 } catch (ApiException e) {
