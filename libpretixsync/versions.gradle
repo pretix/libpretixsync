@@ -1,3 +1,4 @@
+ext.kotlin_version = '1.9.23'
 ext.okhttp_version = '4.9.3'
 ext.requery_version = '1.6.0'
 ext.joda_version = '2.10.10'
