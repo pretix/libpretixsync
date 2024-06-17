@@ -12,6 +12,7 @@ import eu.pretix.libpretixsync.db.CheckInList
 import eu.pretix.libpretixsync.db.Item
 import eu.pretix.libpretixsync.db.NonceGenerator
 import eu.pretix.libpretixsync.db.Question
+import eu.pretix.libpretixsync.sqldelight.SyncDatabase
 import eu.pretix.libpretixsync.sync.FileStorage
 import eu.pretix.libpretixsync.sync.OrderSyncAdapter
 import eu.pretix.libpretixsync.utils.cleanInput
@@ -27,6 +28,7 @@ class OnlineCheckProvider(
     private val config: ConfigStore,
     httpClientFactory: HttpClientFactory?,
     private val dataStore: BlockingEntityStore<Persistable>,
+    private val db: SyncDatabase,
     private val fileStore: FileStorage,
     private val fallback: TicketCheckProvider? = null,
     private val fallbackTimeout: Int = 30000
@@ -203,7 +205,7 @@ class OnlineCheckProvider(
                             val pdfdata = posjson.getJSONObject("pdf_data")
                             if (pdfdata.has("images")) {
                                 val images = pdfdata.getJSONObject("images")
-                                OrderSyncAdapter.updatePdfImages(dataStore, fileStore, api, posjson.getLong("id"), images)
+                                OrderSyncAdapter.updatePdfImages(db, fileStore, api, posjson.getLong("id"), images)
                             }
                         }
                     } catch (e: Exception) {

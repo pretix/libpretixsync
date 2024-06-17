@@ -1,0 +1,16 @@
+import java.util.Date;
+
+CREATE TABLE CheckIn (
+    id serial PRIMARY KEY,
+    datetime DATE AS Date,
+    json_data text,
+    listid bigint,
+    server_id bigint,
+    type character varying(255),
+    "position" bigint,
+    FOREIGN KEY (position) REFERENCES OrderPosition (id) ON DELETE CASCADE
+);
+
+-- Switch to RETURNING once it is also supported by SQLite
+getLastInsertedId:
+SELECT currval('checkin_id_seq');

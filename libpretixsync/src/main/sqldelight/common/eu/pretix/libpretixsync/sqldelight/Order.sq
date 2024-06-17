@@ -2,3 +2,68 @@ selectById:
 SELECT *
 FROM orders
 WHERE id = ?;
+
+selectByCode:
+SELECT *
+FROM orders
+WHERE code = ?;
+
+selectByCodeList:
+SELECT *
+FROM orders
+WHERE code IN ?;
+
+selectCodesByEventSlug:
+SELECT code
+FROM orders
+WHERE event_slug = ?;
+
+countForEventSlug:
+SELECT COUNT(*)
+FROM orders
+WHERE event_slug = ?;
+
+deleteByCode:
+DELETE FROM orders
+WHERE code = ?;
+
+insert:
+INSERT INTO orders (
+    checkin_attention,
+    checkin_text,
+    code,
+    deleteAfterTimestamp,
+    email,
+    event_slug,
+    json_data,
+    status,
+    valid_if_pending
+)
+VALUES (
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?
+);
+
+getLastInsertedId:
+SELECT last_insert_rowid();
+
+updateFromJson:
+UPDATE orders
+SET
+    checkin_attention = ?,
+    checkin_text = ?,
+    code = ?,
+    deleteAfterTimestamp = ?,
+    email = ?,
+    event_slug = ?,
+    json_data = ?,
+    status = ?,
+    valid_if_pending = ?
+WHERE id = ?;

@@ -1,3 +1,7 @@
+selectAll:
+SELECT *
+FROM Item;
+
 selectByServerId:
 SELECT *
 FROM Item

@@ -2,3 +2,34 @@ selectForOrderPosition:
 SELECT *
 FROM CachedPdfImage
 WHERE orderposition_id = ?;
+
+selectForOrderPositionAndKey:
+SELECT *
+FROM CachedPdfImage
+WHERE
+    orderposition_id = ?
+    AND key = ?;
+
+updateEtag:
+UPDATE CachedPdfImage
+SET
+    etag = ?
+WHERE id = ?;
+
+insert:
+INSERT INTO CachedPdfImage(
+    etag,
+    key,
+    orderposition_id
+)
+VALUES (
+    ?,
+    ?,
+    ?
+);
+
+deleteUnseen:
+DELETE FROM CachedPdfImage
+WHERE
+    orderposition_id = :orderposition_id
+    AND etag NOT IN :seen_etags;
