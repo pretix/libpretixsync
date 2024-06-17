@@ -26,7 +26,7 @@ abstract class SqBaseDownloadSyncAdapter<T, K>(
 ) : DownloadSyncAdapter, SqBatchedQueryIterator.BatchedQueryCall<K, T> {
     protected var knownIDs: MutableSet<K>? = null
     protected val seenIDs: MutableSet<K> = mutableSetOf()
-    protected var sizeBefore = 0
+    protected var sizeBefore = 0L
     protected var threadPool = Executors.newCachedThreadPool()
     protected var total = 0
     protected var inserted = 0
@@ -69,16 +69,16 @@ abstract class SqBaseDownloadSyncAdapter<T, K>(
         }
     }
 
-    protected open fun getKnownCount(): Int = knownIDs.let {
+    protected open fun getKnownCount(): Long = knownIDs.let {
         if (it == null) {
             throw RuntimeException("knownIDs can't be null if deleteUnseen() returns true.")
         }
-        return it.size
+        return it.size.toLong()
     }
 
     abstract fun queryKnownIDs(): MutableSet<K>?
 
-    private fun queryKnownObjects(ids: Set<K>): MutableMap<K, T> {
+    protected open fun queryKnownObjects(ids: Set<K>): MutableMap<K, T> {
         if (ids.isEmpty()) {
             return mutableMapOf()
         }

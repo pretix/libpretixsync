@@ -13,3 +13,6 @@ CREATE TABLE OrderPosition (
     FOREIGN KEY (item) REFERENCES Item (id) ON DELETE CASCADE,
     FOREIGN KEY (order_ref) REFERENCES orders (id) ON DELETE CASCADE
 );
+
+getLastInsertedId:
+SELECT last_insert_rowid();

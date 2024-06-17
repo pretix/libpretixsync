@@ -25,9 +25,21 @@ VALUES (
     ?
 );
 
+updateLastModified:
+UPDATE ResourceSyncStatus
+SET
+    last_modified = ?
+WHERE id = ?;
+
 updateLastModifiedAndMeta:
 UPDATE ResourceSyncStatus
 SET
     last_modified = ?,
     meta = ?
+WHERE id = ?;
+
+updateStatus:
+UPDATE ResourceSyncStatus
+SET
+    status = ?
 WHERE id = ?;
