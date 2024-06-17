@@ -4,6 +4,7 @@ import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver;
 import eu.pretix.libpretixsync.db.*;
 import eu.pretix.libpretixsync.Models;
 import eu.pretix.libpretixsync.sqldelight.BigDecimalAdapter;
+import eu.pretix.libpretixsync.sqldelight.CheckIn;
 import eu.pretix.libpretixsync.sqldelight.Closing;
 import eu.pretix.libpretixsync.sqldelight.Event;
 import eu.pretix.libpretixsync.sqldelight.JavaUtilDateAdapter;
@@ -89,6 +90,9 @@ public abstract class BaseDatabaseTest {
 
         db = SyncDatabase.Companion.invoke(
                 driver,
+                new CheckIn.Adapter(
+                        dateAdapter
+                ),
                 new Closing.Adapter(
                         bigDecimalAdapter,
                         dateAdapter,

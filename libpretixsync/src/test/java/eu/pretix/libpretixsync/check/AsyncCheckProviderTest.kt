@@ -58,7 +58,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         )
         SubEventSyncAdapter(dataStore, "demo", "14", fakeApi, "", null).standaloneRefreshFromJSON(jsonResource("subevents/subevent1.json"))
 
-        val osa = OrderSyncAdapter(dataStore, FakeFileStorage(), "demo", 0, true, false, fakeApi, "", null)
+        val osa = OrderSyncAdapter(db, FakeFileStorage(), "demo", 0, true, false, fakeApi!!, "", null)
         osa.standaloneRefreshFromJSON(jsonResource("orders/order1.json"))
         osa.standaloneRefreshFromJSON(jsonResource("orders/order2.json"))
         osa.standaloneRefreshFromJSON(jsonResource("orders/order3.json"))
@@ -68,7 +68,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         osa.standaloneRefreshFromJSON(jsonResource("orders/order7.json"))
         osa.standaloneRefreshFromJSON(jsonResource("orders/order8.json"))
         osa.standaloneRefreshFromJSON(jsonResource("orders/order9.json"))
-        val osa2 = OrderSyncAdapter(dataStore, FakeFileStorage(), "demo2", 0, true, false, fakeApi, "", null)
+        val osa2 = OrderSyncAdapter(db, FakeFileStorage(), "demo2", 0, true, false, fakeApi!!, "", null)
         osa2.standaloneRefreshFromJSON(jsonResource("orders/event2-order1.json"))
     }
 

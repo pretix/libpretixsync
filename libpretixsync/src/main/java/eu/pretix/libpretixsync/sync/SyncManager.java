@@ -446,7 +446,7 @@ public class SyncManager {
                     }
                 }
                 if (profile == Profile.PRETIXSCAN && !skip_orders) {
-                    OrderSyncAdapter osa = new OrderSyncAdapter(dataStore, fileStorage, eventSlug, subEvent, with_pdf_data, false, api, configStore.getSyncCycleId(), feedback);
+                    OrderSyncAdapter osa = new OrderSyncAdapter(db, fileStorage, eventSlug, subEvent, with_pdf_data, false, api, configStore.getSyncCycleId(), feedback);
                     download(osa);
                     try {
                         download(new ReusableMediaSyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
@@ -637,7 +637,7 @@ public class SyncManager {
                     r.setOrder_code(resp.getData().getString("code"));
                     dataStore.update(r, Receipt.ORDER_CODE);
                     dataStore.delete(qo);
-                    (new OrderSyncAdapter(dataStore, fileStorage, qo.getEvent_slug(), null, true, true, api, configStore.getSyncCycleId(), null)).standaloneRefreshFromJSON(resp.getData());
+                    (new OrderSyncAdapter(db, fileStorage, qo.getEvent_slug(), null, true, true, api, configStore.getSyncCycleId(), null)).standaloneRefreshFromJSON(resp.getData());
                     if (connectivityFeedback != null) {
                         connectivityFeedback.recordSuccess(System.currentTimeMillis() - startedAt);
                     }
