@@ -1,5 +1,7 @@
+import kotlin.Long;
+
 CREATE TABLE QueuedOrder (
-    id serial PRIMARY KEY NOT NULL,
+    id serial AS Long PRIMARY KEY NOT NULL,
     error character varying(255),
     event_slug character varying(255),
     idempotency_key character varying(255),

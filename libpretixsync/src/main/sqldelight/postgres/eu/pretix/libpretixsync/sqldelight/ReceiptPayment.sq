@@ -1,7 +1,9 @@
+import kotlin.Long;
+
 CREATE TABLE ReceiptPayment (
-    id serial PRIMARY KEY NOT NULL,
+    id serial AS Long PRIMARY KEY NOT NULL,
     amount numeric,
-    detailsjson character varying(255),
+    detailsJson character varying(255),
     payment_type character varying(255),
     status character varying(255),
     receipt bigint,

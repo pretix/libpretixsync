@@ -10,6 +10,3 @@ CREATE TABLE CheckIn (
     type TEXT,
     FOREIGN KEY (position) REFERENCES OrderPosition (id) ON DELETE CASCADE
 );
-
-getLastInsertedId:
-SELECT last_insert_rowid();

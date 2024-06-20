@@ -173,7 +173,7 @@ class OrderSyncAdapter(
                 variation_id = posobj.variation_id,
             )
 
-            db.orderPositionQueries.getLastInsertedId().executeAsOne()
+            db.compatQueries.getLastInsertedOrderPositionId().executeAsOne()
         }
 
         afterInsertOrUpdatePositionObject(id, posobj.server_id, jsonobj)
@@ -287,7 +287,7 @@ class OrderSyncAdapter(
                     status = jsonobj.getString("status"),
                     valid_if_pending = jsonobj.optBoolean("valid_if_pending", false),
             )
-            db.orderQueries.getLastInsertedId().executeAsOne()
+            db.compatQueries.getLastInsertedOrderId().executeAsOne()
         }
 
         afterInsertOrUpdate(id, jsonobj)

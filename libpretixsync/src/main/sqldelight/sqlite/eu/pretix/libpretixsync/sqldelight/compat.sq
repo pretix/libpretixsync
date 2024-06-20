@@ -1,0 +1,14 @@
+-- Dialect-specific queries
+-- Cannot be part of the table-specific .sq files, as they would generate conflicting query classes
+
+-- Switch to RETURNING once it is also supported by SQLite
+getLastInsertedOrderId:
+SELECT last_insert_rowid();
+
+-- Switch to RETURNING once it is also supported by SQLite
+getLastInsertedCheckInId:
+SELECT last_insert_rowid();
+
+-- Switch to RETURNING once it is also supported by SQLite
+getLastInsertedOrderPositionId:
+SELECT last_insert_rowid();

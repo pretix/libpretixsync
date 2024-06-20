@@ -1,7 +1,8 @@
 import java.util.Date;
+import kotlin.Long;
 
 CREATE TABLE Receipt (
-    id serial PRIMARY KEY,
+    id serial AS Long PRIMARY KEY,
     additional_text character varying(255),
     canceled boolean NOT NULL,
     cashier_name character varying(255),

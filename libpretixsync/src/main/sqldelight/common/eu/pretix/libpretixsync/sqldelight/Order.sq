@@ -51,9 +51,6 @@ VALUES (
     ?
 );
 
-getLastInsertedId:
-SELECT last_insert_rowid();
-
 updateFromJson:
 UPDATE orders
 SET
