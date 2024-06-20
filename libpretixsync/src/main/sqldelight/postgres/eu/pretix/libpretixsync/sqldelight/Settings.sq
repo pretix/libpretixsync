@@ -1,5 +1,7 @@
+import kotlin.Long;
+
 CREATE TABLE Settings (
-    id serial PRIMARY KEY,
+    id serial AS Long PRIMARY KEY,
     address text,
     city character varying(255),
     country character varying(255),

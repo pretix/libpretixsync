@@ -1,9 +1,11 @@
+import kotlin.Long;
+
 CREATE TABLE orders (
-    id serial PRIMARY KEY NOT NULL,
+    id serial AS Long PRIMARY KEY NOT NULL,
     checkin_attention boolean NOT NULL,
     checkin_text text,
     code character varying(255),
-    deleteaftertimestamp bigint,
+    deleteAfterTimestamp bigint,
     email character varying(255),
     event_slug character varying(255),
     json_data text,

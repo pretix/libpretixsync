@@ -1,5 +1,7 @@
+import kotlin.Long;
+
 CREATE TABLE CachedPdfImage (
-    id serial PRIMARY KEY NOT NULL,
+    id serial AS Long PRIMARY KEY NOT NULL,
     etag character varying(255),
     key character varying(255),
     orderposition_id bigint

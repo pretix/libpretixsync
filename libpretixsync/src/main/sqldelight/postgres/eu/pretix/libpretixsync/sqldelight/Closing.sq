@@ -1,8 +1,9 @@
 import java.math.BigDecimal;
 import java.util.Date;
+import kotlin.Long;
 
 CREATE TABLE Closing (
-    id serial PRIMARY KEY NOT NULL,
+    id serial AS Long PRIMARY KEY NOT NULL,
     cash_counted numeric AS BigDecimal,
     cashier_name character varying(255),
     cashier_numericid bigint,

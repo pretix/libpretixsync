@@ -1,7 +1,8 @@
 import java.util.Date;
+import kotlin.Long;
 
 CREATE TABLE Event (
-    id serial PRIMARY KEY NOT NULL,
+    id serial AS Long PRIMARY KEY NOT NULL,
     currency character varying(255),
     date_from DATE AS Date,
     date_to DATE AS Date,
