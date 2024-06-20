@@ -1,5 +1,7 @@
+import kotlin.Long;
+
 CREATE TABLE Question (
-    id serial PRIMARY KEY NOT NULL,
+    id serial AS Long PRIMARY KEY NOT NULL,
     event_slug character varying(255),
     json_data text,
     "position" bigint,

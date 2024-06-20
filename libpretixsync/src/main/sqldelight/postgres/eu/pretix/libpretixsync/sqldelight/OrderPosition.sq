@@ -1,5 +1,7 @@
+import kotlin.Long;
+
 CREATE TABLE OrderPosition (
-    id serial PRIMARY KEY NOT NULL,
+    id serial AS Long PRIMARY KEY NOT NULL,
     attendee_email character varying(255),
     attendee_name character varying(255),
     json_data text,
@@ -13,6 +15,3 @@ CREATE TABLE OrderPosition (
     FOREIGN KEY (item) REFERENCES Item (id) ON DELETE CASCADE,
     FOREIGN KEY (order_ref) REFERENCES orders (id) ON DELETE CASCADE
 );
-
-getLastInsertedId:
-SELECT currval('orderposition_id_seq');

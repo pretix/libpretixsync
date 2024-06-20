@@ -1,5 +1,7 @@
+import kotlin.Long;
+
 CREATE TABLE Item (
-    id serial PRIMARY KEY,
+    id serial AS Long PRIMARY KEY,
     active boolean NOT NULL,
     admission boolean NOT NULL,
     category_id bigint,
@@ -8,7 +10,7 @@ CREATE TABLE Item (
     json_data text,
     picture_filename character varying(255),
     "position" bigint,
-    server_id bigint,
+    server_id bigint NOT NULL,
     ticket_layout_id bigint,
     ticket_layout_pretixpos_id bigint
 );
