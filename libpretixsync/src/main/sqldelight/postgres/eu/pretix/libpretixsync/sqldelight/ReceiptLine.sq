@@ -44,6 +44,11 @@ CREATE TABLE ReceiptLine (
     use_reusable_medium bigint,
     variation_id bigint,
     voucher_code character varying(255),
+    receipt bigint REFERENCES Receipt (id) ON DELETE CASCADE,
+
+    -- SQLDelight does not support self-referential foreign key constraints on columns.
+    -- Creating the constraint on a table-level skips the dependency check for table creation order,
+    -- but the check is not relevant in this case anyway.
     addon_to bigint,
-    receipt bigint
+    FOREIGN KEY (addon_to) REFERENCES ReceiptLine (id) ON DELETE CASCADE
 );
