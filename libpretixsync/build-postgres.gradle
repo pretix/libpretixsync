@@ -130,7 +130,9 @@ sqldelight {
         SyncDatabase {
             packageName = "eu.pretix.libpretixsync.sqldelight"
             dialect "app.cash.sqldelight:postgresql-dialect:$sqldelight_version"
-            srcDirs('src/main/sqldelight/postgres', 'src/main/sqldelight/common')
+            srcDirs('src/main/sqldelight/postgres', 'src/main/sqldelight/common', 'src/main/sqldelight/migrations')
+
+            version = 100
         }
     }
 }
