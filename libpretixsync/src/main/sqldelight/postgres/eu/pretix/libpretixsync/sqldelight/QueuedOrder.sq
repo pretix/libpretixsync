@@ -7,6 +7,5 @@ CREATE TABLE QueuedOrder (
     idempotency_key character varying(255),
     locked boolean DEFAULT FALSE,
     payload character varying(255),
-    receipt bigint,
-    FOREIGN KEY (receipt) REFERENCES Receipt (id) ON DELETE CASCADE
+    receipt bigint REFERENCES Receipt (id) ON DELETE CASCADE
 );

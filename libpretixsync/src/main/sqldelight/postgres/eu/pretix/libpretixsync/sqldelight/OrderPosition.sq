@@ -10,8 +10,6 @@ CREATE TABLE OrderPosition (
     server_id bigint,
     subevent_id bigint,
     variation_id bigint,
-    item bigint,
-    order_ref bigint,
-    FOREIGN KEY (item) REFERENCES Item (id) ON DELETE CASCADE,
-    FOREIGN KEY (order_ref) REFERENCES orders (id) ON DELETE CASCADE
+    item bigint REFERENCES Item (id) ON DELETE CASCADE,
+    order_ref bigint REFERENCES orders (id) ON DELETE CASCADE
 );

@@ -7,6 +7,5 @@ CREATE TABLE QueuedOrder (
     idempotency_key TEXT,
     locked INTEGER AS Boolean DEFAULT FALSE,
     payload TEXT,
-    receipt INTEGER,
-    FOREIGN KEY (receipt) REFERENCES Receipt (id) ON DELETE CASCADE
+    receipt INTEGER REFERENCES Receipt (id) ON DELETE CASCADE
 );
