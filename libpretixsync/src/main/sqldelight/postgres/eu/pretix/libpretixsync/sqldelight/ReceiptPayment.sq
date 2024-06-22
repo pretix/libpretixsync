@@ -6,6 +6,5 @@ CREATE TABLE ReceiptPayment (
     detailsJson character varying(255),
     payment_type character varying(255),
     status character varying(255),
-    receipt bigint,
-    FOREIGN KEY (receipt) REFERENCES Receipt (id) ON DELETE CASCADE
+    receipt bigint REFERENCES Receipt (id) ON DELETE CASCADE
 );

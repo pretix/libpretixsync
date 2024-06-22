@@ -9,7 +9,7 @@ CREATE TABLE Receipt (
     cashier_numericid INTEGER,
     cashier_userid TEXT,
     chosen_cart_id TEXT,
-    closing INTEGER,
+    closing INTEGER REFERENCES Closing (id) ON DELETE CASCADE,
     currency TEXT DEFAULT 'EUR' NOT NULL,
     datetime_closed TEXT AS Date,
     datetime_opened TEXT AS Date,
@@ -25,6 +25,5 @@ CREATE TABLE Receipt (
     printed INTEGER AS Boolean DEFAULT 0 NOT NULL,
     server_id INTEGER,
     started INTEGER AS Boolean DEFAULT 0,
-    training INTEGER AS Boolean DEFAULT 0 NOT NULL,
-    FOREIGN KEY (closing) REFERENCES Closing (id) ON DELETE CASCADE
+    training INTEGER AS Boolean DEFAULT 0 NOT NULL
 );
