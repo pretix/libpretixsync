@@ -25,5 +25,5 @@ CREATE TABLE Receipt (
     server_id bigint,
     started boolean DEFAULT FALSE,
     training boolean DEFAULT FALSE NOT NULL,
-    closing bigint
+    closing bigint REFERENCES Closing (id) ON DELETE CASCADE
 );
