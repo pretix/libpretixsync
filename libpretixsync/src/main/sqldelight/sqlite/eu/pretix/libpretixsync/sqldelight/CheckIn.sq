@@ -5,8 +5,7 @@ CREATE TABLE CheckIn (
     datetime TEXT AS Date,
     json_data TEXT,
     listId INTEGER,
-    position INTEGER,
+    position INTEGER REFERENCES OrderPosition (id) ON DELETE CASCADE,
     server_id INTEGER,
-    type TEXT,
-    FOREIGN KEY (position) REFERENCES OrderPosition (id) ON DELETE CASCADE
+    type TEXT
 );

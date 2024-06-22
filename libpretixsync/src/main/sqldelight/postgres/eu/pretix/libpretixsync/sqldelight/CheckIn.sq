@@ -8,6 +8,5 @@ CREATE TABLE CheckIn (
     listId bigint,
     server_id bigint,
     type character varying(255),
-    "position" bigint,
-    FOREIGN KEY (position) REFERENCES OrderPosition (id) ON DELETE CASCADE
+    "position" bigint REFERENCES OrderPosition (id) ON DELETE CASCADE
 );

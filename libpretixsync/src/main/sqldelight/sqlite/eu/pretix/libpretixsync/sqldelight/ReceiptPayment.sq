@@ -5,7 +5,6 @@ CREATE TABLE ReceiptPayment (
     amount REAL AS BigDecimal,
     detailsJson TEXT,
     payment_type TEXT,
-    receipt INTEGER,
-    status TEXT,
-    FOREIGN KEY (receipt) REFERENCES Receipt (id) ON DELETE CASCADE
+    receipt INTEGER REFERENCES Receipt (id) ON DELETE CASCADE,
+    status TEXT
 );
