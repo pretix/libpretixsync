@@ -2,7 +2,7 @@ package eu.pretix.libpretixsync.sync
 
 import eu.pretix.libpretixsync.api.ApiException
 import eu.pretix.libpretixsync.db.*
-import eu.pretix.pretixscan.scanproxy.tests.db.BaseDatabaseTest
+import eu.pretix.libpretixsync.db.BaseDatabaseTest
 import eu.pretix.pretixscan.scanproxy.tests.test.FakeConfigStore
 import eu.pretix.pretixscan.scanproxy.tests.test.FakeFileStorage
 import eu.pretix.pretixscan.scanproxy.tests.test.FakePretixApi
