@@ -1,4 +1,4 @@
-package eu.pretix.pretixscan.scanproxy.tests.db;
+package eu.pretix.libpretixsync.db;
 
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver;
 import eu.pretix.libpretixsync.db.*;
