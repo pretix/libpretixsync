@@ -1,0 +1,5 @@
+CREATE TABLE CheckInList_Item (
+    itemid bigint NOT NULL REFERENCES Item(id) ON DELETE CASCADE,
+    checkinlistid bigint NOT NULL REFERENCES CheckInList(id) ON DELETE CASCADE,
+    CONSTRAINT checkinlist_item_pkey PRIMARY KEY (itemid, checkinlistid)
+);
