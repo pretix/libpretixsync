@@ -1,0 +1,14 @@
+import kotlin.Boolean;
+
+CREATE TABLE ReusableMedium (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    active INTEGER AS Boolean NOT NULL,
+    customer_id INTEGER,
+    expires TEXT,
+    identifier TEXT,
+    json_data TEXT,
+    linked_giftcard_id INTEGER,
+    linked_orderposition_id INTEGER,
+    server_id INTEGER,
+    type TEXT
+);

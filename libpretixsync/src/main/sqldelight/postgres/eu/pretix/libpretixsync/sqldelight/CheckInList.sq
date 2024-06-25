@@ -1,0 +1,12 @@
+import kotlin.Long;
+
+CREATE TABLE CheckInList (
+    id serial AS Long PRIMARY KEY NOT NULL,
+    all_items boolean NOT NULL,
+    event_slug character varying(255),
+    include_pending boolean NOT NULL,
+    json_data text,
+    name character varying(255),
+    server_id bigint,
+    subevent_id bigint
+);
