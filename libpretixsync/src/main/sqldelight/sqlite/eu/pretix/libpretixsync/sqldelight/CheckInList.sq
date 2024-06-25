@@ -1,0 +1,12 @@
+import kotlin.Boolean;
+
+CREATE TABLE CheckInList (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    all_items INTEGER AS Boolean NOT NULL,
+    event_slug TEXT,
+    include_pending INTEGER AS Boolean NOT NULL,
+    json_data TEXT,
+    name TEXT,
+    server_id INTEGER,
+    subevent_id INTEGER
+);
