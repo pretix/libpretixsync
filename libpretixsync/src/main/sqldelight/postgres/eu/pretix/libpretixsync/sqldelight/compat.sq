@@ -12,3 +12,38 @@ SELECT currval('checkin_id_seq') AS Long;
 -- Switch to RETURNING once it is also supported by SQLite
 getLastInsertedOrderPositionId:
 SELECT currval('orderposition_id_seq') AS Long;
+
+truncateAllTables:
+TRUNCATE
+    BadgeLayout,
+    BadgeLayoutItem,
+    BlockedTicketSecret,
+    CachedPdfImage,
+    Cashier,
+    CheckIn,
+    CheckInList,
+    CheckInList_Item,
+    Closing,
+    Event,
+    Item,
+    ItemCategory,
+    MediumKeySet,
+    orders,
+    OrderPosition,
+    Question,
+    Question_Item,
+    QueuedCall,
+    QueuedCheckIn,
+    QueuedOrder,
+    Quota,
+    Quota_Item,
+    Receipt,
+    ReceiptLine,
+    ReceiptPayment,
+    ResourceSyncStatus,
+    ReusableMedium,
+    RevokedTicketSecret,
+    Settings,
+    SubEvent,
+    TaxRule,
+    TicketLayout;
