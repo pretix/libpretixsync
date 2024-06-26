@@ -12,3 +12,38 @@ SELECT last_insert_rowid();
 -- Switch to RETURNING once it is also supported by SQLite
 getLastInsertedOrderPositionId:
 SELECT last_insert_rowid();
+
+truncateAllTables {
+    DELETE FROM BadgeLayout;
+    DELETE FROM BadgeLayoutItem;
+    DELETE FROM BlockedTicketSecret;
+    DELETE FROM CachedPdfImage;
+    DELETE FROM Cashier;
+    DELETE FROM CheckIn;
+    DELETE FROM CheckInList;
+    DELETE FROM CheckInList_Item;
+    DELETE FROM Closing;
+    DELETE FROM Event;
+    DELETE FROM Item;
+    DELETE FROM ItemCategory;
+    DELETE FROM MediumKeySet;
+    DELETE FROM orders;
+    DELETE FROM OrderPosition;
+    DELETE FROM Question;
+    DELETE FROM Question_Item;
+    DELETE FROM QueuedCall;
+    DELETE FROM QueuedCheckIn;
+    DELETE FROM QueuedOrder;
+    DELETE FROM Quota;
+    DELETE FROM Quota_Item;
+    DELETE FROM Receipt;
+    DELETE FROM ReceiptLine;
+    DELETE FROM ReceiptPayment;
+    DELETE FROM ResourceSyncStatus;
+    DELETE FROM ReusableMedium;
+    DELETE FROM RevokedTicketSecret;
+    DELETE FROM Settings;
+    DELETE FROM SubEvent;
+    DELETE FROM TaxRule;
+    DELETE FROM TicketLayout;
+}
