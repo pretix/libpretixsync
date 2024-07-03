@@ -399,35 +399,35 @@ public class Migrations {
         }
         if (db_version < 100) {
             // DROP COLUMN is not supported before SQLite 3.35.0. Luckily, these columns are all nullable, so if they can't be dropped, they will just… stay.
-            execIgnore(c, "ALTER TABLE Item DROP COLUMN badge_layout_id;", new String[] {"not exists", "existiert", "syntax error"});
+            execIgnore(c, "ALTER TABLE Item DROP COLUMN badge_layout_id;", new String[] {"no such column", "existiert", "syntax error"});
             updateVersionTable(c, 100);
         }
         if (db_version < 105) {
             // DROP COLUMN is not supported before SQLite 3.35.0. Luckily, these columns are all nullable, so if they can't be dropped, they will just… stay.
-            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_vaccinated;", new String[] {"not exists", "existiert", "syntax error"});
-            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_vaccinated_min;", new String[] {"not exists", "existiert", "syntax error"});
-            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_vaccinated_max;", new String[] {"not exists", "existiert", "syntax error"});
-            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_record_proof_vaccinated;", new String[] {"not exists", "existiert", "syntax error"});
-            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_cured;", new String[] {"not exists", "existiert", "syntax error"});
-            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_cured_min;", new String[] {"not exists", "existiert", "syntax error"});
-            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_cured_max;", new String[] {"not exists", "existiert", "syntax error"});
-            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_record_proof_cured;", new String[] {"not exists", "existiert", "syntax error"});
-            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_tested_pcr;", new String[] {"not exists", "existiert", "syntax error"});
-            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_tested_pcr_min;", new String[] {"not exists", "existiert", "syntax error"});
-            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_tested_pcr_max;", new String[] {"not exists", "existiert", "syntax error"});
-            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_record_proof_tested_pcr;", new String[] {"not exists", "existiert", "syntax error"});
-            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_tested_antigen_unknown;", new String[] {"not exists", "existiert", "syntax error"});
-            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_tested_antigen_unknown_min;", new String[] {"not exists", "existiert", "syntax error"});
-            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_tested_antigen_unknown_max;", new String[] {"not exists", "existiert", "syntax error"});
-            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_record_proof_tested_antigen_unknown;", new String[] {"not exists", "existiert", "syntax error"});
-            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_accept_eudgc;", new String[] {"not exists", "existiert", "syntax error"});
-            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_accept_manual;", new String[] {"not exists", "existiert", "syntax error"});
-            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_other;", new String[] {"not exists", "existiert", "syntax error"});
-            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_record_proof_other;", new String[] {"not exists", "existiert", "syntax error"});
-            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_record_validity_time;", new String[] {"not exists", "existiert", "syntax error"});
-            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_combination_rules;", new String[] {"not exists", "existiert", "syntax error"});
-            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_record_proof;", new String[] {"not exists", "existiert", "syntax error"});
-            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_vaccinated_products;", new String[] {"not exists", "existiert", "syntax error"});
+            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_vaccinated;", new String[] {"no such column", "existiert", "syntax error"});
+            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_vaccinated_min;", new String[] {"no such column", "existiert", "syntax error"});
+            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_vaccinated_max;", new String[] {"no such column", "existiert", "syntax error"});
+            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_record_proof_vaccinated;", new String[] {"no such column", "existiert", "syntax error"});
+            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_cured;", new String[] {"no such column", "existiert", "syntax error"});
+            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_cured_min;", new String[] {"no such column", "existiert", "syntax error"});
+            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_cured_max;", new String[] {"no such column", "existiert", "syntax error"});
+            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_record_proof_cured;", new String[] {"no such column", "existiert", "syntax error"});
+            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_tested_pcr;", new String[] {"no such column", "existiert", "syntax error"});
+            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_tested_pcr_min;", new String[] {"no such column", "existiert", "syntax error"});
+            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_tested_pcr_max;", new String[] {"no such column", "existiert", "syntax error"});
+            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_record_proof_tested_pcr;", new String[] {"no such column", "existiert", "syntax error"});
+            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_tested_antigen_unknown;", new String[] {"no such column", "existiert", "syntax error"});
+            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_tested_antigen_unknown_min;", new String[] {"no such column", "existiert", "syntax error"});
+            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_tested_antigen_unknown_max;", new String[] {"no such column", "existiert", "syntax error"});
+            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_record_proof_tested_antigen_unknown;", new String[] {"no such column", "existiert", "syntax error"});
+            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_accept_eudgc;", new String[] {"no such column", "existiert", "syntax error"});
+            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_accept_manual;", new String[] {"no such column", "existiert", "syntax error"});
+            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_other;", new String[] {"no such column", "existiert", "syntax error"});
+            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_record_proof_other;", new String[] {"no such column", "existiert", "syntax error"});
+            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_record_validity_time;", new String[] {"no such column", "existiert", "syntax error"});
+            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_combination_rules;", new String[] {"no such column", "existiert", "syntax error"});
+            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_record_proof;", new String[] {"no such column", "existiert", "syntax error"});
+            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_vaccinated_products;", new String[] {"no such column", "existiert", "syntax error"});
             updateVersionTable(c, 105);
         }
 
@@ -445,34 +445,34 @@ public class Migrations {
         }
         if (oldVersion < 100 && newVersion >= 100) {
             // DROP COLUMN is not supported before SQLite 3.35.0. Luckily, these columns are all nullable, so if they can't be dropped, they will just… stay.
-            execIgnore(c, "ALTER TABLE Item DROP COLUMN badge_layout_id;", new String[]{"not exists", "existiert", "syntax error"});
+            execIgnore(c, "ALTER TABLE Item DROP COLUMN badge_layout_id;", new String[]{"no such column", "existiert", "syntax error"});
         }
         if (oldVersion < 105 && newVersion >= 105) {
             // DROP COLUMN is not supported before SQLite 3.35.0. Luckily, these columns are all nullable, so if they can't be dropped, they will just… stay.
-            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_vaccinated;", new String[] {"not exists", "existiert", "syntax error"});
-            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_vaccinated_min;", new String[] {"not exists", "existiert", "syntax error"});
-            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_vaccinated_max;", new String[] {"not exists", "existiert", "syntax error"});
-            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_record_proof_vaccinated;", new String[] {"not exists", "existiert", "syntax error"});
-            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_cured;", new String[] {"not exists", "existiert", "syntax error"});
-            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_cured_min;", new String[] {"not exists", "existiert", "syntax error"});
-            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_cured_max;", new String[] {"not exists", "existiert", "syntax error"});
-            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_record_proof_cured;", new String[] {"not exists", "existiert", "syntax error"});
-            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_tested_pcr;", new String[] {"not exists", "existiert", "syntax error"});
-            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_tested_pcr_min;", new String[] {"not exists", "existiert", "syntax error"});
-            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_tested_pcr_max;", new String[] {"not exists", "existiert", "syntax error"});
-            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_record_proof_tested_pcr;", new String[] {"not exists", "existiert", "syntax error"});
-            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_tested_antigen_unknown;", new String[] {"not exists", "existiert", "syntax error"});
-            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_tested_antigen_unknown_min;", new String[] {"not exists", "existiert", "syntax error"});
-            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_tested_antigen_unknown_max;", new String[] {"not exists", "existiert", "syntax error"});
-            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_record_proof_tested_antigen_unknown;", new String[] {"not exists", "existiert", "syntax error"});
-            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_accept_eudgc;", new String[] {"not exists", "existiert", "syntax error"});
-            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_accept_manual;", new String[] {"not exists", "existiert", "syntax error"});
-            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_other;", new String[] {"not exists", "existiert", "syntax error"});
-            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_record_proof_other;", new String[] {"not exists", "existiert", "syntax error"});
-            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_record_validity_time;", new String[] {"not exists", "existiert", "syntax error"});
-            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_combination_rules;", new String[] {"not exists", "existiert", "syntax error"});
-            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_record_proof;", new String[] {"not exists", "existiert", "syntax error"});
-            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_vaccinated_products;", new String[] {"not exists", "existiert", "syntax error"});
+            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_vaccinated;", new String[] {"no such column", "existiert", "syntax error"});
+            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_vaccinated_min;", new String[] {"no such column", "existiert", "syntax error"});
+            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_vaccinated_max;", new String[] {"no such column", "existiert", "syntax error"});
+            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_record_proof_vaccinated;", new String[] {"no such column", "existiert", "syntax error"});
+            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_cured;", new String[] {"no such column", "existiert", "syntax error"});
+            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_cured_min;", new String[] {"no such column", "existiert", "syntax error"});
+            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_cured_max;", new String[] {"no such column", "existiert", "syntax error"});
+            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_record_proof_cured;", new String[] {"no such column", "existiert", "syntax error"});
+            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_tested_pcr;", new String[] {"no such column", "existiert", "syntax error"});
+            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_tested_pcr_min;", new String[] {"no such column", "existiert", "syntax error"});
+            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_tested_pcr_max;", new String[] {"no such column", "existiert", "syntax error"});
+            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_record_proof_tested_pcr;", new String[] {"no such column", "existiert", "syntax error"});
+            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_tested_antigen_unknown;", new String[] {"no such column", "existiert", "syntax error"});
+            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_tested_antigen_unknown_min;", new String[] {"no such column", "existiert", "syntax error"});
+            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_tested_antigen_unknown_max;", new String[] {"no such column", "existiert", "syntax error"});
+            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_record_proof_tested_antigen_unknown;", new String[] {"no such column", "existiert", "syntax error"});
+            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_accept_eudgc;", new String[] {"no such column", "existiert", "syntax error"});
+            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_accept_manual;", new String[] {"no such column", "existiert", "syntax error"});
+            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_other;", new String[] {"no such column", "existiert", "syntax error"});
+            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_record_proof_other;", new String[] {"no such column", "existiert", "syntax error"});
+            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_record_validity_time;", new String[] {"no such column", "existiert", "syntax error"});
+            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_combination_rules;", new String[] {"no such column", "existiert", "syntax error"});
+            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_record_proof;", new String[] {"no such column", "existiert", "syntax error"});
+            execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_vaccinated_products;", new String[] {"no such column", "existiert", "syntax error"});
             updateVersionTable(c, 105);
         }
     }
