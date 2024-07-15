@@ -1,0 +1,11 @@
+selectById:
+SELECT *
+FROM BadgeLayout
+WHERE id = ?;
+
+selectDefaultForEventSlug:
+SELECT *
+FROM BadgeLayout
+WHERE
+    is_default = TRUE
+    AND event_slug = ?;
