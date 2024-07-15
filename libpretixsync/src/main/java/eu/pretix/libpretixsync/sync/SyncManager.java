@@ -467,7 +467,7 @@ public class SyncManager {
             }
 
             if (profile == Profile.PRETIXSCAN && !skip_orders && overrideEventSlug == null) {
-                OrderCleanup oc = new OrderCleanup(dataStore, fileStorage, api, configStore.getSyncCycleId(), feedback);
+                OrderCleanup oc = new OrderCleanup(db, dataStore, fileStorage, api, configStore.getSyncCycleId(), feedback);
                 if ((System.currentTimeMillis() - configStore.getLastCleanup()) > 3600 * 1000 * 12) {
                     for (String eventSlug : configStore.getSynchronizedEvents()) {
                         oc.deleteOldSubevents(eventSlug, overrideSubeventId > 0L ? overrideSubeventId : configStore.getSelectedSubeventForEvent(eventSlug));
@@ -482,7 +482,7 @@ public class SyncManager {
                 dataStore.delete(Order.class).get().value();
                 dataStore.delete(ResourceSyncStatus.class).where(ResourceSyncStatus.RESOURCE.like("order%")).get().value();
                 if ((System.currentTimeMillis() - configStore.getLastCleanup()) > 3600 * 1000 * 12) {
-                    OrderCleanup oc = new OrderCleanup(dataStore, fileStorage, api, configStore.getSyncCycleId(), feedback);
+                    OrderCleanup oc = new OrderCleanup(db, dataStore, fileStorage, api, configStore.getSyncCycleId(), feedback);
                     oc.deleteOldPdfImages();
                     configStore.setLastCleanup(System.currentTimeMillis());
                 }
