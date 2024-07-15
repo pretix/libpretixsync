@@ -2,7 +2,12 @@ package eu.pretix.libpretixsync.sync
 
 import eu.pretix.libpretixsync.api.ApiException
 import eu.pretix.libpretixsync.api.PretixApi
-import eu.pretix.libpretixsync.db.*
+import eu.pretix.libpretixsync.db.Event
+import eu.pretix.libpretixsync.db.Order
+import eu.pretix.libpretixsync.db.OrderPosition
+import eu.pretix.libpretixsync.db.ResourceSyncStatus
+import eu.pretix.libpretixsync.db.SubEvent
+import eu.pretix.libpretixsync.sqldelight.SyncDatabase
 import eu.pretix.libpretixsync.sync.SyncManager.ProgressFeedback
 import io.requery.BlockingEntityStore
 import io.requery.Persistable
@@ -13,7 +18,7 @@ import org.joda.time.Duration
 import org.json.JSONException
 import kotlin.math.max
 
-class OrderCleanup(val store: BlockingEntityStore<Persistable>, val fileStorage: FileStorage, val api: PretixApi, val syncCycleId: String, val feedback: ProgressFeedback?) {
+class OrderCleanup(val db: SyncDatabase, val store: BlockingEntityStore<Persistable>, val fileStorage: FileStorage, val api: PretixApi, val syncCycleId: String, val feedback: ProgressFeedback?) {
     private var subeventsDeletionDate: MutableMap<Long, Long?> = HashMap()
     private fun deletionTimeForSubevent(sid: Long, eventSlug: String): Long? {
         if (subeventsDeletionDate.containsKey(sid)) {
@@ -177,13 +182,11 @@ class OrderCleanup(val store: BlockingEntityStore<Persistable>, val fileStorage:
     }
 
     fun deleteOldPdfImages() {
-        store.delete(CachedPdfImage::class.java).where(
-                CachedPdfImage.ORDERPOSITION_ID.notIn(store.select(OrderPosition.SERVER_ID).from(OrderPosition::class.java))
-        )
+        db.cachedPdfImageQueries.deleteOld()
         for (filename in fileStorage.listFiles { _, s -> s.startsWith("pdfimage_") }) {
             val namebase = filename.split("\\.".toRegex()).toTypedArray()[0]
             val etag = namebase.split("_".toRegex()).toTypedArray()[1]
-            if (store.count(CachedPdfImage::class.java).where(CachedPdfImage.ETAG.eq(etag)).get().value() == 0) {
+            if (db.cachedPdfImageQueries.countEtag(etag).executeAsOne() == 0L) {
                 fileStorage.delete(filename)
             }
         }

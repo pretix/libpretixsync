@@ -33,3 +33,13 @@ DELETE FROM CachedPdfImage
 WHERE
     orderposition_id = :orderposition_id
     AND etag NOT IN :seen_etags;
+
+deleteOld:
+DELETE FROM CachedPdfImage
+WHERE
+    orderposition_id NOT IN (SELECT server_id FROM OrderPosition);
+
+countEtag:
+SELECT COUNT()
+FROM CachedPdfImage
+WHERE etag = ?;
