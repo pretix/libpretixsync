@@ -1,0 +1,11 @@
+selectByServerId:
+SELECT *
+FROM TicketLayout
+WHERE server_id = ?;
+
+selectDefaultForEventSlug:
+SELECT *
+FROM TicketLayout
+WHERE
+    is_default = TRUE
+    AND event_slug = ?;
