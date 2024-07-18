@@ -10,7 +10,7 @@ jobs:
   test:
     strategy:
       matrix:
-        java: [ '8', '11' ]
+        java: [ '11' ]
 
     name: test with java ${{ matrix.java }}
 

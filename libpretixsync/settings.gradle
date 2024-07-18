@@ -1,2 +1,18 @@
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        google()
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+}
+
+// workaround: plugin definition with version here, so a standalone build is possible
+// but building it inside the multi module project doesn't exit with "unknown version already on classpath" error
+plugins {
+    id "org.jetbrains.kotlin.jvm" version "1.9.23" apply false
+}
+
 rootProject.name = 'eu.pretix.libpretixsync'
 
