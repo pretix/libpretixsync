@@ -4,5 +4,5 @@ FROM Question
 WHERE Question.id IN (
     SELECT Question_Item.QuestionId
     FROM Question_Item
-    WHERE Question_Item.ItemId = ?
+    WHERE Question_Item.ItemId = :item_id
 );
