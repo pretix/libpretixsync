@@ -10,5 +10,5 @@ WHERE id IN (
     SELECT QuotaId
     FROM Quota_Item
     INNER JOIN Item ON Quota_Item.ItemId = Item.id
-    WHERE Item.id = ?
+    WHERE Item.id = :item_id
 );

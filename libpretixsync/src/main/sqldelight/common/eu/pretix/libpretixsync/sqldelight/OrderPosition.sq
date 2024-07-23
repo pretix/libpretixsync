@@ -11,7 +11,7 @@ WHERE server_id = ?;
 selectForOrder:
 SELECT *
 FROM OrderPosition
-WHERE order_ref = ?;
+WHERE order_ref = :order_id;
 
 deleteByServerIdList:
 DELETE FROM OrderPosition

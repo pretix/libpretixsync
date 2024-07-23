@@ -633,7 +633,7 @@ class OrderSyncAdapter(
                 }
 
                 var cpi = db.cachedPdfImageQueries.selectForOrderPositionAndKey(
-                        orderposition_id = serverId,
+                        order_position_server_id = serverId,
                         key = k,
                 ).executeAsOneOrNull()
 
@@ -641,7 +641,7 @@ class OrderSyncAdapter(
                     db.cachedPdfImageQueries.insert(
                             etag = etag,
                             key = k,
-                            orderposition_id = serverId,
+                            order_position_server_id = serverId,
                     )
                 } else {
                     db.cachedPdfImageQueries.updateEtag(
@@ -652,7 +652,7 @@ class OrderSyncAdapter(
             }
 
             db.cachedPdfImageQueries.deleteUnseen(
-                    orderposition_id = serverId,
+                    order_position_server_id = serverId,
                     seen_etags = seen_etags,
             )
         }
