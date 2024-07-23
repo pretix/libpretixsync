@@ -8,12 +8,7 @@ on:
 
 jobs:
   test:
-    strategy:
-      matrix:
-        java: [ '11' ]
-
-    name: test with java ${{ matrix.java }}
-
+    name: test
     runs-on: ubuntu-latest
 
     steps:
@@ -22,7 +17,7 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v3
         with:
-          java-version: ${{ matrix.java }}
+          java-version: '17'
           distribution: 'temurin'
 
       - name: Run Gradle
