@@ -1,4 +1,4 @@
 selectByItemId:
 SELECT *
 FROM BadgeLayoutItem
-WHERE item = ?;
+WHERE item = :item_id;
