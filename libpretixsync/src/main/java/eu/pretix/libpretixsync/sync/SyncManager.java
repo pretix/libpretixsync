@@ -462,12 +462,12 @@ public class SyncManager {
                 }
 
                 try {
-                    download(new SettingsSyncAdapter(dataStore, eventSlug, eventSlug, api, configStore.getSyncCycleId(), feedback));
+                    download(new SettingsSyncAdapter(db, eventSlug, eventSlug, api, configStore.getSyncCycleId(), feedback));
                 } catch (ApiException e) {
                     // Older pretix installations
                     // We don't need these on pretixSCAN, so we can save some traffic
                     if (profile == Profile.PRETIXPOS) {
-                        download(new InvoiceSettingsSyncAdapter(dataStore, eventSlug, eventSlug, api, configStore.getSyncCycleId(), feedback));
+                        download(new InvoiceSettingsSyncAdapter(db, eventSlug, eventSlug, api, configStore.getSyncCycleId(), feedback));
                     }
                 }
             }
