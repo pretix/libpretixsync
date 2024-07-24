@@ -7,3 +7,43 @@ selectByServerId:
 SELECT *
 FROM ItemCategory
 WHERE server_id = ?;
+
+selectByServerIdList:
+SELECT *
+FROM ItemCategory
+WHERE server_id IN ?;
+
+selectServerIdsByEventSlug:
+SELECT server_id
+FROM ItemCategory
+WHERE event_slug = ?;
+
+deleteByServerId:
+DELETE FROM ItemCategory
+WHERE server_id = ?;
+
+insert:
+INSERT INTO ItemCategory
+(
+    event_slug,
+    is_addon,
+    json_data,
+    "position",
+    server_id
+)
+VALUES (
+    ?,
+    ?,
+    ?,
+    ?,
+    ?
+);
+
+updateFromJson:
+UPDATE ItemCategory
+SET
+    event_slug = ?,
+    is_addon = ?,
+    json_data = ?,
+    "position" = ?
+WHERE server_id = ?;

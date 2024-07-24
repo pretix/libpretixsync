@@ -427,7 +427,7 @@ public class SyncManager {
                     e.eventSlug = eventSlug;
                     throw e;
                 }
-                download(new ItemCategorySyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
+                download(new ItemCategorySyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
                 download(new ItemSyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
                 download(new QuestionSyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
                 if (profile == Profile.PRETIXPOS) {
