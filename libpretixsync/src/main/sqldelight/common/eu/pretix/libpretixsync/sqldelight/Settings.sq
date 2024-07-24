@@ -7,3 +7,46 @@ selectBySlug:
 SELECT *
 FROM Settings
 WHERE slug = ?;
+
+deleteByEventSlug:
+DELETE FROM Settings
+WHERE slug = ?;
+
+insert:
+INSERT INTO Settings (
+    address,
+    city,
+    country,
+    json_data,
+    name,
+    pretixpos_additional_receipt_text,
+    slug,
+    tax_id,
+    vat_id,
+    zipcode
+) VALUES(
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?
+);
+
+updateFromJson:
+UPDATE Settings
+SET
+    address = ?,
+    city = ?,
+    country = ?,
+    json_data = ?,
+    name = ?,
+    pretixpos_additional_receipt_text = ?,
+    tax_id = ?,
+    vat_id = ?,
+    zipcode = ?
+WHERE slug = ?;
