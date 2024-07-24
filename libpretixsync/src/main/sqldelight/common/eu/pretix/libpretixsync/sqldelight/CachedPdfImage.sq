@@ -40,6 +40,6 @@ WHERE
     orderposition_id NOT IN (SELECT server_id FROM OrderPosition);
 
 countEtag:
-SELECT COUNT()
+SELECT COUNT(*)
 FROM CachedPdfImage
 WHERE etag = ?;
