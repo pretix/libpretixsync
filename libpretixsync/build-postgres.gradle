@@ -6,7 +6,7 @@ plugins {
     id 'jacoco'
     id 'org.jetbrains.kotlin.jvm'
     id 'org.jetbrains.kotlin.kapt'
-    id 'com.google.protobuf' version '0.9.4'
+    id 'com.google.protobuf'
     id 'com.github.gmazzo.buildconfig' version "5.3.5"
     id 'org.gradle.idea'
     id 'app.cash.sqldelight'
