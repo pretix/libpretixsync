@@ -25,7 +25,7 @@ class OrderCleanup(val db: SyncDatabase, val store: BlockingEntityStore<Persista
             return subeventsDeletionDate[sid]
         }
         try {
-            SubEventSyncAdapter(store, eventSlug, sid.toString(), api, syncCycleId) { }.download()
+            SubEventSyncAdapter(db, eventSlug, sid.toString(), api, syncCycleId) { }.download()
         } catch (e: RollbackException) {
             subeventsDeletionDate[sid] = null
             return null
