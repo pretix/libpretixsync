@@ -52,7 +52,7 @@ abstract class SqBaseConditionalSyncAdapter<T, K>(
         return apiResponse.data
     }
 
-    protected fun getMeta(): String {
+    protected open fun getMeta(): String {
         return ""
     }
 

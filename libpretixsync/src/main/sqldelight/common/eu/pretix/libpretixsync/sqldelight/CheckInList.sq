@@ -1,0 +1,70 @@
+selectByServerId:
+SELECT *
+FROM CheckInList
+WHERE server_id = ?;
+
+selectByServerIdListAndEventSlug:
+SELECT *
+FROM CheckInList
+WHERE server_id IN ? AND event_slug = ?;
+
+selectServerIdsByEventSlug:
+SELECT server_id
+FROM CheckInList
+WHERE event_slug = ?;
+
+deleteByServerId:
+DELETE FROM CheckInList
+WHERE server_id = ?;
+
+insert:
+INSERT INTO CheckInList(
+    all_items,
+    event_slug,
+    include_pending,
+    json_data,
+    name,
+    server_id,
+    subevent_id
+) VALUES(
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?
+);
+
+updateFromJson:
+UPDATE CheckInList
+SET
+    all_items = ?,
+    event_slug = ?,
+    include_pending = ?,
+    json_data = ?,
+    name = ?,
+    subevent_id = ?
+WHERE id = ?;
+
+selectRelationsForList:
+SELECT *
+FROM CheckInList_Item
+WHERE checkinlistid = :checkin_list_id;
+
+insertItemRelation:
+INSERT INTO CheckInList_Item(
+    itemid,
+    checkinlistid
+) VALUES(
+    :item_id,
+    :checkin_list_id
+);
+
+deleteItemRelation:
+DELETE FROM CheckInList_Item
+WHERE itemid = :item_id AND checkinlistid = :checkin_list_id;
+
+deleteItemRelationsForList:
+DELETE FROM CheckInList_Item
+WHERE checkinlistid = :checkin_list_id;
