@@ -66,4 +66,4 @@ SET
     json_data = ?,
     picture_filename = ?,
     position = ?
-WHERE server_id = ?;
+WHERE id = ?;

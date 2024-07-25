@@ -48,4 +48,4 @@ SET
     name = ?,
     pin = ?,
     userid = ?
-WHERE server_id = ?;
+WHERE id = ?;

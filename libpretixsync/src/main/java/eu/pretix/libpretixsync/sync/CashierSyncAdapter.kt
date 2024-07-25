@@ -70,7 +70,7 @@ class CashierSyncAdapter(
             name = jsonobj.getString("name"),
             pin = if (jsonobj.isNull("pin")) "" else jsonobj.getString("pin"),
             userid = jsonobj.getString("userid"),
-            server_id = jsonobj.getLong("id"),
+            id = obj.id,
         )
     }
 
