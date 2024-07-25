@@ -30,8 +30,8 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         fakeApi = FakePretixApi()
         p = AsyncCheckProvider(configStore!!, dataStore)
 
-        EventSyncAdapter(dataStore, "demo", "demo", fakeApi, "", null).standaloneRefreshFromJSON(jsonResource("events/event1.json"))
-        EventSyncAdapter(dataStore, "demo", "demo", fakeApi, "", null).standaloneRefreshFromJSON(jsonResource("events/event2.json"))
+        EventSyncAdapter(db, "demo", "demo", fakeApi!!, "", null).standaloneRefreshFromJSON(jsonResource("events/event1.json"))
+        EventSyncAdapter(db, "demo2", "demo2", fakeApi!!, "", null).standaloneRefreshFromJSON(jsonResource("events/event2.json"))
         ItemSyncAdapter(db, FakeFileStorage(), "demo", fakeApi!!, "", null).standaloneRefreshFromJSON(jsonResource("items/item1.json"))
         ItemSyncAdapter(db, FakeFileStorage(), "demo", fakeApi!!, "", null).standaloneRefreshFromJSON(jsonResource("items/item2.json"))
         ItemSyncAdapter(db, FakeFileStorage(), "demo2", fakeApi!!, "", null).standaloneRefreshFromJSON(jsonResource("items/event2-item3.json"))
