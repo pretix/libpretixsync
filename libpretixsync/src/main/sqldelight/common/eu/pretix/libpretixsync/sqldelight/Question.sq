@@ -1,3 +1,8 @@
+selectByServerId:
+SELECT *
+FROM Question
+WHERE server_id = ?;
+
 selectForItem:
 SELECT Question.*
 FROM Question
@@ -6,3 +11,63 @@ WHERE Question.id IN (
     FROM Question_Item
     WHERE Question_Item.ItemId = :item_id
 );
+
+selectByServerIdListAndEventSlug:
+SELECT *
+FROM Question
+WHERE server_id IN ? AND event_slug = ?;
+
+selectServerIdsByEventSlug:
+SELECT server_id
+FROM Question
+WHERE event_slug = ?;
+
+deleteByServerId:
+DELETE FROM Question
+WHERE server_id = ?;
+
+insert:
+INSERT INTO Question(
+    event_slug,
+    json_data,
+    "position",
+    required,
+    server_id
+) VALUES(
+    ?,
+    ?,
+    ?,
+    ?,
+    ?
+);
+
+updateFromJson:
+UPDATE Question
+SET
+    event_slug = ?,
+    json_data = ?,
+    "position" = ?,
+    required = ?
+WHERE id = ?;
+
+selectRelationsForQuestion:
+SELECT *
+FROM Question_Item
+WHERE QuestionId = :question_id;
+
+insertItemRelation:
+INSERT INTO Question_Item(
+    ItemId,
+    QuestionId
+) VALUES(
+    :item_id,
+    :question_id
+);
+
+deleteItemRelation:
+DELETE FROM Question_Item
+WHERE ItemId = :item_id AND QuestionId = :question_id;
+
+deleteItemRelationsForQuestion:
+DELETE FROM Question_Item
+WHERE QuestionId = :question_id;
