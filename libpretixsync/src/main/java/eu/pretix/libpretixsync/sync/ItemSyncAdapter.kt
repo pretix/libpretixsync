@@ -150,7 +150,10 @@ class ItemSyncAdapter(
     }
 
     override fun runBatch(parameterBatch: List<Long>): List<Item> =
-        db.itemQueries.selectByServerIdList(parameterBatch).executeAsList()
+        db.itemQueries.selectByServerIdListAndEventSlug(
+            server_id = parameterBatch,
+            event_slug = eventSlug,
+        ).executeAsList()
 
     @Throws(JSONException::class)
     fun standaloneRefreshFromJSON(data: JSONObject) {
