@@ -75,5 +75,8 @@ class ItemCategorySyncAdapter(
     }
 
     override fun runBatch(parameterBatch: List<Long>): List<ItemCategory> =
-        db.itemCategoryQueries.selectByServerIdList(parameterBatch).executeAsList()
+        db.itemCategoryQueries.selectByServerIdListAndEventSlug(
+            server_id = parameterBatch,
+            event_slug = eventSlug,
+        ).executeAsList()
 }

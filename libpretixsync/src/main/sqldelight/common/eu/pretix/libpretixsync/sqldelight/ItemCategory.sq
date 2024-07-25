@@ -8,10 +8,10 @@ SELECT *
 FROM ItemCategory
 WHERE server_id = ?;
 
-selectByServerIdList:
+selectByServerIdListAndEventSlug:
 SELECT *
 FROM ItemCategory
-WHERE server_id IN ?;
+WHERE server_id IN ? AND event_slug = ?;
 
 selectServerIdsByEventSlug:
 SELECT server_id
