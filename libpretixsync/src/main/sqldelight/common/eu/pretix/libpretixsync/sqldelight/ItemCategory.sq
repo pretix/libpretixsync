@@ -46,4 +46,4 @@ SET
     is_addon = ?,
     json_data = ?,
     "position" = ?
-WHERE server_id = ?;
+WHERE id = ?;
