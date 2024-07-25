@@ -62,7 +62,7 @@ class ItemCategorySyncAdapter(
             is_addon = jsonobj.optBoolean("is_addon", false),
             json_data = jsonobj.toString(),
             position = jsonobj.getLong("position"),
-            server_id = jsonobj.getLong("id"),
+            id = obj.id,
         )
     }
 

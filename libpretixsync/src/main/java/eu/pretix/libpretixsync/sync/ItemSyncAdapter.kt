@@ -84,7 +84,7 @@ class ItemSyncAdapter(
             json_data = jsonobj.toString(),
             picture_filename = pictureFilename,
             position = jsonobj.getLong("position"),
-            server_id = jsonobj.getLong("id"),
+            id = obj.id,
         )
     }
 
