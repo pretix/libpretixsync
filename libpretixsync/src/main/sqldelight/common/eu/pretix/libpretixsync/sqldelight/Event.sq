@@ -3,10 +3,19 @@ SELECT *
 FROM Event
 WHERE id = ?;
 
+selectSlugs:
+SELECT slug
+FROM Event;
+
 selectBySlug:
 SELECT *
 FROM Event
 WHERE slug = ?;
+
+selectBySlugList:
+SELECT *
+FROM Event
+WHERE slug IN ?;
 
 deleteBySlug:
 DELETE FROM Event
