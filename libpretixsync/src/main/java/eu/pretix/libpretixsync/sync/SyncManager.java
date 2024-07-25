@@ -422,7 +422,7 @@ public class SyncManager {
                     subEvent = overrideSubeventId;
                 }
                 try {
-                    download(new EventSyncAdapter(dataStore, eventSlug, eventSlug, api, configStore.getSyncCycleId(), feedback));
+                    download(new EventSyncAdapter(db, eventSlug, eventSlug, api, configStore.getSyncCycleId(), feedback));
                 } catch (PermissionDeniedApiException e) {
                     e.eventSlug = eventSlug;
                     throw e;
