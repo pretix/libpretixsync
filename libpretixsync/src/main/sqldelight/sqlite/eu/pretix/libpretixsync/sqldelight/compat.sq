@@ -10,6 +10,10 @@ getLastInsertedCheckInId:
 SELECT last_insert_rowid();
 
 -- Switch to RETURNING once it is also supported by SQLite
+getLastInsertedCheckInListId:
+SELECT last_insert_rowid();
+
+-- Switch to RETURNING once it is also supported by SQLite
 getLastInsertedOrderPositionId:
 SELECT last_insert_rowid();
 
