@@ -28,7 +28,7 @@ class OrderSyncTest : BaseDatabaseTest() {
         fakeApi = FakePretixApi()
         osa = OrderSyncAdapter(db, FakeFileStorage(), "demo", 0, true, false, fakeApi, "", null)
 
-        CheckInListSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null, 0).standaloneRefreshFromJSON(
+        CheckInListSyncAdapter(db, FakeFileStorage(), "demo", fakeApi, "", null, 0).standaloneRefreshFromJSON(
             jsonResource("checkinlists/list1.json")
         )
     }
