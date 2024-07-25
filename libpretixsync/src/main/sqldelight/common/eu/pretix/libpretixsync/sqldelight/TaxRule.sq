@@ -7,3 +7,35 @@ selectByServerId:
 SELECT *
 FROM TaxRule
 WHERE server_id = ?;
+
+selectByServerIdListAndEventSlug:
+SELECT *
+FROM TaxRule
+WHERE server_id IN ? AND event_slug = ?;
+
+selectServerIdsByEventSlug:
+SELECT server_id
+FROM TaxRule
+WHERE event_slug = ?;
+
+deleteByServerId:
+DELETE FROM TaxRule
+WHERE server_id = ?;
+
+insert:
+INSERT INTO TaxRule(
+    event_slug,
+    json_data,
+    server_id
+) VALUES (
+    ?,
+    ?,
+    ?
+);
+
+updateFromJson:
+UPDATE TaxRule
+SET
+    event_slug = ?,
+    json_data = ?
+WHERE id = ?;
