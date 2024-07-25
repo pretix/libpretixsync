@@ -21,6 +21,17 @@ class CashierSyncAdapter(
     syncCycleId = syncCycleId,
     feedback = feedback,
 ) {
+
+    override fun getResourceName(): String = "cashiers"
+
+    override fun getUrl(): String = api.organizerResourceUrl("pos/" + getResourceName())
+
+    override fun getId(obj: Cashier): Long = obj.server_id!!
+
+    override fun getId(obj: JSONObject): Long = obj.getLong("id")
+
+    override fun getJSON(obj: Cashier): JSONObject = JSONObject(obj.json_data)
+
     override fun queryKnownIDs(): MutableSet<Long> {
         val res = mutableSetOf<Long>()
         db.cashierQueries.selectServerIds().execute { cursor ->
@@ -34,14 +45,6 @@ class CashierSyncAdapter(
         return res
     }
 
-    override fun getResourceName(): String = "cashiers"
-
-    override fun getId(obj: JSONObject): Long = obj.getLong("id")
-
-    override fun runInTransaction(body: TransactionWithoutReturn.() -> Unit) {
-        db.cashierQueries.transaction(false, body)
-    }
-
     override fun insert(jsonobj: JSONObject) {
         db.cashierQueries.insert(
             active = jsonobj.getBoolean("active"),
@@ -51,16 +54,6 @@ class CashierSyncAdapter(
             server_id = jsonobj.getLong("id"),
             userid = jsonobj.getString("userid"),
         )
-
-    }
-
-    override fun runBatch(parameterBatch: List<Long>): List<Cashier> =
-        db.cashierQueries.selectByServerIdList(parameterBatch).executeAsList()
-
-    override fun getJSON(obj: Cashier): JSONObject = JSONObject(obj.json_data)
-
-    override fun delete(key: Long) {
-        db.cashierQueries.deleteByServerId(key)
     }
 
     override fun update(obj: Cashier, jsonobj: JSONObject) {
@@ -74,7 +67,15 @@ class CashierSyncAdapter(
         )
     }
 
-    override fun getId(obj: Cashier): Long = obj.server_id!!
+    override fun delete(key: Long) {
+        db.cashierQueries.deleteByServerId(key)
+    }
 
-    override fun getUrl(): String = api.organizerResourceUrl("pos/" + getResourceName())
+    override fun runInTransaction(body: TransactionWithoutReturn.() -> Unit) {
+        db.cashierQueries.transaction(false, body)
+    }
+
+    override fun runBatch(parameterBatch: List<Long>): List<Cashier> =
+        db.cashierQueries.selectByServerIdList(parameterBatch).executeAsList()
+
 }

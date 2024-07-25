@@ -76,8 +76,6 @@ abstract class SqBaseDownloadSyncAdapter<T, K>(
         return it.size.toLong()
     }
 
-    abstract fun queryKnownIDs(): MutableSet<K>?
-
     protected open fun queryKnownObjects(ids: Set<K>): MutableMap<K, T> {
         if (ids.isEmpty()) {
             return mutableMapOf()
@@ -231,12 +229,15 @@ abstract class SqBaseDownloadSyncAdapter<T, K>(
 
     abstract fun getResourceName(): String
 
+    abstract fun getId(obj: T): K
+
     @Throws(JSONException::class)
     abstract fun getId(obj: JSONObject): K
 
-    abstract fun getId(obj: T): K
+    @Throws(JSONException::class)
+    abstract fun getJSON(obj: T): JSONObject
 
-    abstract fun runInTransaction(body: TransactionWithoutReturn.() -> Unit)
+    abstract fun queryKnownIDs(): MutableSet<K>?
 
     abstract fun insert(jsonobj: JSONObject)
 
@@ -244,6 +245,5 @@ abstract class SqBaseDownloadSyncAdapter<T, K>(
 
     abstract fun delete(key: K)
 
-    @Throws(JSONException::class)
-    abstract fun getJSON(obj: T): JSONObject
+    abstract fun runInTransaction(body: TransactionWithoutReturn.() -> Unit)
 }
