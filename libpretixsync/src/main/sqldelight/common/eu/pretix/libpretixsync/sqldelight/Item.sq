@@ -12,10 +12,10 @@ SELECT *
 FROM Item
 WHERE id = ?;
 
-selectByServerIdList:
+selectByServerIdListAndEventSlug:
 SELECT *
 FROM Item
-WHERE server_id IN ?;
+WHERE server_id IN ? AND event_slug = ?;
 
 selectServerIdsByEventSlug:
 SELECT server_id

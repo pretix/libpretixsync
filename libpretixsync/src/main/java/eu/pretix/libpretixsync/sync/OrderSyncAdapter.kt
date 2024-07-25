@@ -508,6 +508,10 @@ class OrderSyncAdapter(
     }
 
     override fun runBatch(parameterBatch: List<String>): List<Order> {
+        // pretix guarantees uniqueness of CODE within an organizer account, so we don't need
+        // to filter by EVENT_SLUG. This is good, because SQLite tends to build a very stupid
+        // query plan otherwise if statistics are not up to date (using the EVENT_SLUG index
+        // instead of using the CODE index)
         return db.orderQueries.selectByCodeList(parameterBatch).executeAsList()
     }
 
