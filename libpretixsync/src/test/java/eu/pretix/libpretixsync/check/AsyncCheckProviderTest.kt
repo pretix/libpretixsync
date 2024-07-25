@@ -872,7 +872,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testQuestionsForOtherItem() {
-        QuestionSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null).standaloneRefreshFromJSON(
+        QuestionSyncAdapter(db, FakeFileStorage(), "demo", fakeApi!!, "", null).standaloneRefreshFromJSON(
             jsonResource("questions/question1.json")
         )
 
@@ -882,7 +882,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testQuestionNotDuringCheckin() {
-        QuestionSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null).standaloneRefreshFromJSON(
+        QuestionSyncAdapter(db, FakeFileStorage(), "demo", fakeApi!!, "", null).standaloneRefreshFromJSON(
             jsonResource("questions/question3.json")
         )
 
@@ -892,7 +892,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testQuestionsFilled() {
-        QuestionSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null).standaloneRefreshFromJSON(
+        QuestionSyncAdapter(db, FakeFileStorage(), "demo", fakeApi!!, "", null).standaloneRefreshFromJSON(
             jsonResource("questions/question1.json")
         )
 
@@ -902,7 +902,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testQuestionsIgnored() {
-        QuestionSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null).standaloneRefreshFromJSON(
+        QuestionSyncAdapter(db, FakeFileStorage(), "demo", fakeApi!!, "", null).standaloneRefreshFromJSON(
             jsonResource("questions/question1.json")
         )
 
@@ -912,7 +912,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testQuestionsRequired() {
-        QuestionSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null).standaloneRefreshFromJSON(
+        QuestionSyncAdapter(db, FakeFileStorage(), "demo", fakeApi!!, "", null).standaloneRefreshFromJSON(
             jsonResource("questions/question1.json")
         )
 
@@ -936,7 +936,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testQuestionsInvalidInput() {
-        QuestionSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null).standaloneRefreshFromJSON(
+        QuestionSyncAdapter(db, FakeFileStorage(), "demo", fakeApi!!, "", null).standaloneRefreshFromJSON(
             jsonResource("questions/question2.json")
         )
 

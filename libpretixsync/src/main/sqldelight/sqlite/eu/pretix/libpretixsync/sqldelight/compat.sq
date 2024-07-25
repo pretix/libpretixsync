@@ -13,6 +13,10 @@ SELECT last_insert_rowid();
 getLastInsertedOrderPositionId:
 SELECT last_insert_rowid();
 
+-- Switch to RETURNING once it is also supported by SQLite
+getLastInsertedQuestionId:
+SELECT last_insert_rowid();
+
 truncateAllTables {
     DELETE FROM BadgeLayout;
     DELETE FROM BadgeLayoutItem;
