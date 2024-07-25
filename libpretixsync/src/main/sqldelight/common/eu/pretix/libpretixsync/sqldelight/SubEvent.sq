@@ -7,3 +7,34 @@ selectByServerId:
 SELECT *
 FROM SubEvent
 WHERE server_id = ?;
+
+deleteByServerId:
+DELETE FROM SubEvent
+WHERE server_id = ?;
+
+insert:
+INSERT INTO SubEvent (
+    active,
+    date_from,
+    date_to,
+    event_slug,
+    json_data,
+    server_id
+) VALUES (
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?
+);
+
+updateFromJson:
+UPDATE SubEvent
+SET
+    active = ?,
+    date_from = ?,
+    date_to = ?,
+    event_slug = ?,
+    json_data = ?
+WHERE id = ?;
