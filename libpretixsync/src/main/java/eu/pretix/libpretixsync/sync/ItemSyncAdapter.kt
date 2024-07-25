@@ -30,6 +30,15 @@ class ItemSyncAdapter(
     syncCycleId = syncCycleId,
     feedback = feedback,
 ) {
+
+    override fun getResourceName(): String = "items"
+
+    override fun getId(obj: Item): Long = obj.server_id!!
+
+    override fun getId(obj: JSONObject): Long = obj.getLong("id")
+
+    override fun getJSON(obj: Item): JSONObject = JSONObject(obj.json_data)
+
     override fun queryKnownIDs(): MutableSet<Long> {
         val res = mutableSetOf<Long>()
         db.itemQueries.selectServerIdsByEventSlug(event_slug = eventSlug).execute { cursor ->
@@ -42,16 +51,6 @@ class ItemSyncAdapter(
         }
 
         return res
-    }
-
-    override fun getResourceName(): String = "items"
-
-    override fun getId(obj: JSONObject): Long = obj.getLong("id")
-
-    override fun getId(obj: Item): Long = obj.server_id!!
-
-    override fun runInTransaction(body: TransactionWithoutReturn.() -> Unit) {
-        db.itemQueries.transaction(false, body)
     }
 
     override fun insert(jsonobj: JSONObject) {
@@ -87,8 +86,6 @@ class ItemSyncAdapter(
             id = obj.id,
         )
     }
-
-    override fun getJSON(obj: Item): JSONObject = JSONObject(obj.json_data)
 
     override fun delete(key: Long) {
         db.itemQueries.deleteByServerId(key)
@@ -147,6 +144,10 @@ class ItemSyncAdapter(
         }
 
         return result
+    }
+
+    override fun runInTransaction(body: TransactionWithoutReturn.() -> Unit) {
+        db.itemQueries.transaction(false, body)
     }
 
     override fun runBatch(parameterBatch: List<Long>): List<Item> =

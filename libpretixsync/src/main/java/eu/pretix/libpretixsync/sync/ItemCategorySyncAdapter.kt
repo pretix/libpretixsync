@@ -23,6 +23,15 @@ class ItemCategorySyncAdapter(
     syncCycleId = syncCycleId,
     feedback = feedback,
 ) {
+
+    override fun getResourceName(): String = "categories"
+
+    override fun getId(obj: ItemCategory): Long = obj.server_id!!
+
+    override fun getId(obj: JSONObject): Long = obj.getLong("id")
+
+    override fun getJSON(obj: ItemCategory): JSONObject = JSONObject(obj.json_data)
+
     override fun queryKnownIDs(): MutableSet<Long>? {
         val res = mutableSetOf<Long>()
         db.itemCategoryQueries.selectServerIdsByEventSlug(event_slug = eventSlug)
@@ -37,14 +46,6 @@ class ItemCategorySyncAdapter(
 
         return res
     }
-
-    override fun getResourceName(): String = "categories"
-
-    override fun getId(obj: JSONObject): Long = obj.getLong("id")
-
-    override fun getId(obj: ItemCategory): Long = obj.server_id!!
-
-    override fun getJSON(obj: ItemCategory): JSONObject = JSONObject(obj.json_data)
 
     override fun insert(jsonobj: JSONObject) {
         db.itemCategoryQueries.insert(

@@ -23,6 +23,15 @@ class TaxRuleSyncAdapter(
     syncCycleId = syncCycleId,
     feedback = feedback,
 ) {
+
+    override fun getResourceName(): String = "taxrules"
+
+    override fun getId(obj: TaxRule): Long = obj.server_id!!
+
+    override fun getId(obj: JSONObject): Long = obj.getLong("id")
+
+    override fun getJSON(obj: TaxRule): JSONObject = JSONObject(obj.json_data!!)
+
     override fun queryKnownIDs(): MutableSet<Long>? {
         val res = mutableSetOf<Long>()
         db.taxRuleQueries.selectServerIdsByEventSlug(eventSlug).execute { cursor ->
@@ -34,14 +43,6 @@ class TaxRuleSyncAdapter(
         }
 
         return res
-    }
-
-    override fun getResourceName(): String = "taxrules"
-
-    override fun getId(obj: JSONObject): Long = obj.getLong("id")
-
-    override fun runInTransaction(body: TransactionWithoutReturn.() -> Unit) {
-        db.taxRuleQueries.transaction(false, body)
     }
 
     override fun insert(jsonobj: JSONObject) {
@@ -60,18 +61,18 @@ class TaxRuleSyncAdapter(
         )
     }
 
+    override fun delete(key: Long) {
+        db.taxRuleQueries.deleteByServerId(key)
+    }
+
+    override fun runInTransaction(body: TransactionWithoutReturn.() -> Unit) {
+        db.taxRuleQueries.transaction(false, body)
+    }
+
     override fun runBatch(parameterBatch: List<Long>): List<TaxRule> =
         db.taxRuleQueries.selectByServerIdListAndEventSlug(
             server_id = parameterBatch,
             event_slug = eventSlug,
         ).executeAsList()
-
-    override fun getJSON(obj: TaxRule): JSONObject = JSONObject(obj.json_data!!)
-
-    override fun delete(key: Long) {
-        db.taxRuleQueries.deleteByServerId(key)
-    }
-
-    override fun getId(obj: TaxRule): Long = obj.server_id!!
 
 }
