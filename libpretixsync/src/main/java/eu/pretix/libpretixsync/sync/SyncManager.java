@@ -402,7 +402,7 @@ public class SyncManager {
                 }
             }
 
-            download(new AllSubEventsSyncAdapter(dataStore, fileStorage, api, configStore.getSyncCycleId(), feedback));
+            download(new AllSubEventsSyncAdapter(db, fileStorage, api, configStore.getSyncCycleId(), feedback));
             List<String> slugs;
             if (overrideEventSlug != null) {
                 slugs = new ArrayList<>();
