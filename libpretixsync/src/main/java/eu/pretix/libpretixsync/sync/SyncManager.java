@@ -446,7 +446,7 @@ public class SyncManager {
                         // ignore, this is only supported from pretix 3.12.
                     }
                     try {
-                        download(new BlockedTicketSecretSyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
+                        download(new BlockedTicketSecretSyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
                     } catch (NotFoundApiException e) {
                         // ignore, this is only supported from pretix 4.17.
                     }
