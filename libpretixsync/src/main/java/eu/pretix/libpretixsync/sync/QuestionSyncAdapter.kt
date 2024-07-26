@@ -67,7 +67,10 @@ class QuestionSyncAdapter(
     override fun update(obj: Question, jsonobj: JSONObject) {
         val existingRelations = db.questionQueries.selectRelationsForQuestion(obj.id)
             .executeAsList()
-            .map { it.ItemId }
+            .map {
+                // Not-null assertion needed for SQLite
+                it.ItemId!!
+            }
             .toSet()
 
         db.questionQueries.updateFromJson(
