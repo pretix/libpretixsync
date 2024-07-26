@@ -158,7 +158,7 @@ abstract class SqBaseDownloadSyncAdapter<T, K>(
 
     protected open fun afterPage() {}
 
-    protected fun prepareDelete(obj: T?) {}
+    protected open fun prepareDelete(obj: T) {}
 
     protected open fun autoPersist(): Boolean {
         return true
