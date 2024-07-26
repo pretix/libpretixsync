@@ -3,10 +3,19 @@ SELECT *
 FROM SubEvent
 WHERE id = ?;
 
+selectServerIds:
+SELECT server_id
+FROM SubEvent;
+
 selectByServerId:
 SELECT *
 FROM SubEvent
 WHERE server_id = ?;
+
+selectByServerIdList:
+SELECT *
+FROM SubEvent
+WHERE server_id IN ?;
 
 deleteByServerId:
 DELETE FROM SubEvent
