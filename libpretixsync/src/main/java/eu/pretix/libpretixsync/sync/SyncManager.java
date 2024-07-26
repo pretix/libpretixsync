@@ -367,7 +367,7 @@ public class SyncManager {
             configStore.setDeviceKnownGateID(gateID);
 
             if (vdata.has("medium_key_sets")) {
-                MediumKeySetSyncAdapter mkssa = new MediumKeySetSyncAdapter(dataStore, fileStorage, api, configStore.getSyncCycleId(), null, vdata.getJSONArray("medium_key_sets"));
+                MediumKeySetSyncAdapter mkssa = new MediumKeySetSyncAdapter(db, fileStorage, api, configStore.getSyncCycleId(), null, vdata.getJSONArray("medium_key_sets"));
                 mkssa.download();
             }
 
