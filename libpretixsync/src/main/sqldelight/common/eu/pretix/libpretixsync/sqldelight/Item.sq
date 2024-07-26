@@ -12,6 +12,11 @@ SELECT *
 FROM Item
 WHERE id = ?;
 
+selectByEventSlug:
+SELECT *
+FROM Item
+WHERE event_slug = ?;
+
 selectByServerIdListAndEventSlug:
 SELECT *
 FROM Item

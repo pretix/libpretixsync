@@ -430,7 +430,7 @@ public class SyncManager {
                     download(new TicketLayoutSyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
                 }
                 download(new BadgeLayoutSyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
-                download(new BadgeLayoutItemSyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
+                download(new BadgeLayoutItemSyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
                 download(new CheckInListSyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback, subEvent));
                 if (profile == Profile.PRETIXSCAN || profile == Profile.PRETIXSCAN_ONLINE) {
                     // We don't need these on pretixPOS, so we can save some traffic

@@ -2,3 +2,40 @@ selectByItemId:
 SELECT *
 FROM BadgeLayoutItem
 WHERE item = :item_id;
+
+selectServerIdsByEventSlug:
+SELECT BadgeLayoutItem.server_id
+FROM BadgeLayoutItem
+LEFT JOIN Item ON BadgeLayoutItem.item = Item.id
+WHERE Item.event_slug = ?;
+
+selectByServerIdListAndEventSlug:
+SELECT BadgeLayoutItem.*
+FROM BadgeLayoutItem
+LEFT JOIN Item ON BadgeLayoutItem.item = Item.id
+WHERE Item.event_slug = ? AND BadgeLayoutItem.server_id IN ?;
+
+deleteByServerId:
+DELETE FROM BadgeLayoutItem
+WHERE server_id = ?;
+
+insert:
+INSERT INTO BadgeLayoutItem(
+    json_data,
+    server_id,
+    item,
+    layout
+) VALUES(
+    ?,
+    ?,
+    ?,
+    ?
+);
+
+updateFromJson:
+UPDATE BadgeLayoutItem
+SET
+    json_data = ?,
+    item = ?,
+    layout = ?
+WHERE id = ?;
