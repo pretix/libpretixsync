@@ -449,7 +449,7 @@ public class SyncManager {
                     OrderSyncAdapter osa = new OrderSyncAdapter(db, fileStorage, eventSlug, subEvent, with_pdf_data, false, api, configStore.getSyncCycleId(), feedback);
                     download(osa);
                     try {
-                        download(new ReusableMediaSyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
+                        download(new ReusableMediaSyncAdapter(db, fileStorage, api, configStore.getSyncCycleId(), feedback));
                     } catch (NotFoundApiException e) {
                         // ignore, this is only supported from pretix 4.19.
                     }
