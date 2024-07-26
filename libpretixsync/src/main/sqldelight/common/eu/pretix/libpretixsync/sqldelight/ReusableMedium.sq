@@ -1,0 +1,53 @@
+selectByServerId:
+SELECT *
+FROM ReusableMedium
+WHERE server_id = ?;
+
+selectServerIds:
+SELECT server_id
+FROM ReusableMedium;
+
+selectByServerIdList:
+SELECT *
+FROM ReusableMedium
+WHERE server_id IN ?;
+
+deleteByServerId:
+DELETE FROM ReusableMedium
+WHERE server_id = ?;
+
+insert:
+INSERT INTO ReusableMedium(
+    active,
+    customer_id,
+    expires,
+    identifier,
+    json_data,
+    linked_giftcard_id,
+    linked_orderposition_id,
+    server_id,
+    type
+) VALUES(
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?
+);
+
+updateFromJson:
+UPDATE ReusableMedium
+SET
+    active = ?,
+    customer_id = ?,
+    expires = ?,
+    identifier = ?,
+    json_data = ?,
+    linked_giftcard_id = ?,
+    linked_orderposition_id = ?,
+    type = ?
+WHERE id = ?;
