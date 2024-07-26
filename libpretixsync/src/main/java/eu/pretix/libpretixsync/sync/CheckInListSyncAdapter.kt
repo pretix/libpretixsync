@@ -87,7 +87,7 @@ class CheckInListSyncAdapter(
     override fun update(obj: CheckInList, jsonobj: JSONObject) {
         val existingRelations = db.checkInListQueries.selectRelationsForList(obj.id)
             .executeAsList()
-            .map { it.itemid }
+            .map { it.ItemId }
             .toSet()
 
         db.checkInListQueries.updateFromJson(

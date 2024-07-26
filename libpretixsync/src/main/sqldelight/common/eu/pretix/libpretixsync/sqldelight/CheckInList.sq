@@ -50,12 +50,12 @@ WHERE id = ?;
 selectRelationsForList:
 SELECT *
 FROM CheckInList_Item
-WHERE checkinlistid = :checkin_list_id;
+WHERE CheckInListId = :checkin_list_id;
 
 insertItemRelation:
 INSERT INTO CheckInList_Item(
-    itemid,
-    checkinlistid
+    ItemId,
+    CheckInListId
 ) VALUES(
     :item_id,
     :checkin_list_id
@@ -63,8 +63,8 @@ INSERT INTO CheckInList_Item(
 
 deleteItemRelation:
 DELETE FROM CheckInList_Item
-WHERE itemid = :item_id AND checkinlistid = :checkin_list_id;
+WHERE ItemId = :item_id AND CheckInListId = :checkin_list_id;
 
 deleteItemRelationsForList:
 DELETE FROM CheckInList_Item
-WHERE checkinlistid = :checkin_list_id;
+WHERE CheckInListId = :checkin_list_id;
