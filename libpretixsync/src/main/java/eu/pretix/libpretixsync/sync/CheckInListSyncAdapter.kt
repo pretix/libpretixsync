@@ -87,7 +87,10 @@ class CheckInListSyncAdapter(
     override fun update(obj: CheckInList, jsonobj: JSONObject) {
         val existingRelations = db.checkInListQueries.selectRelationsForList(obj.id)
             .executeAsList()
-            .map { it.ItemId }
+            .map {
+                // Not-null assertion needed for SQLite
+                it.ItemId!!
+            }
             .toSet()
 
         db.checkInListQueries.updateFromJson(
