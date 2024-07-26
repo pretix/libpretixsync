@@ -3,6 +3,11 @@ SELECT *
 FROM BadgeLayout
 WHERE id = ?;
 
+selectByEventSlug:
+SELECT *
+FROM BadgeLayout
+WHERE event_slug = ?;
+
 selectByServerIdListAndEventSlug:
 SELECT *
 FROM BadgeLayout
