@@ -18,7 +18,7 @@ class SubEventSyncAdapter(
     api: PretixApi,
     syncCycleId: String,
     feedback: ProgressFeedback? = null,
-) : SqBaseSingleObjectSyncAdapter<SubEvent>(
+) : BaseSingleObjectSyncAdapter<SubEvent>(
     db = db,
     eventSlug = eventSlug,
     key = key,

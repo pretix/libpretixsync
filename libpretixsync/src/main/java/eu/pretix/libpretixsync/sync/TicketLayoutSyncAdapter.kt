@@ -20,7 +20,7 @@ class TicketLayoutSyncAdapter(
     api: PretixApi,
     syncCycleId: String,
     feedback: ProgressFeedback?,
-) : SqBaseDownloadSyncAdapter<TicketLayout, Long>(
+) : BaseDownloadSyncAdapter<TicketLayout, Long>(
     db = db,
     api = api,
     syncCycleId = syncCycleId,

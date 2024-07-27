@@ -22,7 +22,7 @@ class AllSubEventsSyncAdapter(
     api: PretixApi,
     syncCycleId: String,
     feedback: ProgressFeedback?,
-) : SqBaseDownloadSyncAdapter<SubEvent, Long>(
+) : BaseDownloadSyncAdapter<SubEvent, Long>(
     db = db,
     api = api,
     syncCycleId = syncCycleId,

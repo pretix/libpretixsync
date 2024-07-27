@@ -15,7 +15,7 @@ class AllEventsSyncAdapter(
     api: PretixApi,
     syncCycleId: String,
     feedback: ProgressFeedback?,
-) : SqBaseDownloadSyncAdapter<Event, String>(
+) : BaseDownloadSyncAdapter<Event, String>(
     db = db,
     api = api,
     syncCycleId = syncCycleId,
