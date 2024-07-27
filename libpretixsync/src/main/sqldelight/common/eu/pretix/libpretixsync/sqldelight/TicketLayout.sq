@@ -3,9 +3,47 @@ SELECT *
 FROM TicketLayout
 WHERE server_id = ?;
 
+selectByServerIdListAndEventSlug:
+SELECT *
+FROM TicketLayout
+WHERE server_id IN ? AND event_slug = ?;
+
+selectServerIdsByEventSlug:
+SELECT server_id
+FROM TicketLayout
+WHERE event_slug = ?;
+
 selectDefaultForEventSlug:
 SELECT *
 FROM TicketLayout
 WHERE
     is_default = TRUE
     AND event_slug = ?;
+
+deleteByServerId:
+DELETE FROM TicketLayout
+WHERE server_id = ?;
+
+insert:
+INSERT INTO TicketLayout(
+    background_filename,
+    event_slug,
+    is_default,
+    json_data,
+    server_id
+) VALUES(
+    ?,
+    ?,
+    ?,
+    ?,
+    ?
+);
+
+updateFromJson:
+UPDATE TicketLayout
+SET
+    background_filename = ?,
+    event_slug = ?,
+    is_default = ?,
+    json_data = ?
+WHERE id = ?;
