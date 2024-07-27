@@ -21,6 +21,10 @@ SELECT currval('orderposition_id_seq') AS Long;
 getLastInsertedQuestionId:
 SELECT currval('question_id_seq') AS Long;
 
+-- Switch to RETURNING once it is also supported by SQLite
+getLastInsertedQuotaId:
+SELECT currval('quota_id_seq') AS Long;
+
 truncateAllTables:
 TRUNCATE
     BadgeLayout,
