@@ -2,3 +2,79 @@ selectById:
 SELECT *
 FROM Quota
 WHERE id = ?;
+
+selectByServerId:
+SELECT *
+FROM Quota
+WHERE server_id = ?;
+
+selectByServerIdListAndEventSlug:
+SELECT *
+FROM Quota
+WHERE server_id IN ? AND event_slug = ?;
+
+selectServerIdsByEventSlug:
+SELECT server_id
+FROM Quota
+WHERE event_slug = ?;
+
+selectServerIdsByEventSlugAndSubEvent:
+SELECT server_id
+FROM Quota
+WHERE event_slug = ? AND subevent_id = ?;
+
+deleteByServerId:
+DELETE FROM Quota
+WHERE server_id = ?;
+
+insert:
+INSERT INTO Quota(
+    available,
+    available_number,
+    event_slug,
+    json_data,
+    server_id,
+    size,
+    subevent_id
+) VALUES(
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?
+);
+
+updateFromJson:
+UPDATE Quota
+SET
+    available = ?,
+    available_number = ?,
+    event_slug = ?,
+    json_data = ?,
+    size = ?,
+    subevent_id = ?
+WHERE id = ?;
+
+selectRelationsForQuota:
+SELECT *
+FROM Quota_Item
+WHERE QuotaId = :quota_id;
+
+insertItemRelation:
+INSERT INTO Quota_Item(
+    ItemId,
+    QuotaId
+) VALUES(
+    :item_id,
+    :quota_id
+);
+
+deleteItemRelation:
+DELETE FROM Quota_Item
+WHERE ItemId = :item_id AND QuotaId = :quota_id;
+
+deleteItemRelationsForQuota:
+DELETE FROM Quota_Item
+WHERE QuotaId = :quota_id;
