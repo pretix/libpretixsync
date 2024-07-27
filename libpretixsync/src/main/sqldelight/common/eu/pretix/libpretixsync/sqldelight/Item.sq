@@ -27,6 +27,38 @@ SELECT server_id
 FROM Item
 WHERE event_slug = ?;
 
+selectByTicketLayoutId:
+SELECT *
+FROM Item
+WHERE ticket_layout_id = ?;
+
+selectByTicketLayoutPretixposId:
+SELECT *
+FROM Item
+WHERE ticket_layout_pretixpos_id = ?;
+
+getWithOutdatedTicketLayoutId:
+SELECT *
+FROM Item
+WHERE server_id NOT IN :server_id_not_in AND ticket_layout_id = ?;
+
+getWithOutdatedTicketLayoutPretixposId:
+SELECT *
+FROM Item
+WHERE server_id NOT IN :server_id_not_in AND ticket_layout_pretixpos_id = ?;
+
+updateTicketLayoutId:
+UPDATE Item
+SET
+    ticket_layout_id = ?
+WHERE id = ?;
+
+updateTicketLayoutPretixposId:
+UPDATE Item
+SET
+    ticket_layout_pretixpos_id = ?
+WHERE id = ?;
+
 deleteByServerId:
 DELETE FROM Item
 WHERE server_id = ?;
