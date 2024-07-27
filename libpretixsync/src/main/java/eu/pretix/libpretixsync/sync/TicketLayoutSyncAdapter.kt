@@ -21,7 +21,7 @@ class TicketLayoutSyncAdapter(
     syncCycleId: String,
     feedback: ProgressFeedback?,
     private val salesChannel: String = "pretixpos",
-) : SqBaseDownloadSyncAdapter<TicketLayout, Long>(
+) : BaseDownloadSyncAdapter<TicketLayout, Long>(
     db = db,
     api = api,
     syncCycleId = syncCycleId,

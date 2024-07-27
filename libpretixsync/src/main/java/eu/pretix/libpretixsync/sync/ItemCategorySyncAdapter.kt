@@ -15,7 +15,7 @@ class ItemCategorySyncAdapter(
     api: PretixApi,
     syncCycleId: String,
     feedback: ProgressFeedback?,
-) : SqBaseConditionalSyncAdapter<ItemCategory, Long>(
+) : BaseConditionalSyncAdapter<ItemCategory, Long>(
     db = db,
     fileStorage = fileStorage,
     eventSlug = eventSlug,

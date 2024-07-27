@@ -37,7 +37,7 @@ class OrderSyncAdapter(
         api: PretixApi,
         syncCylceId: String,
         feedback: ProgressFeedback?,
-) : SqBaseDownloadSyncAdapter<Order, String>(db, api, syncCylceId, eventSlug, fileStorage, feedback) {
+) : BaseDownloadSyncAdapter<Order, String>(db, api, syncCylceId, eventSlug, fileStorage, feedback) {
 
     private val itemCache: MutableMap<Long, Item> = HashMap()
     private val listCache: MutableMap<Long, CheckInList> = HashMap()

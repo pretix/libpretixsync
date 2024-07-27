@@ -10,14 +10,14 @@ import org.json.JSONObject
 import java.util.Date
 import java.util.concurrent.ExecutionException
 
-abstract class SqBaseConditionalSyncAdapter<T, K>(
+abstract class BaseConditionalSyncAdapter<T, K>(
     db: SyncDatabase,
     api: PretixApi,
     syncCycleId: String,
     eventSlug: String,
     fileStorage: FileStorage,
     feedback: ProgressFeedback?,
-) : SqBaseDownloadSyncAdapter<T, K>(
+) : BaseDownloadSyncAdapter<T, K>(
     db = db,
     api = api,
     syncCycleId = syncCycleId,

@@ -19,7 +19,7 @@ class CheckInListSyncAdapter(
     syncCycleId: String,
     feedback: ProgressFeedback?,
     private val subeventId: Long?,
-) : SqBaseConditionalSyncAdapter<CheckInList, Long>(
+) : BaseConditionalSyncAdapter<CheckInList, Long>(
     db = db,
     fileStorage = fileStorage,
     eventSlug = eventSlug,

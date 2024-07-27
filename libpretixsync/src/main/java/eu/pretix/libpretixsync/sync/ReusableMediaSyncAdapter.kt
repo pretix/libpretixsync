@@ -21,7 +21,7 @@ class ReusableMediaSyncAdapter(
     api: PretixApi,
     syncCycleId: String,
     feedback: ProgressFeedback?,
-) : SqBaseDownloadSyncAdapter<ReusableMedium, Long>(
+) : BaseDownloadSyncAdapter<ReusableMedium, Long>(
     db = db,
     api = api,
     syncCycleId = syncCycleId,

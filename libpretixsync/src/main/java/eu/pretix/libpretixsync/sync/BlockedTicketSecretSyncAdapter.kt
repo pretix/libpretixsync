@@ -22,7 +22,7 @@ class BlockedTicketSecretSyncAdapter(
     api: PretixApi,
     syncCycleId: String,
     feedback: ProgressFeedback?,
-) : SqBaseDownloadSyncAdapter<BlockedTicketSecret, Long>(
+) : BaseDownloadSyncAdapter<BlockedTicketSecret, Long>(
     db = db,
     api = api,
     syncCycleId = syncCycleId,

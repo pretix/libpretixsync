@@ -18,7 +18,7 @@ class QuestionSyncAdapter(
     api: PretixApi,
     syncCycleId: String,
     feedback: ProgressFeedback?,
-) : SqBaseConditionalSyncAdapter<Question, Long>(
+) : BaseConditionalSyncAdapter<Question, Long>(
     db = db,
     fileStorage = fileStorage,
     eventSlug = eventSlug,

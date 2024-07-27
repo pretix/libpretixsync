@@ -15,7 +15,7 @@ class TaxRuleSyncAdapter(
     api: PretixApi,
     syncCycleId: String,
     feedback: ProgressFeedback?,
-) : SqBaseConditionalSyncAdapter<TaxRule, Long>(
+) : BaseConditionalSyncAdapter<TaxRule, Long>(
     db = db,
     fileStorage = fileStorage,
     eventSlug = eventSlug,
