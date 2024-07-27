@@ -22,7 +22,7 @@ class ItemSyncAdapter(
     api: PretixApi,
     syncCycleId: String,
     feedback: ProgressFeedback?,
-) : SqBaseConditionalSyncAdapter<Item, Long>(
+) : BaseConditionalSyncAdapter<Item, Long>(
     db = db,
     fileStorage = fileStorage,
     eventSlug = eventSlug,

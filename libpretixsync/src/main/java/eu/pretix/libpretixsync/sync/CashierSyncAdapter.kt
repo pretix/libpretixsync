@@ -13,7 +13,7 @@ class CashierSyncAdapter(
     api: PretixApi,
     syncCycleId: String,
     feedback: SyncManager.ProgressFeedback?,
-) : SqBaseConditionalSyncAdapter<Cashier, Long>(
+) : BaseConditionalSyncAdapter<Cashier, Long>(
     db = db,
     fileStorage = fileStorage,
     eventSlug = "__all__",

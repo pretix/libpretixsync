@@ -14,7 +14,7 @@ open class SettingsSyncAdapter(
     api: PretixApi,
     syncCycleId: String,
     feedback: ProgressFeedback? = null,
-) : SqBaseSingleObjectSyncAdapter<Settings>(
+) : BaseSingleObjectSyncAdapter<Settings>(
     db = db,
     eventSlug = eventSlug,
     key = key,

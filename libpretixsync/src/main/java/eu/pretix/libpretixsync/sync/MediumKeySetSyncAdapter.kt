@@ -20,7 +20,7 @@ class MediumKeySetSyncAdapter(
     syncCycleId: String,
     feedback: ProgressFeedback?,
     private var data: JSONArray,
-) : SqBaseDownloadSyncAdapter<MediumKeySet, Long>(
+) : BaseDownloadSyncAdapter<MediumKeySet, Long>(
     db = db,
     api = api,
     syncCycleId = syncCycleId,

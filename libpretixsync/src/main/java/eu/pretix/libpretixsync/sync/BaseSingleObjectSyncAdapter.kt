@@ -12,7 +12,7 @@ import eu.pretix.libpretixsync.utils.JSONUtils
 import org.json.JSONException
 import org.json.JSONObject
 
-abstract class SqBaseSingleObjectSyncAdapter<T>(
+abstract class BaseSingleObjectSyncAdapter<T>(
     protected var db: SyncDatabase,
     protected var eventSlug: String,
     protected var key: String,

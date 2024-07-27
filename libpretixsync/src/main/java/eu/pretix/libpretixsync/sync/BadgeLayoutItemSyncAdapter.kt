@@ -16,7 +16,7 @@ class BadgeLayoutItemSyncAdapter(
     api: PretixApi,
     syncCycleId: String,
     feedback: ProgressFeedback?,
-) : SqBaseDownloadSyncAdapter<BadgeLayoutItem, Long>(
+) : BaseDownloadSyncAdapter<BadgeLayoutItem, Long>(
     db = db,
     api = api,
     syncCycleId = syncCycleId,

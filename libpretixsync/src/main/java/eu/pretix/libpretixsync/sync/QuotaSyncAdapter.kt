@@ -16,7 +16,7 @@ class QuotaSyncAdapter(
     syncCycleId: String,
     feedback: ProgressFeedback?,
     private val subeventId: Long?,
-) : SqBaseDownloadSyncAdapter<Quota, Long>(
+) : BaseDownloadSyncAdapter<Quota, Long>(
     db = db,
     api = api,
     syncCycleId = syncCycleId,

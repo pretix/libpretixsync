@@ -1,6 +1,6 @@
 package eu.pretix.libpretixsync.sync
 
-class SqBatchedQueryIterator<K, T>(
+class BatchedQueryIterator<K, T>(
     private var allParameters: Iterator<K>,
     private var callBack: BatchedQueryCall<K, T>,
 ) : Iterator<T> {

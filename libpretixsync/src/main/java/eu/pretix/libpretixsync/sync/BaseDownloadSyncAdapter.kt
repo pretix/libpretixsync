@@ -16,14 +16,14 @@ import org.json.JSONObject
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.Executors
 
-abstract class SqBaseDownloadSyncAdapter<T, K>(
+abstract class BaseDownloadSyncAdapter<T, K>(
     protected var db: SyncDatabase,
     protected var api: PretixApi,
     protected var syncCycleId: String,
     protected var eventSlug: String,
     protected var fileStorage: FileStorage,
     protected var feedback: ProgressFeedback?,
-) : DownloadSyncAdapter, SqBatchedQueryIterator.BatchedQueryCall<K, T> {
+) : DownloadSyncAdapter, BatchedQueryIterator.BatchedQueryCall<K, T> {
     protected var knownIDs: MutableSet<K>? = null
     protected val seenIDs: MutableSet<K> = mutableSetOf()
     protected var sizeBefore = 0L
@@ -81,7 +81,7 @@ abstract class SqBaseDownloadSyncAdapter<T, K>(
             return mutableMapOf()
         }
 
-        val it = SqBatchedQueryIterator(ids.iterator(), this)
+        val it = BatchedQueryIterator(ids.iterator(), this)
         val known = mutableMapOf<K, T>()
         while (it.hasNext()) {
             try {
