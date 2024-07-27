@@ -21,6 +21,10 @@ SELECT last_insert_rowid();
 getLastInsertedQuestionId:
 SELECT last_insert_rowid();
 
+-- Switch to RETURNING once it is also supported by SQLite
+getLastInsertedQuotaId:
+SELECT last_insert_rowid();
+
 truncateAllTables {
     DELETE FROM BadgeLayout;
     DELETE FROM BadgeLayoutItem;
