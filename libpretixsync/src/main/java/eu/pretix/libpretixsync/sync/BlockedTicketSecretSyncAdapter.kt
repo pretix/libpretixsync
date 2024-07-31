@@ -42,7 +42,7 @@ class BlockedTicketSecretSyncAdapter(
 
     override fun getJSON(obj: BlockedTicketSecret): JSONObject = JSONObject(obj.json_data!!)
 
-    override fun queryKnownIDs(): MutableSet<Long>? {
+    override fun queryKnownIDs(): MutableSet<Long> {
         val res = mutableSetOf<Long>()
         db.blockedTicketSecretQueries.selectServerIdsByEventSlug(eventSlug).execute { cursor ->
             while (cursor.next().value) {

@@ -41,7 +41,7 @@ class QuotaSyncAdapter(
 
     override fun getJSON(obj: Quota): JSONObject = JSONObject(obj.json_data!!)
 
-    override fun queryKnownIDs(): MutableSet<Long>? {
+    override fun queryKnownIDs(): MutableSet<Long> {
         val res = mutableSetOf<Long>()
 
         if (subeventId != null && subeventId > 0L) {
@@ -50,23 +50,21 @@ class QuotaSyncAdapter(
                 subevent_id = subeventId,
             ).execute { cursor ->
                 while (cursor.next().value) {
-                    val id =
-                        cursor.getLong(0)
-                            ?: throw RuntimeException("server_id column not available")
+                    val id = cursor.getLong(0)
+                        ?: throw RuntimeException("server_id column not available")
+
                     res.add(id)
                 }
-
                 QueryResult.Unit
             }
         } else {
             db.quotaQueries.selectServerIdsByEventSlug(eventSlug).execute { cursor ->
                 while (cursor.next().value) {
-                    val id =
-                        cursor.getLong(0)
-                            ?: throw RuntimeException("server_id column not available")
+                    val id = cursor.getLong(0)
+                        ?: throw RuntimeException("server_id column not available")
+
                     res.add(id)
                 }
-
                 QueryResult.Unit
             }
         }

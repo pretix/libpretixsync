@@ -36,17 +36,16 @@ class BadgeLayoutItemSyncAdapter(
 
     override fun getJSON(obj: BadgeLayoutItem): JSONObject = JSONObject(obj.json_data!!)
 
-    override fun queryKnownIDs(): MutableSet<Long>? {
+    override fun queryKnownIDs(): MutableSet<Long> {
         val res = mutableSetOf<Long>()
         db.badgeLayoutItemQueries.selectServerIdsByEventSlug(event_slug = eventSlug)
             .execute { cursor ->
                 while (cursor.next().value) {
-                    val id =
-                        cursor.getLong(0)
-                            ?: throw RuntimeException("server_id column not available")
+                    val id = cursor.getLong(0)
+                        ?: throw RuntimeException("server_id column not available")
+
                     res.add(id)
                 }
-
                 QueryResult.Unit
             }
 

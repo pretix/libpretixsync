@@ -41,12 +41,13 @@ class ItemSyncAdapter(
 
     override fun queryKnownIDs(): MutableSet<Long> {
         val res = mutableSetOf<Long>()
-        db.itemQueries.selectServerIdsByEventSlug(event_slug = eventSlug).execute { cursor ->
+        db.itemQueries.selectServerIdsByEventSlug(eventSlug).execute { cursor ->
             while (cursor.next().value) {
-                val id = cursor.getLong(0) ?: throw RuntimeException("id column not available")
+                val id = cursor.getLong(0)
+                    ?: throw RuntimeException("server_id column not available")
+
                 res.add(id)
             }
-
             QueryResult.Unit
         }
 
