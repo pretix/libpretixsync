@@ -76,7 +76,7 @@ class QuotaSyncAdapter(
 
     override fun insert(jsonobj: JSONObject) {
         val (available, availableNumber) = if (jsonobj.has("available")) {
-            val available = if (jsonobj.getBoolean("available")) 1L else 0L
+            val available = if (jsonobj.getBoolean("available")) true else false
             val number =
                 if (jsonobj.isNull("available_number")) null else jsonobj.getLong("available_number")
 
@@ -112,7 +112,7 @@ class QuotaSyncAdapter(
             .toSet()
 
         val (available, availableNumber) = if (jsonobj.has("available")) {
-            val available = if (jsonobj.getBoolean("available")) 1L else 0L
+            val available = if (jsonobj.getBoolean("available")) true else false
             val number =
                 if (jsonobj.isNull("available_number")) null else jsonobj.getLong("available_number")
 
