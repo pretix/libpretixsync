@@ -17,7 +17,7 @@ class PostgresIdAdapter : ColumnAdapter<Long, Int> {
 
     override fun encode(value: Long): Int {
         if (value < Int.MIN_VALUE || value > Int.MAX_VALUE) {
-            throw IllegalStateException("ID value exceeds integer range")
+            throw IllegalArgumentException("ID value exceeds integer range")
         }
 
         return value.toInt()
