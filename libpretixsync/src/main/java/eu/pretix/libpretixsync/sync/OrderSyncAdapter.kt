@@ -469,19 +469,7 @@ class OrderSyncAdapter(
         return itemCache[id]
     }
 
-    override fun queryKnownIDs(): MutableSet<String> {
-        val res = mutableSetOf<String>()
-        db.orderQueries.selectCodesByEventSlug(event_slug = eventSlug).execute { cursor ->
-            while (cursor.next().value) {
-                val id = cursor.getString(0) ?: throw RuntimeException("id column not available")
-                res.add(id)
-            }
-
-            QueryResult.Unit
-        }
-
-        return res
-    }
+    override fun queryKnownIDs(): MutableSet<String>? = null
 
     override fun queryKnownObjects(ids: Set<String>): MutableMap<String, Order> {
         checkinCache.clear()

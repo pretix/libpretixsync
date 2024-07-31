@@ -13,11 +13,6 @@ SELECT *
 FROM orders
 WHERE code IN ?;
 
-selectCodesByEventSlug:
-SELECT code
-FROM orders
-WHERE event_slug = ?;
-
 countForEventSlug:
 SELECT COUNT(*)
 FROM orders

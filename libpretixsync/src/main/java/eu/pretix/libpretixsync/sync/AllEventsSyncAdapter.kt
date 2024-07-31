@@ -35,14 +35,15 @@ class AllEventsSyncAdapter(
 
     override fun getJSON(obj: Event): JSONObject = JSONObject(obj.json_data!!)
 
-    override fun queryKnownIDs(): MutableSet<String>? {
+    override fun queryKnownIDs(): MutableSet<String> {
         val res = mutableSetOf<String>()
         db.eventQueries.selectSlugs().execute { cursor ->
             while (cursor.next().value) {
-                val id = cursor.getString(0) ?: throw RuntimeException("slug column not available")
+                val id = cursor.getString(0)
+                    ?: throw RuntimeException("slug column not available")
+
                 res.add(id)
             }
-
             QueryResult.Unit
         }
 
