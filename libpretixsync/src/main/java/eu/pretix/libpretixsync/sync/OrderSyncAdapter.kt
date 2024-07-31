@@ -40,7 +40,6 @@ class OrderSyncAdapter(
 ) : BaseDownloadSyncAdapter<Order, String>(db, api, syncCylceId, eventSlug, fileStorage, feedback) {
 
     private val itemCache: MutableMap<Long, Item> = HashMap()
-    private val listCache: MutableMap<Long, CheckInList> = HashMap()
     private val checkinCache: MutableMap<Long, MutableList<CheckIn>> = HashMap()
     private val checkinCreateCache: MutableList<CheckIn> = ArrayList()
 
@@ -112,7 +111,7 @@ class OrderSyncAdapter(
         }
     }
 
-    private fun preparePositionObject(obj: OrderPosition?, jsonobj: JSONObject, orderId: Long, jsonorder: JSONObject, parent: JSONObject?): OrderPosition {
+    private fun preparePositionObject(jsonobj: JSONObject, orderId: Long, jsonorder: JSONObject, parent: JSONObject?): OrderPosition {
         val jsonName = if (jsonobj.isNull("attendee_name")) "" else jsonobj.optString("attendee_name")
         // TODO: BUG: jsonName can never be null, so parent / jInvoiceAddress is never used
         // Keeping old behaviour for compatibility
@@ -157,7 +156,7 @@ class OrderSyncAdapter(
     }
 
     private fun insertPositionObject(jsonobj: JSONObject, orderId: Long, jsonorder: JSONObject, parent: JSONObject?) {
-        val posobj = preparePositionObject(null, jsonobj, orderId, jsonorder, parent)
+        val posobj = preparePositionObject(jsonobj, orderId, jsonorder, parent)
 
         val id = db.orderPositionQueries.transactionWithResult {
             db.orderPositionQueries.insert(
@@ -180,7 +179,7 @@ class OrderSyncAdapter(
     }
 
     private fun updatePositionObject(obj: OrderPosition, jsonobj: JSONObject, orderId: Long, jsonorder: JSONObject, parent: JSONObject?) {
-        val posobj = preparePositionObject(obj, jsonobj, orderId, jsonorder, parent)
+        val posobj = preparePositionObject(jsonobj, orderId, jsonorder, parent)
 
         db.orderPositionQueries.updateFromJson(
             attendee_email = posobj.attendee_email,
@@ -359,7 +358,6 @@ class OrderSyncAdapter(
     override fun deleteUnseen(): Boolean = false
 
     override fun downloadPage(url: String, isFirstPage: Boolean): JSONObject? {
-        var url = url
         if (isFirstPage) {
             rlm = db.resourceSyncStatusQueries.selectByResourceAndEventSlug(
                 resource = rlmName(),
@@ -367,18 +365,19 @@ class OrderSyncAdapter(
             ).executeAsOneOrNull()
         }
         var is_continued_fetch = false
-        if (!url.contains("testmode=")) {
-            url += if (url.contains("?")) {
+        var resUrl = url
+        if (!resUrl.contains("testmode=")) {
+            resUrl += if (resUrl.contains("?")) {
                 "&"
             } else {
                 "?"
             }
-            url += "testmode=false&exclude=downloads&exclude=payment_date&exclude=payment_provider&exclude=fees&exclude=positions.downloads"
+            resUrl += "testmode=false&exclude=downloads&exclude=payment_date&exclude=payment_provider&exclude=fees&exclude=positions.downloads"
             if (!isPretixpos) {
-                url += "&exclude=payments&exclude=refunds"
+                resUrl += "&exclude=payments&exclude=refunds"
             }
             if (withPdfData) {
-                url += "&pdf_data=true"
+                resUrl += "&pdf_data=true"
             }
         }
 
@@ -408,8 +407,8 @@ class OrderSyncAdapter(
 
                 is_continued_fetch = true
                 try {
-                    if (!url.contains("created_since")) {
-                        url += "&ordering=datetime&created_since=" + URLEncoder.encode(resourceSyncStatus.status.substring(11), "UTF-8") + firstrun_params
+                    if (!resUrl.contains("created_since")) {
+                        resUrl += "&ordering=datetime&created_since=" + URLEncoder.encode(resourceSyncStatus.status.substring(11), "UTF-8") + firstrun_params
                     }
                 } catch (e: UnsupportedEncodingException) {
                     e.printStackTrace()
@@ -429,20 +428,20 @@ class OrderSyncAdapter(
                 // of the first page.
 
                 try {
-                    if (!url.contains("modified_since")) {
-                        url += "&ordering=-last_modified&modified_since=" + URLEncoder.encode(resourceSyncStatus.last_modified, "UTF-8")
+                    if (!resUrl.contains("modified_since")) {
+                        resUrl += "&ordering=-last_modified&modified_since=" + URLEncoder.encode(resourceSyncStatus.last_modified, "UTF-8")
                     }
                 } catch (e: UnsupportedEncodingException) {
                     e.printStackTrace()
                 }
             }
         } else {
-            if (!url.contains("subevent_after")) {
-                url += firstrun_params
+            if (!resUrl.contains("subevent_after")) {
+                resUrl += firstrun_params
             }
         }
 
-        val apiResponse = api.fetchResource(url)
+        val apiResponse = api.fetchResource(resUrl)
         if (isFirstPage && !is_continued_fetch) {
             firstResponseTimestamp = apiResponse.response.header("X-Page-Generated")
         }
