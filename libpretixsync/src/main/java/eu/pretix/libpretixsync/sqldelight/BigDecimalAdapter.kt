@@ -10,6 +10,10 @@ class BigDecimalAdapter : ColumnAdapter<BigDecimal, Double> {
     }
 
     override fun encode(value: BigDecimal): Double {
+        if (value.scale() > 2) {
+            throw IllegalArgumentException("Should not store value $value in database, too much precision")
+        }
+
         return value.toDouble()
     }
 }
