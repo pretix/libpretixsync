@@ -17,3 +17,19 @@ class BigDecimalAdapter : ColumnAdapter<BigDecimal, Double> {
         return value.toDouble()
     }
 }
+
+/**
+ * Converts a Double database value to BigDecimal
+ *
+ * Applies the same conversion as BigDecimalAdapter.
+ * Should be used for values that do not go through adapters (such as SUM() values).
+ */
+fun Double.toScaledBigDecimal(): BigDecimal = BigDecimal.valueOf(this).setScale(2, RoundingMode.HALF_UP)
+
+fun Double?.toScaledBigDecimalOrZero(): BigDecimal {
+    return if (this != null) {
+        BigDecimal.valueOf(this).setScale(2, RoundingMode.HALF_UP)
+    } else {
+        BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP)
+    }
+}
