@@ -1,0 +1,10 @@
+import kotlin.Long;
+
+CREATE TABLE ReceiptPayment (
+    id serial AS Long PRIMARY KEY NOT NULL,
+    amount numeric,
+    detailsJson character varying(255),
+    payment_type character varying(255),
+    status character varying(255),
+    receipt bigint REFERENCES Receipt (id) ON DELETE CASCADE
+);

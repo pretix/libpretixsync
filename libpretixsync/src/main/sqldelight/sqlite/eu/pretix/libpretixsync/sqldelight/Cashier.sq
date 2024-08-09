@@ -1,0 +1,11 @@
+import kotlin.Boolean;
+
+CREATE TABLE Cashier (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    active INTEGER AS Boolean DEFAULT 0 NOT NULL,
+    json_data TEXT,
+    name TEXT,
+    pin TEXT,
+    server_id INTEGER NOT NULL,
+    userid TEXT
+);

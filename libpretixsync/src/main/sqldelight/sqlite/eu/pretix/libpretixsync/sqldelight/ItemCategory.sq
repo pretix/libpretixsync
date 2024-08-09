@@ -1,0 +1,10 @@
+import kotlin.Boolean;
+
+CREATE TABLE ItemCategory (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    event_slug TEXT,
+    is_addon INTEGER AS Boolean NOT NULL,
+    json_data TEXT,
+    position INTEGER,
+    server_id INTEGER
+);

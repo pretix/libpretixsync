@@ -1,0 +1,8 @@
+CREATE TABLE ResourceSyncStatus (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    event_slug TEXT,
+    last_modified TEXT,
+    meta TEXT,
+    resource TEXT,
+    status TEXT
+);

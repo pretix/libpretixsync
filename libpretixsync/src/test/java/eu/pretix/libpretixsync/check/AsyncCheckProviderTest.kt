@@ -2,7 +2,7 @@ package eu.pretix.libpretixsync.check
 
 import eu.pretix.libpretixsync.db.*
 import eu.pretix.libpretixsync.sync.*
-import eu.pretix.pretixscan.scanproxy.tests.db.BaseDatabaseTest
+import eu.pretix.libpretixsync.db.BaseDatabaseTest
 import eu.pretix.pretixscan.scanproxy.tests.test.FakeConfigStore
 import eu.pretix.pretixscan.scanproxy.tests.test.FakeFileStorage
 import eu.pretix.pretixscan.scanproxy.tests.test.FakePretixApi
@@ -30,35 +30,35 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         fakeApi = FakePretixApi()
         p = AsyncCheckProvider(configStore!!, dataStore)
 
-        EventSyncAdapter(dataStore, "demo", "demo", fakeApi, "", null).standaloneRefreshFromJSON(jsonResource("events/event1.json"))
-        EventSyncAdapter(dataStore, "demo", "demo", fakeApi, "", null).standaloneRefreshFromJSON(jsonResource("events/event2.json"))
-        ItemSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null).standaloneRefreshFromJSON(jsonResource("items/item1.json"))
-        ItemSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null).standaloneRefreshFromJSON(jsonResource("items/item2.json"))
-        ItemSyncAdapter(dataStore, FakeFileStorage(), "demo2", fakeApi, "", null).standaloneRefreshFromJSON(jsonResource("items/event2-item3.json"))
-        CheckInListSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null, 0).standaloneRefreshFromJSON(
+        EventSyncAdapter(db, "demo", "demo", fakeApi!!, "", null).standaloneRefreshFromJSON(jsonResource("events/event1.json"))
+        EventSyncAdapter(db, "demo2", "demo2", fakeApi!!, "", null).standaloneRefreshFromJSON(jsonResource("events/event2.json"))
+        ItemSyncAdapter(db, FakeFileStorage(), "demo", fakeApi!!, "", null).standaloneRefreshFromJSON(jsonResource("items/item1.json"))
+        ItemSyncAdapter(db, FakeFileStorage(), "demo", fakeApi!!, "", null).standaloneRefreshFromJSON(jsonResource("items/item2.json"))
+        ItemSyncAdapter(db, FakeFileStorage(), "demo2", fakeApi!!, "", null).standaloneRefreshFromJSON(jsonResource("items/event2-item3.json"))
+        CheckInListSyncAdapter(db, FakeFileStorage(), "demo", fakeApi!!, "", null, 0).standaloneRefreshFromJSON(
             jsonResource("checkinlists/list1.json")
         )
-        CheckInListSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null, 0).standaloneRefreshFromJSON(
+        CheckInListSyncAdapter(db, FakeFileStorage(), "demo", fakeApi!!, "", null, 0).standaloneRefreshFromJSON(
             jsonResource("checkinlists/list2.json")
         )
-        CheckInListSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null, 0).standaloneRefreshFromJSON(
+        CheckInListSyncAdapter(db, FakeFileStorage(), "demo", fakeApi!!, "", null, 0).standaloneRefreshFromJSON(
             jsonResource("checkinlists/list3.json")
         )
-        CheckInListSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null, 0).standaloneRefreshFromJSON(
+        CheckInListSyncAdapter(db, FakeFileStorage(), "demo", fakeApi!!, "", null, 0).standaloneRefreshFromJSON(
             jsonResource("checkinlists/list4.json")
         )
-        CheckInListSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null, 0).standaloneRefreshFromJSON(
+        CheckInListSyncAdapter(db, FakeFileStorage(), "demo", fakeApi!!, "", null, 0).standaloneRefreshFromJSON(
             jsonResource("checkinlists/list5.json")
         )
-        CheckInListSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null, 0).standaloneRefreshFromJSON(
+        CheckInListSyncAdapter(db, FakeFileStorage(), "demo", fakeApi!!, "", null, 0).standaloneRefreshFromJSON(
             jsonResource("checkinlists/list6.json")
         )
-        CheckInListSyncAdapter(dataStore, FakeFileStorage(), "demo2", fakeApi, "", null, 0).standaloneRefreshFromJSON(
+        CheckInListSyncAdapter(db, FakeFileStorage(), "demo2", fakeApi!!, "", null, 0).standaloneRefreshFromJSON(
             jsonResource("checkinlists/event2-list7.json")
         )
-        SubEventSyncAdapter(dataStore, "demo", "14", fakeApi, "", null).standaloneRefreshFromJSON(jsonResource("subevents/subevent1.json"))
+        SubEventSyncAdapter(db, "demo", "14", fakeApi!!, "", null).standaloneRefreshFromJSON(jsonResource("subevents/subevent1.json"))
 
-        val osa = OrderSyncAdapter(dataStore, FakeFileStorage(), "demo", 0, true, false, fakeApi, "", null)
+        val osa = OrderSyncAdapter(db, FakeFileStorage(), "demo", 0, true, false, fakeApi!!, "", null)
         osa.standaloneRefreshFromJSON(jsonResource("orders/order1.json"))
         osa.standaloneRefreshFromJSON(jsonResource("orders/order2.json"))
         osa.standaloneRefreshFromJSON(jsonResource("orders/order3.json"))
@@ -68,7 +68,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         osa.standaloneRefreshFromJSON(jsonResource("orders/order7.json"))
         osa.standaloneRefreshFromJSON(jsonResource("orders/order8.json"))
         osa.standaloneRefreshFromJSON(jsonResource("orders/order9.json"))
-        val osa2 = OrderSyncAdapter(dataStore, FakeFileStorage(), "demo2", 0, true, false, fakeApi, "", null)
+        val osa2 = OrderSyncAdapter(db, FakeFileStorage(), "demo2", 0, true, false, fakeApi!!, "", null)
         osa2.standaloneRefreshFromJSON(jsonResource("orders/event2-order1.json"))
     }
 
@@ -872,7 +872,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testQuestionsForOtherItem() {
-        QuestionSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null).standaloneRefreshFromJSON(
+        QuestionSyncAdapter(db, FakeFileStorage(), "demo", fakeApi!!, "", null).standaloneRefreshFromJSON(
             jsonResource("questions/question1.json")
         )
 
@@ -882,7 +882,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testQuestionNotDuringCheckin() {
-        QuestionSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null).standaloneRefreshFromJSON(
+        QuestionSyncAdapter(db, FakeFileStorage(), "demo", fakeApi!!, "", null).standaloneRefreshFromJSON(
             jsonResource("questions/question3.json")
         )
 
@@ -892,7 +892,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testQuestionsFilled() {
-        QuestionSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null).standaloneRefreshFromJSON(
+        QuestionSyncAdapter(db, FakeFileStorage(), "demo", fakeApi!!, "", null).standaloneRefreshFromJSON(
             jsonResource("questions/question1.json")
         )
 
@@ -902,7 +902,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testQuestionsIgnored() {
-        QuestionSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null).standaloneRefreshFromJSON(
+        QuestionSyncAdapter(db, FakeFileStorage(), "demo", fakeApi!!, "", null).standaloneRefreshFromJSON(
             jsonResource("questions/question1.json")
         )
 
@@ -912,7 +912,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testQuestionsRequired() {
-        QuestionSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null).standaloneRefreshFromJSON(
+        QuestionSyncAdapter(db, FakeFileStorage(), "demo", fakeApi!!, "", null).standaloneRefreshFromJSON(
             jsonResource("questions/question1.json")
         )
 
@@ -936,7 +936,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testQuestionsInvalidInput() {
-        QuestionSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null).standaloneRefreshFromJSON(
+        QuestionSyncAdapter(db, FakeFileStorage(), "demo", fakeApi!!, "", null).standaloneRefreshFromJSON(
             jsonResource("questions/question2.json")
         )
 
