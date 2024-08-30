@@ -8,6 +8,7 @@ import eu.pretix.libpretixsync.models.ReceiptLine as ReceiptLineModel
 fun ReceiptLine.toModel() =
     ReceiptLineModel(
         id = id,
+        receiptId = receipt!!,
         positionId = positionid!!,
         type = ReceiptLineModel.Type.valueOf(type!!),
         price = price!!,
