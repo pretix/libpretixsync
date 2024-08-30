@@ -9,6 +9,7 @@ import java.time.OffsetDateTime
  */
 data class ReceiptLine(
     val id: Long,
+    val receiptId: Long,
     val positionId: Long,
     val type: Type,
     val price: BigDecimal,
