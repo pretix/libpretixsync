@@ -8,7 +8,6 @@ import eu.pretix.libpretixsync.crypto.isValidSignature
 import eu.pretix.libpretixsync.crypto.readPubkeyFromPem
 import eu.pretix.libpretixsync.crypto.sig1.TicketProtos
 import eu.pretix.libpretixsync.db.Answer
-import eu.pretix.libpretixsync.db.BlockedTicketSecret
 import eu.pretix.libpretixsync.db.CheckIn
 import eu.pretix.libpretixsync.db.CheckInList
 import eu.pretix.libpretixsync.db.CheckInList_Item
@@ -21,7 +20,6 @@ import eu.pretix.libpretixsync.db.QuestionLike
 import eu.pretix.libpretixsync.db.QueuedCall
 import eu.pretix.libpretixsync.db.QueuedCheckIn
 import eu.pretix.libpretixsync.db.ReusableMedium
-import eu.pretix.libpretixsync.db.RevokedTicketSecret
 import eu.pretix.libpretixsync.db.SubEvent
 import eu.pretix.libpretixsync.models.Question
 import eu.pretix.libpretixsync.models.db.toModel
@@ -308,18 +306,13 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
                 .get().firstOrNull()
                 ?: return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.ERROR, "Check-in list not found", offline = true)
 
-        val is_revoked = dataStore.count(RevokedTicketSecret::class.java)
-            .where(RevokedTicketSecret.SECRET.eq(ticketid))
-            .get().value()
+        val is_revoked = db.revokedTicketSecretQueries.countForSecret(ticketid).executeAsOne()
         if (is_revoked > 0) {
             storeFailedCheckin(eventSlug, listId, "revoked", ticketid, type, nonce = nonce)
             return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.REVOKED, offline = true)
         }
 
-        val is_blocked = dataStore.count(BlockedTicketSecret::class.java)
-                .where(BlockedTicketSecret.SECRET.eq(ticketid))
-                .and(BlockedTicketSecret.BLOCKED.eq(true))
-                .get().value()
+        val is_blocked = db.blockedTicketSecretQueries.countBlockedForSecret(ticketid).executeAsOne()
         if (is_blocked > 0) {
             storeFailedCheckin(eventSlug, listId, "blocked", ticketid, type, nonce = nonce)
             return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.BLOCKED, offline = true)
