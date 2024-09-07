@@ -1056,12 +1056,13 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testSignedAndRevoked() {
-        val rev = RevokedTicketSecret()
-        rev.setEvent_slug(configStore!!.eventSlug)
-        rev.setCreated("2020-10-19T10:00:00+00:00")
-        rev.setSecret("E4BibyTSylQOgeKjuMPiTDxi5HXPuTVsx1qCli3IL0143gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKAEAPAQA")
-        rev.setJson_data("{}")
-        dataStore.insert(rev)
+        db.revokedTicketSecretQueries.insert(
+            created = "2020-10-19T10:00:00+00:00",
+            event_slug = configStore!!.eventSlug,
+            json_data = "{}",
+            secret = "E4BibyTSylQOgeKjuMPiTDxi5HXPuTVsx1qCli3IL0143gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKAEAPAQA",
+            server_id = 1L,
+        )
 
         val r = p!!.check(mapOf("demo" to 1L), "E4BibyTSylQOgeKjuMPiTDxi5HXPuTVsx1qCli3IL0143gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKAEAPAQA")
         assertEquals(TicketCheckProvider.CheckResult.Type.REVOKED, r.type)
@@ -1070,13 +1071,14 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testSignedAndBlocked() {
-        val rev = BlockedTicketSecret()
-        rev.setEvent_slug(configStore!!.eventSlug)
-        rev.setUpdated("2020-10-19T10:00:00+00:00")
-        rev.setSecret("E4BibyTSylQOgeKjuMPiTDxi5HXPuTVsx1qCli3IL0143gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKAEAPAQA")
-        rev.isBlocked = true
-        rev.setJson_data("{}")
-        dataStore.insert(rev)
+        db.blockedTicketSecretQueries.insert(
+            blocked = true,
+            event_slug = configStore!!.eventSlug,
+            json_data = "{}",
+            secret = "E4BibyTSylQOgeKjuMPiTDxi5HXPuTVsx1qCli3IL0143gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKAEAPAQA",
+            updated = "2020-10-19T10:00:00+00:00",
+            server_id = 1L,
+        )
 
         val r = p!!.check(mapOf("demo" to 1L), "E4BibyTSylQOgeKjuMPiTDxi5HXPuTVsx1qCli3IL0143gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKAEAPAQA")
         assertEquals(TicketCheckProvider.CheckResult.Type.BLOCKED, r.type)
