@@ -7,8 +7,25 @@ import eu.pretix.libpretixsync.config.ConfigStore
 import eu.pretix.libpretixsync.crypto.isValidSignature
 import eu.pretix.libpretixsync.crypto.readPubkeyFromPem
 import eu.pretix.libpretixsync.crypto.sig1.TicketProtos
-import eu.pretix.libpretixsync.db.*
+import eu.pretix.libpretixsync.db.Answer
+import eu.pretix.libpretixsync.db.BlockedTicketSecret
+import eu.pretix.libpretixsync.db.CheckIn
+import eu.pretix.libpretixsync.db.CheckInList
+import eu.pretix.libpretixsync.db.CheckInList_Item
+import eu.pretix.libpretixsync.db.Event
+import eu.pretix.libpretixsync.db.Item
+import eu.pretix.libpretixsync.db.NonceGenerator
 import eu.pretix.libpretixsync.db.Order
+import eu.pretix.libpretixsync.db.OrderPosition
+import eu.pretix.libpretixsync.db.QuestionLike
+import eu.pretix.libpretixsync.db.QueuedCall
+import eu.pretix.libpretixsync.db.QueuedCheckIn
+import eu.pretix.libpretixsync.db.ReusableMedium
+import eu.pretix.libpretixsync.db.RevokedTicketSecret
+import eu.pretix.libpretixsync.db.SubEvent
+import eu.pretix.libpretixsync.models.Question
+import eu.pretix.libpretixsync.models.db.toModel
+import eu.pretix.libpretixsync.sqldelight.SyncDatabase
 import eu.pretix.libpretixsync.utils.cleanInput
 import eu.pretix.libpretixsync.utils.codec.binary.Base64
 import eu.pretix.libpretixsync.utils.codec.binary.Base64.decodeBase64
@@ -30,7 +47,7 @@ import java.lang.Exception
 import java.nio.charset.Charset
 import java.util.*
 
-class AsyncCheckProvider(private val config: ConfigStore, private val dataStore: BlockingEntityStore<Persistable>) : TicketCheckProvider {
+class AsyncCheckProvider(private val config: ConfigStore, private val dataStore: BlockingEntityStore<Persistable>, private val db: SyncDatabase) : TicketCheckProvider {
     private var sentry: SentryInterface = DummySentryImplementation()
 
     /*
@@ -223,41 +240,43 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
         var askQuestions = false
 
         for (q in questions) {
-            if (!q.isAskDuringCheckin && !q.isShowDuringCheckin) {
+            val questionJson = db.questionQueries.selectByServerId(q.serverId).executeAsOne().json_data!!
+
+            if (!q.askDuringCheckIn && !q.showDuringCheckIn) {
                 continue
             }
             var answer: String? = ""
-            if (answerMap.containsKey(q.getServer_id())) {
-                answer = answerMap[q.getServer_id()]
+            if (answerMap.containsKey(q.serverId)) {
+                answer = answerMap[q.serverId]
                 try {
                     answer = q.clean_answer(answer, q.options, false)
                     val jo = JSONObject()
                     jo.put("answer", answer)
-                    jo.put("question", q.getServer_id())
-                    if (q.isAskDuringCheckin) {
+                    jo.put("question", q.serverId)
+                    if (q.askDuringCheckIn) {
                         givenAnswers.put(jo)
                     }
-                    if (q.isShowDuringCheckin) {
-                        shownAnswers.add(TicketCheckProvider.QuestionAnswer(q, answer))
+                    if (q.showDuringCheckIn) {
+                        shownAnswers.add(TicketCheckProvider.QuestionAnswer(q, questionJson, answer))
                     }
                 } catch (e: QuestionLike.ValidationException) {
                     answer = ""
-                    if (q.isAskDuringCheckin) {
+                    if (q.askDuringCheckIn) {
                         askQuestions = true
                     }
                 } catch (e: JSONException) {
                     answer = ""
-                    if (q.isAskDuringCheckin) {
+                    if (q.askDuringCheckIn) {
                         askQuestions = true
                     }
                 }
             } else {
-                if (q.isAskDuringCheckin) {
+                if (q.askDuringCheckIn) {
                     askQuestions = true
                 }
             }
-            if (q.isAskDuringCheckin) {
-                requiredAnswers.add(TicketCheckProvider.QuestionAnswer(q, answer))
+            if (q.askDuringCheckIn) {
+                requiredAnswers.add(TicketCheckProvider.QuestionAnswer(q, questionJson, answer))
             }
         }
 
@@ -465,12 +484,14 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
             }
         }
 
-        val questions = item.questions
+        val questions = db.questionQueries.selectForItem(item.id)
+            .executeAsList()
+            .map { it.toModel() }
 
         val answerMap = mutableMapOf<Long, String>()
         if (answers != null) {
             for (a in answers) {
-                answerMap[(a.question as Question).getServer_id()] = a.value
+                answerMap[(a.question as Question).serverId] = a.value
             }
         }
         var givenAnswers = JSONArray()
@@ -859,11 +880,14 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
 
         // !!! When extending this, also extend checkOfflineWithoutData !!!
 
-        val questions = item.questions
+        val questions = db.questionQueries.selectForItem(item.id)
+            .executeAsList()
+            .map { it.toModel() }
+
         val answerMap = position.answers
         if (answers != null) {
             for (a in answers) {
-                answerMap[(a.question as Question).getServer_id()] = a.value
+                answerMap[(a.question as Question).serverId] = a.value
             }
         }
         var givenAnswers = JSONArray()
