@@ -2,6 +2,8 @@ package eu.pretix.libpretixsync.sync;
 
 import eu.pretix.libpretixsync.api.*;
 import eu.pretix.libpretixsync.db.ReusableMedium;
+import eu.pretix.libpretixsync.models.Question;
+import eu.pretix.libpretixsync.models.db.QuestionExtensionsKt;
 import eu.pretix.libpretixsync.sqldelight.SyncDatabase;
 import eu.pretix.libpretixsync.utils.JSONUtils;
 import io.requery.sql.StatementExecutionException;
@@ -21,7 +23,6 @@ import eu.pretix.libpretixsync.db.CheckIn;
 import eu.pretix.libpretixsync.db.Closing;
 import eu.pretix.libpretixsync.db.Order;
 import eu.pretix.libpretixsync.db.OrderPosition;
-import eu.pretix.libpretixsync.db.Question;
 import eu.pretix.libpretixsync.db.QueuedCall;
 import eu.pretix.libpretixsync.db.QueuedCheckIn;
 import eu.pretix.libpretixsync.db.QueuedOrder;
@@ -728,8 +729,18 @@ public class SyncManager {
                     JSONArray ja = new JSONArray(qci.getAnswers());
                     for (int j = 0; j < ja.length(); j++) {
                         JSONObject jo = ja.getJSONObject(j);
-                        Question q = new Question();
-                        q.setServer_id(jo.getLong("question"));
+
+                        Question q = QuestionExtensionsKt.toModel(
+                            new eu.pretix.libpretixsync.sqldelight.Question(
+                                -1L,
+                                null,
+                                "{}",
+                                -1L,
+                                false,
+                                jo.getLong("question")
+                            )
+                        );
+
                         answers.add(new Answer(q, jo.getString("answer"), null));
                     }
                 } catch (JSONException e) {

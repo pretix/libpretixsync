@@ -4,8 +4,8 @@ import eu.pretix.libpretixsync.DummySentryImplementation
 import eu.pretix.libpretixsync.SentryInterface
 import eu.pretix.libpretixsync.config.ConfigStore
 import eu.pretix.libpretixsync.db.Answer
-import eu.pretix.libpretixsync.db.Question
 import eu.pretix.libpretixsync.db.QueuedCheckIn
+import eu.pretix.libpretixsync.models.Question
 import eu.pretix.libpretixsync.utils.NetUtils
 import eu.pretix.libpretixsync.utils.URLFragmentEncoder
 import okhttp3.MediaType
@@ -73,9 +73,9 @@ open class PretixApi(url: String, key: String, orgaSlug: String, version: Int, h
                         "pdf" -> "application/pdf".toMediaTypeOrNull()!!
                         else -> "application/unknown".toMediaTypeOrNull()!!
                     }, a.value.split("/").last())
-                    answerbody.put("" + (a.question as Question).getServer_id(), fileid)
+                    answerbody.put("" + (a.question as Question).serverId, fileid)
                 } else {
-                    answerbody.put("" + (a.question as Question).getServer_id(), a.value)
+                    answerbody.put("" + (a.question as Question).serverId, a.value)
                 }
             }
         }
@@ -120,9 +120,9 @@ open class PretixApi(url: String, key: String, orgaSlug: String, version: Int, h
                         "pdf" -> "application/pdf".toMediaTypeOrNull()!!
                         else -> "application/unknown".toMediaTypeOrNull()!!
                     }, a.value.split("/").last())
-                    answerbody.put("" + (a.question as Question).getServer_id(), fileid)
+                    answerbody.put("" + (a.question as Question).serverId, fileid)
                 } else {
-                    answerbody.put("" + (a.question as Question).getServer_id(), a.value)
+                    answerbody.put("" + (a.question as Question).serverId, a.value)
                 }
             }
         }

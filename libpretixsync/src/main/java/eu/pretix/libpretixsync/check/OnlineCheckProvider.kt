@@ -11,7 +11,8 @@ import eu.pretix.libpretixsync.db.Answer
 import eu.pretix.libpretixsync.db.CheckInList
 import eu.pretix.libpretixsync.db.Item
 import eu.pretix.libpretixsync.db.NonceGenerator
-import eu.pretix.libpretixsync.db.Question
+import eu.pretix.libpretixsync.models.db.toModel
+import eu.pretix.libpretixsync.sqldelight.Question
 import eu.pretix.libpretixsync.sqldelight.SyncDatabase
 import eu.pretix.libpretixsync.sync.FileStorage
 import eu.pretix.libpretixsync.sync.OrderSyncAdapter
@@ -106,12 +107,16 @@ class OnlineCheckProvider(
                     val required_answers: MutableList<TicketCheckProvider.QuestionAnswer> = ArrayList()
                     for (i in 0 until response.getJSONArray("questions").length()) {
                         val q = response.getJSONArray("questions").getJSONObject(i)
-                        val question = Question()
-                        question.setServer_id(q.getLong("id"))
-                        question.isRequired = q.getBoolean("required")
-                        question.setPosition(q.getLong("position"))
-                        question.setJson_data(q.toString())
-                        required_answers.add(TicketCheckProvider.QuestionAnswer(question, ""))
+
+                        val question = Question(
+                            server_id = q.getLong("id"),
+                            required = q.getBoolean("required"),
+                            position = q.getLong("position"),
+                            json_data = q.toString(),
+                            id = -1,
+                            event_slug = null,
+                        ).toModel()
+                        required_answers.add(TicketCheckProvider.QuestionAnswer(question, q.toString(), ""))
                     }
                     res.requiredAnswers = required_answers
                 } else {
@@ -220,18 +225,17 @@ class OnlineCheckProvider(
                             val value = a.getString("answer")
                             val q = a.get("question")
                             if (q is JSONObject) {  // pretix version supports the expand parameter
-                                val question = Question()
-                                question.setServer_id(q.getLong("id"))
-                                question.isRequired = q.getBoolean("required")
-                                question.setPosition(q.getLong("position"))
-                                question.setJson_data(q.toString())
-                                if (question.isShowDuringCheckin) {
-                                    shownAnswers.add(
-                                        TicketCheckProvider.QuestionAnswer(
-                                            question,
-                                            value
-                                        )
-                                    )
+                                val question = Question(
+                                    server_id = q.getLong("id"),
+                                    required = q.getBoolean("required"),
+                                    position = q.getLong("position"),
+                                    json_data = q.toString(),
+                                    id = -1,
+                                    event_slug = null,
+                                ).toModel()
+
+                                if (question.showDuringCheckIn) {
+                                    shownAnswers.add(TicketCheckProvider.QuestionAnswer(question, q.toString(), value))
                                 }
                             }
                         }
