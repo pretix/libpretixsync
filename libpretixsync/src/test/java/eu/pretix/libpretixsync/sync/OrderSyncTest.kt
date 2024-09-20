@@ -63,7 +63,7 @@ class OrderSyncTest : BaseDatabaseTest() {
 
         assertEquals(2, dataStore.count(Order::class.java).get().value())
         assertEquals(5, dataStore.count(OrderPosition::class.java).get().value())
-        assertEquals(3, dataStore.count(CheckIn::class.java).get().value())
+        assertEquals(3L, db.checkInQueries.count().executeAsOne())
         val rlm = dataStore.select(ResourceSyncStatus::class.java).where(ResourceSyncStatus.RESOURCE.eq("orders_withpdfdata")).get().first()
         assertEquals(rlm.getEvent_slug(), "demo")
         assertEquals(rlm.getLast_modified(), "timestamp1")
@@ -97,7 +97,7 @@ class OrderSyncTest : BaseDatabaseTest() {
 
         assertEquals(2, dataStore.count(Order::class.java).get().value())
         assertEquals(5, dataStore.count(OrderPosition::class.java).get().value())
-        assertEquals(3, dataStore.count(CheckIn::class.java).get().value())
+        assertEquals(3L, db.checkInQueries.count().executeAsOne())
 
         val rlm = dataStore.select(ResourceSyncStatus::class.java).where(ResourceSyncStatus.RESOURCE.eq("orders_withpdfdata")).get().first()
         assertEquals(rlm.getEvent_slug(), "demo")
@@ -138,7 +138,7 @@ class OrderSyncTest : BaseDatabaseTest() {
 
         assertEquals(2, dataStore.count(Order::class.java).get().value())
         assertEquals(5, dataStore.count(OrderPosition::class.java).get().value())
-        assertEquals(3, dataStore.count(CheckIn::class.java).get().value())
+        assertEquals(3L, db.checkInQueries.count().executeAsOne())
 
         val rlm = dataStore.select(ResourceSyncStatus::class.java).where(ResourceSyncStatus.RESOURCE.eq("orders_withpdfdata")).get().first()
         assertEquals(rlm.getEvent_slug(), "demo")
@@ -200,7 +200,7 @@ class OrderSyncTest : BaseDatabaseTest() {
 
         assertEquals(2, dataStore.count(Order::class.java).get().value())
         assertEquals(5, dataStore.count(OrderPosition::class.java).get().value())
-        assertEquals(3, dataStore.count(CheckIn::class.java).get().value())
+        assertEquals(3L, db.checkInQueries.count().executeAsOne())
 
         val rlm = dataStore.select(ResourceSyncStatus::class.java).where(ResourceSyncStatus.RESOURCE.eq("orders_withpdfdata")).get().first()
         assertEquals(rlm.getEvent_slug(), "demo")
@@ -274,7 +274,7 @@ class OrderSyncTest : BaseDatabaseTest() {
         osa.download()
         assertEquals(4, dataStore.count(Order::class.java).get().value())
         assertEquals(9, dataStore.count(OrderPosition::class.java).get().value())
-        assertEquals(5, dataStore.count(CheckIn::class.java).get().value())
+        assertEquals(5L, db.checkInQueries.count().executeAsOne())
 
         fakeApi.fetchResponses.add {
             val respdata = JSONObject()
@@ -290,7 +290,7 @@ class OrderSyncTest : BaseDatabaseTest() {
         osa.download()
         assertEquals("http://1.1.1.1/api/v1/organizers/demo/events/demo/orders/?testmode=false&exclude=downloads&exclude=payment_date&exclude=payment_provider&exclude=fees&exclude=positions.downloads&exclude=payments&exclude=refunds&pdf_data=true&ordering=-last_modified&modified_since=timestamp1", fakeApi.lastRequestUrl)
         assertEquals(11, dataStore.count(OrderPosition::class.java).get().value())
-        assertEquals(6, dataStore.count(CheckIn::class.java).get().value())
+        assertEquals(6L, db.checkInQueries.count().executeAsOne())
         val rlm = dataStore.select(ResourceSyncStatus::class.java).where(ResourceSyncStatus.RESOURCE.eq("orders_withpdfdata")).get().first()
         assertEquals(rlm.getEvent_slug(), "demo")
         assertEquals(rlm.getLast_modified(), "timestamp2")
@@ -314,7 +314,7 @@ class OrderSyncTest : BaseDatabaseTest() {
 
         osa.download()
         assertEquals(4, dataStore.count(Order::class.java).get().value())
-        assertEquals(5, dataStore.count(CheckIn::class.java).get().value())
+        assertEquals(5L, db.checkInQueries.count().executeAsOne())
 
         fakeApi.fetchResponses.add {
             val respdata = JSONObject()
@@ -335,7 +335,7 @@ class OrderSyncTest : BaseDatabaseTest() {
 
         assertEquals("%page2?testmode=false&exclude=downloads&exclude=payment_date&exclude=payment_provider&exclude=fees&exclude=positions.downloads&exclude=payments&exclude=refunds&pdf_data=true&ordering=-last_modified&modified_since=timestamp1", fakeApi.lastRequestUrl)
         assertEquals(4, dataStore.count(Order::class.java).get().value())
-        assertEquals(6, dataStore.count(CheckIn::class.java).get().value())
+        assertEquals(6L, db.checkInQueries.count().executeAsOne())
 
         val rlm = dataStore.select(ResourceSyncStatus::class.java).where(ResourceSyncStatus.RESOURCE.eq("orders_withpdfdata")).get().first()
         assertEquals(rlm.getEvent_slug(), "demo")
@@ -356,7 +356,7 @@ class OrderSyncTest : BaseDatabaseTest() {
         osa.download()
         assertEquals("http://1.1.1.1/api/v1/organizers/demo/events/demo/orders/?testmode=false&exclude=downloads&exclude=payment_date&exclude=payment_provider&exclude=fees&exclude=positions.downloads&exclude=payments&exclude=refunds&pdf_data=true&ordering=-last_modified&modified_since=timestamp1", fakeApi.lastRequestUrl)
         assertEquals(11, dataStore.count(OrderPosition::class.java).get().value())
-        assertEquals(6, dataStore.count(CheckIn::class.java).get().value())
+        assertEquals(6L, db.checkInQueries.count().executeAsOne())
         val rlm2 = dataStore.select(ResourceSyncStatus::class.java).where(ResourceSyncStatus.RESOURCE.eq("orders_withpdfdata")).get().first()
         assertEquals(rlm2.getEvent_slug(), "demo")
         assertEquals(rlm2.getLast_modified(), "timestamp2")

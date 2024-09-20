@@ -8,7 +8,6 @@ import eu.pretix.libpretixsync.crypto.isValidSignature
 import eu.pretix.libpretixsync.crypto.readPubkeyFromPem
 import eu.pretix.libpretixsync.crypto.sig1.TicketProtos
 import eu.pretix.libpretixsync.db.Answer
-import eu.pretix.libpretixsync.db.CheckIn
 import eu.pretix.libpretixsync.db.CheckInList
 import eu.pretix.libpretixsync.db.CheckInList_Item
 import eu.pretix.libpretixsync.db.Item
@@ -19,6 +18,7 @@ import eu.pretix.libpretixsync.db.QuestionLike
 import eu.pretix.libpretixsync.db.QueuedCall
 import eu.pretix.libpretixsync.db.QueuedCheckIn
 import eu.pretix.libpretixsync.db.ReusableMedium
+import eu.pretix.libpretixsync.models.CheckIn
 import eu.pretix.libpretixsync.models.Event
 import eu.pretix.libpretixsync.models.Question
 import eu.pretix.libpretixsync.models.db.toModel
@@ -713,11 +713,9 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
         res.isRequireAttention = require_attention || variation?.isCheckin_attention == true
         res.checkinTexts = listOfNotNull(order.checkin_text?.trim(), variation?.checkin_text?.trim(), item.checkin_text?.trim()).filterNot { it.isBlank() || it == "null" }
 
-        val storedCheckIns = dataStore.select(CheckIn::class.java)
-                .where(CheckIn.POSITION_ID.eq(position.getId()))
-                .get().toList()
+        val storedCheckIns = db.checkInQueries.selectByPositionId(position.getId()).executeAsList().map { it.toModel() }
         val checkIns = storedCheckIns.filter {
-            it.getListId() == listId
+            it.listServerId == listId
         }.sortedWith(compareBy({ it.fullDatetime }, { it.id }))
 
         if (order.getStatus() != "p" && order.getStatus() != "n") {
@@ -797,41 +795,41 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
             data.put("now_isoweekday", dt.withZone(tz).dayOfWeek().get())
             data.put("entries_number", checkIns.filter { it.type == "entry" }.size)
             data.put("entries_today", checkIns.filter {
-                DateTime(it.fullDatetime).withZone(tz).toLocalDate() == dt.withZone(tz).toLocalDate() && it.type == "entry"
+                it.fullDatetime.withZone(tz).toLocalDate() == dt.withZone(tz).toLocalDate() && it.type == "entry"
             }.size)
             data.put("entries_since", { cutoff: DateTime ->
                 checkIns.filter {
-                    DateTime(it.fullDatetime).withZone(tz).isAfter(cutoff.minus(Duration.millis(1))) && it.type == "entry"
+                    it.fullDatetime.withZone(tz).isAfter(cutoff.minus(Duration.millis(1))) && it.type == "entry"
                 }.size
             })
             data.put("entries_days_since", { cutoff: DateTime ->
                 checkIns.filter {
-                    DateTime(it.fullDatetime).withZone(tz).isAfter(cutoff.minus(Duration.millis(1))) && it.type == "entry"
+                    it.fullDatetime.withZone(tz).isAfter(cutoff.minus(Duration.millis(1))) && it.type == "entry"
                 }.map {
-                    DateTime(it.fullDatetime).withZone(tz).toLocalDate()
+                    it.fullDatetime.withZone(tz).toLocalDate()
                 }.toHashSet().size
             })
             data.put("entries_before", { cutoff: DateTime ->
                 checkIns.filter {
-                    DateTime(it.fullDatetime).withZone(tz).isBefore(cutoff) && it.type == "entry"
+                    it.fullDatetime.withZone(tz).isBefore(cutoff) && it.type == "entry"
                 }.size
             })
             data.put("entries_days_before", { cutoff: DateTime ->
                 checkIns.filter {
-                    DateTime(it.fullDatetime).withZone(tz).isBefore(cutoff) && it.type == "entry"
+                    it.fullDatetime.withZone(tz).isBefore(cutoff) && it.type == "entry"
                 }.map {
-                    DateTime(it.fullDatetime).withZone(tz).toLocalDate()
+                    it.fullDatetime.withZone(tz).toLocalDate()
                 }.toHashSet().size
             })
             data.put("entries_days", checkIns.filter { it.type == "entry" }.map {
-                DateTime(it.fullDatetime).withZone(tz).toLocalDate()
+                it.fullDatetime.withZone(tz).toLocalDate()
             }.toHashSet().size)
             val minutes_since_entries = checkIns.filter { it.type == "entry" }.map {
-                Duration(DateTime(it.fullDatetime).withZone(tz), dt).toStandardMinutes().minutes
+                Duration(it.fullDatetime.withZone(tz), dt).toStandardMinutes().minutes
             }
             data.put("minutes_since_last_entry", minutes_since_entries.minOrNull() ?: -1)
             data.put("minutes_since_first_entry", minutes_since_entries.maxOrNull() ?: -1)
-            data.put("entry_status", if (checkIns.lastOrNull()?.getType() == "entry") {
+            data.put("entry_status", if (checkIns.lastOrNull()?.type == "entry") {
                 "present"
             } else {
                 "absent"
@@ -916,7 +914,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
                     )
             if (!entry_allowed) {
                 res.isCheckinAllowed = false
-                res.firstScanned = checkIns.first().fullDatetime
+                res.firstScanned = checkIns.first().fullDatetime.toDate()
                 res.type = TicketCheckProvider.CheckResult.Type.USED
                 storeFailedCheckin(eventSlug, list.getServer_id(), "already_redeemed", position.secret, type, position = position.getServer_id(), item = position.getItem().getServer_id(), variation = position.getVariation_id(), subevent = position.getSubevent_id(), nonce = nonce)
             } else {
@@ -936,13 +934,14 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
                 qci.setType(type.toString().lowercase(Locale.getDefault()))
                 qci.setCheckinListId(listId)
                 dataStore.insert(qci)
-                val ci = CheckIn()
-                ci.setListId(listId)
-                ci.setPosition(position)
-                ci.setType(type.toString().lowercase(Locale.getDefault()))
-                ci.setDatetime(dt.toDate())
-                ci.setJson_data("{\"local\": true, \"type\": \"${type.toString().lowercase(Locale.getDefault())}\", \"datetime\": \"${QueuedCheckIn.formatDatetime(dt.toDate())}\"}")
-                dataStore.insert(ci)
+                db.checkInQueries.insert(
+                    server_id = null,
+                    listId = listId,
+                    position = position.getId(),
+                    type = type.toString().lowercase(Locale.getDefault()),
+                    datetime = dt.toDate(),
+                    json_data = "{\"local\": true, \"type\": \"${type.toString().lowercase(Locale.getDefault())}\", \"datetime\": \"${QueuedCheckIn.formatDatetime(dt.toDate())}\"}",
+                )
             }
         }
 
@@ -1083,9 +1082,10 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
 
             if (onlyCheckedIn) {
                 lq = lq.and(OrderPosition.ID.`in`(
-                        dataStore.select(CheckIn.POSITION_ID)
-                                .where(CheckIn.LIST_ID.eq(list.getServer_id()))
-                                .and(CheckIn.TYPE.eq("entry"))
+                        db.checkInQueries.selectPositionIdByListIdAndType(
+                            list_server_id = list.getServer_id(),
+                            type = "entry"
+                        ).executeAsList().map { it.position }
                 ))
             }
             q = q.or(lq)
@@ -1160,4 +1160,15 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
     private fun now(): DateTime {
         return overrideNow ?: DateTime()
     }
+
+    private val CheckIn.fullDatetime : DateTime
+        get() {
+            // To avoid Joda Time code in the models, handle the case where we don't have a datetime value from JSON here
+            return if (this.datetime != null) {
+                DateTime(this.datetime.toInstant())
+            } else {
+                val date = db.checkInQueries.selectById(this.id).executeAsOne().datetime
+                DateTime(date)
+            }
+        }
 }

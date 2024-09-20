@@ -239,7 +239,8 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         r = p!!.check(mapOf("demo" to 2L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj")
         assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
         assertEquals(dataStore.count(QueuedCheckIn::class.java).get().value(), 2)
-        assertEquals(dataStore.count(CheckIn::class.java).join(OrderPosition::class.java).on(OrderPosition.ID.eq(CheckIn.POSITION_ID)).where(OrderPosition.SECRET.eq("kfndgffgyw4tdgcacx6bb3bgemq69cxj")).get().value(), 3)
+        assertEquals(db.checkInQueries.testCountByOrderPositionSecret("kfndgffgyw4tdgcacx6bb3bgemq69cxj").executeAsOne(), 3L)
+
     }
 
     @Test
@@ -608,7 +609,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         r = p2.check(mapOf("demo" to 2L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj")
         assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
 
-        dataStore.delete(CheckIn::class.java).get().value()
+        db.compatQueries.truncateCheckIn()
 
         r = p2.check(mapOf("demo" to 2L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj")
         assertEquals(TicketCheckProvider.CheckResult.Type.RULES, r.type)
