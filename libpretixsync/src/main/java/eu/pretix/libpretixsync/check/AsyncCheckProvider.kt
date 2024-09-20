@@ -20,7 +20,6 @@ import eu.pretix.libpretixsync.db.QuestionLike
 import eu.pretix.libpretixsync.db.QueuedCall
 import eu.pretix.libpretixsync.db.QueuedCheckIn
 import eu.pretix.libpretixsync.db.ReusableMedium
-import eu.pretix.libpretixsync.db.SubEvent
 import eu.pretix.libpretixsync.models.Question
 import eu.pretix.libpretixsync.models.db.toModel
 import eu.pretix.libpretixsync.sqldelight.SyncDatabase
@@ -154,11 +153,12 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
             val t = l?.getOrNull(0)
             var evjson = event.json
             if (subeventId != 0L) {
-                val subevent = dataStore.select(SubEvent::class.java)
-                        .where(SubEvent.EVENT_SLUG.eq(event.slug))
-                        .and(SubEvent.SERVER_ID.eq(subeventId))
-                        .get().first()
-                evjson = subevent.json
+                val jsonData = db.subEventQueries.selectByServerIdAndSlug(
+                    server_id = subeventId,
+                    event_slug = event.slug,
+                ).executeAsOne().json_data
+
+                evjson = JSONObject(jsonData)
             }
             if (t == "custom") {
                 ISODateTimeFormat.dateTimeParser().parseDateTime(l.getOrNull(1) as String?)
