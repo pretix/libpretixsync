@@ -17,4 +17,5 @@ data class Event(
     val plugins: List<String> = emptyList(),
     val hasSeating: Boolean = false,
     val seatCategoryMapping: JSONObject = JSONObject(),
+    val validKeys: JSONObject? = null,
 )
