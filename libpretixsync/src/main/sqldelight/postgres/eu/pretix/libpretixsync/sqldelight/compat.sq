@@ -25,6 +25,9 @@ SELECT currval('question_id_seq') AS Long;
 getLastInsertedQuotaId:
 SELECT currval('quota_id_seq') AS Long;
 
+truncateCheckIn:
+TRUNCATE CheckIn;
+
 truncateAllTables:
 TRUNCATE
     BadgeLayout,
