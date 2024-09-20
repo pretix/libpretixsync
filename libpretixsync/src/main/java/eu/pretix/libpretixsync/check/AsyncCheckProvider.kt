@@ -11,7 +11,6 @@ import eu.pretix.libpretixsync.db.Answer
 import eu.pretix.libpretixsync.db.CheckIn
 import eu.pretix.libpretixsync.db.CheckInList
 import eu.pretix.libpretixsync.db.CheckInList_Item
-import eu.pretix.libpretixsync.db.Event
 import eu.pretix.libpretixsync.db.Item
 import eu.pretix.libpretixsync.db.NonceGenerator
 import eu.pretix.libpretixsync.db.Order
@@ -20,6 +19,7 @@ import eu.pretix.libpretixsync.db.QuestionLike
 import eu.pretix.libpretixsync.db.QueuedCall
 import eu.pretix.libpretixsync.db.QueuedCheckIn
 import eu.pretix.libpretixsync.db.ReusableMedium
+import eu.pretix.libpretixsync.models.Event
 import eu.pretix.libpretixsync.models.Question
 import eu.pretix.libpretixsync.models.db.toModel
 import eu.pretix.libpretixsync.sqldelight.SyncDatabase
@@ -151,14 +151,19 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
         }
         jsonLogic.addOperation("buildTime") { l, d ->
             val t = l?.getOrNull(0)
-            var evjson = event.json
-            if (subeventId != 0L) {
+
+            // Re-fetch event/sub-event to get raw JSON and use date values from that
+            // Should be less risky than converting back and forth between java.time and Joda
+            val evjson = if (subeventId != 0L) {
                 val jsonData = db.subEventQueries.selectByServerIdAndSlug(
                     server_id = subeventId,
                     event_slug = event.slug,
                 ).executeAsOne().json_data
 
-                evjson = JSONObject(jsonData)
+                JSONObject(jsonData)
+            } else {
+                val jsonData = db.eventQueries.selectById(event.id).executeAsOne().json_data
+                JSONObject(jsonData)
             }
             if (t == "custom") {
                 ISODateTimeFormat.dateTimeParser().parseDateTime(l.getOrNull(1) as String?)
@@ -283,9 +288,9 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
 
     private fun checkOfflineWithoutData(eventsAndCheckinLists: Map<String, Long>, ticketid: String, type: TicketCheckProvider.CheckInType, answers: List<Answer>?, nonce: String?, allowQuestions: Boolean): TicketCheckProvider.CheckResult {
         val dt = now()
-        val events = dataStore.select(Event::class.java)
-                .where(Event.SLUG.`in`(eventsAndCheckinLists.keys.toList()))
-                .get().toList()
+        val events = db.eventQueries.selectBySlugList(eventsAndCheckinLists.keys.toList())
+            .executeAsList()
+            .map { it.toModel() }
         var decoded: SignedTicketData? = null
         var event: Event? = null
         for (e in events) {
@@ -388,7 +393,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
         val rules = list.rules
         if (type == TicketCheckProvider.CheckInType.ENTRY && rules != null && rules.length() > 0) {
             val data = mutableMapOf<String, Any>()
-            val tz = DateTimeZone.forID(event.getTimezone())
+            val tz = DateTimeZone.forID(event.timezone.toString())
             val jsonLogic = initJsonLogic(event, decoded.subevent ?: 0, tz)
             data.put("product", item.getServer_id().toString())
             data.put("variation", if (decoded.variation != null && decoded.variation!! > 0) {
@@ -625,9 +630,8 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
         // !!! When extending this, also extend checkOfflineWithoutData !!!
         val dt = now()
         val eventSlug = tickets[0].getOrder().getEvent_slug()
-        val event = dataStore.select(Event::class.java)
-                .where(Event.SLUG.eq(eventSlug))
-                .get().firstOrNull()
+        val event = db.eventQueries.selectBySlug(eventSlug).executeAsOneOrNull()?.toModel()
+
                 ?: return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.ERROR, "Event not found", offline = true)
         val listId = eventsAndCheckinLists[eventSlug] ?: return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.ERROR, "No check-in list selected", offline = true)
         val list = dataStore.select(CheckInList::class.java)
@@ -784,7 +788,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
         val rules = list.rules
         if (type == TicketCheckProvider.CheckInType.ENTRY && rules != null && rules.length() > 0) {
             val data = mutableMapOf<String, Any>()
-            val tz = DateTimeZone.forID(event.getTimezone())
+            val tz = DateTimeZone.forID(event.timezone.toString())
             val jsonLogic = initJsonLogic(event, position.getSubevent_id(), tz)
             data.put("product", position.getItem().getServer_id().toString())
             data.put("variation", position.getVariation_id().toString())
