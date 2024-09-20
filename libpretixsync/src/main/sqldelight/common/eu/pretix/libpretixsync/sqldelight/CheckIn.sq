@@ -3,6 +3,20 @@ SELECT *
 FROM CheckIn
 WHERE id = ?;
 
+selectByPositionId:
+SELECT *
+FROM CheckIn
+WHERE position = :postion_id;
+
+selectPositionIdByListIdAndType:
+SELECT position
+FROM CheckIn
+WHERE listId = :list_server_id AND type = :type;
+
+count:
+SELECT COUNT(*)
+FROM CheckIn;
+
 deleteById:
 DELETE FROM CheckIn WHERE id = ?;
 
@@ -54,3 +68,10 @@ WHERE position IN (
         WHERE orders.code IN :order_codes
     )
 );
+
+-- for tests only:
+testCountByOrderPositionSecret:
+SELECT COUNT(*)
+FROM CheckIn
+LEFT JOIN OrderPosition ON CheckIn.position = OrderPosition.id
+WHERE OrderPosition.secret = :secret;

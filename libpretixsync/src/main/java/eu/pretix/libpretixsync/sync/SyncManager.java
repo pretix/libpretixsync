@@ -19,7 +19,6 @@ import java.util.concurrent.ExecutionException;
 import eu.pretix.libpretixsync.SentryInterface;
 import eu.pretix.libpretixsync.config.ConfigStore;
 import eu.pretix.libpretixsync.db.Answer;
-import eu.pretix.libpretixsync.db.CheckIn;
 import eu.pretix.libpretixsync.db.Closing;
 import eu.pretix.libpretixsync.db.Order;
 import eu.pretix.libpretixsync.db.OrderPosition;
@@ -484,7 +483,7 @@ public class SyncManager {
                     configStore.setLastCleanup(System.currentTimeMillis());
                 }
             } else if (profile == Profile.PRETIXSCAN_ONLINE && overrideEventSlug == null) {
-                dataStore.delete(CheckIn.class).get().value();
+                db.getCompatQueries().truncateCheckIn();
                 dataStore.delete(OrderPosition.class).get().value();
                 dataStore.delete(Order.class).get().value();
                 dataStore.delete(ResourceSyncStatus.class).where(ResourceSyncStatus.RESOURCE.like("order%")).get().value();
@@ -497,7 +496,7 @@ public class SyncManager {
 
 
         } catch (DeviceAccessRevokedException e) {
-            dataStore.delete(CheckIn.class).get().value();
+            db.getCompatQueries().truncateCheckIn();
             dataStore.delete(OrderPosition.class).get().value();
             dataStore.delete(Order.class).get().value();
             dataStore.delete(ReusableMedium.class).get().value();
