@@ -6,7 +6,7 @@ import eu.pretix.libpretixsync.db.Event
 import eu.pretix.libpretixsync.db.Order
 import eu.pretix.libpretixsync.db.OrderPosition
 import eu.pretix.libpretixsync.db.ResourceSyncStatus
-import eu.pretix.libpretixsync.db.SubEvent
+import eu.pretix.libpretixsync.models.db.toModel
 import eu.pretix.libpretixsync.sqldelight.SyncDatabase
 import eu.pretix.libpretixsync.sync.SyncManager.ProgressFeedback
 import io.requery.BlockingEntityStore
@@ -36,13 +36,13 @@ class OrderCleanup(val db: SyncDatabase, val store: BlockingEntityStore<Persista
             subeventsDeletionDate[sid] = null
             return null
         }
-        val se = store.select(SubEvent::class.java).where(SubEvent.SERVER_ID.eq(sid)).get().firstOrNull()
+        val se = db.subEventQueries.selectByServerId(sid).executeAsOneOrNull()?.toModel()
         if (se == null) {
             subeventsDeletionDate[sid] = null
             return null
         }
-        val d = DateTime(if (se.getDate_to() != null) se.getDate_to() else se.getDate_from())
-        val v = d.plus(Duration.standardDays(14)).millis
+        val d = se.dateTo ?: se.dateFrom
+        val v = d.plus(java.time.Duration.ofDays(14)).toInstant().toEpochMilli()
         subeventsDeletionDate[sid] = v
         return v
     }

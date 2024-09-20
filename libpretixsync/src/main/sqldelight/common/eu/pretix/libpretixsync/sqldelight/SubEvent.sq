@@ -17,6 +17,11 @@ SELECT *
 FROM SubEvent
 WHERE server_id IN ?;
 
+selectByServerIdAndSlug:
+SELECT *
+FROM SubEvent
+WHERE server_id = ? AND event_slug = ?;
+
 deleteByServerId:
 DELETE FROM SubEvent
 WHERE server_id = ?;
