@@ -506,14 +506,6 @@ class OrderSyncAdapter(
         return db.orderQueries.countForEventSlug(eventSlug).executeAsOne()
     }
 
-    override fun autoPersist(): Boolean {
-        // This differs from the requery-version, since the previous updateObject() mechanism has
-        // been replaced with insert() / update() methods.
-        // The original OrderSyncAdapter inserted the Order as part of updateObject().
-        // TODO: Review API once more adapters have been migrated
-        return true
-    }
-
     override fun getResourceName(): String {
         return "orders"
     }
