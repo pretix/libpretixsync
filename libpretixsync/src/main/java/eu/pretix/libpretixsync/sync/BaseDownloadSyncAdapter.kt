@@ -139,11 +139,8 @@ abstract class BaseDownloadSyncAdapter<T, K>(
                         update(obj, jsonobj)
                     }
                 } else {
-                    // TODO: Is it okay to insert directly instead of batching?
-                    if (autoPersist()) {
-                        insert(jsonobj)
-                        inserted += 1
-                    }
+                    insert(jsonobj)
+                    inserted += 1
                 }
                 seenIDs.add(jsonid)
             }
@@ -159,10 +156,6 @@ abstract class BaseDownloadSyncAdapter<T, K>(
     protected open fun afterPage() {}
 
     protected open fun prepareDelete(obj: T) {}
-
-    protected open fun autoPersist(): Boolean {
-        return true
-    }
 
     protected open fun deleteUnseen(): Boolean {
         return true

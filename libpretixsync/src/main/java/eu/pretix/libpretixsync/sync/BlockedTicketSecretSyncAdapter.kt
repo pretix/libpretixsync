@@ -105,10 +105,6 @@ class BlockedTicketSecretSyncAdapter(
             event_slug = eventSlug,
         ).executeAsList()
 
-    override fun autoPersist(): Boolean {
-        return true
-    }
-
     @Throws(
         JSONException::class,
         ApiException::class,
