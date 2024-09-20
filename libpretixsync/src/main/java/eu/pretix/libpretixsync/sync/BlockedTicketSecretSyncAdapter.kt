@@ -106,7 +106,7 @@ class BlockedTicketSecretSyncAdapter(
         ).executeAsList()
 
     override fun autoPersist(): Boolean {
-        return false
+        return true
     }
 
     @Throws(
