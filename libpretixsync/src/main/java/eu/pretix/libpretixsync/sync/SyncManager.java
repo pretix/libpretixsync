@@ -497,12 +497,11 @@ public class SyncManager {
 
 
         } catch (DeviceAccessRevokedException e) {
-            int deleted = 0;
-            deleted += dataStore.delete(CheckIn.class).get().value();
-            deleted += dataStore.delete(OrderPosition.class).get().value();
-            deleted += dataStore.delete(Order.class).get().value();
-            deleted += dataStore.delete(ReusableMedium.class).get().value();
-            deleted += dataStore.delete(ResourceSyncStatus.class).get().value();
+            dataStore.delete(CheckIn.class).get().value();
+            dataStore.delete(OrderPosition.class).get().value();
+            dataStore.delete(Order.class).get().value();
+            dataStore.delete(ReusableMedium.class).get().value();
+            dataStore.delete(ResourceSyncStatus.class).get().value();
             throw new SyncException(e.getMessage());
         } catch (JSONException e) {
             e.printStackTrace();
