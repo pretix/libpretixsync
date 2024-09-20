@@ -2,7 +2,6 @@ package eu.pretix.libpretixsync.sync
 
 import eu.pretix.libpretixsync.api.ApiException
 import eu.pretix.libpretixsync.api.PretixApi
-import eu.pretix.libpretixsync.db.Event
 import eu.pretix.libpretixsync.db.Order
 import eu.pretix.libpretixsync.db.OrderPosition
 import eu.pretix.libpretixsync.db.ResourceSyncStatus
@@ -13,9 +12,8 @@ import io.requery.BlockingEntityStore
 import io.requery.Persistable
 import io.requery.RollbackException
 import io.requery.query.Tuple
-import org.joda.time.DateTime
-import org.joda.time.Duration
 import org.json.JSONException
+import java.time.Duration
 import kotlin.math.max
 
 class OrderCleanup(val db: SyncDatabase, val store: BlockingEntityStore<Persistable>, val fileStorage: FileStorage, val api: PretixApi, val syncCycleId: String, val feedback: ProgressFeedback?) {
@@ -42,7 +40,7 @@ class OrderCleanup(val db: SyncDatabase, val store: BlockingEntityStore<Persista
             return null
         }
         val d = se.dateTo ?: se.dateFrom
-        val v = d.plus(java.time.Duration.ofDays(14)).toInstant().toEpochMilli()
+        val v = d.plus(Duration.ofDays(14)).toInstant().toEpochMilli()
         subeventsDeletionDate[sid] = v
         return v
     }
@@ -140,10 +138,10 @@ class OrderCleanup(val db: SyncDatabase, val store: BlockingEntityStore<Persista
         if (eventsDeletionDate.containsKey(slug)) {
             return eventsDeletionDate[slug]
         }
-        val e: Event = store.select(Event::class.java).where(Event.SLUG.eq(slug)).get().firstOrNull()
-                ?: return null
-        val d = DateTime(if (e.getDate_to() != null) e.getDate_to() else e.getDate_from())
-        val v = d.plus(Duration.standardDays(14)).millis
+        val e = db.eventQueries.selectBySlug(slug).executeAsOneOrNull()?.toModel() ?: return null
+        val d = e.dateTo ?: e.dateFrom
+        val v = d.plus(Duration.ofDays(14)).toInstant().toEpochMilli()
+
         eventsDeletionDate[slug] = v
         return v
     }
