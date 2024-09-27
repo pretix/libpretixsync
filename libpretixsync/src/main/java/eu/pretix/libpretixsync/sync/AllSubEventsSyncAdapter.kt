@@ -75,7 +75,7 @@ class AllSubEventsSyncAdapter(
             active = jsonobj.getBoolean("active"),
             date_from = dateFrom,
             date_to = dateTo,
-            event_slug = eventSlug,
+            event_slug = jsonobj.getString("event"),
             json_data = jsonobj.toString(),
             server_id = jsonobj.getLong("id"),
         )
@@ -96,7 +96,7 @@ class AllSubEventsSyncAdapter(
             active = jsonobj.getBoolean("active"),
             date_from = dateFrom,
             date_to = dateTo,
-            event_slug = eventSlug,
+            event_slug = jsonobj.getString("event"),
             json_data = jsonobj.toString(),
             id = obj.id,
         )
