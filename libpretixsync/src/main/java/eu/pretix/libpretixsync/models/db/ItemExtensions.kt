@@ -49,6 +49,7 @@ fun Item.toModel(): ItemModel {
         bundles = json.getJSONArray("bundles"),
         addons = json.getJSONArray("addons"),
         salesChannels = json.optJSONArray("sales_channels"),
+        checkInAttention = json.optBoolean("checkin_attention", false),
     )
 }
 

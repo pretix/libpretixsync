@@ -8,6 +8,11 @@ SELECT *
 FROM ItemCategory
 WHERE server_id = ?;
 
+selectByEventSlug:
+SELECT *
+FROM ItemCategory
+WHERE event_slug = ?;
+
 selectByServerIdListAndEventSlug:
 SELECT *
 FROM ItemCategory
