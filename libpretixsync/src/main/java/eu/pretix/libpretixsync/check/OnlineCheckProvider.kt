@@ -8,7 +8,6 @@ import eu.pretix.libpretixsync.api.PretixApi
 import eu.pretix.libpretixsync.api.TimeoutApiException
 import eu.pretix.libpretixsync.config.ConfigStore
 import eu.pretix.libpretixsync.db.Answer
-import eu.pretix.libpretixsync.db.Item
 import eu.pretix.libpretixsync.db.NonceGenerator
 import eu.pretix.libpretixsync.models.db.toModel
 import eu.pretix.libpretixsync.sqldelight.Question
@@ -174,9 +173,7 @@ class OnlineCheckProvider(
 
                 if (response.has("position")) {
                     val posjson = response.getJSONObject("position")
-                    val item = dataStore.select(Item::class.java)
-                            .where(Item.SERVER_ID.eq(posjson.getLong("item")))
-                            .get().firstOrNull()
+                    val item = db.itemQueries.selectByServerId(posjson.getLong("item")).executeAsOneOrNull()?.toModel()
                     if (item != null) {
                         res.ticket = item.internalName
                         if (posjson.optLong("variation", 0) > 0) {
@@ -340,9 +337,7 @@ class OnlineCheckProvider(
             for (i in 0 until resdata.length()) {
                 val res = resdata.getJSONObject(i)
                 val sr = TicketCheckProvider.SearchResult()
-                val item = dataStore.select(Item::class.java)
-                        .where(Item.SERVER_ID.eq(res.getLong("item")))
-                        .get().firstOrNull()
+                val item = db.itemQueries.selectByServerId(res.getLong("item")).executeAsOneOrNull()?.toModel()
                 if (item != null) {
                     sr.ticket = item.internalName
                     if (res.optLong("variation", 0) > 0) {

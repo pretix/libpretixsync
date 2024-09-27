@@ -349,10 +349,10 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
             return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.INVALID, offline = true)
         }
 
-        val item = dataStore.select(Item::class.java)
-                .where(Item.SERVER_ID.eq(decoded.item))
-                .and(Item.EVENT_SLUG.eq(eventSlug))
-                .get().firstOrNull()
+        val item = db.itemQueries.selectByServerIdAndEventSlug(
+            server_id = decoded.item,
+            event_slug = eventSlug,
+        ).executeAsOneOrNull()?.toModel()
         if (item == null) {
             storeFailedCheckin(eventSlug, listId, "product", ticketid, type, subevent = decoded.subevent, nonce = nonce)
             return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.ERROR, "Item not found", offline = true)
@@ -364,7 +364,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
         res.ticket = item.internalName
         val variation = if (decoded.variation != null && decoded.variation!! > 0L) {
             try {
-                item.getVariation(decoded.variation) ?: null
+                item.getVariation(decoded.variation!!)
             } catch (e: JSONException) {
                 sentry.captureException(e)
                 null
@@ -373,14 +373,9 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
         if (variation != null) {
             res.variation = variation.stringValue
         }
-        var require_attention = false
-        try {
-            require_attention = item.json.optBoolean("checkin_attention", false)
-        } catch (e: JSONException) {
-            sentry.captureException(e)
-        }
+        val require_attention = item.checkInAttention
         res.isRequireAttention = require_attention || (variation?.isCheckin_attention == true)
-        res.checkinTexts = listOfNotNull(variation?.checkin_text?.trim(), item.checkin_text?.trim()).filterNot { it.isBlank() }.filterNot { it.isBlank() || it == "null" }
+        res.checkinTexts = listOfNotNull(variation?.checkin_text?.trim(), item.checkInText?.trim()).filterNot { it.isBlank() }.filterNot { it.isBlank() || it == "null" }
 
         val queuedCheckIns = dataStore.select(QueuedCheckIn::class.java)
                 .where(QueuedCheckIn.SECRET.eq(ticketid))
@@ -393,7 +388,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
             val data = mutableMapOf<String, Any>()
             val tz = DateTimeZone.forID(event.timezone.toString())
             val jsonLogic = initJsonLogic(event, decoded.subevent ?: 0, tz)
-            data.put("product", item.getServer_id().toString())
+            data.put("product", item.serverId.toString())
             data.put("variation", if (decoded.variation != null && decoded.variation!! > 0) {
                 decoded.variation.toString()
             } else {
