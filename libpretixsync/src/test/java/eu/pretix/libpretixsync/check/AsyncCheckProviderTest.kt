@@ -302,11 +302,13 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
     }
 
     private fun setRuleOnList2(r: String) {
-        val cl = dataStore.select(CheckInList::class.java).where(CheckInList.SERVER_ID.eq(2)).get().first()
-        val j = cl.json
+        val cl = db.checkInListQueries.selectByServerId(2L).executeAsOne()
+        val j = JSONObject(cl.json_data)
         j.put("rules", JSONObject(r))
-        cl.setJson_data(j.toString())
-        dataStore.update(cl)
+        db.checkInListQueries.testUpdateJsonData(
+            json_data = j.toString(),
+            id = cl.id,
+        )
     }
 
     @Test

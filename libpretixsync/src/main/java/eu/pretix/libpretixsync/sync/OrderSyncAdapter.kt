@@ -1,10 +1,8 @@
 package eu.pretix.libpretixsync.sync
 
 import app.cash.sqldelight.TransactionWithoutReturn
-import app.cash.sqldelight.db.QueryResult
 import eu.pretix.libpretixsync.api.ApiException
 import eu.pretix.libpretixsync.api.PretixApi
-import eu.pretix.libpretixsync.db.CheckInList
 import eu.pretix.libpretixsync.db.Migrations
 import eu.pretix.libpretixsync.sqldelight.CheckIn
 import eu.pretix.libpretixsync.sqldelight.Item

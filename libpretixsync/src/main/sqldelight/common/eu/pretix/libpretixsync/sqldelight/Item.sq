@@ -37,6 +37,15 @@ SELECT *
 FROM Item
 WHERE ticket_layout_pretixpos_id = ?;
 
+selectForCheckInList:
+SELECT Item.*
+FROM Item
+WHERE Item.id IN (
+    SELECT CheckInList_Item.ItemId
+    FROM CheckInList_Item
+    WHERE CheckInList_Item.CheckInListId = :check_in_list_id
+);
+
 getWithOutdatedTicketLayoutId:
 SELECT *
 FROM Item
