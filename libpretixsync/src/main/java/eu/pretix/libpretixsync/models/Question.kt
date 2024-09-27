@@ -17,12 +17,14 @@ class Question(
     question: String,
     identifier: String,
     options: List<QuestionOption>?,
+    dependencyValues: List<String>,
 ) : QuestionLike() {
 
     private val _type: QuestionType = type
     private val _question: String = question
     private val _identifier: String = identifier
     private val _options: List<QuestionOption>? = options
+    private val _dependencyValues: List<String> = dependencyValues
 
     private var resolveDependencyCalled = false
     private var resolvedDependency: Question? = null
@@ -57,4 +59,6 @@ class Question(
             }
         }
     }
+
+    override fun getDependencyValues(): List<String> = _dependencyValues
 }

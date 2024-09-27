@@ -21,6 +21,7 @@ fun Question.toModel(): QuestionModel {
         askDuringCheckIn = parseAskDuringCheckIn(json),
         showDuringCheckIn = parseShowDuringCheckIn(json),
         dependencyQuestionServerId = parseDependencyQuestionId(json),
+        dependencyValues = parseDependencyValues(json),
         type = parseType(json),
         identifier = parseIdentifier(json),
         question = parseQuestion(json),
@@ -114,5 +115,21 @@ private fun parseDependencyQuestionId(json: JSONObject): Long? {
     } catch (e: JSONException) {
         e.printStackTrace()
         null
+    }
+}
+
+private fun parseDependencyValues(json: JSONObject): List<String> {
+    try {
+        val l: MutableList<String> = java.util.ArrayList()
+        val a = json.optJSONArray("dependency_values")
+        if (a != null) {
+            for (i in 0 until a.length()) {
+                l.add(a.getString(i))
+            }
+        }
+        return l
+    } catch (e: JSONException) {
+        e.printStackTrace()
+        return java.util.ArrayList()
     }
 }
