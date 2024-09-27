@@ -21,7 +21,6 @@ import org.junit.Assert.assertNull
 class AsyncCheckProviderTest : BaseDatabaseTest() {
     private var configStore: FakeConfigStore? = null
     private var fakeApi: FakePretixApi? = null
-    private var item: Item? = null
     private var p: AsyncCheckProvider? = null
 
     @Before
