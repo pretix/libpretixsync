@@ -3,6 +3,16 @@ SELECT *
 FROM CheckInList
 WHERE server_id = ?;
 
+selectByEventSlug:
+SELECT *
+FROM CheckInList
+WHERE event_slug = ?;
+
+selectByServerIdAndEventSlug:
+SELECT *
+FROM CheckInList
+WHERE server_id = ? AND event_slug = ?;
+
 selectByServerIdListAndEventSlug:
 SELECT *
 FROM CheckInList
@@ -68,3 +78,20 @@ WHERE ItemId = :item_id AND CheckInListId = :checkin_list_id;
 deleteItemRelationsForList:
 DELETE FROM CheckInList_Item
 WHERE CheckInListId = :checkin_list_id;
+
+selectItemIdsForList:
+SELECT ItemId
+FROM CheckInList_Item
+WHERE CheckInListId = :checkin_list_id;
+
+checkIfItemIsInList:
+SELECT COUNT(*)
+FROM CheckInList_Item
+WHERE CheckInListId = :checkin_list_id AND ItemId = :item_id;
+
+-- for tests only:
+testUpdateJsonData:
+UPDATE CheckInList
+SET
+    json_data = ?
+WHERE id = ?;

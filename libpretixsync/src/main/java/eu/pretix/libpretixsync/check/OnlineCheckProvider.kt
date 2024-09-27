@@ -8,7 +8,6 @@ import eu.pretix.libpretixsync.api.PretixApi
 import eu.pretix.libpretixsync.api.TimeoutApiException
 import eu.pretix.libpretixsync.config.ConfigStore
 import eu.pretix.libpretixsync.db.Answer
-import eu.pretix.libpretixsync.db.CheckInList
 import eu.pretix.libpretixsync.db.Item
 import eu.pretix.libpretixsync.db.NonceGenerator
 import eu.pretix.libpretixsync.models.db.toModel
@@ -148,12 +147,12 @@ class OnlineCheckProvider(
                             response.getJSONObject("list").getBoolean("include_pending")
                         } else {
                             // pretix < 4.12, no multi-scan supported
-                            val list = dataStore.select(CheckInList::class.java)
-                                    .where(CheckInList.SERVER_ID.eq(eventsAndCheckinLists.values.first()))
-                                    .and(CheckInList.EVENT_SLUG.eq(eventsAndCheckinLists.keys.first()))
-                                    .get().firstOrNull()
-                                    ?: throw CheckException("Check-in list not found")
-                            list.isInclude_pending
+                            val list = db.checkInListQueries.selectByServerIdAndEventSlug(
+                                server_id = eventsAndCheckinLists.values.first(),
+                                event_slug = eventsAndCheckinLists.keys.first(),
+                            ).executeAsOneOrNull()?.toModel()
+                                ?: throw CheckException("Check-in list not found")
+                            list.includePending
                         }
                         res.isCheckinAllowed = includePending && response.has("position") && response.getJSONObject("position").optString("order__status", "n") == "n"
                     } else if ("product" == reason) {
@@ -392,10 +391,10 @@ class OnlineCheckProvider(
             val response = api.status(eventSlug, listId)
             val r = parseStatusResponse(response.data!!)
 
-            val list = dataStore.select(CheckInList::class.java)
-                    .where(CheckInList.SERVER_ID.eq(listId))
-                    .and(CheckInList.EVENT_SLUG.eq(eventSlug))
-                    .get().firstOrNull()
+            val list = db.checkInListQueries.selectByServerIdAndEventSlug(
+                server_id = listId,
+                event_slug = eventSlug,
+            ).executeAsOneOrNull()
             if (list != null) {
                 r.eventName += " – " + list.name
             }

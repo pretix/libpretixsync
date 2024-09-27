@@ -8,8 +8,6 @@ import eu.pretix.libpretixsync.crypto.isValidSignature
 import eu.pretix.libpretixsync.crypto.readPubkeyFromPem
 import eu.pretix.libpretixsync.crypto.sig1.TicketProtos
 import eu.pretix.libpretixsync.db.Answer
-import eu.pretix.libpretixsync.db.CheckInList
-import eu.pretix.libpretixsync.db.CheckInList_Item
 import eu.pretix.libpretixsync.db.Item
 import eu.pretix.libpretixsync.db.NonceGenerator
 import eu.pretix.libpretixsync.db.Order
@@ -19,6 +17,7 @@ import eu.pretix.libpretixsync.db.QueuedCall
 import eu.pretix.libpretixsync.db.QueuedCheckIn
 import eu.pretix.libpretixsync.db.ReusableMedium
 import eu.pretix.libpretixsync.models.CheckIn
+import eu.pretix.libpretixsync.models.CheckInList
 import eu.pretix.libpretixsync.models.Event
 import eu.pretix.libpretixsync.models.Question
 import eu.pretix.libpretixsync.models.db.toModel
@@ -305,11 +304,11 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
         }
         val listId = eventsAndCheckinLists[event.slug] ?: return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.ERROR, "Check-in list not set for event", offline = true)
         val eventSlug = event.slug
-        val list = dataStore.select(CheckInList::class.java)
-                .where(CheckInList.SERVER_ID.eq(listId))
-                .and(CheckInList.EVENT_SLUG.eq(eventSlug))
-                .get().firstOrNull()
-                ?: return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.ERROR, "Check-in list not found", offline = true)
+        val list = db.checkInListQueries.selectByServerIdAndEventSlug(
+            server_id = listId,
+            event_slug = eventSlug,
+        ).executeAsOneOrNull()?.toModel()
+            ?: return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.ERROR, "Check-in list not found", offline = true)
 
         val is_revoked = db.revokedTicketSecretQueries.countForSecret(ticketid).executeAsOne()
         if (is_revoked > 0) {
@@ -334,19 +333,18 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
             }
         }
 
-        if (!list.all_items) {
-            val is_in_list = dataStore.count(CheckInList_Item::class.java)
-                    .leftJoin(Item::class.java).on(CheckInList_Item.ITEM_ID.eq(Item.ID))
-                    .where(Item.SERVER_ID.eq(decoded.item))
-                    .and(CheckInList_Item.CHECK_IN_LIST_ID.eq(list.getId()))
-                    .get().value()
-            if (is_in_list == 0) {
+        if (!list.allItems) {
+            val is_in_list = db.checkInListQueries.checkIfItemIsInList(
+                checkin_list_id = list.id,
+                item_id = decoded.item,
+            ).executeAsOne()
+            if (is_in_list == 0L) {
                 storeFailedCheckin(eventSlug, listId, "product", ticketid, type, subevent = decoded.subevent, nonce = nonce)
                 return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.PRODUCT, offline = true)
             }
         }
 
-        if (list.getSubevent_id() != null && list.getSubevent_id() > 0 && list.getSubevent_id() != decoded.subevent) {
+        if (list.subEventId != null && list.subEventId > 0 && list.subEventId != decoded.subevent) {
             storeFailedCheckin(eventSlug, listId, "invalid", ticketid, type, nonce = nonce)
             return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.INVALID, offline = true)
         }
@@ -512,10 +510,10 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
         } else {
             val entry_allowed = (
                     type == TicketCheckProvider.CheckInType.EXIT ||
-                            list.isAllowMultipleEntries ||
+                            list.allowMultipleEntries ||
                             queuedCheckIns.isEmpty() ||
                             queuedCheckIns.all { it.type == "exit" } ||
-                            (list.isAllowEntryAfterExit && queuedCheckIns.last().type == "exit")
+                            (list.allowEntryAfterExit && queuedCheckIns.last().type == "exit")
                     )
             if (!entry_allowed) {
                 res.isCheckinAllowed = false
@@ -634,22 +632,22 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
 
                 ?: return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.ERROR, "Event not found", offline = true)
         val listId = eventsAndCheckinLists[eventSlug] ?: return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.ERROR, "No check-in list selected", offline = true)
-        val list = dataStore.select(CheckInList::class.java)
-                .where(CheckInList.SERVER_ID.eq(listId))
-                .and(CheckInList.EVENT_SLUG.eq(eventSlug))
-                .get().firstOrNull()
-                ?: return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.ERROR, "Check-in list not found", offline = true)
+        val list = db.checkInListQueries.selectByServerIdAndEventSlug(
+            server_id = listId,
+            event_slug = eventSlug,
+        ).executeAsOneOrNull()?.toModel()
+            ?: return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.ERROR, "Check-in list not found", offline = true)
 
-        val position = if (list.isAddonMatch) {
+        val position = if (list.addonMatch) {
             // Add-on matching, as per spec, but only if we have data, it's impossible in data-less mode
             val candidates = mutableListOf(tickets[0])
             candidates.addAll(tickets[0].getOrder().getPositions().filter {
                 it.addonToId == tickets[0].getServer_id()
             })
-            val filteredCandidates = if (!list.all_items) {
-                val items = dataStore.select(CheckInList_Item.ITEM_ID)
-                        .where(CheckInList_Item.CHECK_IN_LIST_ID.eq(list.getId()))
-                        .get().toList().map { it.get<Long>(0) }.toHashSet()
+            val filteredCandidates = if (!list.allItems) {
+                val items = db.checkInListQueries.selectItemIdsForList(list.id)
+                    .executeAsList()
+                    .toHashSet()
                 candidates.filter { candidate -> items.contains(candidate.getItem().getId()) }
             } else {
                 // This is a useless configuration that the backend won't allow, but we'll still handle
@@ -657,10 +655,10 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
                 candidates
             }
             if (filteredCandidates.isEmpty()) {
-                storeFailedCheckin(eventSlug, list.getServer_id(), "product", secret, type, position = tickets[0].getServer_id(), item = tickets[0].getItem().getServer_id(), variation = tickets[0].getVariation_id(), subevent = tickets[0].getSubevent_id(), nonce = nonce)
+                storeFailedCheckin(eventSlug, list.serverId, "product", secret, type, position = tickets[0].getServer_id(), item = tickets[0].getItem().getServer_id(), variation = tickets[0].getVariation_id(), subevent = tickets[0].getSubevent_id(), nonce = nonce)
                 return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.PRODUCT, offline = true)
             } else if (filteredCandidates.size > 1) {
-                storeFailedCheckin(eventSlug, list.getServer_id(), "ambiguous", secret, type, position = tickets[0].getServer_id(), item = tickets[0].getItem().getServer_id(), variation = tickets[0].getVariation_id(), subevent = tickets[0].getSubevent_id(), nonce = nonce)
+                storeFailedCheckin(eventSlug, list.serverId, "ambiguous", secret, type, position = tickets[0].getServer_id(), item = tickets[0].getItem().getServer_id(), variation = tickets[0].getVariation_id(), subevent = tickets[0].getSubevent_id(), nonce = nonce)
                 return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.AMBIGUOUS, offline = true)
             }
             filteredCandidates[0]
@@ -676,7 +674,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
             position.json
         } catch (e: JSONException) {
             sentry.captureException(e)
-            storeFailedCheckin(eventSlug, list.getServer_id(), "error", position.secret, type, position = position.getServer_id(), item = position.getItem().getServer_id(), variation = position.getVariation_id(), subevent = position.getSubevent_id(), nonce = nonce)
+            storeFailedCheckin(eventSlug, list.serverId, "error", position.secret, type, position = position.getServer_id(), item = position.getItem().getServer_id(), variation = position.getVariation_id(), subevent = position.getSubevent_id(), nonce = nonce)
             return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.ERROR, offline = true)
         }
 
@@ -703,7 +701,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
         res.orderCode = position.getOrder().getCode()
         res.positionId = position.getPositionid()
         res.position = jPosition
-        res.eventSlug = list.event_slug
+        res.eventSlug = list.eventSlug
         var require_attention = position.getOrder().isCheckin_attention
         try {
             require_attention = require_attention || item.json.optBoolean("checkin_attention", false)
@@ -721,21 +719,21 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
         if (order.getStatus() != "p" && order.getStatus() != "n") {
             res.type = TicketCheckProvider.CheckResult.Type.CANCELED
             res.isCheckinAllowed = false
-            storeFailedCheckin(eventSlug, list.getServer_id(), "canceled", position.secret, type, position = position.getServer_id(), item = position.getItem().getServer_id(), variation = position.getVariation_id(), subevent = position.getSubevent_id(), nonce = nonce)
+            storeFailedCheckin(eventSlug, list.serverId, "canceled", position.secret, type, position = position.getServer_id(), item = position.getItem().getServer_id(), variation = position.getVariation_id(), subevent = position.getSubevent_id(), nonce = nonce)
             return res
         }
 
         if (position.isBlocked) {
             res.type = TicketCheckProvider.CheckResult.Type.BLOCKED
             res.isCheckinAllowed = false
-            storeFailedCheckin(eventSlug, list.getServer_id(), "blocked", position.secret, type, position = position.getServer_id(), item = position.getItem().getServer_id(), variation = position.getVariation_id(), subevent = position.getSubevent_id(), nonce = nonce)
+            storeFailedCheckin(eventSlug, list.serverId, "blocked", position.secret, type, position = position.getServer_id(), item = position.getItem().getServer_id(), variation = position.getVariation_id(), subevent = position.getSubevent_id(), nonce = nonce)
             return res
         }
 
         if (order.status != "p" && order.isRequireApproval) {
             res.type = TicketCheckProvider.CheckResult.Type.UNAPPROVED
             res.isCheckinAllowed = false
-            storeFailedCheckin(eventSlug, list.getServer_id(), "unapproved", position.secret, type, position = position.getServer_id(), item = position.getItem().getServer_id(), variation = position.getVariation_id(), subevent = position.getSubevent_id(), nonce = nonce)
+            storeFailedCheckin(eventSlug, list.serverId, "unapproved", position.secret, type, position = position.getServer_id(), item = position.getItem().getServer_id(), variation = position.getVariation_id(), subevent = position.getSubevent_id(), nonce = nonce)
             return res
         }
 
@@ -744,40 +742,40 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
             if (validFrom != null && validFrom.isAfter(now())) {
                 res.type = TicketCheckProvider.CheckResult.Type.INVALID_TIME
                 res.isCheckinAllowed = false
-                storeFailedCheckin(eventSlug, list.getServer_id(), "invalid_time", position.secret, type, position = position.getServer_id(), item = position.getItem().getServer_id(), variation = position.getVariation_id(), subevent = position.getSubevent_id(), nonce = nonce)
+                storeFailedCheckin(eventSlug, list.serverId, "invalid_time", position.secret, type, position = position.getServer_id(), item = position.getItem().getServer_id(), variation = position.getVariation_id(), subevent = position.getSubevent_id(), nonce = nonce)
                 return res
             }
             val validUntil = position.validUntil
             if (validUntil != null && validUntil.isBefore(now())) {
                 res.type = TicketCheckProvider.CheckResult.Type.INVALID_TIME
                 res.isCheckinAllowed = false
-                storeFailedCheckin(eventSlug, list.getServer_id(), "invalid_time", position.secret, type, position = position.getServer_id(), item = position.getItem().getServer_id(), variation = position.getVariation_id(), subevent = position.getSubevent_id(), nonce = nonce)
+                storeFailedCheckin(eventSlug, list.serverId, "invalid_time", position.secret, type, position = position.getServer_id(), item = position.getItem().getServer_id(), variation = position.getVariation_id(), subevent = position.getSubevent_id(), nonce = nonce)
                 return res
             }
         }
 
-        if (!list.all_items) {
-            val is_in_list = dataStore.count(CheckInList_Item::class.java)
-                    .where(CheckInList_Item.ITEM_ID.eq(item.getId()))
-                    .and(CheckInList_Item.CHECK_IN_LIST_ID.eq(list.getId()))
-                    .get().value()
-            if (is_in_list == 0) {
-                storeFailedCheckin(eventSlug, list.getServer_id(), "product", position.secret, type, position = position.getServer_id(), item = position.getItem().getServer_id(), variation = position.getVariation_id(), subevent = position.getSubevent_id(), nonce = nonce)
+        if (!list.allItems) {
+            val is_in_list = db.checkInListQueries.checkIfItemIsInList(
+                checkin_list_id = list.id,
+                item_id = item.getId(),
+            ).executeAsOne()
+            if (is_in_list == 0L) {
+                storeFailedCheckin(eventSlug, list.serverId, "product", position.secret, type, position = position.getServer_id(), item = position.getItem().getServer_id(), variation = position.getVariation_id(), subevent = position.getSubevent_id(), nonce = nonce)
                 res.type = TicketCheckProvider.CheckResult.Type.PRODUCT
                 res.isCheckinAllowed = false
                 return res
             }
         }
 
-        if (list.getSubevent_id() != null && list.getSubevent_id() > 0 && list.getSubevent_id() != position.subeventId) {
-            storeFailedCheckin(eventSlug, list.getServer_id(), "invalid", position.secret, type, position = position.getServer_id(), item = position.getItem().getServer_id(), variation = position.getVariation_id(), subevent = position.getSubevent_id(), nonce = nonce)
+        if (list.subEventId != null && list.subEventId > 0 && list.subEventId != position.subeventId) {
+            storeFailedCheckin(eventSlug, list.subEventId, "invalid", position.secret, type, position = position.getServer_id(), item = position.getItem().getServer_id(), variation = position.getVariation_id(), subevent = position.getSubevent_id(), nonce = nonce)
             return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.INVALID, offline = true)
         }
 
-        if (!order.isValidStatus && !(ignore_unpaid && list.include_pending)) {
+        if (!order.isValidStatus && !(ignore_unpaid && list.includePending)) {
             res.type = TicketCheckProvider.CheckResult.Type.UNPAID
-            res.isCheckinAllowed = list.include_pending && !order.isValid_if_pending
-            storeFailedCheckin(eventSlug, list.getServer_id(), "unpaid", position.secret, type, position = position.getServer_id(), item = position.getItem().getServer_id(), variation = position.getVariation_id(), subevent = position.getSubevent_id(), nonce = nonce)
+            res.isCheckinAllowed = list.includePending && !order.isValid_if_pending
+            storeFailedCheckin(eventSlug, list.serverId, "unpaid", position.secret, type, position = position.getServer_id(), item = position.getItem().getServer_id(), variation = position.getVariation_id(), subevent = position.getSubevent_id(), nonce = nonce)
             return res
         }
 
@@ -841,7 +839,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
                     res.isCheckinAllowed = false
                     storeFailedCheckin(
                         eventSlug,
-                        list.getServer_id(),
+                        list.serverId,
                         "rules",
                         position.secret,
                         type,
@@ -859,7 +857,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
                 res.reasonExplanation = "Custom rule evaluation failed ($e)"
                 storeFailedCheckin(
                     eventSlug,
-                    list.getServer_id(),
+                    list.serverId,
                     "rules",
                     position.secret,
                     type,
@@ -907,16 +905,16 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
         } else {
             val entry_allowed = (
                     type == TicketCheckProvider.CheckInType.EXIT ||
-                            list.isAllowMultipleEntries ||
+                            list.allowMultipleEntries ||
                             checkIns.isEmpty() ||
                             checkIns.all { it.type == "exit" } ||
-                            (list.isAllowEntryAfterExit && checkIns.last().type == "exit")
+                            (list.allowEntryAfterExit && checkIns.last().type == "exit")
                     )
             if (!entry_allowed) {
                 res.isCheckinAllowed = false
                 res.firstScanned = checkIns.first().fullDatetime.toDate()
                 res.type = TicketCheckProvider.CheckResult.Type.USED
-                storeFailedCheckin(eventSlug, list.getServer_id(), "already_redeemed", position.secret, type, position = position.getServer_id(), item = position.getItem().getServer_id(), variation = position.getVariation_id(), subevent = position.getSubevent_id(), nonce = nonce)
+                storeFailedCheckin(eventSlug, list.serverId, "already_redeemed", position.secret, type, position = position.getServer_id(), item = position.getItem().getServer_id(), variation = position.getVariation_id(), subevent = position.getSubevent_id(), nonce = nonce)
             } else {
                 res.isCheckinAllowed = true
                 res.type = TicketCheckProvider.CheckResult.Type.VALID
@@ -967,22 +965,24 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
 
         var listfilters: Logical<*, *>? = null
         for (entry in eventsAndCheckinLists.entries) {
-            val list = dataStore.select(CheckInList::class.java)
-                    .where(CheckInList.SERVER_ID.eq(entry.value))
-                    .and(CheckInList.EVENT_SLUG.eq(entry.key))
-                    .get().firstOrNull()
-                    ?: throw CheckException("Check-in list not found")
+            val list = db.checkInListQueries.selectByServerIdAndEventSlug(
+                server_id = entry.value,
+                event_slug = entry.key,
+            ).executeAsOneOrNull()?.toModel()
+                ?: throw CheckException("Check-in list not found")
 
             var listfilter: Logical<*, *> = Order.EVENT_SLUG.eq(entry.key)
-            if (!list.all_items) {
+            if (!list.allItems) {
                 val itemids: MutableList<Long> = ArrayList()
-                for (item in list.items) {
-                    itemids.add(item.getId())
+                val items = db.itemQueries.selectForCheckInList(list.id)
+                    .executeAsList()
+                for (item in items) {
+                    itemids.add(item.id)
                 }
                 listfilter = Item.ID.`in`(itemids).and(listfilter)
             }
-            if (list.getSubevent_id() != null && list.getSubevent_id() > 0) {
-                listfilter = OrderPosition.SUBEVENT_ID.eq(list.getSubevent_id()).and(listfilter)
+            if (list.subEventId != null && list.subEventId > 0) {
+                listfilter = OrderPosition.SUBEVENT_ID.eq(list.subEventId).and(listfilter)
             }
             if (listfilters == null) {
                 listfilters = listfilter
@@ -1062,28 +1062,26 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
                 .where(OrderPosition.SERVER_ID.eq(-1))  // stupid logic node just so we can dynamically add .or() below
 
         for (list in lists) {
-            var lq: Logical<*, *> = Order.EVENT_SLUG.eq(list.getEvent_slug())
-            if (list.include_pending) {
+            var lq: Logical<*, *> = Order.EVENT_SLUG.eq(list.eventSlug)
+            if (list.includePending) {
                 lq = lq.and(Order.STATUS.`in`(listOf("p", "n")))
             } else {
                 lq = lq.and(Order.STATUS.eq("p").or(Order.STATUS.eq("n").and(Order.VALID_IF_PENDING.eq(true))))
             }
 
-            if (list.getSubevent_id() != null && list.getSubevent_id() > 0) {
-                lq = lq.and(OrderPosition.SUBEVENT_ID.eq(list.getSubevent_id()))
+            if (list.subEventId != null && list.subEventId > 0) {
+                lq = lq.and(OrderPosition.SUBEVENT_ID.eq(list.subEventId))
             }
 
-            if (!list.isAll_items) {
-                val product_ids = dataStore.select(CheckInList_Item.ITEM_ID)
-                        .where(CheckInList_Item.CHECK_IN_LIST_ID.eq(list.getId()))
-                        .get().toList().map { it.get<Long>(0) }
+            if (!list.allItems) {
+                val product_ids = db.checkInListQueries.selectItemIdsForList(list.id).executeAsList()
                 lq = lq.and(OrderPosition.ITEM_ID.`in`(product_ids))
             }
 
             if (onlyCheckedIn) {
                 lq = lq.and(OrderPosition.ID.`in`(
                         db.checkInQueries.selectPositionIdByListIdAndType(
-                            list_server_id = list.getServer_id(),
+                            list_server_id = list.serverId,
                             type = "entry"
                         ).executeAsList().map { it.position }
                 ))
@@ -1098,18 +1096,20 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
     override fun status(eventSlug: String, listId: Long): TicketCheckProvider.StatusResult {
         sentry.addBreadcrumb("provider.status", "offline status started")
         val items: MutableList<TicketCheckProvider.StatusResultItem> = ArrayList()
-        val list = dataStore.select(CheckInList::class.java)
-                .where(CheckInList.SERVER_ID.eq(listId))
-                .and(CheckInList.EVENT_SLUG.eq(eventSlug))
-                .get().firstOrNull()
-                ?: throw CheckException("Check-in list not found")
-        val products: List<Item>
-        products = if (list.all_items) {
-            dataStore.select(Item::class.java)
-                    .where(Item.EVENT_SLUG.eq(eventSlug))
-                    .get().toList()
+        val list = db.checkInListQueries.selectByServerIdAndEventSlug(
+            server_id = listId,
+            event_slug = eventSlug,
+        ).executeAsOneOrNull()?.toModel()
+            ?: throw CheckException("Check-in list not found")
+
+        val products = if (list.allItems) {
+            db.itemQueries.selectByEventSlug(eventSlug)
+                .executeAsList()
+                .map { it.toModel() }
         } else {
-            list.items
+            db.itemQueries.selectForCheckInList(list.id)
+                .executeAsList()
+                .map { it.toModel() }
         }
         var sum_pos = 0
         var sum_ci = 0
@@ -1135,12 +1135,12 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
                 val ci_count = basePositionQuery(listOf(list), true)
                         .and(OrderPosition.ITEM_ID.eq(product.id)).get()!!.value()!!
                 items.add(TicketCheckProvider.StatusResultItem(
-                        product.getServer_id(),
+                        product.serverId,
                         product.internalName,
                         position_count,
                         ci_count,
                         variations,
-                        product.isAdmission
+                        product.admission
                 ))
                 sum_pos += position_count
                 sum_ci += ci_count
