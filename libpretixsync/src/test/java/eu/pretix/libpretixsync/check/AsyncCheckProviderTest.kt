@@ -1,8 +1,14 @@
 package eu.pretix.libpretixsync.check
 
-import eu.pretix.libpretixsync.db.*
-import eu.pretix.libpretixsync.sync.*
+import eu.pretix.libpretixsync.db.Answer
 import eu.pretix.libpretixsync.db.BaseDatabaseTest
+import eu.pretix.libpretixsync.db.QueuedCheckIn
+import eu.pretix.libpretixsync.sync.CheckInListSyncAdapter
+import eu.pretix.libpretixsync.sync.EventSyncAdapter
+import eu.pretix.libpretixsync.sync.ItemSyncAdapter
+import eu.pretix.libpretixsync.sync.OrderSyncAdapter
+import eu.pretix.libpretixsync.sync.QuestionSyncAdapter
+import eu.pretix.libpretixsync.sync.SubEventSyncAdapter
 import eu.pretix.pretixscan.scanproxy.tests.test.FakeConfigStore
 import eu.pretix.pretixscan.scanproxy.tests.test.FakeFileStorage
 import eu.pretix.pretixscan.scanproxy.tests.test.FakePretixApi
