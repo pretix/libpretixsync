@@ -1165,7 +1165,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
         get() {
             // To avoid Joda Time code in the models, handle the case where we don't have a datetime value from JSON here
             return if (this.datetime != null) {
-                DateTime(this.datetime.toInstant())
+                DateTime(this.datetime.toInstant().toEpochMilli())
             } else {
                 val date = db.checkInQueries.selectById(this.id).executeAsOne().datetime
                 DateTime(date)
