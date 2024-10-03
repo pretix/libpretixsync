@@ -3,6 +3,11 @@ SELECT *
 FROM OrderPosition
 WHERE id = ?;
 
+selectByIdList:
+SELECT *
+FROM OrderPosition
+WHERE id IN ?;
+
 selectByServerId:
 SELECT *
 FROM OrderPosition
@@ -12,6 +17,20 @@ selectForOrder:
 SELECT *
 FROM OrderPosition
 WHERE order_ref = :order_id;
+
+selectBySecretAndEventSlugs:
+SELECT OrderPosition.*
+FROM OrderPosition
+LEFT JOIN orders ON OrderPosition.order_ref = orders.id
+WHERE OrderPosition.secret = :secret
+AND orders.event_slug IN :event_slugs;
+
+selectByServerIdAndEventSlugs:
+SELECT OrderPosition.*
+FROM OrderPosition
+LEFT JOIN orders ON OrderPosition.order_ref = orders.id
+WHERE OrderPosition.server_id = :server_id
+AND orders.event_slug IN :event_slugs;
 
 deleteByServerIdList:
 DELETE FROM OrderPosition

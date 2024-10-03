@@ -9,7 +9,16 @@ data class Order(
     val checkInText: String? = null,
     val testMode: Boolean = false,
     val email: String? = null,
+    val requiresApproval: Boolean = false,
+    val validIfPending: Boolean = false,
 ) {
+
+    val hasValidStatus = when (status) {
+        Status.PAID -> true
+        Status.PENDING -> validIfPending
+        else -> false
+    }
+
     enum class Status(val value: String) {
         PENDING("n"),
         PAID("p"),
