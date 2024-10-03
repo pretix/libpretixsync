@@ -3,6 +3,7 @@ package eu.pretix.libpretixsync.models
 import eu.pretix.libpretixsync.db.OrderPositionLike
 import org.json.JSONObject
 import java.math.BigDecimal
+import java.time.OffsetDateTime
 
 class OrderPosition(
     val id: Long,
@@ -23,6 +24,12 @@ class OrderPosition(
     val price: BigDecimal? = null,
     val taxRate: BigDecimal? = null,
     val taxValue: BigDecimal? = null,
+    val seatName: String? = null,
+    val addonToServerId: Long? = null,
+    val blocked: Boolean = false,
+    val validFrom: OffsetDateTime? = null,
+    val validUntil: OffsetDateTime? = null,
+    val answers: Map<Long, String>? = null,
     attendeeEmail: String? = null,
     attendeeName: String? = null,
 ) : OrderPositionLike {
