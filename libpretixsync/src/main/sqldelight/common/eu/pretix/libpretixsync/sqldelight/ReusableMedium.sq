@@ -12,6 +12,15 @@ SELECT *
 FROM ReusableMedium
 WHERE server_id IN ?;
 
+selectForCheck:
+SELECT ReusableMedium.*
+FROM ReusableMedium
+LEFT JOIN OrderPosition ON ReusableMedium.linked_orderposition_id = OrderPosition.server_id
+LEFT JOIN orders ON OrderPosition.order_ref = orders.id
+WHERE ReusableMedium.identifier = :identifier
+AND ReusableMedium.type = :type
+AND orders.event_slug IN :event_slugs;
+
 deleteByServerId:
 DELETE FROM ReusableMedium
 WHERE server_id = ?;

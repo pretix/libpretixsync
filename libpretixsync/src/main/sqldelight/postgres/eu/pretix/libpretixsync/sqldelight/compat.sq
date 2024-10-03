@@ -28,6 +28,9 @@ SELECT currval('quota_id_seq') AS Long;
 truncateCheckIn:
 TRUNCATE CheckIn;
 
+truncateReusableMedium:
+TRUNCATE ReusableMedium;
+
 truncateAllTables:
 TRUNCATE
     BadgeLayout,

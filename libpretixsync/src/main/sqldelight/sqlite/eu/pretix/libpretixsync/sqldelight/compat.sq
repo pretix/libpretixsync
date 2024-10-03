@@ -28,6 +28,9 @@ SELECT last_insert_rowid();
 truncateCheckIn:
 DELETE FROM CheckIn;
 
+truncateReusableMedium:
+DELETE FROM ReusableMedium;
+
 truncateAllTables {
     DELETE FROM BadgeLayout;
     DELETE FROM BadgeLayoutItem;
