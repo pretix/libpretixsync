@@ -15,7 +15,6 @@ import eu.pretix.libpretixsync.db.OrderPosition
 import eu.pretix.libpretixsync.db.QuestionLike
 import eu.pretix.libpretixsync.db.QueuedCall
 import eu.pretix.libpretixsync.db.QueuedCheckIn
-import eu.pretix.libpretixsync.db.ReusableMedium
 import eu.pretix.libpretixsync.models.CheckIn
 import eu.pretix.libpretixsync.models.CheckInList
 import eu.pretix.libpretixsync.models.Event
@@ -563,17 +562,15 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
             .and(Order.EVENT_SLUG.`in`(eventsAndCheckinLists.keys.toList()))
             .get().toList()
         if (tickets.size == 0) {
-            val medium = dataStore.select(ReusableMedium::class.java)
-                .leftJoin(OrderPosition::class.java).on(OrderPosition.SERVER_ID.eq(ReusableMedium.LINKED_ORDERPOSITION_ID))
-                .leftJoin(Order::class.java).on(Order.ID.eq(OrderPosition.ORDER_ID))
-                .where(ReusableMedium.IDENTIFIER.eq(ticketid_cleaned))
-                .and(ReusableMedium.TYPE.eq(source_type))
-                .and(Order.EVENT_SLUG.`in`(eventsAndCheckinLists.keys.toList()))
-                .get().firstOrNull()
+            val medium = db.reusableMediumQueries.selectForCheck(
+                identifier = ticketid_cleaned,
+                type = source_type,
+                event_slugs = eventsAndCheckinLists.keys.toList(),
+            ).executeAsOneOrNull()?.toModel()
             if (medium != null) {
                 val tickets = dataStore.select(OrderPosition::class.java)
                     .leftJoin(Order::class.java).on(Order.ID.eq(OrderPosition.ORDER_ID))
-                    .where(OrderPosition.SERVER_ID.eq(medium.getLinked_orderposition_id()))
+                    .where(OrderPosition.SERVER_ID.eq(medium.linkedOrderPositionServerId))
                     .and(Order.EVENT_SLUG.`in`(eventsAndCheckinLists.keys.toList()))
                     .get().toList()
                 return checkOfflineWithData(

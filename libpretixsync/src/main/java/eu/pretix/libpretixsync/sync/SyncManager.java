@@ -1,7 +1,6 @@
 package eu.pretix.libpretixsync.sync;
 
 import eu.pretix.libpretixsync.api.*;
-import eu.pretix.libpretixsync.db.ReusableMedium;
 import eu.pretix.libpretixsync.models.Question;
 import eu.pretix.libpretixsync.models.db.QuestionExtensionsKt;
 import eu.pretix.libpretixsync.sqldelight.SyncDatabase;
@@ -499,7 +498,7 @@ public class SyncManager {
             db.getCompatQueries().truncateCheckIn();
             dataStore.delete(OrderPosition.class).get().value();
             dataStore.delete(Order.class).get().value();
-            dataStore.delete(ReusableMedium.class).get().value();
+            db.getCompatQueries().truncateReusableMedium();
             dataStore.delete(ResourceSyncStatus.class).get().value();
             throw new SyncException(e.getMessage());
         } catch (JSONException e) {
