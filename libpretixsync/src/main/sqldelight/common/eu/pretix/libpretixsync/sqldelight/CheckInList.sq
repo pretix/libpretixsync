@@ -80,7 +80,9 @@ DELETE FROM CheckInList_Item
 WHERE CheckInListId = :checkin_list_id;
 
 selectItemIdsForList:
-SELECT ItemId
+-- We must select at least two columns, otherwise we get different result types between
+-- SQLite and Postgres since the ItemId column is only defined as NOT NULL in Postgres
+SELECT ItemId AS id, CheckInListId
 FROM CheckInList_Item
 WHERE CheckInListId = :checkin_list_id;
 
