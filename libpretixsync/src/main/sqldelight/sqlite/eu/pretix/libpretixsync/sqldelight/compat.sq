@@ -28,6 +28,9 @@ SELECT last_insert_rowid();
 truncateCheckIn:
 DELETE FROM CheckIn;
 
+truncateResourceSyncStatus:
+DELETE FROM ResourceSyncStatus;
+
 truncateReusableMedium:
 DELETE FROM ReusableMedium;
 

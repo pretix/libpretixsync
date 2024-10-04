@@ -4,7 +4,6 @@ import eu.pretix.libpretixsync.api.ApiException
 import eu.pretix.libpretixsync.api.PretixApi
 import eu.pretix.libpretixsync.db.Order
 import eu.pretix.libpretixsync.db.OrderPosition
-import eu.pretix.libpretixsync.db.ResourceSyncStatus
 import eu.pretix.libpretixsync.models.db.toModel
 import eu.pretix.libpretixsync.sqldelight.SyncDatabase
 import eu.pretix.libpretixsync.sync.SyncManager.ProgressFeedback
@@ -161,7 +160,10 @@ class OrderCleanup(val db: SyncDatabase, val store: BlockingEntityStore<Persista
             val slug = t.get<String>(0)
             val deletionDate = deletionTimeForEvent(slug)
             if (deletionDate == null || deletionDate < System.currentTimeMillis()) {
-                store.delete(ResourceSyncStatus::class.java).where(ResourceSyncStatus.RESOURCE.like("order%")).and(ResourceSyncStatus.EVENT_SLUG.eq(slug))
+                db.resourceSyncStatusQueries.deleteByResourceFilterAndEventSlug(
+                    filter = "order%",
+                    event_slug = slug,
+                )
                 while (true) {
                     val ordersToDelete: List<Tuple> = store.select(Order.ID).where(Order.EVENT_SLUG.eq(slug)).limit(200).get().toList()
                     if (ordersToDelete.isEmpty()) {

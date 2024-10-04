@@ -28,6 +28,9 @@ SELECT currval('quota_id_seq') AS Long;
 truncateCheckIn:
 TRUNCATE CheckIn;
 
+truncateResourceSyncStatus:
+TRUNCATE ResourceSyncStatus;
+
 truncateReusableMedium:
 TRUNCATE ReusableMedium;
 
