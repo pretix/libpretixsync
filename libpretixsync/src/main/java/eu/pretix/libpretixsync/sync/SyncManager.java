@@ -27,7 +27,6 @@ import eu.pretix.libpretixsync.db.QueuedOrder;
 import eu.pretix.libpretixsync.db.Receipt;
 import eu.pretix.libpretixsync.db.ReceiptLine;
 import eu.pretix.libpretixsync.db.ReceiptPayment;
-import eu.pretix.libpretixsync.db.ResourceSyncStatus;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
 
@@ -485,7 +484,7 @@ public class SyncManager {
                 db.getCompatQueries().truncateCheckIn();
                 dataStore.delete(OrderPosition.class).get().value();
                 dataStore.delete(Order.class).get().value();
-                dataStore.delete(ResourceSyncStatus.class).where(ResourceSyncStatus.RESOURCE.like("order%")).get().value();
+                db.getResourceSyncStatusQueries().deleteByResourceFilter("order%");
                 if ((System.currentTimeMillis() - configStore.getLastCleanup()) > 3600 * 1000 * 12) {
                     OrderCleanup oc = new OrderCleanup(db, dataStore, fileStorage, api, configStore.getSyncCycleId(), feedback);
                     oc.deleteOldPdfImages();
@@ -499,7 +498,7 @@ public class SyncManager {
             dataStore.delete(OrderPosition.class).get().value();
             dataStore.delete(Order.class).get().value();
             db.getCompatQueries().truncateReusableMedium();
-            dataStore.delete(ResourceSyncStatus.class).get().value();
+            db.getCompatQueries().truncateResourceSyncStatus();
             throw new SyncException(e.getMessage());
         } catch (JSONException e) {
             e.printStackTrace();
