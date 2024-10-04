@@ -2,7 +2,9 @@ package eu.pretix.libpretixsync.check
 
 import eu.pretix.libpretixsync.SentryInterface
 import eu.pretix.libpretixsync.db.Answer
-import eu.pretix.libpretixsync.db.Question
+import eu.pretix.libpretixsync.models.db.toModel
+import eu.pretix.libpretixsync.sqldelight.Question
+import eu.pretix.libpretixsync.models.Question as QuestionModel
 import org.json.JSONObject
 import java.util.*
 
@@ -11,21 +13,60 @@ interface TicketCheckProvider {
         ENTRY, EXIT
     }
 
+    // Old clients expect the requery models on the API
+    // This class mimics the relevant fields
+    // TODO: List affected versions?
+    data class QuestionOutput(
+        val server_id: Long,
+        val position: Long,
+        val required: Boolean,
+        val json_data: String,
+    ) {
+        constructor(model: QuestionModel, jsonData: String) : this(
+            server_id = model.serverId,
+            required = model.required,
+            position = model.position,
+            json_data = jsonData,
+        )
+
+        fun toModel() = Question(
+            server_id = server_id,
+            position = position,
+            required = required,
+            json_data = json_data,
+            id = -1L,
+            event_slug = null,
+        ).toModel()
+    }
+
     class QuestionAnswer {
-        lateinit var question: Question
+        private lateinit var _question: QuestionModel
+        private lateinit var _jsonData: String
+
         var currentValue: String? = null
 
-        constructor(question: Question, current_value: String?) {
-            this.question = question
-            this.currentValue = current_value
+        var question: QuestionOutput
+            get() = QuestionOutput(_question, _jsonData)
+
+            set(value) {
+                this._question = Question(
+                    server_id = value.server_id,
+                    json_data = value.json_data,
+                    position = -1, //TODO
+                    required = false, //TODO
+                    id = -1,
+                    event_slug = null,
+                ).toModel()
+            }
+
+        constructor(question: QuestionModel, jsonData: String, currentValue: String?) {
+            this._question = question
+            this._jsonData = jsonData
+            this.currentValue = currentValue
         }
 
-        constructor() {  // required for de-serialization
-        }
-
-        fun setCurrent_value(current_value: String?) {
-            currentValue = current_value
-        }
+        // required for de-serialization
+        constructor() {}
     }
 
     class CheckResult {

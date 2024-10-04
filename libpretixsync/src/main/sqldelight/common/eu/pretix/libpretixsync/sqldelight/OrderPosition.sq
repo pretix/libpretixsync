@@ -1,0 +1,99 @@
+selectById:
+SELECT *
+FROM OrderPosition
+WHERE id = ?;
+
+selectByIdList:
+SELECT *
+FROM OrderPosition
+WHERE id IN ?;
+
+selectByServerId:
+SELECT *
+FROM OrderPosition
+WHERE server_id = ?;
+
+selectForOrder:
+SELECT *
+FROM OrderPosition
+WHERE order_ref = :order_id;
+
+selectBySecretAndEventSlugs:
+SELECT OrderPosition.*
+FROM OrderPosition
+LEFT JOIN orders ON OrderPosition.order_ref = orders.id
+WHERE OrderPosition.secret = :secret
+AND orders.event_slug IN :event_slugs;
+
+selectByServerIdAndEventSlugs:
+SELECT OrderPosition.*
+FROM OrderPosition
+LEFT JOIN orders ON OrderPosition.order_ref = orders.id
+WHERE OrderPosition.server_id = :server_id
+AND orders.event_slug IN :event_slugs;
+
+deleteByServerIdList:
+DELETE FROM OrderPosition
+WHERE server_id IN ?;
+
+insert:
+INSERT INTO OrderPosition (
+    attendee_email,
+    attendee_name,
+    item,
+    json_data,
+    order_ref,
+    positionid,
+    secret,
+    server_id,
+    subevent_id,
+    variation_id
+)
+VALUES (
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?
+);
+
+updateFromJson:
+UPDATE OrderPosition
+SET
+    attendee_email = ?,
+    attendee_name = ?,
+    item = ?,
+    json_data = ?,
+    order_ref = ?,
+    positionid = ?,
+    secret = ?,
+    server_id = ?,
+    subevent_id = ?,
+    variation_id = ?
+WHERE id = ?;
+
+search:
+SELECT OrderPosition.*
+FROM OrderPosition
+LEFT JOIN orders ON OrderPosition.order_ref = orders.id
+LEFT JOIN Item ON OrderPosition.item = Item.id
+WHERE (
+    UPPER(OrderPosition.secret) LIKE :queryStartsWith
+    OR UPPER(OrderPosition.attendee_name) LIKE :queryContains
+    OR UPPER(OrderPosition.attendee_email) LIKE :queryContains
+    OR UPPER(orders.email) LIKE :queryContains
+    OR UPPER(orders.code) LIKE :queryStartsWith
+)
+AND (
+    CASE WHEN (:use_event_filter) THEN (orders.event_slug IN :event_filter) ELSE FALSE END
+    OR CASE WHEN (:use_event_item_filter) THEN (orders.event_slug IN :event_item_filter_events AND OrderPosition.item IN :event_item_filter_items) ELSE FALSE END
+    OR CASE WHEN (:use_event_subevent_filter) THEN (orders.event_slug IN :event_subevent_filter_events AND OrderPosition.subevent_id IN :event_subevent_filter_subevents) ELSE FALSE END
+    OR CASE WHEN (:use_all_filter) THEN (orders.event_slug IN :all_filter_events AND OrderPosition.item IN :all_filter_items AND OrderPosition.subevent_id IN :all_filter_subevents) ELSE FALSE END
+)
+LIMIT :limit
+OFFSET :offset;

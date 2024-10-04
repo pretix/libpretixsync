@@ -1,0 +1,29 @@
+selectById:
+SELECT *
+FROM QueuedOrder
+WHERE id = ?;
+
+delete:
+DELETE FROM QueuedOrder
+WHERE id = ?;
+
+insert:
+INSERT INTO QueuedOrder
+(
+    id,
+    error,
+    event_slug,
+    idempotency_key,
+    locked,
+    payload,
+    receipt
+)
+VALUES(
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?
+);

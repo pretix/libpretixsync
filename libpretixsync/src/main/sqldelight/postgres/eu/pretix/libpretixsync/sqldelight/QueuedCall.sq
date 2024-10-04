@@ -1,0 +1,8 @@
+import kotlin.Long;
+
+CREATE TABLE QueuedCall (
+    id serial AS Long PRIMARY KEY NOT NULL,
+    body text,
+    idempotency_key character varying(255),
+    url text
+);

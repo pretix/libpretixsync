@@ -1,0 +1,6 @@
+CREATE TABLE TaxRule (
+    id INTEGER PRIMARY KEY AUTOINCREMENT ,
+    event_slug TEXT,
+    json_data TEXT,
+    server_id INTEGER
+);

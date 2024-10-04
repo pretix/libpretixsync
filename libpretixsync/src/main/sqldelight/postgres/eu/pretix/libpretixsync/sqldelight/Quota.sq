@@ -1,0 +1,13 @@
+import kotlin.Boolean;
+import kotlin.Long;
+
+CREATE TABLE Quota (
+    id serial AS Long PRIMARY KEY NOT NULL,
+    available bigint AS Boolean,
+    available_number bigint,
+    event_slug character varying(255),
+    json_data text,
+    server_id bigint,
+    size bigint,
+    subevent_id bigint
+);

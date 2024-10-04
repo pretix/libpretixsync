@@ -1,7 +1,9 @@
 package eu.pretix.libpretixsync.sync;
 
 import eu.pretix.libpretixsync.api.*;
-import eu.pretix.libpretixsync.db.ReusableMedium;
+import eu.pretix.libpretixsync.models.Question;
+import eu.pretix.libpretixsync.models.db.QuestionExtensionsKt;
+import eu.pretix.libpretixsync.sqldelight.SyncDatabase;
 import eu.pretix.libpretixsync.utils.JSONUtils;
 import io.requery.sql.StatementExecutionException;
 import org.json.JSONArray;
@@ -15,18 +17,15 @@ import java.util.concurrent.ExecutionException;
 import eu.pretix.libpretixsync.SentryInterface;
 import eu.pretix.libpretixsync.config.ConfigStore;
 import eu.pretix.libpretixsync.db.Answer;
-import eu.pretix.libpretixsync.db.CheckIn;
 import eu.pretix.libpretixsync.db.Closing;
 import eu.pretix.libpretixsync.db.Order;
 import eu.pretix.libpretixsync.db.OrderPosition;
-import eu.pretix.libpretixsync.db.Question;
 import eu.pretix.libpretixsync.db.QueuedCall;
 import eu.pretix.libpretixsync.db.QueuedCheckIn;
 import eu.pretix.libpretixsync.db.QueuedOrder;
 import eu.pretix.libpretixsync.db.Receipt;
 import eu.pretix.libpretixsync.db.ReceiptLine;
 import eu.pretix.libpretixsync.db.ReceiptPayment;
-import eu.pretix.libpretixsync.db.ResourceSyncStatus;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
 
@@ -41,6 +40,7 @@ public class SyncManager {
     protected long upload_interval;
     protected long download_interval;
     protected BlockingEntityStore<Persistable> dataStore;
+    protected SyncDatabase db;
     protected FileStorage fileStorage;
     protected Profile profile;
     protected boolean with_pdf_data;
@@ -95,6 +95,7 @@ public class SyncManager {
             PretixApi api,
             SentryInterface sentry,
             BlockingEntityStore<Persistable> dataStore,
+            SyncDatabase db,
             FileStorage fileStorage,
             long upload_interval,
             long download_interval,
@@ -117,6 +118,7 @@ public class SyncManager {
         this.upload_interval = upload_interval;
         this.download_interval = download_interval;
         this.dataStore = dataStore;
+        this.db = db;
         this.fileStorage = fileStorage;
         this.profile = profile;
         this.with_pdf_data = with_pdf_data;
@@ -363,7 +365,7 @@ public class SyncManager {
             configStore.setDeviceKnownGateID(gateID);
 
             if (vdata.has("medium_key_sets")) {
-                MediumKeySetSyncAdapter mkssa = new MediumKeySetSyncAdapter(dataStore, fileStorage, api, configStore.getSyncCycleId(), null, vdata.getJSONArray("medium_key_sets"));
+                MediumKeySetSyncAdapter mkssa = new MediumKeySetSyncAdapter(db, fileStorage, api, configStore.getSyncCycleId(), null, vdata.getJSONArray("medium_key_sets"));
                 mkssa.download();
             }
 
@@ -389,7 +391,7 @@ public class SyncManager {
 
             if (profile == Profile.PRETIXPOS) {
                 try {
-                    download(new CashierSyncAdapter(dataStore, fileStorage, api, configStore.getSyncCycleId(), feedback));
+                    download(new CashierSyncAdapter(db, fileStorage, api, configStore.getSyncCycleId(), feedback));
                 } catch (NotFoundApiException e) {
                     // ignore, this is only supported from a later pretixpos-backend version
                 }
@@ -398,7 +400,7 @@ public class SyncManager {
                 }
             }
 
-            download(new AllSubEventsSyncAdapter(dataStore, fileStorage, api, configStore.getSyncCycleId(), feedback));
+            download(new AllSubEventsSyncAdapter(db, fileStorage, api, configStore.getSyncCycleId(), feedback));
             List<String> slugs;
             if (overrideEventSlug != null) {
                 slugs = new ArrayList<>();
@@ -412,58 +414,58 @@ public class SyncManager {
                     subEvent = overrideSubeventId;
                 }
                 try {
-                    download(new EventSyncAdapter(dataStore, eventSlug, eventSlug, api, configStore.getSyncCycleId(), feedback));
+                    download(new EventSyncAdapter(db, eventSlug, eventSlug, api, configStore.getSyncCycleId(), feedback));
                 } catch (PermissionDeniedApiException e) {
                     e.eventSlug = eventSlug;
                     throw e;
                 }
-                download(new ItemCategorySyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
-                download(new ItemSyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
-                download(new QuestionSyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
+                download(new ItemCategorySyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
+                download(new ItemSyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
+                download(new QuestionSyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
                 if (profile == Profile.PRETIXPOS) {
-                    download(new QuotaSyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback, subEvent));
-                    download(new TaxRuleSyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
-                    download(new TicketLayoutSyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
+                    download(new QuotaSyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback, subEvent));
+                    download(new TaxRuleSyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
+                    download(new TicketLayoutSyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
                 }
-                download(new BadgeLayoutSyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
-                download(new BadgeLayoutItemSyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
-                download(new CheckInListSyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback, subEvent));
+                download(new BadgeLayoutSyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
+                download(new BadgeLayoutItemSyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
+                download(new CheckInListSyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback, subEvent));
                 if (profile == Profile.PRETIXSCAN || profile == Profile.PRETIXSCAN_ONLINE) {
                     // We don't need these on pretixPOS, so we can save some traffic
                     try {
-                        download(new RevokedTicketSecretSyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
+                        download(new RevokedTicketSecretSyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
                     } catch (NotFoundApiException e) {
                         // ignore, this is only supported from pretix 3.12.
                     }
                     try {
-                        download(new BlockedTicketSecretSyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
+                        download(new BlockedTicketSecretSyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
                     } catch (NotFoundApiException e) {
                         // ignore, this is only supported from pretix 4.17.
                     }
                 }
                 if (profile == Profile.PRETIXSCAN && !skip_orders) {
-                    OrderSyncAdapter osa = new OrderSyncAdapter(dataStore, fileStorage, eventSlug, subEvent, with_pdf_data, false, api, configStore.getSyncCycleId(), feedback);
+                    OrderSyncAdapter osa = new OrderSyncAdapter(db, fileStorage, eventSlug, subEvent, with_pdf_data, false, api, configStore.getSyncCycleId(), feedback);
                     download(osa);
                     try {
-                        download(new ReusableMediaSyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
+                        download(new ReusableMediaSyncAdapter(db, fileStorage, api, configStore.getSyncCycleId(), feedback));
                     } catch (NotFoundApiException e) {
                         // ignore, this is only supported from pretix 4.19.
                     }
                 }
 
                 try {
-                    download(new SettingsSyncAdapter(dataStore, eventSlug, eventSlug, api, configStore.getSyncCycleId(), feedback));
+                    download(new SettingsSyncAdapter(db, eventSlug, eventSlug, api, configStore.getSyncCycleId(), feedback));
                 } catch (ApiException e) {
                     // Older pretix installations
                     // We don't need these on pretixSCAN, so we can save some traffic
                     if (profile == Profile.PRETIXPOS) {
-                        download(new InvoiceSettingsSyncAdapter(dataStore, eventSlug, eventSlug, api, configStore.getSyncCycleId(), feedback));
+                        download(new InvoiceSettingsSyncAdapter(db, eventSlug, eventSlug, api, configStore.getSyncCycleId(), feedback));
                     }
                 }
             }
 
             if (profile == Profile.PRETIXSCAN && !skip_orders && overrideEventSlug == null) {
-                OrderCleanup oc = new OrderCleanup(dataStore, fileStorage, api, configStore.getSyncCycleId(), feedback);
+                OrderCleanup oc = new OrderCleanup(db, dataStore, fileStorage, api, configStore.getSyncCycleId(), feedback);
                 if ((System.currentTimeMillis() - configStore.getLastCleanup()) > 3600 * 1000 * 12) {
                     for (String eventSlug : configStore.getSynchronizedEvents()) {
                         oc.deleteOldSubevents(eventSlug, overrideSubeventId > 0L ? overrideSubeventId : configStore.getSelectedSubeventForEvent(eventSlug));
@@ -473,12 +475,12 @@ public class SyncManager {
                     configStore.setLastCleanup(System.currentTimeMillis());
                 }
             } else if (profile == Profile.PRETIXSCAN_ONLINE && overrideEventSlug == null) {
-                dataStore.delete(CheckIn.class).get().value();
+                db.getCompatQueries().truncateCheckIn();
                 dataStore.delete(OrderPosition.class).get().value();
                 dataStore.delete(Order.class).get().value();
-                dataStore.delete(ResourceSyncStatus.class).where(ResourceSyncStatus.RESOURCE.like("order%")).get().value();
+                db.getResourceSyncStatusQueries().deleteByResourceFilter("order%");
                 if ((System.currentTimeMillis() - configStore.getLastCleanup()) > 3600 * 1000 * 12) {
-                    OrderCleanup oc = new OrderCleanup(dataStore, fileStorage, api, configStore.getSyncCycleId(), feedback);
+                    OrderCleanup oc = new OrderCleanup(db, dataStore, fileStorage, api, configStore.getSyncCycleId(), feedback);
                     oc.deleteOldPdfImages();
                     configStore.setLastCleanup(System.currentTimeMillis());
                 }
@@ -486,12 +488,11 @@ public class SyncManager {
 
 
         } catch (DeviceAccessRevokedException e) {
-            int deleted = 0;
-            deleted += dataStore.delete(CheckIn.class).get().value();
-            deleted += dataStore.delete(OrderPosition.class).get().value();
-            deleted += dataStore.delete(Order.class).get().value();
-            deleted += dataStore.delete(ReusableMedium.class).get().value();
-            deleted += dataStore.delete(ResourceSyncStatus.class).get().value();
+            db.getCompatQueries().truncateCheckIn();
+            dataStore.delete(OrderPosition.class).get().value();
+            dataStore.delete(Order.class).get().value();
+            db.getCompatQueries().truncateReusableMedium();
+            db.getCompatQueries().truncateResourceSyncStatus();
             throw new SyncException(e.getMessage());
         } catch (JSONException e) {
             e.printStackTrace();
@@ -568,10 +569,13 @@ public class SyncManager {
                     feedback.postFeedback("Uploading receipts (" + i + "/" + receipts.size() + ") …");
                 }
                 i++;
+
+
                 JSONObject data = receipt.toJSON();
                 JSONArray lines = new JSONArray();
                 JSONArray payments = new JSONArray();
                 for (ReceiptLine line : receipt.getLines()) {
+                    // TODO: Manually add addon_to.positionid when switching to SQLDelight
                     lines.put(line.toJSON());
                 }
                 for (ReceiptPayment payment : receipt.getPayments()) {
@@ -630,7 +634,7 @@ public class SyncManager {
                     r.setOrder_code(resp.getData().getString("code"));
                     dataStore.update(r, Receipt.ORDER_CODE);
                     dataStore.delete(qo);
-                    (new OrderSyncAdapter(dataStore, fileStorage, qo.getEvent_slug(), null, true, true, api, configStore.getSyncCycleId(), null)).standaloneRefreshFromJSON(resp.getData());
+                    (new OrderSyncAdapter(db, fileStorage, qo.getEvent_slug(), null, true, true, api, configStore.getSyncCycleId(), null)).standaloneRefreshFromJSON(resp.getData());
                     if (connectivityFeedback != null) {
                         connectivityFeedback.recordSuccess(System.currentTimeMillis() - startedAt);
                     }
@@ -712,8 +716,18 @@ public class SyncManager {
                     JSONArray ja = new JSONArray(qci.getAnswers());
                     for (int j = 0; j < ja.length(); j++) {
                         JSONObject jo = ja.getJSONObject(j);
-                        Question q = new Question();
-                        q.setServer_id(jo.getLong("question"));
+
+                        Question q = QuestionExtensionsKt.toModel(
+                            new eu.pretix.libpretixsync.sqldelight.Question(
+                                -1L,
+                                null,
+                                "{}",
+                                -1L,
+                                false,
+                                jo.getLong("question")
+                            )
+                        );
+
                         answers.add(new Answer(q, jo.getString("answer"), null));
                     }
                 } catch (JSONException e) {

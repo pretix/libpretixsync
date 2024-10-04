@@ -1,0 +1,15 @@
+import java.util.Date;
+import kotlin.Long;
+
+CREATE TABLE QueuedCheckIn (
+    id serial AS Long PRIMARY KEY NOT NULL,
+    answers character varying(255),
+    checkinlistid bigint,
+    datetime DATE AS Date,
+    datetime_string character varying(255),
+    event_slug character varying(255),
+    nonce character varying(255),
+    secret character varying(255),
+    source_type character varying(255),
+    type character varying(255)
+);

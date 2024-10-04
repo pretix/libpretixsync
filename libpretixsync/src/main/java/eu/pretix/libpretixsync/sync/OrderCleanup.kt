@@ -2,25 +2,27 @@ package eu.pretix.libpretixsync.sync
 
 import eu.pretix.libpretixsync.api.ApiException
 import eu.pretix.libpretixsync.api.PretixApi
-import eu.pretix.libpretixsync.db.*
+import eu.pretix.libpretixsync.db.Order
+import eu.pretix.libpretixsync.db.OrderPosition
+import eu.pretix.libpretixsync.models.db.toModel
+import eu.pretix.libpretixsync.sqldelight.SyncDatabase
 import eu.pretix.libpretixsync.sync.SyncManager.ProgressFeedback
 import io.requery.BlockingEntityStore
 import io.requery.Persistable
 import io.requery.RollbackException
 import io.requery.query.Tuple
-import org.joda.time.DateTime
-import org.joda.time.Duration
 import org.json.JSONException
+import java.time.Duration
 import kotlin.math.max
 
-class OrderCleanup(val store: BlockingEntityStore<Persistable>, val fileStorage: FileStorage, val api: PretixApi, val syncCycleId: String, val feedback: ProgressFeedback?) {
+class OrderCleanup(val db: SyncDatabase, val store: BlockingEntityStore<Persistable>, val fileStorage: FileStorage, val api: PretixApi, val syncCycleId: String, val feedback: ProgressFeedback?) {
     private var subeventsDeletionDate: MutableMap<Long, Long?> = HashMap()
     private fun deletionTimeForSubevent(sid: Long, eventSlug: String): Long? {
         if (subeventsDeletionDate.containsKey(sid)) {
             return subeventsDeletionDate[sid]
         }
         try {
-            SubEventSyncAdapter(store, eventSlug, sid.toString(), api, syncCycleId) { }.download()
+            SubEventSyncAdapter(db, eventSlug, sid.toString(), api, syncCycleId) { }.download()
         } catch (e: RollbackException) {
             subeventsDeletionDate[sid] = null
             return null
@@ -31,13 +33,13 @@ class OrderCleanup(val store: BlockingEntityStore<Persistable>, val fileStorage:
             subeventsDeletionDate[sid] = null
             return null
         }
-        val se = store.select(SubEvent::class.java).where(SubEvent.SERVER_ID.eq(sid)).get().firstOrNull()
+        val se = db.subEventQueries.selectByServerId(sid).executeAsOneOrNull()?.toModel()
         if (se == null) {
             subeventsDeletionDate[sid] = null
             return null
         }
-        val d = DateTime(if (se.getDate_to() != null) se.getDate_to() else se.getDate_from())
-        val v = d.plus(Duration.standardDays(14)).millis
+        val d = se.dateTo ?: se.dateFrom
+        val v = d.plus(Duration.ofDays(14)).toInstant().toEpochMilli()
         subeventsDeletionDate[sid] = v
         return v
     }
@@ -135,10 +137,10 @@ class OrderCleanup(val store: BlockingEntityStore<Persistable>, val fileStorage:
         if (eventsDeletionDate.containsKey(slug)) {
             return eventsDeletionDate[slug]
         }
-        val e: Event = store.select(Event::class.java).where(Event.SLUG.eq(slug)).get().firstOrNull()
-                ?: return null
-        val d = DateTime(if (e.getDate_to() != null) e.getDate_to() else e.getDate_from())
-        val v = d.plus(Duration.standardDays(14)).millis
+        val e = db.eventQueries.selectBySlug(slug).executeAsOneOrNull()?.toModel() ?: return null
+        val d = e.dateTo ?: e.dateFrom
+        val v = d.plus(Duration.ofDays(14)).toInstant().toEpochMilli()
+
         eventsDeletionDate[slug] = v
         return v
     }
@@ -158,7 +160,10 @@ class OrderCleanup(val store: BlockingEntityStore<Persistable>, val fileStorage:
             val slug = t.get<String>(0)
             val deletionDate = deletionTimeForEvent(slug)
             if (deletionDate == null || deletionDate < System.currentTimeMillis()) {
-                store.delete(ResourceSyncStatus::class.java).where(ResourceSyncStatus.RESOURCE.like("order%")).and(ResourceSyncStatus.EVENT_SLUG.eq(slug))
+                db.resourceSyncStatusQueries.deleteByResourceFilterAndEventSlug(
+                    filter = "order%",
+                    event_slug = slug,
+                )
                 while (true) {
                     val ordersToDelete: List<Tuple> = store.select(Order.ID).where(Order.EVENT_SLUG.eq(slug)).limit(200).get().toList()
                     if (ordersToDelete.isEmpty()) {
@@ -177,13 +182,11 @@ class OrderCleanup(val store: BlockingEntityStore<Persistable>, val fileStorage:
     }
 
     fun deleteOldPdfImages() {
-        store.delete(CachedPdfImage::class.java).where(
-                CachedPdfImage.ORDERPOSITION_ID.notIn(store.select(OrderPosition.SERVER_ID).from(OrderPosition::class.java))
-        )
+        db.cachedPdfImageQueries.deleteOld()
         for (filename in fileStorage.listFiles { _, s -> s.startsWith("pdfimage_") }) {
             val namebase = filename.split("\\.".toRegex()).toTypedArray()[0]
             val etag = namebase.split("_".toRegex()).toTypedArray()[1]
-            if (store.count(CachedPdfImage::class.java).where(CachedPdfImage.ETAG.eq(etag)).get().value() == 0) {
+            if (db.cachedPdfImageQueries.countEtag(etag).executeAsOne() == 0L) {
                 fileStorage.delete(filename)
             }
         }

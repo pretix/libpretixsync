@@ -24,5 +24,6 @@
   ],
   "valid_keys": {
     "pretix_sig1": ["LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUNvd0JRWURLMlZ3QXlFQWJWYmZxZGdtaFZzSFFmTk15eko5eUYxbGdWeWdkcE5oS29vdlE1NHhDWTQ9Ci0tLS0tRU5EIFBVQkxJQyBLRVktLS0tLQo="]
-  }
+  },
+  "seat_category_mapping": {}
 }
