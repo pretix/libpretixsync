@@ -1,3 +1,8 @@
+selectByResource:
+SELECT *
+FROM ResourceSyncStatus
+WHERE resource = ?;
+
 selectByResourceAndEventSlug:
 SELECT *
 FROM ResourceSyncStatus
@@ -7,6 +12,14 @@ LIMIT 1;
 deleteById:
 DELETE FROM ResourceSyncStatus
 WHERE id = ?;
+
+deleteByResourceFilter:
+DELETE FROM ResourceSyncStatus
+WHERE resource LIKE :filter;
+
+deleteByResourceFilterAndEventSlug:
+DELETE FROM ResourceSyncStatus
+WHERE resource LIKE :filter AND event_slug = :event_slug;
 
 insert:
 INSERT INTO ResourceSyncStatus
