@@ -647,6 +647,10 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
             val filteredCandidates = if (!list.allItems) {
                 val items = db.checkInListQueries.selectItemIdsForList(list.id)
                     .executeAsList()
+                    .map {
+                        // Not-null assertion needed for SQLite
+                        it.id!!
+                    }
                     .toHashSet()
                 candidates.filter { candidate ->
                     val candidateItem = db.itemQueries.selectById(candidate.itemId).executeAsOne()
@@ -978,7 +982,13 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
             ).executeAsOneOrNull() ?: throw CheckException("Check-in list not found")
 
             val itemIds = if (!list.all_items) {
-                db.checkInListQueries.selectItemIdsForList(list.id).executeAsList().ifEmpty { null }
+                db.checkInListQueries.selectItemIdsForList(list.id)
+                    .executeAsList()
+                    .map {
+                        // Not-null assertion needed for SQLite
+                        it.id!!
+                    }
+                    .ifEmpty { null }
             } else {
                 null
             }
@@ -1137,7 +1147,12 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
             }
 
             if (!list.allItems) {
-                val product_ids = db.checkInListQueries.selectItemIdsForList(list.id).executeAsList()
+                val product_ids = db.checkInListQueries.selectItemIdsForList(list.id)
+                    .executeAsList()
+                    .map {
+                        // Not-null assertion needed for SQLite
+                        it.id!!
+                    }
                 lq = lq.and(OrderPosition.ITEM_ID.`in`(product_ids))
             }
 
