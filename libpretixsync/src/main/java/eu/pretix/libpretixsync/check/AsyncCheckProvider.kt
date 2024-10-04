@@ -8,7 +8,6 @@ import eu.pretix.libpretixsync.crypto.isValidSignature
 import eu.pretix.libpretixsync.crypto.readPubkeyFromPem
 import eu.pretix.libpretixsync.crypto.sig1.TicketProtos
 import eu.pretix.libpretixsync.db.Answer
-import eu.pretix.libpretixsync.db.Item
 import eu.pretix.libpretixsync.db.NonceGenerator
 import eu.pretix.libpretixsync.db.Order
 import eu.pretix.libpretixsync.db.OrderPosition
@@ -964,52 +963,100 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
             return results
         }
 
-        var search: LogicalCondition<*, *>
-        search = OrderPosition.SECRET.upper().like("$query%")
-                .or(OrderPosition.ATTENDEE_NAME.upper().like("%$query%"))
-                .or(OrderPosition.ATTENDEE_EMAIL.upper().like("%$query%"))
-                .or(Order.EMAIL.upper().like("%$query%"))
-                .or(Order.CODE.upper().like("$query%"))
-
-        var listfilters: Logical<*, *>? = null
+        val eventFilter = mutableListOf<String>()
+        val eventItemFilterEvents = mutableListOf<String>()
+        val eventItemFilterItems = mutableListOf<Long>()
+        val eventSubEventFilterEvents = mutableListOf<String>()
+        val eventSubEventFilterSubEvents = mutableListOf<Long>()
+        val allFilterEvents = mutableListOf<String>()
+        val allFilterItems = mutableListOf<Long>()
+        val allFilterSubEvents = mutableListOf<Long>()
         for (entry in eventsAndCheckinLists.entries) {
             val list = db.checkInListQueries.selectByServerIdAndEventSlug(
                 server_id = entry.value,
                 event_slug = entry.key,
-            ).executeAsOneOrNull()?.toModel()
-                ?: throw CheckException("Check-in list not found")
+            ).executeAsOneOrNull() ?: throw CheckException("Check-in list not found")
 
-            var listfilter: Logical<*, *> = Order.EVENT_SLUG.eq(entry.key)
-            if (!list.allItems) {
-                val itemids: MutableList<Long> = ArrayList()
-                val items = db.itemQueries.selectForCheckInList(list.id)
-                    .executeAsList()
-                for (item in items) {
-                    itemids.add(item.id)
-                }
-                listfilter = Item.ID.`in`(itemids).and(listfilter)
-            }
-            if (list.subEventId != null && list.subEventId > 0) {
-                listfilter = OrderPosition.SUBEVENT_ID.eq(list.subEventId).and(listfilter)
-            }
-            if (listfilters == null) {
-                listfilters = listfilter
+            val itemIds = if (!list.all_items) {
+                db.checkInListQueries.selectItemIdsForList(list.id).executeAsList().ifEmpty { null }
             } else {
-                listfilters = listfilter.or(listfilters)
+                null
+            }
+
+            val subEventId = if (list.subevent_id != null && list.subevent_id > 0) {
+                list.subevent_id
+            } else {
+                null
+            }
+
+            if (itemIds != null && subEventId != null) {
+                allFilterEvents.add(entry.key)
+                allFilterItems.addAll(itemIds)
+                allFilterSubEvents.add(subEventId)
+            } else if (itemIds != null) {
+                eventItemFilterEvents.add(entry.key)
+                eventItemFilterItems.addAll(itemIds)
+            } else if (subEventId != null) {
+                eventSubEventFilterEvents.add(entry.key)
+                eventSubEventFilterSubEvents.add(subEventId)
+            } else {
+                eventFilter.add(entry.key)
             }
         }
-        search = search.and(listfilters)
 
-        val _positions: List<OrderPosition>
-        // The weird typecasting is apparently due to a bug in the Java compiler
-// see https://github.com/requery/requery/issues/229#issuecomment-240470748
-        _positions = (dataStore.select(OrderPosition::class.java)
-                .leftJoin(Order::class.java).on(Order.ID.eq(OrderPosition.ORDER_ID) as Condition<*, *>)
-                .leftJoin(Item::class.java).on(Item.ID.eq(OrderPosition.ITEM_ID))
-                .where(search).limit(50).offset(50 * (page - 1)).get() as Result<OrderPosition>).toList()
+        // The individual filters need a separate flag, based on whether any of their lists are empty.
+        // If any of them are, we also need to provide dummy values. These will not affect the
+        // query result, but might still be evaluated.
+        // All of this is done to avoid executing `<column> IN ()`, which is not valid SQL.
+        // See https://github.com/sqldelight/sql-psi/issues/285
+        // and https://www.postgresql.org/docs/current/sql-expressions.html#SYNTAX-EXPRESS-EVAL.
+        val useEventFilter = if (eventFilter.isEmpty()) {
+            eventFilter.add("")
+            false
+        } else {
+            true
+        }
+        val useEventItemFilter = if (eventItemFilterEvents.isEmpty() || eventItemFilterItems.isEmpty()) {
+            eventItemFilterEvents.add("")
+            eventItemFilterItems.add(-1L)
+            false
+        } else {
+            true
+        }
+        val useEventSubEventFilter = if (eventSubEventFilterEvents.isEmpty() || eventSubEventFilterSubEvents.isEmpty()) {
+            eventSubEventFilterEvents.add("")
+            eventSubEventFilterSubEvents.add(-1L)
+            false
+        } else {
+            true
+        }
+        val useAllFilter = if (allFilterEvents.isEmpty() || allFilterItems.isEmpty() || allFilterSubEvents.isEmpty()) {
+            allFilterEvents.add("")
+            allFilterItems.add(-1L)
+            allFilterSubEvents.add(-1L)
+            false
+        } else {
+            true
+        }
 
-        // TODO: Convert search query
-        val positions = db.orderPositionQueries.selectByIdList(_positions.map { it.getId() })
+        val positions = db.orderPositionQueries.search(
+            queryStartsWith = "$query%",
+            queryContains = "%$query%",
+            use_event_filter = useEventFilter,
+            event_filter = eventFilter,
+            use_event_item_filter = useEventItemFilter,
+            event_item_filter_events = eventItemFilterEvents,
+            event_item_filter_items = eventItemFilterItems,
+            use_event_subevent_filter = useEventSubEventFilter,
+            event_subevent_filter_events = eventSubEventFilterEvents,
+            event_subevent_filter_subevents = eventSubEventFilterSubEvents,
+            use_all_filter = useAllFilter,
+            all_filter_events = allFilterEvents,
+            all_filter_items = allFilterItems,
+            all_filter_subevents = allFilterSubEvents,
+            limit = 50L,
+            offset = 50L * (page - 1L),
+        )
             .executeAsList()
             .map { it.toModel() }
 
