@@ -4,6 +4,7 @@ import eu.pretix.libpretixsync.api.*;
 import eu.pretix.libpretixsync.db.ReusableMedium;
 import eu.pretix.libpretixsync.utils.JSONUtils;
 import io.requery.sql.StatementExecutionException;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -74,6 +75,7 @@ public class SyncManager {
 
     public interface CheckConnectivityFeedback {
         void recordError();
+
         void recordSuccess(Long durationInMillis);
     }
 
@@ -82,6 +84,7 @@ public class SyncManager {
         public String eventName;
         public Long subeventId;
         public Long checkinlistId;
+
         public EventSwitchRequested(String eventSlug, String eventName, Long subeventId, Long checkinlistId) {
             this.eventSlug = eventSlug;
             this.eventName = eventName;
@@ -134,7 +137,7 @@ public class SyncManager {
     }
 
     public SyncResult sync(boolean force) throws EventSwitchRequested {
-        return sync(force,null);
+        return sync(force, null);
     }
 
     /**
@@ -514,9 +517,9 @@ public class SyncManager {
         List<QueuedCall> calls = dataStore.select(QueuedCall.class)
                 .get().toList();
         String url = "";
-        try {
-            int i = 0;
-            for (QueuedCall call : calls) {
+        int i = 0;
+        for (QueuedCall call : calls) {
+            try {
                 if (feedback != null && i % 10 == 0) {
                     feedback.postFeedback("Uploading queued calls (" + i + "/" + calls.size() + ") …");
                 }
@@ -536,21 +539,24 @@ public class SyncManager {
                 } else {
                     throw new SyncException(response.getData().toString());
                 }
-            }
-        } catch (JSONException e) {
-            sentry.captureException(e);
-            throw new SyncException("Unknown server response: " + e.getMessage());
-        } catch (NotFoundApiException e) {
-            if (!url.contains("/failed_checkins/")) {  // ignore this one: old pretix systems don't have it
+            } catch (JSONException e) {
+                sentry.captureException(e);
+                throw new SyncException("Unknown server response: " + e.getMessage());
+            } catch (NotFoundApiException e) {
+                if (url.contains("/failed_checkins/") || url.contains("/printlog/")) {
+                    // ignore this one: old pretix systems don't have it
+                    dataStore.delete(call);
+                } else {
+                    sentry.addBreadcrumb("sync.queue", "API Error: " + e.getMessage());
+                    throw new SyncException(e.getMessage());
+                }
+            } catch (ApiException e) {
                 sentry.addBreadcrumb("sync.queue", "API Error: " + e.getMessage());
                 throw new SyncException(e.getMessage());
             }
-        } catch (ApiException e) {
-            sentry.addBreadcrumb("sync.queue", "API Error: " + e.getMessage());
-            throw new SyncException(e.getMessage());
         }
 
-        sentry.addBreadcrumb("sync.queue", "Receipt upload complete");
+        sentry.addBreadcrumb("sync.queue", "Queed call upload complete");
     }
 
     protected void uploadReceipts(ProgressFeedback feedback) throws SyncException {
@@ -563,7 +569,7 @@ public class SyncManager {
 
         try {
             int i = 0;
-            for (Receipt receipt: receipts) {
+            for (Receipt receipt : receipts) {
                 if (feedback != null && (i % 10) == 0) {
                     feedback.postFeedback("Uploading receipts (" + i + "/" + receipts.size() + ") …");
                 }
