@@ -556,7 +556,7 @@ public class SyncManager {
             }
         }
 
-        sentry.addBreadcrumb("sync.queue", "Queed call upload complete");
+        sentry.addBreadcrumb("sync.queue", "Queued call upload complete");
     }
 
     protected void uploadReceipts(ProgressFeedback feedback) throws SyncException {
