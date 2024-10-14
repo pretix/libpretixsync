@@ -90,16 +90,16 @@ open class PretixApi(url: String, key: String, orgaSlug: String, version: Int, h
     }
 
     @Throws(ApiException::class, JSONException::class)
-    fun redeem(lists: List<Long>, secret: String, datetime: Date?, force: Boolean, nonce: String?, answers: List<Answer>?, ignore_unpaid: Boolean, pdf_data: Boolean, type: String?, callTimeout: Long? = null, questions_supported: Boolean = true): ApiResponse {
+    fun redeem(lists: List<Long>, secret: String, datetime: Date?, force: Boolean, nonce: String?, answers: List<Answer>?, ignore_unpaid: Boolean, pdf_data: Boolean, type: String?, source_type: String?, callTimeout: Long? = null, questions_supported: Boolean = true): ApiResponse {
         var dt: String? = null
         if (datetime != null) {
             dt = QueuedCheckIn.formatDatetime(datetime)
         }
-        return redeem(lists, secret, dt, force, nonce, answers, ignore_unpaid, pdf_data, type, callTimeout, questions_supported)
+        return redeem(lists, secret, dt, force, nonce, answers, ignore_unpaid, pdf_data, type, source_type, callTimeout, questions_supported)
     }
 
     @Throws(ApiException::class, JSONException::class)
-    open fun redeem(lists: List<Long>, secret: String, datetime: String?, force: Boolean, nonce: String?, answers: List<Answer>?, ignore_unpaid: Boolean, pdf_data: Boolean, type: String?, callTimeout: Long? = null, questions_supported: Boolean = true): ApiResponse {
+    open fun redeem(lists: List<Long>, secret: String, datetime: String?, force: Boolean, nonce: String?, answers: List<Answer>?, ignore_unpaid: Boolean, pdf_data: Boolean, type: String?, source_type: String?, callTimeout: Long? = null, questions_supported: Boolean = true): ApiResponse {
         val body = JSONObject()
         if (datetime != null) {
             body.put("datetime", datetime)
@@ -108,6 +108,7 @@ open class PretixApi(url: String, key: String, orgaSlug: String, version: Int, h
         body.put("ignore_unpaid", ignore_unpaid)
         body.put("nonce", nonce)
         body.put("type", type)
+        body.put("source_type", source_type ?: "barcode")
         val answerbody = JSONObject()
         if (answers != null) {
             for (a in answers) {

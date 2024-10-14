@@ -40,6 +40,7 @@ class FakePretixApi : PretixApi("http://1.1.1.1/", "a", "demo", 1, DefaultHttpCl
         ignore_unpaid: Boolean,
         pdf_data: Boolean,
         type: String?,
+        source_type: String?,
         callTimeout: Long?,
         questions_supported: Boolean
     ): ApiResponse {
