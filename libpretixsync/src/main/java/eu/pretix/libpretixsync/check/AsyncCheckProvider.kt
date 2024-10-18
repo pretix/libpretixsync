@@ -41,6 +41,7 @@ import org.json.JSONException
 import org.json.JSONObject
 import java.lang.Exception
 import java.nio.charset.Charset
+import java.time.Instant
 import java.time.OffsetDateTime
 import java.util.*
 
@@ -750,14 +751,14 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
 
         if (type != TicketCheckProvider.CheckInType.EXIT) {
             val validFrom = position.validFrom
-            if (validFrom != null && validFrom.isAfter(OffsetDateTime.now())) {
+            if (validFrom != null && validFrom.isAfter(javaTimeNow())) {
                 res.type = TicketCheckProvider.CheckResult.Type.INVALID_TIME
                 res.isCheckinAllowed = false
                 storeFailedCheckin(eventSlug, list.serverId, "invalid_time", position.secret!!, type, position = position.serverId, item = positionItem.serverId, variation = position.variationServerId, subevent = position.subEventServerId, nonce = nonce)
                 return res
             }
             val validUntil = position.validUntil
-            if (validUntil != null && validUntil.isBefore(OffsetDateTime.now())) {
+            if (validUntil != null && validUntil.isBefore(javaTimeNow())) {
                 res.type = TicketCheckProvider.CheckResult.Type.INVALID_TIME
                 res.isCheckinAllowed = false
                 storeFailedCheckin(eventSlug, list.serverId, "invalid_time", position.secret!!, type, position = position.serverId, item = positionItem.serverId, variation = position.variationServerId, subevent = position.subEventServerId, nonce = nonce)
@@ -1237,6 +1238,13 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
 
     private fun now(): DateTime {
         return overrideNow ?: DateTime()
+    }
+
+    private fun javaTimeNow(): OffsetDateTime {
+        val jodaNow = now()
+        val instant = Instant.ofEpochMilli(jodaNow.millis)
+        val zoneId = jodaNow.zone.toTimeZone().toZoneId()
+        return OffsetDateTime.ofInstant(instant, zoneId)
     }
 
     private val CheckIn.fullDatetime : DateTime
