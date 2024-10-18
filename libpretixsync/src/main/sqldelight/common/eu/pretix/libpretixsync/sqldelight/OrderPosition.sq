@@ -97,3 +97,25 @@ AND (
 )
 LIMIT :limit
 OFFSET :offset;
+
+countForStatus:
+-- TODO: Check if DISTINCT is required here
+SELECT COUNT(DISTINCT OrderPosition.id)
+FROM OrderPosition
+LEFT JOIN orders ON OrderPosition.order_ref = orders.id
+WHERE(
+    orders.event_slug = :event_slug
+    AND CASE WHEN (:include_pending)
+        THEN orders.status IN ('p', 'n')
+        ELSE (orders.status = 'p' OR (orders.status = 'n' AND orders.valid_if_pending = TRUE))
+    END
+    AND CASE WHEN (:subevent_id > 0) THEN OrderPosition.subevent_id = :subevent_id ELSE TRUE END
+    AND CASE WHEN (:not_all_items) THEN OrderPosition.item IN :list_item_ids ELSE TRUE END
+    AND CASE WHEN (:only_checked_in_list_server_id > 0) THEN
+        (OrderPosition.id IN (SELECT position FROM CheckIn WHERE listId = :only_checked_in_list_server_id AND type = 'entry'))
+    ELSE
+        TRUE
+    END
+    AND OrderPosition.item = :item_id
+    AND CASE WHEN (:variation_id > 0) THEN OrderPosition.variation_id = :variation_id ELSE TRUE END
+);
