@@ -9,13 +9,10 @@ import eu.pretix.libpretixsync.crypto.readPubkeyFromPem
 import eu.pretix.libpretixsync.crypto.sig1.TicketProtos
 import eu.pretix.libpretixsync.db.Answer
 import eu.pretix.libpretixsync.db.NonceGenerator
-import eu.pretix.libpretixsync.db.Order
-import eu.pretix.libpretixsync.db.OrderPosition
 import eu.pretix.libpretixsync.db.QuestionLike
 import eu.pretix.libpretixsync.db.QueuedCall
 import eu.pretix.libpretixsync.db.QueuedCheckIn
 import eu.pretix.libpretixsync.models.CheckIn
-import eu.pretix.libpretixsync.models.CheckInList
 import eu.pretix.libpretixsync.models.Event
 import eu.pretix.libpretixsync.models.Order as OrderModel
 import eu.pretix.libpretixsync.models.OrderPosition as OrderPositionModel
@@ -29,7 +26,6 @@ import eu.pretix.libpretixsync.utils.logic.JsonLogic
 import eu.pretix.libpretixsync.utils.logic.truthy
 import io.requery.BlockingEntityStore
 import io.requery.Persistable
-import io.requery.kotlin.Logical
 import io.requery.query.*
 import org.joda.time.DateTime
 import org.joda.time.DateTimeZone
@@ -1129,48 +1125,6 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
         return results
     }
 
-    private fun basePositionQuery(lists: List<CheckInList>, onlyCheckedIn: Boolean): WhereAndOr<out Scalar<Int?>?> {
-
-        var q = dataStore.count(OrderPosition::class.java).distinct()
-                .leftJoin(Order::class.java).on(OrderPosition.ORDER_ID.eq(Order.ID))
-                .where(OrderPosition.SERVER_ID.eq(-1))  // stupid logic node just so we can dynamically add .or() below
-
-        for (list in lists) {
-            var lq: Logical<*, *> = Order.EVENT_SLUG.eq(list.eventSlug)
-            if (list.includePending) {
-                lq = lq.and(Order.STATUS.`in`(listOf("p", "n")))
-            } else {
-                lq = lq.and(Order.STATUS.eq("p").or(Order.STATUS.eq("n").and(Order.VALID_IF_PENDING.eq(true))))
-            }
-
-            if (list.subEventId != null && list.subEventId > 0) {
-                lq = lq.and(OrderPosition.SUBEVENT_ID.eq(list.subEventId))
-            }
-
-            if (!list.allItems) {
-                val product_ids = db.checkInListQueries.selectItemIdsForList(list.id)
-                    .executeAsList()
-                    .map {
-                        // Not-null assertion needed for SQLite
-                        it.id!!
-                    }
-                lq = lq.and(OrderPosition.ITEM_ID.`in`(product_ids))
-            }
-
-            if (onlyCheckedIn) {
-                lq = lq.and(OrderPosition.ID.`in`(
-                        db.checkInQueries.selectPositionIdByListIdAndType(
-                            list_server_id = list.serverId,
-                            type = "entry"
-                        ).executeAsList().map { it.position }
-                ))
-            }
-            q = q.or(lq)
-        }
-
-        return q
-    }
-
     @Throws(CheckException::class)
     override fun status(eventSlug: String, listId: Long): TicketCheckProvider.StatusResult {
         sentry.addBreadcrumb("provider.status", "offline status started")
@@ -1195,13 +1149,45 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
         for (product in products) {
             val variations: MutableList<TicketCheckProvider.StatusResultItemVariation> = ArrayList()
             try {
+                val subEventId = if (list.subEventId != null && list.subEventId > 0) list.subEventId else -1L
+
+                val notAllItems = !list.allItems
+                val listItemIds = if (notAllItems) {
+                    db.checkInListQueries.selectItemIdsForList(list.id)
+                        .executeAsList()
+                        .map {
+                            // Not-null assertion needed for SQLite
+                            it.id!!
+                        }
+                } else {
+                    // Dummy ID that is not used. Required for SQLDelight to generate valid SQL.
+                    // See comments in search().
+                    listOf(-1L)
+                }
+
                 for (`var` in product.variations) {
-                    val position_count = basePositionQuery(listOf(list), false)
-                            .and(OrderPosition.ITEM_ID.eq(product.id))
-                            .and(OrderPosition.VARIATION_ID.eq(`var`.server_id)).get()!!.value()!!
-                    val ci_count = basePositionQuery(listOf(list), true)
-                            .and(OrderPosition.ITEM_ID.eq(product.id))
-                            .and(OrderPosition.VARIATION_ID.eq(`var`.server_id)).get()!!.value()!!
+                    val position_count = db.orderPositionQueries.countForStatus(
+                        event_slug = list.eventSlug,
+                        include_pending = list.includePending,
+                        subevent_id = subEventId,
+                        not_all_items = notAllItems,
+                        list_item_ids = listItemIds,
+                        only_checked_in_list_server_id = -1L,
+                        item_id = product.id,
+                        variation_id = `var`.server_id,
+                    ).executeAsOne().toInt()
+
+                    val ci_count = db.orderPositionQueries.countForStatus(
+                        event_slug = list.eventSlug,
+                        include_pending = list.includePending,
+                        subevent_id = subEventId,
+                        not_all_items = notAllItems,
+                        list_item_ids = listItemIds,
+                        only_checked_in_list_server_id = list.serverId,
+                        item_id = product.id,
+                        variation_id = `var`.server_id,
+                    ).executeAsOne().toInt()
+
                     variations.add(TicketCheckProvider.StatusResultItemVariation(
                             `var`.server_id,
                             `var`.stringValue,
@@ -1209,10 +1195,29 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
                             ci_count
                     ))
                 }
-                val position_count = basePositionQuery(listOf(list), false)
-                        .and(OrderPosition.ITEM_ID.eq(product.id)).get()!!.value()!!
-                val ci_count = basePositionQuery(listOf(list), true)
-                        .and(OrderPosition.ITEM_ID.eq(product.id)).get()!!.value()!!
+
+                val position_count = db.orderPositionQueries.countForStatus(
+                    event_slug = list.eventSlug,
+                    include_pending = list.includePending,
+                    subevent_id = subEventId,
+                    not_all_items = notAllItems,
+                    list_item_ids = listItemIds,
+                    only_checked_in_list_server_id = -1L,
+                    item_id = product.id,
+                    variation_id = -1L,
+                ).executeAsOne().toInt()
+
+                val ci_count = db.orderPositionQueries.countForStatus(
+                    event_slug = list.eventSlug,
+                    include_pending = list.includePending,
+                    subevent_id = subEventId,
+                    not_all_items = notAllItems,
+                    list_item_ids = listItemIds,
+                    only_checked_in_list_server_id = list.serverId,
+                    item_id = product.id,
+                    variation_id = -1L,
+                ).executeAsOne().toInt()
+
                 items.add(TicketCheckProvider.StatusResultItem(
                         product.serverId,
                         product.internalName,
