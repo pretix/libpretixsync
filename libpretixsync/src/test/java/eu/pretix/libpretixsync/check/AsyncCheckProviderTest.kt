@@ -1,8 +1,14 @@
 package eu.pretix.libpretixsync.check
 
-import eu.pretix.libpretixsync.db.*
-import eu.pretix.libpretixsync.sync.*
-import eu.pretix.pretixscan.scanproxy.tests.db.BaseDatabaseTest
+import eu.pretix.libpretixsync.db.Answer
+import eu.pretix.libpretixsync.db.BaseDatabaseTest
+import eu.pretix.libpretixsync.db.QueuedCheckIn
+import eu.pretix.libpretixsync.sync.CheckInListSyncAdapter
+import eu.pretix.libpretixsync.sync.EventSyncAdapter
+import eu.pretix.libpretixsync.sync.ItemSyncAdapter
+import eu.pretix.libpretixsync.sync.OrderSyncAdapter
+import eu.pretix.libpretixsync.sync.QuestionSyncAdapter
+import eu.pretix.libpretixsync.sync.SubEventSyncAdapter
 import eu.pretix.pretixscan.scanproxy.tests.test.FakeConfigStore
 import eu.pretix.pretixscan.scanproxy.tests.test.FakeFileStorage
 import eu.pretix.pretixscan.scanproxy.tests.test.FakePretixApi
@@ -21,44 +27,43 @@ import org.junit.Assert.assertNull
 class AsyncCheckProviderTest : BaseDatabaseTest() {
     private var configStore: FakeConfigStore? = null
     private var fakeApi: FakePretixApi? = null
-    private var item: Item? = null
     private var p: AsyncCheckProvider? = null
 
     @Before
     fun setUpFakes() {
         configStore = FakeConfigStore()
         fakeApi = FakePretixApi()
-        p = AsyncCheckProvider(configStore!!, dataStore)
+        p = AsyncCheckProvider(configStore!!, dataStore, db)
 
-        EventSyncAdapter(dataStore, "demo", "demo", fakeApi, "", null).standaloneRefreshFromJSON(jsonResource("events/event1.json"))
-        EventSyncAdapter(dataStore, "demo", "demo", fakeApi, "", null).standaloneRefreshFromJSON(jsonResource("events/event2.json"))
-        ItemSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null).standaloneRefreshFromJSON(jsonResource("items/item1.json"))
-        ItemSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null).standaloneRefreshFromJSON(jsonResource("items/item2.json"))
-        ItemSyncAdapter(dataStore, FakeFileStorage(), "demo2", fakeApi, "", null).standaloneRefreshFromJSON(jsonResource("items/event2-item3.json"))
-        CheckInListSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null, 0).standaloneRefreshFromJSON(
+        EventSyncAdapter(db, "demo", "demo", fakeApi!!, "", null).standaloneRefreshFromJSON(jsonResource("events/event1.json"))
+        EventSyncAdapter(db, "demo2", "demo2", fakeApi!!, "", null).standaloneRefreshFromJSON(jsonResource("events/event2.json"))
+        ItemSyncAdapter(db, FakeFileStorage(), "demo", fakeApi!!, "", null).standaloneRefreshFromJSON(jsonResource("items/item1.json"))
+        ItemSyncAdapter(db, FakeFileStorage(), "demo", fakeApi!!, "", null).standaloneRefreshFromJSON(jsonResource("items/item2.json"))
+        ItemSyncAdapter(db, FakeFileStorage(), "demo2", fakeApi!!, "", null).standaloneRefreshFromJSON(jsonResource("items/event2-item3.json"))
+        CheckInListSyncAdapter(db, FakeFileStorage(), "demo", fakeApi!!, "", null, 0).standaloneRefreshFromJSON(
             jsonResource("checkinlists/list1.json")
         )
-        CheckInListSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null, 0).standaloneRefreshFromJSON(
+        CheckInListSyncAdapter(db, FakeFileStorage(), "demo", fakeApi!!, "", null, 0).standaloneRefreshFromJSON(
             jsonResource("checkinlists/list2.json")
         )
-        CheckInListSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null, 0).standaloneRefreshFromJSON(
+        CheckInListSyncAdapter(db, FakeFileStorage(), "demo", fakeApi!!, "", null, 0).standaloneRefreshFromJSON(
             jsonResource("checkinlists/list3.json")
         )
-        CheckInListSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null, 0).standaloneRefreshFromJSON(
+        CheckInListSyncAdapter(db, FakeFileStorage(), "demo", fakeApi!!, "", null, 0).standaloneRefreshFromJSON(
             jsonResource("checkinlists/list4.json")
         )
-        CheckInListSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null, 0).standaloneRefreshFromJSON(
+        CheckInListSyncAdapter(db, FakeFileStorage(), "demo", fakeApi!!, "", null, 0).standaloneRefreshFromJSON(
             jsonResource("checkinlists/list5.json")
         )
-        CheckInListSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null, 0).standaloneRefreshFromJSON(
+        CheckInListSyncAdapter(db, FakeFileStorage(), "demo", fakeApi!!, "", null, 0).standaloneRefreshFromJSON(
             jsonResource("checkinlists/list6.json")
         )
-        CheckInListSyncAdapter(dataStore, FakeFileStorage(), "demo2", fakeApi, "", null, 0).standaloneRefreshFromJSON(
+        CheckInListSyncAdapter(db, FakeFileStorage(), "demo2", fakeApi!!, "", null, 0).standaloneRefreshFromJSON(
             jsonResource("checkinlists/event2-list7.json")
         )
-        SubEventSyncAdapter(dataStore, "demo", "14", fakeApi, "", null).standaloneRefreshFromJSON(jsonResource("subevents/subevent1.json"))
+        SubEventSyncAdapter(db, "demo", "14", fakeApi!!, "", null).standaloneRefreshFromJSON(jsonResource("subevents/subevent1.json"))
 
-        val osa = OrderSyncAdapter(dataStore, FakeFileStorage(), "demo", 0, true, false, fakeApi, "", null)
+        val osa = OrderSyncAdapter(db, FakeFileStorage(), "demo", 0, true, false, fakeApi!!, "", null)
         osa.standaloneRefreshFromJSON(jsonResource("orders/order1.json"))
         osa.standaloneRefreshFromJSON(jsonResource("orders/order2.json"))
         osa.standaloneRefreshFromJSON(jsonResource("orders/order3.json"))
@@ -68,7 +73,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         osa.standaloneRefreshFromJSON(jsonResource("orders/order7.json"))
         osa.standaloneRefreshFromJSON(jsonResource("orders/order8.json"))
         osa.standaloneRefreshFromJSON(jsonResource("orders/order9.json"))
-        val osa2 = OrderSyncAdapter(dataStore, FakeFileStorage(), "demo2", 0, true, false, fakeApi, "", null)
+        val osa2 = OrderSyncAdapter(db, FakeFileStorage(), "demo2", 0, true, false, fakeApi!!, "", null)
         osa2.standaloneRefreshFromJSON(jsonResource("orders/event2-order1.json"))
     }
 
@@ -147,7 +152,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testSimpleValidUntil() {
-        val p2 = AsyncCheckProvider(configStore!!, dataStore)
+        val p2 = AsyncCheckProvider(configStore!!, dataStore, db)
 
         p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2023-03-04T00:00:01.000Z"))
         var r = p2.check(mapOf("demo" to 1L), "dz4OBvVsTDSJ6T1nY1dD")
@@ -160,7 +165,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testSimpleValidFrom() {
-        val p2 = AsyncCheckProvider(configStore!!, dataStore)
+        val p2 = AsyncCheckProvider(configStore!!, dataStore, db)
 
         p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2023-03-03T23:59:59.000Z"))
         var r = p2.check(mapOf("demo" to 1L), "uG3H4hgRYEIrw4YNclyH")
@@ -239,7 +244,8 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         r = p!!.check(mapOf("demo" to 2L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj")
         assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
         assertEquals(dataStore.count(QueuedCheckIn::class.java).get().value(), 2)
-        assertEquals(dataStore.count(CheckIn::class.java).join(OrderPosition::class.java).on(OrderPosition.ID.eq(CheckIn.POSITION_ID)).where(OrderPosition.SECRET.eq("kfndgffgyw4tdgcacx6bb3bgemq69cxj")).get().value(), 3)
+        assertEquals(db.checkInQueries.testCountByOrderPositionSecret("kfndgffgyw4tdgcacx6bb3bgemq69cxj").executeAsOne(), 3L)
+
     }
 
     @Test
@@ -301,11 +307,13 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
     }
 
     private fun setRuleOnList2(r: String) {
-        val cl = dataStore.select(CheckInList::class.java).where(CheckInList.SERVER_ID.eq(2)).get().first()
-        val j = cl.json
+        val cl = db.checkInListQueries.selectByServerId(2L).executeAsOne()
+        val j = JSONObject(cl.json_data)
         j.put("rules", JSONObject(r))
-        cl.setJson_data(j.toString())
-        dataStore.update(cl)
+        db.checkInListQueries.testUpdateJsonData(
+            json_data = j.toString(),
+            id = cl.id,
+        )
     }
 
     @Test
@@ -450,7 +458,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testRulesEntriesToday() {
-        val p2 = AsyncCheckProvider(configStore!!, dataStore)
+        val p2 = AsyncCheckProvider(configStore!!, dataStore, db)
 
         p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2020-01-01T10:00:00.000Z"))
         setRuleOnList2("{\"<\": [{\"var\": \"entries_today\"}, 3]}")
@@ -484,7 +492,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testRulesEntriesDays() {
-        val p2 = AsyncCheckProvider(configStore!!, dataStore)
+        val p2 = AsyncCheckProvider(configStore!!, dataStore, db)
 
         // Ticket is valid unlimited times, but only on two arbitrary days
         setRuleOnList2("{\"or\": [{\">\": [{\"var\": \"entries_today\"}, 0]}, {\"<\": [{\"var\": \"entries_days\"}, 2]}]}")
@@ -520,7 +528,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testRulesEntriesSince() {
-        val p2 = AsyncCheckProvider(configStore!!, dataStore)
+        val p2 = AsyncCheckProvider(configStore!!, dataStore, db)
 
         // Ticket is valid once before X and once after X
         setRuleOnList2("{\n" +
@@ -552,7 +560,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testRulesEntriesSinceTimeOfDay() {
-        val p2 = AsyncCheckProvider(configStore!!, dataStore)
+        val p2 = AsyncCheckProvider(configStore!!, dataStore, db)
 
         // Ticket is valid once before X and once after X
         setRuleOnList2("{\n" +
@@ -585,7 +593,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testRulesEntriesBefore() {
-        val p2 = AsyncCheckProvider(configStore!!, dataStore)
+        val p2 = AsyncCheckProvider(configStore!!, dataStore, db)
 
         // Ticket is valid after 23:00 only if people already showed up before
         setRuleOnList2("{\n" +
@@ -608,7 +616,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         r = p2.check(mapOf("demo" to 2L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj")
         assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
 
-        dataStore.delete(CheckIn::class.java).get().value()
+        db.compatQueries.truncateCheckIn()
 
         r = p2.check(mapOf("demo" to 2L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj")
         assertEquals(TicketCheckProvider.CheckResult.Type.RULES, r.type)
@@ -616,7 +624,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testRulesEntriesDaysSince() {
-        val p2 = AsyncCheckProvider(configStore!!, dataStore)
+        val p2 = AsyncCheckProvider(configStore!!, dataStore, db)
 
         // Ticket is valid once before X and on one day after X
         setRuleOnList2("{" +
@@ -656,7 +664,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testRulesEntriesDaysBefore() {
-        val p2 = AsyncCheckProvider(configStore!!, dataStore)
+        val p2 = AsyncCheckProvider(configStore!!, dataStore, db)
 
         // Ticket is valid after 23:00 only if people already showed up on two days before
         setRuleOnList2("{" +
@@ -692,7 +700,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testRulesMinutesSinceLastEntry() {
-        val p2 = AsyncCheckProvider(configStore!!, dataStore)
+        val p2 = AsyncCheckProvider(configStore!!, dataStore, db)
         setRuleOnList2("{\"or\": [{\"<=\": [{\"var\": \"minutes_since_last_entry\"}, -1]}, {\">\": [{\"var\": \"minutes_since_last_entry\"}, 180]}]}")
 
         p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2020-01-01T10:00:00.000Z"))
@@ -718,7 +726,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testRulesMinutesSinceFirstEntry() {
-        val p2 = AsyncCheckProvider(configStore!!, dataStore)
+        val p2 = AsyncCheckProvider(configStore!!, dataStore, db)
         setRuleOnList2("{\"or\": [{\"<=\": [{\"var\": \"minutes_since_first_entry\"}, -1]}, {\"<\": [{\"var\": \"minutes_since_first_entry\"}, 180]}]}")
 
         p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2020-01-01T10:00:00.000Z"))
@@ -736,7 +744,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testRulesIsAfterTolerance() {
-        val p2 = AsyncCheckProvider(configStore!!, dataStore)
+        val p2 = AsyncCheckProvider(configStore!!, dataStore, db)
 
         // Ticket is valid unlimited times, but only on two arbitrary days
         setRuleOnList2("{\"isAfter\": [{\"var\": \"now\"}, {\"buildTime\": [\"date_admission\"]}, 10]}")
@@ -756,7 +764,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testRulesIsAfterSubevent() {
-        val p2 = AsyncCheckProvider(configStore!!, dataStore)
+        val p2 = AsyncCheckProvider(configStore!!, dataStore, db)
 
         // Ticket is valid unlimited times, but only on two arbitrary days
         setRuleOnList2("{\"isAfter\": [{\"var\": \"now\"}, {\"buildTime\": [\"date_admission\"]}, 10]}")
@@ -776,7 +784,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testRulesIsAfterNoTolerance() {
-        val p2 = AsyncCheckProvider(configStore!!, dataStore)
+        val p2 = AsyncCheckProvider(configStore!!, dataStore, db)
 
         // Ticket is valid unlimited times, but only on two arbitrary days
         setRuleOnList2("{\"isAfter\": [{\"var\": \"now\"}, {\"buildTime\": [\"date_admission\"]}, null]}")
@@ -792,7 +800,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testRulesIsBeforeTolerance() {
-        val p2 = AsyncCheckProvider(configStore!!, dataStore)
+        val p2 = AsyncCheckProvider(configStore!!, dataStore, db)
 
         // Ticket is valid unlimited times, but only on two arbitrary days
         setRuleOnList2("{\"isBefore\": [{\"var\": \"now\"}, {\"buildTime\": [\"date_to\"]}, 10]}")
@@ -808,7 +816,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testRulesIsBeforeNoTolerance() {
-        val p2 = AsyncCheckProvider(configStore!!, dataStore)
+        val p2 = AsyncCheckProvider(configStore!!, dataStore, db)
 
         // Ticket is valid unlimited times, but only on two arbitrary days
         setRuleOnList2("{\"isBefore\": [{\"var\": \"now\"}, {\"buildTime\": [\"date_to\"]}]}")
@@ -824,7 +832,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testRulesIsAfterCustomDateTime() {
-        val p2 = AsyncCheckProvider(configStore!!, dataStore)
+        val p2 = AsyncCheckProvider(configStore!!, dataStore, db)
 
         // Ticket is valid unlimited times, but only on two arbitrary days
         setRuleOnList2("{\"isAfter\": [{\"var\": \"now\"}, {\"buildTime\": [\"custom\", \"2020-01-01T22:00:00.000Z\"]}]}")
@@ -840,7 +848,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testRulesIsAfterCustomTime() {
-        val p2 = AsyncCheckProvider(configStore!!, dataStore)
+        val p2 = AsyncCheckProvider(configStore!!, dataStore, db)
 
         // Ticket is valid unlimited times, but only on two arbitrary days
         setRuleOnList2("{\"isAfter\": [{\"var\": \"now\"}, {\"buildTime\": [\"customtime\", \"14:00\"]}]}")
@@ -856,7 +864,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testRulesCompareIsoweekday() {
-        val p2 = AsyncCheckProvider(configStore!!, dataStore)
+        val p2 = AsyncCheckProvider(configStore!!, dataStore, db)
 
         // Ticket is valid unlimited times, but only on two arbitrary days
         setRuleOnList2("{\">=\": [{\"var\": \"now_isoweekday\"}, 6]}")
@@ -872,7 +880,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testQuestionsForOtherItem() {
-        QuestionSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null).standaloneRefreshFromJSON(
+        QuestionSyncAdapter(db, FakeFileStorage(), "demo", fakeApi!!, "", null).standaloneRefreshFromJSON(
             jsonResource("questions/question1.json")
         )
 
@@ -882,7 +890,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testQuestionNotDuringCheckin() {
-        QuestionSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null).standaloneRefreshFromJSON(
+        QuestionSyncAdapter(db, FakeFileStorage(), "demo", fakeApi!!, "", null).standaloneRefreshFromJSON(
             jsonResource("questions/question3.json")
         )
 
@@ -892,7 +900,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testQuestionsFilled() {
-        QuestionSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null).standaloneRefreshFromJSON(
+        QuestionSyncAdapter(db, FakeFileStorage(), "demo", fakeApi!!, "", null).standaloneRefreshFromJSON(
             jsonResource("questions/question1.json")
         )
 
@@ -902,7 +910,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testQuestionsIgnored() {
-        QuestionSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null).standaloneRefreshFromJSON(
+        QuestionSyncAdapter(db, FakeFileStorage(), "demo", fakeApi!!, "", null).standaloneRefreshFromJSON(
             jsonResource("questions/question1.json")
         )
 
@@ -912,7 +920,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testQuestionsRequired() {
-        QuestionSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null).standaloneRefreshFromJSON(
+        QuestionSyncAdapter(db, FakeFileStorage(), "demo", fakeApi!!, "", null).standaloneRefreshFromJSON(
             jsonResource("questions/question1.json")
         )
 
@@ -920,10 +928,10 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         assertEquals(TicketCheckProvider.CheckResult.Type.ANSWERS_REQUIRED, r.type)
         assertEquals(1, r.requiredAnswers?.size)
         val ra = r.requiredAnswers!![0]
-        assertEquals(1, ra.question.getServer_id())
+        assertEquals(1, ra.question.server_id)
 
         val answers = ArrayList<Answer>()
-        answers.add(Answer(ra.question, "True"))
+        answers.add(Answer(ra.question.toModel(), "True"))
 
         r = p!!.check(mapOf("demo" to 1L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj", "barcode", answers, false, false, TicketCheckProvider.CheckInType.ENTRY)
         assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
@@ -936,7 +944,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testQuestionsInvalidInput() {
-        QuestionSyncAdapter(dataStore, FakeFileStorage(), "demo", fakeApi, "", null).standaloneRefreshFromJSON(
+        QuestionSyncAdapter(db, FakeFileStorage(), "demo", fakeApi!!, "", null).standaloneRefreshFromJSON(
             jsonResource("questions/question2.json")
         )
 
@@ -946,7 +954,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         val ra = r.requiredAnswers!![0]
 
         val answers = ArrayList<Answer>()
-        answers.add(Answer(ra.question, "True"))
+        answers.add(Answer(ra.question.toModel(), "True"))
 
         r = p!!.check(mapOf("demo" to 1L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj", "barcode", answers, false, false, TicketCheckProvider.CheckInType.ENTRY)
         assertEquals(TicketCheckProvider.CheckResult.Type.ANSWERS_REQUIRED, r.type)
@@ -1026,7 +1034,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testSignedAndNotYetValid() {
-        val p2 = AsyncCheckProvider(configStore!!, dataStore)
+        val p2 = AsyncCheckProvider(configStore!!, dataStore, db)
         p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2023-02-03T22:59:59.000Z"))
 
         val r = p2.check(mapOf("demo" to 1L), "Ok4EsqDRCr2cL6yDRtqeP7j5Usr1Vj1Db7J0izOuRGx6Qn0BS1ISW2nxlW8PXkYRk7PJhIBmsK1V1ucq5obBoBAMG4p9jCPKBAheRdFV0REVDZUCKAEAVAQA")
@@ -1041,7 +1049,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testSignedAndNotLongerValid() {
-        val p2 = AsyncCheckProvider(configStore!!, dataStore)
+        val p2 = AsyncCheckProvider(configStore!!, dataStore, db)
         p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2023-02-03T11:01:01.000Z"))
 
         val r = p2.check(mapOf("demo" to 1L), "EU9dJn3k5jzwfY4JQAKrTOVFmo+BvZKwH6UAIFOz3XTxABa7tmjU5UoLD8hJr3440uY7IFEHzau1DVk0sP994bgnzLNswAAKBARdUdGMmNVSHVUCKAEAVAQA")
@@ -1056,12 +1064,13 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testSignedAndRevoked() {
-        val rev = RevokedTicketSecret()
-        rev.setEvent_slug(configStore!!.eventSlug)
-        rev.setCreated("2020-10-19T10:00:00+00:00")
-        rev.setSecret("E4BibyTSylQOgeKjuMPiTDxi5HXPuTVsx1qCli3IL0143gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKAEAPAQA")
-        rev.setJson_data("{}")
-        dataStore.insert(rev)
+        db.revokedTicketSecretQueries.insert(
+            created = "2020-10-19T10:00:00+00:00",
+            event_slug = configStore!!.eventSlug,
+            json_data = "{}",
+            secret = "E4BibyTSylQOgeKjuMPiTDxi5HXPuTVsx1qCli3IL0143gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKAEAPAQA",
+            server_id = 1L,
+        )
 
         val r = p!!.check(mapOf("demo" to 1L), "E4BibyTSylQOgeKjuMPiTDxi5HXPuTVsx1qCli3IL0143gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKAEAPAQA")
         assertEquals(TicketCheckProvider.CheckResult.Type.REVOKED, r.type)
@@ -1070,13 +1079,14 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testSignedAndBlocked() {
-        val rev = BlockedTicketSecret()
-        rev.setEvent_slug(configStore!!.eventSlug)
-        rev.setUpdated("2020-10-19T10:00:00+00:00")
-        rev.setSecret("E4BibyTSylQOgeKjuMPiTDxi5HXPuTVsx1qCli3IL0143gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKAEAPAQA")
-        rev.isBlocked = true
-        rev.setJson_data("{}")
-        dataStore.insert(rev)
+        db.blockedTicketSecretQueries.insert(
+            blocked = true,
+            event_slug = configStore!!.eventSlug,
+            json_data = "{}",
+            secret = "E4BibyTSylQOgeKjuMPiTDxi5HXPuTVsx1qCli3IL0143gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKAEAPAQA",
+            updated = "2020-10-19T10:00:00+00:00",
+            server_id = 1L,
+        )
 
         val r = p!!.check(mapOf("demo" to 1L), "E4BibyTSylQOgeKjuMPiTDxi5HXPuTVsx1qCli3IL0143gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKAEAPAQA")
         assertEquals(TicketCheckProvider.CheckResult.Type.BLOCKED, r.type)

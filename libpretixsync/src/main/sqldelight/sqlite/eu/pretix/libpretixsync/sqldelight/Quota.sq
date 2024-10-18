@@ -1,0 +1,12 @@
+import kotlin.Boolean;
+
+CREATE TABLE Quota (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    available INTEGER AS Boolean,
+    available_number INTEGER,
+    event_slug TEXT,
+    json_data TEXT,
+    server_id INTEGER,
+    size INTEGER,
+    subevent_id INTEGER
+);

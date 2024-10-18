@@ -1,0 +1,9 @@
+import kotlin.Long;
+
+CREATE TABLE BadgeLayoutItem (
+    id serial AS Long PRIMARY KEY NOT NULL,
+    json_data text,
+    server_id bigint,
+    item bigint REFERENCES Item (id) ON DELETE CASCADE,
+    layout bigint REFERENCES BadgeLayout (id) ON DELETE CASCADE
+);
