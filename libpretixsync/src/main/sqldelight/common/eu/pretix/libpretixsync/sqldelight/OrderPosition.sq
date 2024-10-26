@@ -32,6 +32,10 @@ LEFT JOIN orders ON OrderPosition.order_ref = orders.id
 WHERE OrderPosition.server_id = :server_id
 AND orders.event_slug IN :event_slugs;
 
+count:
+SELECT COUNT(*)
+FROM OrderPosition;
+
 deleteByServerIdList:
 DELETE FROM OrderPosition
 WHERE server_id IN ?;
