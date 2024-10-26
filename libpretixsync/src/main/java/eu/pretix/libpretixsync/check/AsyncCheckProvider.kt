@@ -10,7 +10,6 @@ import eu.pretix.libpretixsync.crypto.sig1.TicketProtos
 import eu.pretix.libpretixsync.db.Answer
 import eu.pretix.libpretixsync.db.NonceGenerator
 import eu.pretix.libpretixsync.db.QuestionLike
-import eu.pretix.libpretixsync.db.QueuedCall
 import eu.pretix.libpretixsync.db.QueuedCheckIn
 import eu.pretix.libpretixsync.models.CheckIn
 import eu.pretix.libpretixsync.models.Event
@@ -83,12 +82,12 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
         if (variation != null && variation > 0) jdoc.put("variation", variation)
         if (subevent != null && subevent > 0) jdoc.put("subevent", subevent)
 
-        val qo = QueuedCall()
         val api = PretixApi.fromConfig(config)  // todo: uses wrong http client
-        qo.setUrl(api.eventResourceUrl(eventSlug, "checkinlists") + listId + "/failed_checkins/")
-        qo.setBody(jdoc.toString())
-        qo.setIdempotency_key(NonceGenerator.nextNonce())
-        dataStore.insert(qo)
+        db.queuedCallQueries.insert(
+            body = jdoc.toString(),
+            idempotency_key = NonceGenerator.nextNonce(),
+            url = api.eventResourceUrl(eventSlug, "checkinlists") + listId + "/failed_checkins/",
+        )
     }
 
     private fun initJsonLogic(event: Event, subeventId: Long, tz: DateTimeZone): JsonLogic {
