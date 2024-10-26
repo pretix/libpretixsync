@@ -3,6 +3,7 @@ package eu.pretix.libpretixsync.sync;
 import eu.pretix.libpretixsync.api.*;
 import eu.pretix.libpretixsync.models.Question;
 import eu.pretix.libpretixsync.models.db.QuestionExtensionsKt;
+import eu.pretix.libpretixsync.sqldelight.QueuedCall;
 import eu.pretix.libpretixsync.sqldelight.SyncDatabase;
 import eu.pretix.libpretixsync.utils.JSONUtils;
 import io.requery.sql.StatementExecutionException;
@@ -19,7 +20,6 @@ import eu.pretix.libpretixsync.SentryInterface;
 import eu.pretix.libpretixsync.config.ConfigStore;
 import eu.pretix.libpretixsync.db.Answer;
 import eu.pretix.libpretixsync.db.Closing;
-import eu.pretix.libpretixsync.db.QueuedCall;
 import eu.pretix.libpretixsync.db.QueuedCheckIn;
 import eu.pretix.libpretixsync.db.QueuedOrder;
 import eu.pretix.libpretixsync.db.Receipt;
@@ -516,8 +516,9 @@ public class SyncManager {
     protected void uploadQueuedCalls(ProgressFeedback feedback) throws SyncException {
         sentry.addBreadcrumb("sync.queue", "Start queuedcall upload");
 
-        List<QueuedCall> calls = dataStore.select(QueuedCall.class)
-                .get().toList();
+
+
+        List<QueuedCall> calls = db.getQueuedCallQueries().selectAll().executeAsList();
         String url = "";
         int i = 0;
         for (QueuedCall call : calls) {
@@ -526,14 +527,14 @@ public class SyncManager {
                     feedback.postFeedback("Uploading queued calls (" + i + "/" + calls.size() + ") …");
                 }
                 i++;
-                url = call.url;
+                url = call.getUrl();
                 PretixApi.ApiResponse response = api.postResource(
-                        call.url,
-                        new JSONObject(call.body),
-                        call.idempotency_key
+                        call.getUrl(),
+                        new JSONObject(call.getBody()),
+                        call.getIdempotency_key()
                 );
                 if (response.getResponse().code() < 500) {
-                    dataStore.delete(call);
+                    db.getQueuedCallQueries().delete(call.getId());
                     if (response.getResponse().code() >= 400) {
                         sentry.captureException(new ApiException("Received response (" + response.getResponse().code() + ") for queued call: " + response.getData().toString()));
                         // We ignore 400s, because we can't do something about them
@@ -547,7 +548,7 @@ public class SyncManager {
             } catch (NotFoundApiException e) {
                 if (url.contains("/failed_checkins/") || url.contains("/printlog/")) {
                     // ignore this one: old pretix systems don't have it
-                    dataStore.delete(call);
+                    db.getQueuedCallQueries().delete(call.getId());
                 } else {
                     sentry.addBreadcrumb("sync.queue", "API Error: " + e.getMessage());
                     throw new SyncException(e.getMessage());
