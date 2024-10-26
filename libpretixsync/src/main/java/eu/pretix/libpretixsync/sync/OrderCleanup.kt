@@ -2,20 +2,15 @@ package eu.pretix.libpretixsync.sync
 
 import eu.pretix.libpretixsync.api.ApiException
 import eu.pretix.libpretixsync.api.PretixApi
-import eu.pretix.libpretixsync.db.Order
-import eu.pretix.libpretixsync.db.OrderPosition
 import eu.pretix.libpretixsync.models.db.toModel
 import eu.pretix.libpretixsync.sqldelight.SyncDatabase
 import eu.pretix.libpretixsync.sync.SyncManager.ProgressFeedback
-import io.requery.BlockingEntityStore
-import io.requery.Persistable
 import io.requery.RollbackException
-import io.requery.query.Tuple
 import org.json.JSONException
 import java.time.Duration
 import kotlin.math.max
 
-class OrderCleanup(val db: SyncDatabase, val store: BlockingEntityStore<Persistable>, val fileStorage: FileStorage, val api: PretixApi, val syncCycleId: String, val feedback: ProgressFeedback?) {
+class OrderCleanup(val db: SyncDatabase, val fileStorage: FileStorage, val api: PretixApi, val syncCycleId: String, val feedback: ProgressFeedback?) {
     private var subeventsDeletionDate: MutableMap<Long, Long?> = HashMap()
     private fun deletionTimeForSubevent(sid: Long, eventSlug: String): Long? {
         if (subeventsDeletionDate.containsKey(sid)) {
@@ -62,28 +57,24 @@ class OrderCleanup(val db: SyncDatabase, val store: BlockingEntityStore<Persista
         // Further above, in updateObject(), we *always* reset the deletion date to 0 for anything
         // that's in the diff. This way, we can be sure to "un-delete" orders when they are changed
         // -- or when the subevent date is changed, which triggers all orders to be in the diff.
-        val ordercount: Int = store.count(Order::class.java)
-                .where(Order.EVENT_SLUG.eq(eventSlug))
-                .and(Order.DELETE_AFTER_TIMESTAMP.isNull().or(Order.DELETE_AFTER_TIMESTAMP.lt(1L)))
-                .get().value()
+        val ordercount = db.orderCleanupQueries.countOrders(
+            event_slug = eventSlug,
+        ).executeAsOne()
         var done = 0
         feedback?.postFeedback("Checking for old orders ($done/$ordercount) [$eventSlug] …")
         while (true) {
-            val orders: List<Order> = store.select(Order::class.java)
-                    .where(Order.EVENT_SLUG.eq(eventSlug))
-                    .and(Order.DELETE_AFTER_TIMESTAMP.isNull().or(Order.DELETE_AFTER_TIMESTAMP.lt(1L)))
-                    .limit(100)
-                    .get().toList()
-            if (orders.isEmpty()) {
+            val orderIds = db.orderCleanupQueries.selectOrderIds(event_slug = eventSlug).executeAsList()
+            if (orderIds.isEmpty()) {
                 break
             }
-            for (o in orders) {
+            for (orderId in orderIds) {
                 var deltime: Long? = null
                 try {
-                    val subeventIds = store.select(OrderPosition.SUBEVENT_ID)
-                        .from(OrderPosition::class.java)
-                        .where(OrderPosition.ORDER_ID.eq(o.id))
-                        .get().toList().map { it.get(0) as Long? }.distinct()
+                    val subeventIds = db.orderCleanupQueries.selectSubEventIdsForOrder(orderId)
+                        .executeAsList()
+                        .map { it.subevent_id }
+                        .distinct()
+
                     if (subeventIds.isEmpty()) {
                         deltime = System.currentTimeMillis()
                     }
@@ -107,8 +98,10 @@ class OrderCleanup(val db: SyncDatabase, val store: BlockingEntityStore<Persista
                 if (deltime == null) {
                     continue
                 }
-                o.setDeleteAfterTimestamp(deltime)
-                store.update(o)
+                db.orderCleanupQueries.updateDeleteAfterTimestamp(
+                    delete_after_timestamp = deltime,
+                    id = orderId,
+                )
                 done++
                 if (done % 50 == 0) {
                     feedback?.postFeedback("Checking for old orders ($done/$ordercount) …")
@@ -116,18 +109,33 @@ class OrderCleanup(val db: SyncDatabase, val store: BlockingEntityStore<Persista
             }
         }
         feedback?.postFeedback("Deleting old orders…")
-        var deleted = 0
+        var deleted = 0L
         while (true) {
-            val ordersToDelete: List<Tuple> = store.select(Order.ID).where(Order.DELETE_AFTER_TIMESTAMP.lt(System.currentTimeMillis()).and(Order.DELETE_AFTER_TIMESTAMP.gt(1L))).and(Order.ID.notIn(store.select(OrderPosition.ORDER_ID).from(OrderPosition::class.java).where(OrderPosition.SUBEVENT_ID.eq(subeventId)))).limit(200).get().toList()
+            // TODO: Why NOT IN?
+            val ordersToDelete = db.orderCleanupQueries.selectOrderIdsToDelete(
+                current_timestamp = System.currentTimeMillis(),
+                sub_event_id = subeventId,
+            ).executeAsList()
+
             if (ordersToDelete.isEmpty()) {
                 break
             }
             val idsToDelete: MutableList<Long> = ArrayList()
-            for (t in ordersToDelete) {
-                idsToDelete.add(t.get(0))
+            for (id in ordersToDelete) {
+                idsToDelete.add(id)
             }
-            // sqlite foreign keys are created with `on delete cascade`, so order positions and checkins are handled automatically
-            deleted += store.delete(Order::class.java).where(Order.ID.`in`(idsToDelete)).get().value()
+
+            // Count affected rows manually, since there is no convenient way
+            // to do this with one query that works on SQLite and Postgres
+            val count = db.orderCleanupQueries.transactionWithResult {
+                val count = db.orderCleanupQueries.countOrdersByIdList(idsToDelete).executeAsOne()
+                // sqlite foreign keys are created with `on delete cascade`,
+                // so order positions and checkins are handled automatically
+                db.orderCleanupQueries.deleteOrders(idsToDelete)
+                count
+            }
+
+            deleted += count
             feedback?.postFeedback("Deleting old orders ($deleted)…")
         }
     }
@@ -149,15 +157,12 @@ class OrderCleanup(val db: SyncDatabase, val store: BlockingEntityStore<Persista
         if (keepSlugs.isEmpty())
             return
         feedback?.postFeedback("Deleting orders of old events…")
-        val tuples: List<Tuple> = store.select(Order.EVENT_SLUG)
-                .from(Order::class.java)
-                .where(Order.EVENT_SLUG.notIn(keepSlugs))
-                .groupBy(Order.EVENT_SLUG)
-                .orderBy(Order.EVENT_SLUG)
-                .get().toList()
-        var deleted = 0
-        for (t in tuples) {
-            val slug = t.get<String>(0)
+        val slugs = db.orderCleanupQueries.selectOldEventSlugs(keepSlugs)
+            .executeAsList()
+            .map { it.event_slug!! }
+
+        var deleted = 0L
+        for (slug in slugs) {
             val deletionDate = deletionTimeForEvent(slug)
             if (deletionDate == null || deletionDate < System.currentTimeMillis()) {
                 db.resourceSyncStatusQueries.deleteByResourceFilterAndEventSlug(
@@ -165,16 +170,22 @@ class OrderCleanup(val db: SyncDatabase, val store: BlockingEntityStore<Persista
                     event_slug = slug,
                 )
                 while (true) {
-                    val ordersToDelete: List<Tuple> = store.select(Order.ID).where(Order.EVENT_SLUG.eq(slug)).limit(200).get().toList()
-                    if (ordersToDelete.isEmpty()) {
+                    val idsToDelete = db.orderCleanupQueries.selectOrderIdsForOldEvent(slug)
+                        .executeAsList()
+                    if (idsToDelete.isEmpty()) {
                         break
                     }
-                    val idsToDelete: MutableList<Long> = ArrayList()
-                    for (t2 in ordersToDelete) {
-                        idsToDelete.add(t2.get(0))
+
+                    // Count affected rows manually, since there is no convenient way
+                    // to do this with one query that works on SQLite and Postgres
+                    val count = db.orderCleanupQueries.transactionWithResult {
+                        val count = db.orderCleanupQueries.countOrdersByIdList(idsToDelete).executeAsOne()
+                        // sqlite foreign keys are created with `on delete cascade`,
+                        // so order positions and checkins are handled automatically
+                        db.orderCleanupQueries.deleteOrders(idsToDelete)
+                        count
                     }
-                    // sqlite foreign keys are created with `on delete cascade`, so order positions and checkins are handled automatically
-                    deleted += store.delete(Order::class.java).where(Order.ID.`in`(idsToDelete)).get().value()
+                    deleted += count
                     feedback?.postFeedback("Deleting orders of old events ($deleted)…")
                 }
             }
