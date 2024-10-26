@@ -13,6 +13,10 @@ SELECT *
 FROM orders
 WHERE code IN ?;
 
+count:
+SELECT COUNT(*)
+FROM orders;
+
 countForEventSlug:
 SELECT COUNT(*)
 FROM orders

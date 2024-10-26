@@ -19,8 +19,6 @@ import eu.pretix.libpretixsync.SentryInterface;
 import eu.pretix.libpretixsync.config.ConfigStore;
 import eu.pretix.libpretixsync.db.Answer;
 import eu.pretix.libpretixsync.db.Closing;
-import eu.pretix.libpretixsync.db.Order;
-import eu.pretix.libpretixsync.db.OrderPosition;
 import eu.pretix.libpretixsync.db.QueuedCall;
 import eu.pretix.libpretixsync.db.QueuedCheckIn;
 import eu.pretix.libpretixsync.db.QueuedOrder;
@@ -482,8 +480,8 @@ public class SyncManager {
                 }
             } else if (profile == Profile.PRETIXSCAN_ONLINE && overrideEventSlug == null) {
                 db.getCompatQueries().truncateCheckIn();
-                dataStore.delete(OrderPosition.class).get().value();
-                dataStore.delete(Order.class).get().value();
+                db.getCompatQueries().truncateOrderPosition();
+                db.getCompatQueries().truncateOrder();
                 db.getResourceSyncStatusQueries().deleteByResourceFilter("order%");
                 if ((System.currentTimeMillis() - configStore.getLastCleanup()) > 3600 * 1000 * 12) {
                     OrderCleanup oc = new OrderCleanup(db, fileStorage, api, configStore.getSyncCycleId(), feedback);
@@ -495,8 +493,8 @@ public class SyncManager {
 
         } catch (DeviceAccessRevokedException e) {
             db.getCompatQueries().truncateCheckIn();
-            dataStore.delete(OrderPosition.class).get().value();
-            dataStore.delete(Order.class).get().value();
+            db.getCompatQueries().truncateOrderPosition();
+            db.getCompatQueries().truncateOrder();
             db.getCompatQueries().truncateReusableMedium();
             db.getCompatQueries().truncateResourceSyncStatus();
             throw new SyncException(e.getMessage());

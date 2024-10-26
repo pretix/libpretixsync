@@ -28,6 +28,12 @@ SELECT currval('quota_id_seq') AS Long;
 truncateCheckIn:
 TRUNCATE CheckIn;
 
+truncateOrderPosition:
+TRUNCATE OrderPosition;
+
+truncateOrder:
+TRUNCATE orders;
+
 truncateResourceSyncStatus:
 TRUNCATE ResourceSyncStatus;
 
