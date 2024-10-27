@@ -3,6 +3,11 @@ SELECT *
 FROM QueuedOrder
 WHERE id = ?;
 
+selectUnlockedWithoutError:
+SELECT *
+FROM QueuedOrder
+WHERE locked = FALSE AND error IS NULL;
+
 delete:
 DELETE FROM QueuedOrder
 WHERE id = ?;
@@ -27,3 +32,15 @@ VALUES(
     ?,
     ?
 );
+
+lock:
+UPDATE QueuedOrder
+SET
+    locked = TRUE
+WHERE id = ?;
+
+updateError:
+UPDATE QueuedOrder
+SET
+    error = ?
+WHERE id = ?;
