@@ -4,6 +4,7 @@ import eu.pretix.libpretixsync.api.*;
 import eu.pretix.libpretixsync.models.Question;
 import eu.pretix.libpretixsync.models.db.QuestionExtensionsKt;
 import eu.pretix.libpretixsync.sqldelight.QueuedCall;
+import eu.pretix.libpretixsync.sqldelight.QueuedCheckIn;
 import eu.pretix.libpretixsync.sqldelight.SyncDatabase;
 import eu.pretix.libpretixsync.utils.JSONUtils;
 import io.requery.sql.StatementExecutionException;
@@ -20,7 +21,6 @@ import eu.pretix.libpretixsync.SentryInterface;
 import eu.pretix.libpretixsync.config.ConfigStore;
 import eu.pretix.libpretixsync.db.Answer;
 import eu.pretix.libpretixsync.db.Closing;
-import eu.pretix.libpretixsync.db.QueuedCheckIn;
 import eu.pretix.libpretixsync.db.QueuedOrder;
 import eu.pretix.libpretixsync.db.Receipt;
 import eu.pretix.libpretixsync.db.ReceiptLine;
@@ -709,8 +709,7 @@ public class SyncManager {
     protected void uploadCheckins(ProgressFeedback feedback) throws SyncException {
         sentry.addBreadcrumb("sync.queue", "Start check-in upload");
 
-        List<QueuedCheckIn> queued = dataStore.select(QueuedCheckIn.class)
-                .get().toList();
+        List<QueuedCheckIn> queued = db.getQueuedCheckInQueries().selectAll().executeAsList();
 
         try {
             int i = 0;
@@ -749,9 +748,9 @@ public class SyncManager {
                 }
                 if (qci.getDatetime_string() == null || qci.getDatetime_string().equals("")) {
                     // Backwards compatibility
-                    ar = api.redeem(qci.getEvent_slug(), qci.getSecret(), qci.getDatetime(), true, qci.getNonce(), answers, qci.checkinListId, false, false, qci.getType(), st, null, false);
+                    ar = api.redeem(qci.getEvent_slug(), qci.getSecret(), qci.getDatetime(), true, qci.getNonce(), answers, qci.getCheckinListId(), false, false, qci.getType(), st, null, false);
                 } else {
-                    ar = api.redeem(qci.getEvent_slug(), qci.getSecret(), qci.getDatetime_string(), true, qci.getNonce(), answers, qci.checkinListId, false, false, qci.getType(), st, null, false);
+                    ar = api.redeem(qci.getEvent_slug(), qci.getSecret(), qci.getDatetime_string(), true, qci.getNonce(), answers, qci.getCheckinListId(), false, false, qci.getType(), st, null, false);
                 }
                 if (connectivityFeedback != null) {
                     connectivityFeedback.recordSuccess(System.currentTimeMillis() - startedAt);
@@ -759,12 +758,12 @@ public class SyncManager {
                 JSONObject response = ar.getData();
                 String status = response.optString("status", null);
                 if ("ok".equals(status)) {
-                    dataStore.delete(qci);
+                    db.getQueuedCheckInQueries().delete(qci.getId());
                 } else if (ar.getResponse().code() == 404 || ar.getResponse().code() == 400) {
                     // There's no point in re-trying a 404 or 400 since it won't change on later uploads.
                     // Modern pretix versions already log this case and handle it if possible, nothing
                     // we can do here.
-                    dataStore.delete(qci);
+                    db.getQueuedCheckInQueries().delete(qci.getId());
                 } // Else: will be retried later
             }
         } catch (JSONException e) {

@@ -7,15 +7,16 @@ import eu.pretix.libpretixsync.config.ConfigStore
 import eu.pretix.libpretixsync.crypto.isValidSignature
 import eu.pretix.libpretixsync.crypto.readPubkeyFromPem
 import eu.pretix.libpretixsync.crypto.sig1.TicketProtos
+import eu.pretix.libpretixsync.db.AbstractQueuedCheckIn
 import eu.pretix.libpretixsync.db.Answer
 import eu.pretix.libpretixsync.db.NonceGenerator
 import eu.pretix.libpretixsync.db.QuestionLike
-import eu.pretix.libpretixsync.db.QueuedCheckIn
 import eu.pretix.libpretixsync.models.CheckIn
 import eu.pretix.libpretixsync.models.Event
 import eu.pretix.libpretixsync.models.Order as OrderModel
 import eu.pretix.libpretixsync.models.OrderPosition as OrderPositionModel
 import eu.pretix.libpretixsync.models.Question
+import eu.pretix.libpretixsync.models.QueuedCheckIn
 import eu.pretix.libpretixsync.models.db.toModel
 import eu.pretix.libpretixsync.sqldelight.SyncDatabase
 import eu.pretix.libpretixsync.utils.cleanInput
@@ -65,7 +66,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
 
         val dt = now()
         val jdoc = JSONObject()
-        jdoc.put("datetime", QueuedCheckIn.formatDatetime(dt.toDate()))
+        jdoc.put("datetime", AbstractQueuedCheckIn.formatDatetime(dt.toDate()))
         if (raw_barcode.contains(Regex("[\\p{C}]"))) {
             jdoc.put("raw_barcode", "binary:" + Base64.encodeBase64(raw_barcode.toByteArray(Charset.defaultCharset())).toString(Charset.defaultCharset()))
         } else {
@@ -374,11 +375,11 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
         res.isRequireAttention = require_attention || (variation?.isCheckin_attention == true)
         res.checkinTexts = listOfNotNull(variation?.checkin_text?.trim(), item.checkInText?.trim()).filterNot { it.isBlank() }.filterNot { it.isBlank() || it == "null" }
 
-        val queuedCheckIns = dataStore.select(QueuedCheckIn::class.java)
-                .where(QueuedCheckIn.SECRET.eq(ticketid))
-                .get().toList().filter {
-                    it.getCheckinListId() == listId
-                }.sortedWith(compareBy({ it.fullDatetime }, { it.id }))
+        val queuedCheckIns = db.queuedCheckInQueries.selectBySecret(ticketid)
+            .executeAsList()
+            .filter { it.checkinListId == listId }
+            .map { it.toModel() }
+            .sortedWith(compareBy({ it.dateTime }, { it.id }))
 
         val rules = list.rules
         if (type == TicketCheckProvider.CheckInType.ENTRY && rules != null && rules.length() > 0) {
@@ -430,7 +431,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
             }
             data.put("minutes_since_last_entry", minutes_since_entries.minOrNull() ?: -1)
             data.put("minutes_since_first_entry", minutes_since_entries.maxOrNull() ?: -1)
-            data.put("entry_status", if (queuedCheckIns.lastOrNull()?.getType() == "entry") {
+            data.put("entry_status", if (queuedCheckIns.lastOrNull()?.type == "entry") {
                 "present"
             } else {
                 "absent"
@@ -515,20 +516,18 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
             } else {
                 res.isCheckinAllowed = true
                 res.type = TicketCheckProvider.CheckResult.Type.VALID
-                val qci = QueuedCheckIn()
-                if (nonce != null) {
-                    qci.setNonce(nonce)
-                } else {
-                    qci.generateNonce()
-                }
-                qci.setSecret(ticketid)
-                qci.setDatetime(dt.toDate())
-                qci.setDatetime_string(QueuedCheckIn.formatDatetime(dt.toDate()))
-                qci.setAnswers(givenAnswers.toString())
-                qci.setEvent_slug(eventSlug)
-                qci.setType(type.toString().lowercase(Locale.getDefault()))
-                qci.setCheckinListId(listId)
-                dataStore.insert(qci)
+
+                db.queuedCheckInQueries.insert(
+                    answers = givenAnswers.toString(),
+                    checkinListId = listId,
+                    datetime = dt.toDate(),
+                    datetime_string = AbstractQueuedCheckIn.formatDatetime(dt.toDate()),
+                    event_slug = eventSlug,
+                    nonce = nonce ?: NonceGenerator.nextNonce(),
+                    secret = ticketid,
+                    source_type = null,
+                    type = type.toString().lowercase(Locale.getDefault()),
+                )
             }
         }
         return res
@@ -925,27 +924,26 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
             } else {
                 res.isCheckinAllowed = true
                 res.type = TicketCheckProvider.CheckResult.Type.VALID
-                val qci = QueuedCheckIn()
-                if (nonce != null) {
-                    qci.setNonce(nonce)
-                } else {
-                    qci.generateNonce()
-                }
-                qci.setSecret(position.secret)
-                qci.setDatetime(dt.toDate())
-                qci.setDatetime_string(QueuedCheckIn.formatDatetime(dt.toDate()))
-                qci.setAnswers(givenAnswers.toString())
-                qci.setEvent_slug(eventSlug)
-                qci.setType(type.toString().lowercase(Locale.getDefault()))
-                qci.setCheckinListId(listId)
-                dataStore.insert(qci)
+
+                db.queuedCheckInQueries.insert(
+                    answers = givenAnswers.toString(),
+                    checkinListId = listId,
+                    datetime = dt.toDate(),
+                    datetime_string = AbstractQueuedCheckIn.formatDatetime(dt.toDate()),
+                    event_slug = eventSlug,
+                    nonce = nonce ?: NonceGenerator.nextNonce(),
+                    secret = position.secret,
+                    source_type = null,
+                    type = type.toString().lowercase(Locale.getDefault()),
+                )
+
                 db.checkInQueries.insert(
                     server_id = null,
                     listId = listId,
                     position = position.id,
                     type = type.toString().lowercase(Locale.getDefault()),
                     datetime = dt.toDate(),
-                    json_data = "{\"local\": true, \"type\": \"${type.toString().lowercase(Locale.getDefault())}\", \"datetime\": \"${QueuedCheckIn.formatDatetime(dt.toDate())}\"}",
+                    json_data = "{\"local\": true, \"type\": \"${type.toString().lowercase(Locale.getDefault())}\", \"datetime\": \"${AbstractQueuedCheckIn.formatDatetime(dt.toDate())}\"}",
                 )
             }
         }
@@ -1091,10 +1089,10 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
             sr.positionId = position.positionId
             sr.secret = position.secret
 
-            val queuedCheckIns = dataStore.count(QueuedCheckIn::class.java)
-                    .where(QueuedCheckIn.SECRET.eq(position.secret))
-                    .and(QueuedCheckIn.CHECKIN_LIST_ID.`in`(eventsAndCheckinLists.values.toList()))
-                    .get().value().toLong()
+            val queuedCheckIns = db.queuedCheckInQueries.countForSecretAndLists(
+                secret = position.secret,
+                checkin_list_ids = eventsAndCheckinLists.values.toList(),
+            ).executeAsOne()
             val checkIns = db.checkInQueries.selectByPositionId(position.id).executeAsList().map { it.toModel() }
             var is_checked_in = queuedCheckIns > 0
             for (ci in checkIns) {
@@ -1261,4 +1259,8 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
                 DateTime(date)
             }
         }
+
+    // Replicates the behaviour of AbstractQueuedCheckIn.getFullDatetime()
+    private val QueuedCheckIn.fullDatetime : Date
+        get() = DateTime(this.dateTime.toInstant().toEpochMilli()).toDate()
 }

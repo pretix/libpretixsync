@@ -1,0 +1,50 @@
+selectAll:
+SELECT *
+FROM QueuedCheckIn;
+
+selectById:
+SELECT *
+FROM QueuedCheckIn
+WHERE id = ?;
+
+selectBySecret:
+SELECT *
+FROM QueuedCheckIn
+WHERE secret = ?;
+
+count:
+SELECT COUNT(*)
+FROM QueuedCheckIn;
+
+countForSecretAndLists:
+SELECT COUNT(*)
+FROM QueuedCheckIn
+WHERE secret = :secret AND checkinListId IN :checkin_list_ids;
+
+delete:
+DELETE FROM QueuedCheckIn
+WHERE id = ?;
+
+insert:
+INSERT INTO QueuedCheckIn (
+    answers,
+    checkinListId,
+    datetime,
+    datetime_string,
+    event_slug,
+    nonce,
+    secret,
+    source_type,
+    type
+)
+VALUES (
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?
+);

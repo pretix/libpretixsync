@@ -2,7 +2,6 @@ package eu.pretix.libpretixsync.check
 
 import eu.pretix.libpretixsync.db.Answer
 import eu.pretix.libpretixsync.db.BaseDatabaseTest
-import eu.pretix.libpretixsync.db.QueuedCheckIn
 import eu.pretix.libpretixsync.sync.CheckInListSyncAdapter
 import eu.pretix.libpretixsync.sync.EventSyncAdapter
 import eu.pretix.libpretixsync.sync.ItemSyncAdapter
@@ -86,9 +85,9 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         assertEquals("Casey Flores", r.attendee_name)
         assertEquals(true, r.isRequireAttention)
 
-        val qciList = dataStore.select(QueuedCheckIn::class.java).get().toList()
+        val qciList = db.queuedCheckInQueries.selectAll().executeAsList()
         assertEquals(1, qciList.size.toLong())
-        assertEquals("kfndgffgyw4tdgcacx6bb3bgemq69cxj", qciList[0].getSecret())
+        assertEquals("kfndgffgyw4tdgcacx6bb3bgemq69cxj", qciList[0].secret)
     }
 
     @Test
@@ -243,7 +242,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
         r = p!!.check(mapOf("demo" to 2L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj")
         assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
-        assertEquals(dataStore.count(QueuedCheckIn::class.java).get().value(), 2)
+        assertEquals(db.queuedCheckInQueries.count().executeAsOne(), 2L)
         assertEquals(db.checkInQueries.testCountByOrderPositionSecret("kfndgffgyw4tdgcacx6bb3bgemq69cxj").executeAsOne(), 3L)
 
     }
@@ -256,8 +255,8 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
         r = p!!.check(mapOf("demo" to 1L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj", "barcode", null, false, false, TicketCheckProvider.CheckInType.EXIT)
         assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
-        assertEquals(dataStore.count(QueuedCheckIn::class.java).get().value(), 3)
-        assertEquals(dataStore.select(QueuedCheckIn::class.java).get().toList().last().getType(), "exit")
+        assertEquals(db.queuedCheckInQueries.count().executeAsOne(), 3L)
+        assertEquals(db.queuedCheckInQueries.selectAll().executeAsList().last().type, "exit")
     }
 
     @Test
@@ -271,7 +270,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
         r = p!!.check(mapOf("demo" to 1L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj", "barcode", null, false, false, TicketCheckProvider.CheckInType.ENTRY)
         assertEquals(TicketCheckProvider.CheckResult.Type.USED, r.type)
-        assertEquals(dataStore.count(QueuedCheckIn::class.java).get().value(), 3)
+        assertEquals(db.queuedCheckInQueries.count().executeAsOne(), 3L)
     }
 
     @Test
@@ -282,28 +281,28 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
         r = p!!.check(mapOf("demo" to 3L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj", "barcode", null, false, false, TicketCheckProvider.CheckInType.ENTRY)
         assertEquals(TicketCheckProvider.CheckResult.Type.USED, r.type)
-        assertEquals(dataStore.count(QueuedCheckIn::class.java).get().value(), 2)
+        assertEquals(db.queuedCheckInQueries.count().executeAsOne(), 2L)
     }
 
     @Test
     fun testAddonMatchDisabled() {
         val r = p!!.check(mapOf("demo" to 5L), "XwBltvZO50PKtygKtlIHgAFAxmhtDlzK")
         assertEquals(TicketCheckProvider.CheckResult.Type.PRODUCT, r.type)
-        assertEquals(dataStore.count(QueuedCheckIn::class.java).get().value(), 0)
+        assertEquals(db.queuedCheckInQueries.count().executeAsOne(), 0L)
     }
 
     @Test
     fun testAddonMatchValid() {
         val r = p!!.check(mapOf("demo" to 3L), "XwBltvZO50PKtygKtlIHgAFAxmhtDlzK")
         assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
-        assertEquals(dataStore.count(QueuedCheckIn::class.java).get().value(), 1)
+        assertEquals(db.queuedCheckInQueries.count().executeAsOne(), 1L)
     }
 
     @Test
     fun testAddonMatchAmbiguous() {
         val r = p!!.check(mapOf("demo" to 4L), "XwBltvZO50PKtygKtlIHgAFAxmhtDlzK")
         assertEquals(TicketCheckProvider.CheckResult.Type.AMBIGUOUS, r.type)
-        assertEquals(dataStore.count(QueuedCheckIn::class.java).get().value(), 0)
+        assertEquals(db.queuedCheckInQueries.count().executeAsOne(), 0L)
     }
 
     private fun setRuleOnList2(r: String) {
@@ -332,27 +331,27 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
     @Test
     fun testRulesProduct() {
         setRuleOnList2("{\n" +
-                "        \"inList\": [\n" +
-                "            {\"var\": \"product\"}, {\n" +
-                "                \"objectList\": [\n" +
-                "                    {\"lookup\": [\"product\", \"2\", \"Ticket\"]}\n" +
-                "                ]\n" +
-                "            }\n" +
-                "        ]\n" +
-                "    }")
+            "        \"inList\": [\n" +
+            "            {\"var\": \"product\"}, {\n" +
+            "                \"objectList\": [\n" +
+            "                    {\"lookup\": [\"product\", \"2\", \"Ticket\"]}\n" +
+            "                ]\n" +
+            "            }\n" +
+            "        ]\n" +
+            "    }")
         var r = p!!.check(mapOf("demo" to 2L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj")
         assertEquals(TicketCheckProvider.CheckResult.Type.RULES, r.type)
 
         setRuleOnList2("{\n" +
-                "        \"inList\": [\n" +
-                "            {\"var\": \"product\"}, {\n" +
-                "                \"objectList\": [\n" +
-                "                    {\"lookup\": [\"product\", \"1\", \"Ticket\"]},\n" +
-                "                    {\"lookup\": [\"product\", \"2\", \"Ticket\"]}\n" +
-                "                ]\n" +
-                "            }\n" +
-                "        ]\n" +
-                "    }")
+            "        \"inList\": [\n" +
+            "            {\"var\": \"product\"}, {\n" +
+            "                \"objectList\": [\n" +
+            "                    {\"lookup\": [\"product\", \"1\", \"Ticket\"]},\n" +
+            "                    {\"lookup\": [\"product\", \"2\", \"Ticket\"]}\n" +
+            "                ]\n" +
+            "            }\n" +
+            "        ]\n" +
+            "    }")
         r = p!!.check(mapOf("demo" to 2L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj")
         assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
     }
@@ -360,27 +359,27 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
     @Test
     fun testRulesVariation() {
         setRuleOnList2("{\n" +
-                "        \"inList\": [\n" +
-                "            {\"var\": \"variation\"}, {\n" +
-                "                \"objectList\": [\n" +
-                "                    {\"lookup\": [\"variation\", \"3\", \"Ticket\"]}\n" +
-                "                ]\n" +
-                "            }\n" +
-                "        ]\n" +
-                "    }")
+            "        \"inList\": [\n" +
+            "            {\"var\": \"variation\"}, {\n" +
+            "                \"objectList\": [\n" +
+            "                    {\"lookup\": [\"variation\", \"3\", \"Ticket\"]}\n" +
+            "                ]\n" +
+            "            }\n" +
+            "        ]\n" +
+            "    }")
         var r = p!!.check(mapOf("demo" to 2L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj")
         assertEquals(TicketCheckProvider.CheckResult.Type.RULES, r.type)
 
         setRuleOnList2("{\n" +
-                "        \"inList\": [\n" +
-                "            {\"var\": \"variation\"}, {\n" +
-                "                \"objectList\": [\n" +
-                "                    {\"lookup\": [\"variation\", \"3\", \"Ticket\"]},\n" +
-                "                    {\"lookup\": [\"variation\", \"2\", \"Ticket\"]}\n" +
-                "                ]\n" +
-                "            }\n" +
-                "        ]\n" +
-                "    }")
+            "        \"inList\": [\n" +
+            "            {\"var\": \"variation\"}, {\n" +
+            "                \"objectList\": [\n" +
+            "                    {\"lookup\": [\"variation\", \"3\", \"Ticket\"]},\n" +
+            "                    {\"lookup\": [\"variation\", \"2\", \"Ticket\"]}\n" +
+            "                ]\n" +
+            "            }\n" +
+            "        ]\n" +
+            "    }")
         r = p!!.check(mapOf("demo" to 2L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj")
         assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
     }
@@ -388,14 +387,14 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
     @Test
     fun testRulesGate() {
         setRuleOnList2("{\n" +
-                "        \"inList\": [\n" +
-                "            {\"var\": \"gate\"}, {\n" +
-                "                \"objectList\": [\n" +
-                "                    {\"lookup\": [\"gate\", \"1\", \"Gate 1\"]},\n" +
-                "                ]\n" +
-                "            }\n" +
-                "        ]\n" +
-                "    }")
+            "        \"inList\": [\n" +
+            "            {\"var\": \"gate\"}, {\n" +
+            "                \"objectList\": [\n" +
+            "                    {\"lookup\": [\"gate\", \"1\", \"Gate 1\"]},\n" +
+            "                ]\n" +
+            "            }\n" +
+            "        ]\n" +
+            "    }")
         configStore!!.deviceKnownGateID = 0
         var r = p!!.check(mapOf("demo" to 2L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj")
         assertEquals(TicketCheckProvider.CheckResult.Type.RULES, r.type)
@@ -408,15 +407,15 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         assertEquals(TicketCheckProvider.CheckResult.Type.RULES, r.type)
 
         setRuleOnList2("{\n" +
-                "        \"inList\": [\n" +
-                "            {\"var\": \"gate\"}, {\n" +
-                "                \"objectList\": [\n" +
-                "                    {\"lookup\": [\"gate\", \"1\", \"Gate 1\"]},\n" +
-                "                    {\"lookup\": [\"gate\", \"2\", \"Gate 2\"]},\n" +
-                "                ]\n" +
-                "            }\n" +
-                "        ]\n" +
-                "    }")
+            "        \"inList\": [\n" +
+            "            {\"var\": \"gate\"}, {\n" +
+            "                \"objectList\": [\n" +
+            "                    {\"lookup\": [\"gate\", \"1\", \"Gate 1\"]},\n" +
+            "                    {\"lookup\": [\"gate\", \"2\", \"Gate 2\"]},\n" +
+            "                ]\n" +
+            "            }\n" +
+            "        ]\n" +
+            "    }")
         r = p!!.check(mapOf("demo" to 2L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj")
         assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
         r = p!!.check(mapOf("demo" to 2L), "E4BibyTSylQOgeKjuMPiTDxi5HXPuTVsx1qCli3IL0143gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKAEAPAQA")
@@ -441,11 +440,11 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
     @Test
     fun testRulesEntryStatus() {
         setRuleOnList2("{\n" +
-                "        \"or\": [\n" +
-                "            {\"==\": [{\"var\": \"entry_status\"}, \"absent\"]},\n" +
-                "            {\"<\": [{\"var\": \"entries_number\"}, 1]}\n" +
-                "        ]\n" +
-                "    }")
+            "        \"or\": [\n" +
+            "            {\"==\": [{\"var\": \"entry_status\"}, \"absent\"]},\n" +
+            "            {\"<\": [{\"var\": \"entries_number\"}, 1]}\n" +
+            "        ]\n" +
+            "    }")
         var r = p!!.check(mapOf("demo" to 2L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj")
         assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
         r = p!!.check(mapOf("demo" to 2L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj")
@@ -532,14 +531,14 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
         // Ticket is valid once before X and once after X
         setRuleOnList2("{\n" +
-                "        \"or\": [\n" +
-                "            {\"<=\": [{\"var\": \"entries_number\"}, 0]},\n" +
-                "            {\"and\": [\n" +
-                "                {\"isAfter\": [{\"var\": \"now\"}, {\"buildTime\": [\"custom\", \"2020-01-01T23:00:00.000+01:00\"]}, 0]},\n" +
-                "                {\"<=\": [{\"entries_since\": [{\"buildTime\": [\"custom\", \"2020-01-01T23:00:00.000+01:00\"]}]}, 0]},\n" +
-                "            ]},\n" +
-                "        ],\n" +
-                "    }")
+            "        \"or\": [\n" +
+            "            {\"<=\": [{\"var\": \"entries_number\"}, 0]},\n" +
+            "            {\"and\": [\n" +
+            "                {\"isAfter\": [{\"var\": \"now\"}, {\"buildTime\": [\"custom\", \"2020-01-01T23:00:00.000+01:00\"]}, 0]},\n" +
+            "                {\"<=\": [{\"entries_since\": [{\"buildTime\": [\"custom\", \"2020-01-01T23:00:00.000+01:00\"]}]}, 0]},\n" +
+            "            ]},\n" +
+            "        ],\n" +
+            "    }")
 
         p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2020-01-01T21:00:00.000Z"))
 
@@ -564,14 +563,14 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
         // Ticket is valid once before X and once after X
         setRuleOnList2("{\n" +
-                "        \"or\": [\n" +
-                "            {\"<=\": [{\"var\": \"entries_today\"}, 0]},\n" +
-                "            {\"and\": [\n" +
-                "                {\"isAfter\": [{\"var\": \"now\"}, {\"buildTime\": [\"customtime\", \"23:00:00\"]}, 0]},\n" +
-                "                {\"<=\": [{\"entries_since\": [{\"buildTime\": [\"customtime\", \"23:00:00\"]}]}, 0]},\n" +
-                "            ]},\n" +
-                "        ],\n" +
-                "    }")
+            "        \"or\": [\n" +
+            "            {\"<=\": [{\"var\": \"entries_today\"}, 0]},\n" +
+            "            {\"and\": [\n" +
+            "                {\"isAfter\": [{\"var\": \"now\"}, {\"buildTime\": [\"customtime\", \"23:00:00\"]}, 0]},\n" +
+            "                {\"<=\": [{\"entries_since\": [{\"buildTime\": [\"customtime\", \"23:00:00\"]}]}, 0]},\n" +
+            "            ]},\n" +
+            "        ],\n" +
+            "    }")
 
         val times = listOf(
             "2020-01-01T22:00:00.000+09:00",
@@ -597,14 +596,14 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
         // Ticket is valid after 23:00 only if people already showed up before
         setRuleOnList2("{\n" +
-                "        \"or\": [\n" +
-                "            {\"isBefore\": [{\"var\": \"now\"}, {\"buildTime\": [\"custom\", \"2020-01-01T23:00:00.000+01:00\"]}, 0]},\n" +
-                "            {\"and\": [\n" +
-                "                {\"isAfter\": [{\"var\": \"now\"}, {\"buildTime\": [\"custom\", \"2020-01-01T23:00:00.000+01:00\"]}, 0]},\n" +
-                "                {\">=\": [{\"entries_before\": [{\"buildTime\": [\"custom\", \"2020-01-01T23:00:00.000+01:00\"]}]}, 1]},\n" +
-                "            ]},\n" +
-                "        ],\n" +
-                "    }")
+            "        \"or\": [\n" +
+            "            {\"isBefore\": [{\"var\": \"now\"}, {\"buildTime\": [\"custom\", \"2020-01-01T23:00:00.000+01:00\"]}, 0]},\n" +
+            "            {\"and\": [\n" +
+            "                {\"isAfter\": [{\"var\": \"now\"}, {\"buildTime\": [\"custom\", \"2020-01-01T23:00:00.000+01:00\"]}, 0]},\n" +
+            "                {\">=\": [{\"entries_before\": [{\"buildTime\": [\"custom\", \"2020-01-01T23:00:00.000+01:00\"]}]}, 1]},\n" +
+            "            ]},\n" +
+            "        ],\n" +
+            "    }")
 
         p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2020-01-01T21:00:00.000Z"))
 
@@ -628,17 +627,17 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
         // Ticket is valid once before X and on one day after X
         setRuleOnList2("{" +
-                "        \"or\": [\n" +
-                "            {\"<=\": [{\"var\": \"entries_number\"}, 0]},\n" +
-                "            {\"and\": [\n" +
-                "                {\"isAfter\": [{\"var\": \"now\"}, {\"buildTime\": [\"custom\", \"2020-01-01T23:00:00.000+01:00\"]}, 0]},\n" +
-                "                {\"or\": [\n" +
-                "                    {\">\": [{\"var\": \"entries_today\"}, 0]},\n" +
-                "                    {\"<=\": [{\"entries_days_since\": [{\"buildTime\": [\"custom\", \"2020-01-01T23:00:00.000+01:00\"]}]}, 0]},\n" +
-                "                ]}\n" +
-                "            ]},\n" +
-                "        ],\n" +
-                "    }")
+            "        \"or\": [\n" +
+            "            {\"<=\": [{\"var\": \"entries_number\"}, 0]},\n" +
+            "            {\"and\": [\n" +
+            "                {\"isAfter\": [{\"var\": \"now\"}, {\"buildTime\": [\"custom\", \"2020-01-01T23:00:00.000+01:00\"]}, 0]},\n" +
+            "                {\"or\": [\n" +
+            "                    {\">\": [{\"var\": \"entries_today\"}, 0]},\n" +
+            "                    {\"<=\": [{\"entries_days_since\": [{\"buildTime\": [\"custom\", \"2020-01-01T23:00:00.000+01:00\"]}]}, 0]},\n" +
+            "                ]}\n" +
+            "            ]},\n" +
+            "        ],\n" +
+            "    }")
 
         p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2020-01-01T21:00:00.000Z"))
 
@@ -668,14 +667,14 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
         // Ticket is valid after 23:00 only if people already showed up on two days before
         setRuleOnList2("{" +
-                "        \"or\": [\n" +
-                "            {\"isBefore\": [{\"var\": \"now\"}, {\"buildTime\": [\"custom\", \"2020-01-01T23:00:00.000+01:00\"]}, 0]},\n" +
-                "            {\"and\": [\n" +
-                "                {\"isAfter\": [{\"var\": \"now\"}, {\"buildTime\": [\"custom\", \"2020-01-01T23:00:00.000+01:00\"]}, 0]},\n" +
-                "                {\">=\": [{\"entries_days_before\": [{\"buildTime\": [\"custom\", \"2020-01-01T23:00:00.000+01:00\"]}]}, 2]},\n" +
-                "            ]},\n" +
-                "        ],\n" +
-                "    }")
+            "        \"or\": [\n" +
+            "            {\"isBefore\": [{\"var\": \"now\"}, {\"buildTime\": [\"custom\", \"2020-01-01T23:00:00.000+01:00\"]}, 0]},\n" +
+            "            {\"and\": [\n" +
+            "                {\"isAfter\": [{\"var\": \"now\"}, {\"buildTime\": [\"custom\", \"2020-01-01T23:00:00.000+01:00\"]}, 0]},\n" +
+            "                {\">=\": [{\"entries_days_before\": [{\"buildTime\": [\"custom\", \"2020-01-01T23:00:00.000+01:00\"]}]}, 2]},\n" +
+            "            ]},\n" +
+            "        ],\n" +
+            "    }")
 
         p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2019-12-30T21:00:00.000Z"))
 
@@ -936,10 +935,10 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         r = p!!.check(mapOf("demo" to 1L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj", "barcode", answers, false, false, TicketCheckProvider.CheckInType.ENTRY)
         assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
 
-        val qciList = dataStore.select(QueuedCheckIn::class.java).get().toList()
+        val qciList = db.queuedCheckInQueries.selectAll().executeAsList()
         assertEquals(1, qciList.size.toLong())
-        assertEquals("kfndgffgyw4tdgcacx6bb3bgemq69cxj", qciList[0].getSecret())
-        assertEquals("[{\"answer\":\"True\",\"question\":1}]", qciList[0].getAnswers())
+        assertEquals("kfndgffgyw4tdgcacx6bb3bgemq69cxj", qciList[0].secret)
+        assertEquals("[{\"answer\":\"True\",\"question\":1}]", qciList[0].answers)
     }
 
     @Test
@@ -959,7 +958,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         r = p!!.check(mapOf("demo" to 1L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj", "barcode", answers, false, false, TicketCheckProvider.CheckInType.ENTRY)
         assertEquals(TicketCheckProvider.CheckResult.Type.ANSWERS_REQUIRED, r.type)
 
-        val qciList = dataStore.select(QueuedCheckIn::class.java).get().toList()
+        val qciList = db.queuedCheckInQueries.selectAll().executeAsList()
         assertEquals(0, qciList.size.toLong())
     }
 
@@ -1029,7 +1028,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
     fun testSignedAndValid() {
         val r = p!!.check(mapOf("demo" to 1L), "E4BibyTSylQOgeKjuMPiTDxi5HXPuTVsx1qCli3IL0143gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKAEAPAQA")
         assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
-        assertEquals(dataStore.count(QueuedCheckIn::class.java).get().value(), 1)
+        assertEquals(db.queuedCheckInQueries.count().executeAsOne(), 1L)
     }
 
     @Test
@@ -1044,7 +1043,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
         val r2 = p2.check(mapOf("demo" to 1L), "Ok4EsqDRCr2cL6yDRtqeP7j5Usr1Vj1Db7J0izOuRGx6Qn0BS1ISW2nxlW8PXkYRk7PJhIBmsK1V1ucq5obBoBAMG4p9jCPKBAheRdFV0REVDZUCKAEAVAQA")
         assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r2.type)
-        assertEquals(dataStore.count(QueuedCheckIn::class.java).get().value(), 1)
+        assertEquals(db.queuedCheckInQueries.count().executeAsOne(), 1L)
     }
 
     @Test
@@ -1059,7 +1058,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
         val r2 = p2.check(mapOf("demo" to 1L), "EU9dJn3k5jzwfY4JQAKrTOVFmo+BvZKwH6UAIFOz3XTxABa7tmjU5UoLD8hJr3440uY7IFEHzau1DVk0sP994bgnzLNswAAKBARdUdGMmNVSHVUCKAEAVAQA")
         assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r2.type)
-        assertEquals(dataStore.count(QueuedCheckIn::class.java).get().value(), 1)
+        assertEquals(db.queuedCheckInQueries.count().executeAsOne(), 1L)
     }
 
     @Test
@@ -1074,7 +1073,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
         val r = p!!.check(mapOf("demo" to 1L), "E4BibyTSylQOgeKjuMPiTDxi5HXPuTVsx1qCli3IL0143gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKAEAPAQA")
         assertEquals(TicketCheckProvider.CheckResult.Type.REVOKED, r.type)
-        assertEquals(dataStore.count(QueuedCheckIn::class.java).get().value(), 0)
+        assertEquals(db.queuedCheckInQueries.count().executeAsOne(), 0L)
     }
 
     @Test
@@ -1090,21 +1089,21 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
         val r = p!!.check(mapOf("demo" to 1L), "E4BibyTSylQOgeKjuMPiTDxi5HXPuTVsx1qCli3IL0143gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKAEAPAQA")
         assertEquals(TicketCheckProvider.CheckResult.Type.BLOCKED, r.type)
-        assertEquals(dataStore.count(QueuedCheckIn::class.java).get().value(), 0)
+        assertEquals(db.queuedCheckInQueries.count().executeAsOne(), 0L)
     }
 
     @Test
     fun testSignedUnknownProduct() {
         val r = p!!.check(mapOf("demo" to 1L), "OUmw2Ro3YOMQ4ktAlAIsDVe4Xsr1KXla/0SZVN34qIZWtUX0hx1DXDHxaCatGTNzOeCMjHQABR5E6ESCOOx1g7AIkBhVkdDdJJTVSZWCKAEAPAQA")
         assertEquals(TicketCheckProvider.CheckResult.Type.ERROR, r.type)
-        assertEquals(dataStore.count(QueuedCheckIn::class.java).get().value(), 0)
+        assertEquals(db.queuedCheckInQueries.count().executeAsOne(), 0L)
     }
 
     @Test
     fun testSignedInvalidSignature() {
         val r = p!!.check(mapOf("demo" to 1L), "EFAKEyTSylQOgeKjuMPiTDxi5HXPuTVsx1qCli3IL0143gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKAEAPAQA")
         assertEquals(TicketCheckProvider.CheckResult.Type.INVALID, r.type)
-        assertEquals(dataStore.count(QueuedCheckIn::class.java).get().value(), 0)
+        assertEquals(db.queuedCheckInQueries.count().executeAsOne(), 0L)
     }
 
     @Test
@@ -1148,9 +1147,9 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
     fun testSignedMultipleLists() {
         var r = p!!.check(mapOf("demo2" to 7L), "E4BibyTSylQOgeKjuMPiTDxi5HXPuTVsx1qCli3IL0143gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKAEAPAQA")
         assertEquals(TicketCheckProvider.CheckResult.Type.INVALID, r.type)
-        assertEquals(dataStore.count(QueuedCheckIn::class.java).get().value(), 0)
+        assertEquals(db.queuedCheckInQueries.count().executeAsOne(), 0L)
         r = p!!.check(mapOf("demo2" to 7L, "demo" to 1L), "E4BibyTSylQOgeKjuMPiTDxi5HXPuTVsx1qCli3IL0143gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKAEAPAQA")
         assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
-        assertEquals(dataStore.count(QueuedCheckIn::class.java).get().value(), 1)
+        assertEquals(db.queuedCheckInQueries.count().executeAsOne(), 1L)
     }
 }
