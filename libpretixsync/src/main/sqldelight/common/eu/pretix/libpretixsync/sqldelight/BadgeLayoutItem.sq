@@ -3,6 +3,12 @@ SELECT *
 FROM BadgeLayoutItem
 WHERE item = :item_id;
 
+selectByEventSlug:
+SELECT BadgeLayoutItem.*
+FROM BadgeLayoutItem
+LEFT JOIN BadgeLayout ON BadgeLayoutItem.layout = BadgeLayout.id
+WHERE BadgeLayout.event_slug = ?;
+
 selectServerIdsByEventSlug:
 SELECT BadgeLayoutItem.server_id
 FROM BadgeLayoutItem
