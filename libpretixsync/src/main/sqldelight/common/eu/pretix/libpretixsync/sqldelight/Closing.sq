@@ -8,6 +8,13 @@ SELECT *
 FROM Closing
 WHERE server_id = ?;
 
+selectClosedWithoutServerId:
+SELECT *
+FROM Closing
+WHERE
+    open = FALSE
+    AND server_id IS NULL;
+
 insert:
 INSERT INTO Closing (
     cash_counted,
@@ -40,3 +47,9 @@ INSERT INTO Closing (
     ?,
     ?
 );
+
+updateServerId:
+UPDATE Closing
+SET
+    server_id = ?
+WHERE id = ?;
