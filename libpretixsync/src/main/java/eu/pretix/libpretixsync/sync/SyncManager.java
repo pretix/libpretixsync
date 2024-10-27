@@ -7,6 +7,7 @@ import eu.pretix.libpretixsync.sqldelight.Closing;
 import eu.pretix.libpretixsync.sqldelight.ClosingExtensionsKt;
 import eu.pretix.libpretixsync.sqldelight.QueuedCall;
 import eu.pretix.libpretixsync.sqldelight.QueuedCheckIn;
+import eu.pretix.libpretixsync.sqldelight.QueuedOrder;
 import eu.pretix.libpretixsync.sqldelight.SyncDatabase;
 import eu.pretix.libpretixsync.utils.JSONUtils;
 import io.requery.sql.StatementExecutionException;
@@ -22,7 +23,6 @@ import java.util.concurrent.ExecutionException;
 import eu.pretix.libpretixsync.SentryInterface;
 import eu.pretix.libpretixsync.config.ConfigStore;
 import eu.pretix.libpretixsync.db.Answer;
-import eu.pretix.libpretixsync.db.QueuedOrder;
 import eu.pretix.libpretixsync.db.Receipt;
 import eu.pretix.libpretixsync.db.ReceiptLine;
 import eu.pretix.libpretixsync.db.ReceiptPayment;
@@ -617,10 +617,7 @@ public class SyncManager {
     protected void uploadOrders(ProgressFeedback feedback) throws SyncException {
         sentry.addBreadcrumb("sync.queue", "Start order upload");
 
-        List<QueuedOrder> orders = dataStore.select(QueuedOrder.class)
-                .where(QueuedOrder.ERROR.isNull())
-                .and(QueuedOrder.LOCKED.eq(false))
-                .get().toList();
+        List<QueuedOrder> orders = db.getQueuedOrderQueries().selectUnlockedWithoutError().executeAsList();
 
         try {
             int i = 0;
@@ -630,8 +627,7 @@ public class SyncManager {
                 }
                 i++;
 
-                qo.setLocked(true);
-                dataStore.update(qo, QueuedOrder.LOCKED);
+                db.getQueuedOrderQueries().lock(qo.getId());
                 Long startedAt = System.currentTimeMillis();
                 PretixApi.ApiResponse resp = api.postResource(
                         api.eventResourceUrl(qo.getEvent_slug(), "orders") + "?pdf_data=true&force=true",
@@ -639,18 +635,15 @@ public class SyncManager {
                         qo.getIdempotency_key()
                 );
                 if (resp.getResponse().code() == 201) {
-                    Receipt r = qo.getReceipt();
-                    r.setOrder_code(resp.getData().getString("code"));
-                    dataStore.update(r, Receipt.ORDER_CODE);
-                    dataStore.delete(qo);
+                    db.getReceiptQueries().updateOrderCode(resp.getData().getString("code"), qo.getReceipt());
+                    db.getQueuedOrderQueries().delete(qo.getId());
                     (new OrderSyncAdapter(db, fileStorage, qo.getEvent_slug(), null, true, true, api, configStore.getSyncCycleId(), null)).standaloneRefreshFromJSON(resp.getData());
                     if (connectivityFeedback != null) {
                         connectivityFeedback.recordSuccess(System.currentTimeMillis() - startedAt);
                     }
                 } else if (resp.getResponse().code() == 400) {
                     // TODO: User feedback or log in some way?
-                    qo.setError(resp.getData().toString());
-                    dataStore.update(qo);
+                    db.getQueuedOrderQueries().updateError(resp.getData().toString(), qo.getId());
                 }
             }
         } catch (JSONException e) {

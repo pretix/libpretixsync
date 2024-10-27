@@ -56,3 +56,9 @@ VALUES (
     ?,
     ?
 );
+
+updateOrderCode:
+UPDATE Receipt
+SET
+    order_code = ?
+WHERE id = ?;
