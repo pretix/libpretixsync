@@ -3,6 +3,8 @@ package eu.pretix.libpretixsync.sync;
 import eu.pretix.libpretixsync.api.*;
 import eu.pretix.libpretixsync.models.Question;
 import eu.pretix.libpretixsync.models.db.QuestionExtensionsKt;
+import eu.pretix.libpretixsync.sqldelight.Closing;
+import eu.pretix.libpretixsync.sqldelight.ClosingExtensionsKt;
 import eu.pretix.libpretixsync.sqldelight.QueuedCall;
 import eu.pretix.libpretixsync.sqldelight.QueuedCheckIn;
 import eu.pretix.libpretixsync.sqldelight.SyncDatabase;
@@ -20,7 +22,6 @@ import java.util.concurrent.ExecutionException;
 import eu.pretix.libpretixsync.SentryInterface;
 import eu.pretix.libpretixsync.config.ConfigStore;
 import eu.pretix.libpretixsync.db.Answer;
-import eu.pretix.libpretixsync.db.Closing;
 import eu.pretix.libpretixsync.db.QueuedOrder;
 import eu.pretix.libpretixsync.db.Receipt;
 import eu.pretix.libpretixsync.db.ReceiptLine;
@@ -672,10 +673,7 @@ public class SyncManager {
     protected void uploadClosings(ProgressFeedback feedback) throws SyncException {
         sentry.addBreadcrumb("sync.queue", "Start closings upload");
 
-        List<Closing> closings = dataStore.select(Closing.class)
-                .where(Closing.OPEN.eq(false))
-                .and(Closing.SERVER_ID.isNull())
-                .get().toList();
+        List<Closing> closings = db.getClosingQueries().selectClosedWithoutServerId().executeAsList();
 
         try {
             int i = 0;
@@ -686,11 +684,10 @@ public class SyncManager {
                 i++;
                 PretixApi.ApiResponse response = api.postResource(
                         api.organizerResourceUrl("posdevices/" + configStore.getPosId() + "/closings"),
-                        closing.toJSON()
+                        ClosingExtensionsKt.toJSON(closing)
                 );
                 if (response.getResponse().code() == 201) {
-                    closing.setServer_id(response.getData().getLong("closing_id"));
-                    dataStore.update(closing);
+                    db.getClosingQueries().updateServerId(response.getData().getLong("closing_id"), closing.getId());
                 } else {
                     throw new SyncException(response.getData().toString());
                 }
