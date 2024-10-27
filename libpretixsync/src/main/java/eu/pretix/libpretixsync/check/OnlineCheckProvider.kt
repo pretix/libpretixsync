@@ -26,7 +26,6 @@ import java.util.*
 class OnlineCheckProvider(
     private val config: ConfigStore,
     httpClientFactory: HttpClientFactory?,
-    private val dataStore: BlockingEntityStore<Persistable>,
     private val db: SyncDatabase,
     private val fileStore: FileStorage,
     private val fallback: TicketCheckProvider? = null,

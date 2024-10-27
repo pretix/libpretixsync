@@ -32,7 +32,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
     fun setUpFakes() {
         configStore = FakeConfigStore()
         fakeApi = FakePretixApi()
-        p = AsyncCheckProvider(configStore!!, dataStore, db)
+        p = AsyncCheckProvider(configStore!!, db)
 
         EventSyncAdapter(db, "demo", "demo", fakeApi!!, "", null).standaloneRefreshFromJSON(jsonResource("events/event1.json"))
         EventSyncAdapter(db, "demo2", "demo2", fakeApi!!, "", null).standaloneRefreshFromJSON(jsonResource("events/event2.json"))
@@ -151,7 +151,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testSimpleValidUntil() {
-        val p2 = AsyncCheckProvider(configStore!!, dataStore, db)
+        val p2 = AsyncCheckProvider(configStore!!, db)
 
         p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2023-03-04T00:00:01.000Z"))
         var r = p2.check(mapOf("demo" to 1L), "dz4OBvVsTDSJ6T1nY1dD")
@@ -164,7 +164,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testSimpleValidFrom() {
-        val p2 = AsyncCheckProvider(configStore!!, dataStore, db)
+        val p2 = AsyncCheckProvider(configStore!!, db)
 
         p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2023-03-03T23:59:59.000Z"))
         var r = p2.check(mapOf("demo" to 1L), "uG3H4hgRYEIrw4YNclyH")
@@ -457,7 +457,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testRulesEntriesToday() {
-        val p2 = AsyncCheckProvider(configStore!!, dataStore, db)
+        val p2 = AsyncCheckProvider(configStore!!, db)
 
         p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2020-01-01T10:00:00.000Z"))
         setRuleOnList2("{\"<\": [{\"var\": \"entries_today\"}, 3]}")
@@ -491,7 +491,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testRulesEntriesDays() {
-        val p2 = AsyncCheckProvider(configStore!!, dataStore, db)
+        val p2 = AsyncCheckProvider(configStore!!, db)
 
         // Ticket is valid unlimited times, but only on two arbitrary days
         setRuleOnList2("{\"or\": [{\">\": [{\"var\": \"entries_today\"}, 0]}, {\"<\": [{\"var\": \"entries_days\"}, 2]}]}")
@@ -527,7 +527,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testRulesEntriesSince() {
-        val p2 = AsyncCheckProvider(configStore!!, dataStore, db)
+        val p2 = AsyncCheckProvider(configStore!!, db)
 
         // Ticket is valid once before X and once after X
         setRuleOnList2("{\n" +
@@ -559,7 +559,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testRulesEntriesSinceTimeOfDay() {
-        val p2 = AsyncCheckProvider(configStore!!, dataStore, db)
+        val p2 = AsyncCheckProvider(configStore!!, db)
 
         // Ticket is valid once before X and once after X
         setRuleOnList2("{\n" +
@@ -592,7 +592,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testRulesEntriesBefore() {
-        val p2 = AsyncCheckProvider(configStore!!, dataStore, db)
+        val p2 = AsyncCheckProvider(configStore!!, db)
 
         // Ticket is valid after 23:00 only if people already showed up before
         setRuleOnList2("{\n" +
@@ -623,7 +623,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testRulesEntriesDaysSince() {
-        val p2 = AsyncCheckProvider(configStore!!, dataStore, db)
+        val p2 = AsyncCheckProvider(configStore!!, db)
 
         // Ticket is valid once before X and on one day after X
         setRuleOnList2("{" +
@@ -663,7 +663,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testRulesEntriesDaysBefore() {
-        val p2 = AsyncCheckProvider(configStore!!, dataStore, db)
+        val p2 = AsyncCheckProvider(configStore!!, db)
 
         // Ticket is valid after 23:00 only if people already showed up on two days before
         setRuleOnList2("{" +
@@ -699,7 +699,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testRulesMinutesSinceLastEntry() {
-        val p2 = AsyncCheckProvider(configStore!!, dataStore, db)
+        val p2 = AsyncCheckProvider(configStore!!, db)
         setRuleOnList2("{\"or\": [{\"<=\": [{\"var\": \"minutes_since_last_entry\"}, -1]}, {\">\": [{\"var\": \"minutes_since_last_entry\"}, 180]}]}")
 
         p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2020-01-01T10:00:00.000Z"))
@@ -725,7 +725,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testRulesMinutesSinceFirstEntry() {
-        val p2 = AsyncCheckProvider(configStore!!, dataStore, db)
+        val p2 = AsyncCheckProvider(configStore!!, db)
         setRuleOnList2("{\"or\": [{\"<=\": [{\"var\": \"minutes_since_first_entry\"}, -1]}, {\"<\": [{\"var\": \"minutes_since_first_entry\"}, 180]}]}")
 
         p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2020-01-01T10:00:00.000Z"))
@@ -743,7 +743,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testRulesIsAfterTolerance() {
-        val p2 = AsyncCheckProvider(configStore!!, dataStore, db)
+        val p2 = AsyncCheckProvider(configStore!!, db)
 
         // Ticket is valid unlimited times, but only on two arbitrary days
         setRuleOnList2("{\"isAfter\": [{\"var\": \"now\"}, {\"buildTime\": [\"date_admission\"]}, 10]}")
@@ -763,7 +763,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testRulesIsAfterSubevent() {
-        val p2 = AsyncCheckProvider(configStore!!, dataStore, db)
+        val p2 = AsyncCheckProvider(configStore!!, db)
 
         // Ticket is valid unlimited times, but only on two arbitrary days
         setRuleOnList2("{\"isAfter\": [{\"var\": \"now\"}, {\"buildTime\": [\"date_admission\"]}, 10]}")
@@ -783,7 +783,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testRulesIsAfterNoTolerance() {
-        val p2 = AsyncCheckProvider(configStore!!, dataStore, db)
+        val p2 = AsyncCheckProvider(configStore!!, db)
 
         // Ticket is valid unlimited times, but only on two arbitrary days
         setRuleOnList2("{\"isAfter\": [{\"var\": \"now\"}, {\"buildTime\": [\"date_admission\"]}, null]}")
@@ -799,7 +799,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testRulesIsBeforeTolerance() {
-        val p2 = AsyncCheckProvider(configStore!!, dataStore, db)
+        val p2 = AsyncCheckProvider(configStore!!, db)
 
         // Ticket is valid unlimited times, but only on two arbitrary days
         setRuleOnList2("{\"isBefore\": [{\"var\": \"now\"}, {\"buildTime\": [\"date_to\"]}, 10]}")
@@ -815,7 +815,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testRulesIsBeforeNoTolerance() {
-        val p2 = AsyncCheckProvider(configStore!!, dataStore, db)
+        val p2 = AsyncCheckProvider(configStore!!, db)
 
         // Ticket is valid unlimited times, but only on two arbitrary days
         setRuleOnList2("{\"isBefore\": [{\"var\": \"now\"}, {\"buildTime\": [\"date_to\"]}]}")
@@ -831,7 +831,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testRulesIsAfterCustomDateTime() {
-        val p2 = AsyncCheckProvider(configStore!!, dataStore, db)
+        val p2 = AsyncCheckProvider(configStore!!, db)
 
         // Ticket is valid unlimited times, but only on two arbitrary days
         setRuleOnList2("{\"isAfter\": [{\"var\": \"now\"}, {\"buildTime\": [\"custom\", \"2020-01-01T22:00:00.000Z\"]}]}")
@@ -847,7 +847,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testRulesIsAfterCustomTime() {
-        val p2 = AsyncCheckProvider(configStore!!, dataStore, db)
+        val p2 = AsyncCheckProvider(configStore!!, db)
 
         // Ticket is valid unlimited times, but only on two arbitrary days
         setRuleOnList2("{\"isAfter\": [{\"var\": \"now\"}, {\"buildTime\": [\"customtime\", \"14:00\"]}]}")
@@ -863,7 +863,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testRulesCompareIsoweekday() {
-        val p2 = AsyncCheckProvider(configStore!!, dataStore, db)
+        val p2 = AsyncCheckProvider(configStore!!, db)
 
         // Ticket is valid unlimited times, but only on two arbitrary days
         setRuleOnList2("{\">=\": [{\"var\": \"now_isoweekday\"}, 6]}")
@@ -1033,7 +1033,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testSignedAndNotYetValid() {
-        val p2 = AsyncCheckProvider(configStore!!, dataStore, db)
+        val p2 = AsyncCheckProvider(configStore!!, db)
         p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2023-02-03T22:59:59.000Z"))
 
         val r = p2.check(mapOf("demo" to 1L), "Ok4EsqDRCr2cL6yDRtqeP7j5Usr1Vj1Db7J0izOuRGx6Qn0BS1ISW2nxlW8PXkYRk7PJhIBmsK1V1ucq5obBoBAMG4p9jCPKBAheRdFV0REVDZUCKAEAVAQA")
@@ -1048,7 +1048,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
 
     @Test
     fun testSignedAndNotLongerValid() {
-        val p2 = AsyncCheckProvider(configStore!!, dataStore, db)
+        val p2 = AsyncCheckProvider(configStore!!, db)
         p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2023-02-03T11:01:01.000Z"))
 
         val r = p2.check(mapOf("demo" to 1L), "EU9dJn3k5jzwfY4JQAKrTOVFmo+BvZKwH6UAIFOz3XTxABa7tmjU5UoLD8hJr3440uY7IFEHzau1DVk0sP994bgnzLNswAAKBARdUdGMmNVSHVUCKAEAVAQA")
