@@ -41,7 +41,7 @@ import java.time.Instant
 import java.time.OffsetDateTime
 import java.util.*
 
-class AsyncCheckProvider(private val config: ConfigStore, private val dataStore: BlockingEntityStore<Persistable>, private val db: SyncDatabase) : TicketCheckProvider {
+class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDatabase) : TicketCheckProvider {
     private var sentry: SentryInterface = DummySentryImplementation()
 
     /*
