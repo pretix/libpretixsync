@@ -8,6 +8,7 @@ import eu.pretix.libpretixsync.sqldelight.CheckIn;
 import eu.pretix.libpretixsync.sqldelight.Closing;
 import eu.pretix.libpretixsync.sqldelight.Event;
 import eu.pretix.libpretixsync.sqldelight.JavaUtilDateAdapter;
+import eu.pretix.libpretixsync.sqldelight.QueuedCheckIn;
 import eu.pretix.libpretixsync.sqldelight.Receipt;
 import eu.pretix.libpretixsync.sqldelight.ReceiptLine;
 import eu.pretix.libpretixsync.sqldelight.ReceiptPayment;
@@ -101,6 +102,9 @@ public abstract class BaseDatabaseTest {
                 ),
                 new Event.Adapter(
                         dateAdapter,
+                        dateAdapter
+                ),
+                new QueuedCheckIn.Adapter(
                         dateAdapter
                 ),
                 new Receipt.Adapter(
