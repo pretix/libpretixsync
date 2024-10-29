@@ -21,9 +21,11 @@ import io.requery.query.Tuple;
 import io.requery.util.CloseableIterator;
 
 public class TicketLayoutSyncAdapter extends BaseDownloadSyncAdapter<TicketLayout, Long> {
+    String salesChannel = "pretixpos";
 
-    public TicketLayoutSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, PretixApi api, String syncCycleId, SyncManager.ProgressFeedback feedback) {
+    public TicketLayoutSyncAdapter(BlockingEntityStore<Persistable> store, FileStorage fileStorage, String eventSlug, PretixApi api, String syncCycleId, String salesChannel, SyncManager.ProgressFeedback feedback) {
         super(store, fileStorage, eventSlug, api, syncCycleId, feedback);
+        this.salesChannel = salesChannel;
     }
 
     @Override
@@ -57,7 +59,7 @@ public class TicketLayoutSyncAdapter extends BaseDownloadSyncAdapter<TicketLayou
                     itemobj.setTicket_layout_id(obj.getServer_id());
                     store.update(itemobj, Item.TICKET_LAYOUT_ID);
                 }
-            } else if (sc.equals("pretixpos")) {
+            } else if (sc.equals(salesChannel)) {
                 itemids_pretixpos.add(item);
 
                 Item itemobj = store.select(Item.class).where(

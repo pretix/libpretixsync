@@ -55,6 +55,7 @@ public class SyncManager {
     protected String software_brand;
     protected String software_version;
     protected String rsa_pubkey;
+    protected String salesChannel;
     protected CheckConnectivityFeedback connectivityFeedback;
 
     public class CanceledState {
@@ -112,6 +113,7 @@ public class SyncManager {
             String software_brand,
             String software_version,
             String rsa_pubkey,
+            String salesChannel,
             CheckConnectivityFeedback connectivityFeedback
     ) {
         this.configStore = configStore;
@@ -133,6 +135,7 @@ public class SyncManager {
         this.software_brand = software_brand;
         this.software_version = software_version;
         this.rsa_pubkey = rsa_pubkey;
+        this.salesChannel = salesChannel;
         this.connectivityFeedback = connectivityFeedback;
     }
 
@@ -426,7 +429,7 @@ public class SyncManager {
                 if (profile == Profile.PRETIXPOS) {
                     download(new QuotaSyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback, subEvent));
                     download(new TaxRuleSyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
-                    download(new TicketLayoutSyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
+                    download(new TicketLayoutSyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), salesChannel, feedback));
                 }
                 download(new BadgeLayoutSyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
                 download(new BadgeLayoutItemSyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
