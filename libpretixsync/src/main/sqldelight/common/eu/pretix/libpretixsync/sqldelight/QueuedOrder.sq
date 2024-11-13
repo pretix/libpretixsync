@@ -6,7 +6,7 @@ WHERE id = ?;
 selectUnlockedWithoutError:
 SELECT *
 FROM QueuedOrder
-WHERE locked = FALSE AND error IS NULL;
+WHERE locked = 0 AND error IS NULL;
 
 delete:
 DELETE FROM QueuedOrder
@@ -36,7 +36,7 @@ VALUES(
 lock:
 UPDATE QueuedOrder
 SET
-    locked = TRUE
+    locked = 1
 WHERE id = ?;
 
 updateError:

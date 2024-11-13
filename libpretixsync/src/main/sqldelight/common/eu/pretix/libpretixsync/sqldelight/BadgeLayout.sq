@@ -26,7 +26,7 @@ selectDefaultForEventSlug:
 SELECT *
 FROM BadgeLayout
 WHERE
-    is_default = TRUE
+    is_default = 1
     AND event_slug = ?;
 
 insert:

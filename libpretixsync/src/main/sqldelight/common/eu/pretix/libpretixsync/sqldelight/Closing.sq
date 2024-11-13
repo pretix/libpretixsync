@@ -12,7 +12,7 @@ selectClosedWithoutServerId:
 SELECT *
 FROM Closing
 WHERE
-    open = FALSE
+    open = 0
     AND server_id IS NULL;
 
 insert:

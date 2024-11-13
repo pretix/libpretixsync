@@ -5,7 +5,7 @@ CREATE TABLE QueuedOrder (
     error TEXT,
     event_slug TEXT,
     idempotency_key TEXT,
-    locked INTEGER AS Boolean DEFAULT FALSE,
+    locked INTEGER AS Boolean DEFAULT 0,
     payload TEXT,
     receipt INTEGER REFERENCES Receipt (id) ON DELETE CASCADE
 );
