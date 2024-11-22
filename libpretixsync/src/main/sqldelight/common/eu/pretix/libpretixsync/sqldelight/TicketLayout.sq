@@ -17,7 +17,7 @@ selectDefaultForEventSlug:
 SELECT *
 FROM TicketLayout
 WHERE
-    is_default = 1
+    CAST(is_default AS INTEGER) = 1
     AND event_slug = ?;
 
 deleteByServerId:
