@@ -15,7 +15,6 @@ WHERE id = ?;
 insert:
 INSERT INTO QueuedOrder
 (
-    id,
     error,
     event_slug,
     idempotency_key,
@@ -24,7 +23,6 @@ INSERT INTO QueuedOrder
     receipt
 )
 VALUES(
-    ?,
     ?,
     ?,
     ?,
