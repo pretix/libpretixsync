@@ -117,3 +117,9 @@ WHERE(
     AND OrderPosition.item = :item_id
     AND CASE WHEN (:variation_id > 0) THEN OrderPosition.variation_id = :variation_id ELSE TRUE END
 );
+
+lockQueuedOrder:
+UPDATE QueuedOrder
+SET
+    locked = TRUE
+WHERE id = ?;
