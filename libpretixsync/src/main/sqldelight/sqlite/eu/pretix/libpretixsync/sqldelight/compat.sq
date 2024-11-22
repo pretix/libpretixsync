@@ -74,3 +74,46 @@ truncateAllTables {
     DELETE FROM TaxRule;
     DELETE FROM TicketLayout;
 }
+
+searchOrderPosition:
+SELECT OrderPosition.*
+FROM OrderPosition
+LEFT JOIN orders ON OrderPosition.order_ref = orders.id
+LEFT JOIN Item ON OrderPosition.item = Item.id
+WHERE (
+    UPPER(OrderPosition.secret) LIKE :queryStartsWith
+    OR UPPER(OrderPosition.attendee_name) LIKE :queryContains
+    OR UPPER(OrderPosition.attendee_email) LIKE :queryContains
+    OR UPPER(orders.email) LIKE :queryContains
+    OR UPPER(orders.code) LIKE :queryStartsWith
+)
+AND (
+    CASE WHEN (:use_event_filter) THEN (orders.event_slug IN :event_filter) ELSE 0 END
+    OR CASE WHEN (:use_event_item_filter) THEN (orders.event_slug IN :event_item_filter_events AND OrderPosition.item IN :event_item_filter_items) ELSE 0 END
+    OR CASE WHEN (:use_event_subevent_filter) THEN (orders.event_slug IN :event_subevent_filter_events AND OrderPosition.subevent_id IN :event_subevent_filter_subevents) ELSE 0 END
+    OR CASE WHEN (:use_all_filter) THEN (orders.event_slug IN :all_filter_events AND OrderPosition.item IN :all_filter_items AND OrderPosition.subevent_id IN :all_filter_subevents) ELSE 0 END
+)
+LIMIT :limit
+OFFSET :offset;
+
+countOrderPositionForStatus:
+-- TODO: Check if DISTINCT is required here
+SELECT COUNT(DISTINCT OrderPosition.id)
+FROM OrderPosition
+LEFT JOIN orders ON OrderPosition.order_ref = orders.id
+WHERE(
+    orders.event_slug = :event_slug
+    AND CASE WHEN (:include_pending)
+        THEN orders.status IN ('p', 'n')
+        ELSE (orders.status = 'p' OR (orders.status = 'n' AND orders.valid_if_pending = 1))
+    END
+    AND CASE WHEN (:subevent_id > 0) THEN OrderPosition.subevent_id = :subevent_id ELSE 1 END
+    AND CASE WHEN (:not_all_items) THEN OrderPosition.item IN :list_item_ids ELSE 1 END
+    AND CASE WHEN (:only_checked_in_list_server_id > 0) THEN
+        (OrderPosition.id IN (SELECT position FROM CheckIn WHERE listId = :only_checked_in_list_server_id AND type = 'entry'))
+    ELSE
+        1
+    END
+    AND OrderPosition.item = :item_id
+    AND CASE WHEN (:variation_id > 0) THEN OrderPosition.variation_id = :variation_id ELSE 1 END
+);

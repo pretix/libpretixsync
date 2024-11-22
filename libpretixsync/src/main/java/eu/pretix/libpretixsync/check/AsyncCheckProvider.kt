@@ -1043,7 +1043,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
             true
         }
 
-        val positions = db.orderPositionQueries.search(
+        val positions = db.compatQueries.searchOrderPosition(
             queryStartsWith = "$query%",
             queryContains = "%$query%",
             use_event_filter = useEventFilter,
@@ -1163,7 +1163,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
                 }
 
                 for (`var` in product.variations) {
-                    val position_count = db.orderPositionQueries.countForStatus(
+                    val position_count = db.compatQueries.countOrderPositionForStatus(
                         event_slug = list.eventSlug,
                         include_pending = list.includePending,
                         subevent_id = subEventId,
@@ -1174,7 +1174,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
                         variation_id = `var`.server_id,
                     ).executeAsOne().toInt()
 
-                    val ci_count = db.orderPositionQueries.countForStatus(
+                    val ci_count = db.compatQueries.countOrderPositionForStatus(
                         event_slug = list.eventSlug,
                         include_pending = list.includePending,
                         subevent_id = subEventId,
@@ -1193,7 +1193,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
                     ))
                 }
 
-                val position_count = db.orderPositionQueries.countForStatus(
+                val position_count = db.compatQueries.countOrderPositionForStatus(
                     event_slug = list.eventSlug,
                     include_pending = list.includePending,
                     subevent_id = subEventId,
@@ -1204,7 +1204,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
                     variation_id = -1L,
                 ).executeAsOne().toInt()
 
-                val ci_count = db.orderPositionQueries.countForStatus(
+                val ci_count = db.compatQueries.countOrderPositionForStatus(
                     event_slug = list.eventSlug,
                     include_pending = list.includePending,
                     subevent_id = subEventId,

@@ -6,7 +6,7 @@ WHERE id = ?;
 selectUnlockedWithoutError:
 SELECT *
 FROM QueuedOrder
-WHERE locked = 0 AND error IS NULL;
+WHERE CAST(locked AS INTEGER) = 0 AND error IS NULL;
 
 delete:
 DELETE FROM QueuedOrder
