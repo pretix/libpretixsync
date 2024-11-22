@@ -31,12 +31,6 @@ VALUES(
     ?
 );
 
-lock:
-UPDATE QueuedOrder
-SET
-    locked = 1
-WHERE id = ?;
-
 updateError:
 UPDATE QueuedOrder
 SET

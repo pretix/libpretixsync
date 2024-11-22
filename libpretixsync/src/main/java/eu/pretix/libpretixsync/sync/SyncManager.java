@@ -627,7 +627,7 @@ public class SyncManager {
                 }
                 i++;
 
-                db.getQueuedOrderQueries().lock(qo.getId());
+                db.getCompatQueries().lockQueuedOrder(qo.getId());
                 Long startedAt = System.currentTimeMillis();
                 PretixApi.ApiResponse resp = api.postResource(
                         api.eventResourceUrl(qo.getEvent_slug(), "orders") + "?pdf_data=true&force=true",
