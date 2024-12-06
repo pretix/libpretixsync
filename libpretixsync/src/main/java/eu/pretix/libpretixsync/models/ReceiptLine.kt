@@ -28,6 +28,7 @@ data class ReceiptLine(
     val taxRate: BigDecimal? = null,
     val taxRule: Long? = null,
     val taxValue: BigDecimal? = null,
+    val taxCode: String? = null,
     val eventDateFrom: OffsetDateTime? = null,
     val eventDateTo: OffsetDateTime? = null,
     val subEventServerId: Long? = null,
