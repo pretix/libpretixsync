@@ -10,14 +10,14 @@ class Question(
     val eventSlug: String?,
     val position: Long,
     val required: Boolean,
-    val askDuringCheckIn: Boolean,
-    val showDuringCheckIn: Boolean,
-    val dependencyQuestionServerId: Long?,
-    type: QuestionType,
     question: String,
     identifier: String,
-    options: List<QuestionOption>?,
-    dependencyValues: List<String>,
+    val askDuringCheckIn: Boolean = false,
+    val showDuringCheckIn: Boolean = false,
+    val dependencyQuestionServerId: Long? = null,
+    type: QuestionType = QuestionType.T,
+    options: List<QuestionOption>? = null,
+    dependencyValues: List<String> = emptyList(),
 ) : QuestionLike() {
 
     private val _type: QuestionType = type
