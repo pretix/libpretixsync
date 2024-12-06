@@ -6,6 +6,7 @@ import org.junit.Assert.fail
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
+import eu.pretix.libpretixsync.models.Question as QuestionModel
 
 
 @RunWith(Parameterized::class)
@@ -13,8 +14,21 @@ class QuestionAnswerValidationTest(private val questionType: QuestionType, priva
 
     @Test
     fun test() {
-        val q = Question()
-        q.setJson_data("{\"id\":1,\"question\":{\"en\":\"Test\"},\"type\":\"$questionType\",\"required\":false,\"items\":[1],\"options\":[{\"id\": 3, \"answer\": \"A\", \"position\": 2, \"identifier\": \"AAA1\"}, {\"id\": 12, \"answer\": \"B\", \"position\": 1, \"identifier\": \"BBB2\"}],\"position\":0,\"ask_during_checkin\":false,\"identifier\":\"ABTBAB8S\",\"dependency_question\":null,\"dependency_value\":null}")
+        val q = QuestionModel(
+            type = questionType,
+            required = false,
+            question = "Test",
+            identifier = "ABTBAB8S",
+            askDuringCheckIn = false,
+            options = listOf(
+                QuestionOption(3L, 2, "AAA1", "A"),
+                QuestionOption(12L, 1, "BBB2", "B"),
+            ),
+            id = 1L,
+            serverId = 1L,
+            eventSlug = "",
+            position = 0L,
+        )
 
         if (expected == null) {
             try {
