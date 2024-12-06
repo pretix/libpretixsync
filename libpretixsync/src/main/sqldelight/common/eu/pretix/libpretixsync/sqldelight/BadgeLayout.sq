@@ -1,0 +1,54 @@
+selectById:
+SELECT *
+FROM BadgeLayout
+WHERE id = ?;
+
+selectByEventSlug:
+SELECT *
+FROM BadgeLayout
+WHERE event_slug = ?;
+
+selectByServerIdListAndEventSlug:
+SELECT *
+FROM BadgeLayout
+WHERE server_id IN ? AND event_slug = ?;
+
+selectServerIdsByEventSlug:
+SELECT server_id
+FROM BadgeLayout
+WHERE event_slug = ?;
+
+deleteByServerId:
+DELETE FROM BadgeLayout
+WHERE server_id = ?;
+
+selectDefaultForEventSlug:
+SELECT *
+FROM BadgeLayout
+WHERE
+    CAST(is_default AS INTEGER) = 1
+    AND event_slug = ?;
+
+insert:
+INSERT INTO BadgeLayout(
+    background_filename,
+    event_slug,
+    is_default,
+    json_data,
+    server_id
+) VALUES(
+    ?,
+    ?,
+    ?,
+    ?,
+    ?
+);
+
+updateFromJson:
+UPDATE BadgeLayout
+SET
+    background_filename = ?,
+    event_slug = ?,
+    is_default = ?,
+    json_data = ?
+WHERE id = ?;

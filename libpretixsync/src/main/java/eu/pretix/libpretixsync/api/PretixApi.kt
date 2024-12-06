@@ -3,9 +3,9 @@ package eu.pretix.libpretixsync.api
 import eu.pretix.libpretixsync.DummySentryImplementation
 import eu.pretix.libpretixsync.SentryInterface
 import eu.pretix.libpretixsync.config.ConfigStore
+import eu.pretix.libpretixsync.db.AbstractQueuedCheckIn
 import eu.pretix.libpretixsync.db.Answer
-import eu.pretix.libpretixsync.db.Question
-import eu.pretix.libpretixsync.db.QueuedCheckIn
+import eu.pretix.libpretixsync.models.Question
 import eu.pretix.libpretixsync.utils.NetUtils
 import eu.pretix.libpretixsync.utils.URLFragmentEncoder
 import okhttp3.MediaType
@@ -46,7 +46,7 @@ open class PretixApi(url: String, key: String, orgaSlug: String, version: Int, h
     fun redeem(eventSlug: String, secret: String, datetime: Date?, force: Boolean, nonce: String?, answers: List<Answer>?, listId: Long, ignore_unpaid: Boolean, pdf_data: Boolean, type: String?, source_type: String?, callTimeout: Long? = null, questions_supported: Boolean = true): ApiResponse {
         var dt: String? = null
         if (datetime != null) {
-            dt = QueuedCheckIn.formatDatetime(datetime)
+            dt = AbstractQueuedCheckIn.formatDatetime(datetime)
         }
         return redeem(eventSlug, secret, dt, force, nonce, answers, listId, ignore_unpaid, pdf_data, type, source_type, callTimeout, questions_supported)
     }
@@ -73,9 +73,9 @@ open class PretixApi(url: String, key: String, orgaSlug: String, version: Int, h
                         "pdf" -> "application/pdf".toMediaTypeOrNull()!!
                         else -> "application/unknown".toMediaTypeOrNull()!!
                     }, a.value.split("/").last())
-                    answerbody.put("" + (a.question as Question).getServer_id(), fileid)
+                    answerbody.put("" + (a.question as Question).serverId, fileid)
                 } else {
-                    answerbody.put("" + (a.question as Question).getServer_id(), a.value)
+                    answerbody.put("" + (a.question as Question).serverId, a.value)
                 }
             }
         }
@@ -93,7 +93,7 @@ open class PretixApi(url: String, key: String, orgaSlug: String, version: Int, h
     fun redeem(lists: List<Long>, secret: String, datetime: Date?, force: Boolean, nonce: String?, answers: List<Answer>?, ignore_unpaid: Boolean, pdf_data: Boolean, type: String?, source_type: String?, callTimeout: Long? = null, questions_supported: Boolean = true): ApiResponse {
         var dt: String? = null
         if (datetime != null) {
-            dt = QueuedCheckIn.formatDatetime(datetime)
+            dt = AbstractQueuedCheckIn.formatDatetime(datetime)
         }
         return redeem(lists, secret, dt, force, nonce, answers, ignore_unpaid, pdf_data, type, source_type, callTimeout, questions_supported)
     }
@@ -120,9 +120,9 @@ open class PretixApi(url: String, key: String, orgaSlug: String, version: Int, h
                         "pdf" -> "application/pdf".toMediaTypeOrNull()!!
                         else -> "application/unknown".toMediaTypeOrNull()!!
                     }, a.value.split("/").last())
-                    answerbody.put("" + (a.question as Question).getServer_id(), fileid)
+                    answerbody.put("" + (a.question as Question).serverId, fileid)
                 } else {
-                    answerbody.put("" + (a.question as Question).getServer_id(), a.value)
+                    answerbody.put("" + (a.question as Question).serverId, a.value)
                 }
             }
         }
@@ -314,7 +314,7 @@ open class PretixApi(url: String, key: String, orgaSlug: String, version: Int, h
     }
 
     @Throws(ApiException::class)
-    open fun downloadFile(full_url: String): ApiResponse? {
+    open fun downloadFile(full_url: String): ApiResponse {
         var request = Request.Builder()
                 .url(full_url)
                 .header("Authorization", "Device $key")
