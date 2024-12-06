@@ -430,6 +430,10 @@ public class Migrations {
             execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_vaccinated_products;", new String[] {"no such column", "existiert", "syntax error"});
             updateVersionTable(c, 105);
         }
+        if (db_version < 106) {
+            execIgnore(c, "ALTER TABLE receiptline ADD tax_code TEXT NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            updateVersionTable(c, 106);
+        }
 
         // Note that the Android app currently does not use these queries!
 
