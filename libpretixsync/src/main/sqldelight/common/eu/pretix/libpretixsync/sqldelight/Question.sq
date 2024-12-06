@@ -3,6 +3,11 @@ SELECT *
 FROM Question
 WHERE server_id = ?;
 
+selectByEventSlug:
+SELECT *
+FROM Question
+WHERE event_slug = ?;
+
 selectForItem:
 SELECT Question.*
 FROM Question

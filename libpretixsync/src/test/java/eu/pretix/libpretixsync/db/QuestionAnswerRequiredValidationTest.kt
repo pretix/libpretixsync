@@ -1,7 +1,9 @@
 package eu.pretix.libpretixsync.db
 
+import eu.pretix.libpretixsync.check.QuestionType
 import org.junit.Assert.fail
 import org.junit.Test
+import eu.pretix.libpretixsync.models.Question as QuestionModel
 
 
 class QuestionAnswerRequiredValidationTest {
@@ -9,9 +11,17 @@ class QuestionAnswerRequiredValidationTest {
     @Test
     @Throws(QuestionLike.ValidationException::class)
     fun testBoolean() {
-        val q = Question()
-        q.isRequired = true
-        q.setJson_data("{\"id\":1,\"question\":{\"en\":\"Test\"},\"type\":\"B\",\"required\":true,\"items\":[1],\"options\":[],\"position\":0,\"ask_during_checkin\":false,\"identifier\":\"ABTBAB8S\",\"dependency_question\":null,\"dependency_value\":null}")
+        val q = QuestionModel(
+            question = "Test",
+            type = QuestionType.B,
+            required = true,
+            identifier = "ABTBAB8S",
+            eventSlug = "test",
+            id = 1L,
+            serverId = 1L,
+            position = 0L,
+        )
+
         q.clean_answer("True", q.options, false)
 
         try {
@@ -24,9 +34,17 @@ class QuestionAnswerRequiredValidationTest {
 
     @Test
     fun testBooleanWithOptionalOverride() {
-        val q = Question()
-        q.isRequired = true
-        q.setJson_data("{\"id\":1,\"question\":{\"en\":\"Test\"},\"type\":\"B\",\"required\":true,\"items\":[1],\"options\":[],\"position\":0,\"ask_during_checkin\":false,\"identifier\":\"ABTBAB8S\",\"dependency_question\":null,\"dependency_value\":null}")
+        val q = QuestionModel(
+            question = "Test",
+            type = QuestionType.B,
+            required = true,
+            identifier = "ABTBAB8S",
+            eventSlug = "test",
+            id = 1L,
+            serverId = 1L,
+            position = 0L,
+        )
+
         try {
             q.clean_answer("False", q.options, true)
         } catch (e: QuestionLike.ValidationException) {
@@ -37,9 +55,17 @@ class QuestionAnswerRequiredValidationTest {
     @Test
     @Throws(QuestionLike.ValidationException::class)
     fun testText() {
-        val q = Question()
-        q.setJson_data("{\"id\":1,\"question\":{\"en\":\"Test\"},\"type\":\"T\",\"required\":true,\"items\":[1],\"options\":[],\"position\":0,\"ask_during_checkin\":false,\"identifier\":\"ABTBAB8S\",\"dependency_question\":null,\"dependency_value\":null}")
-        q.isRequired = true
+        val q = QuestionModel(
+            question = "Test",
+            type = QuestionType.T,
+            required = true,
+            identifier = "ABTBAB8S",
+            eventSlug = "test",
+            id = 1L,
+            serverId = 1L,
+            position = 0L,
+        )
+
         q.clean_answer("True", q.options, false)
         q.clean_answer("False", q.options, false)
         try {
@@ -51,9 +77,17 @@ class QuestionAnswerRequiredValidationTest {
 
     @Test
     fun testTextWithOptionalOverride() {
-        val q = Question()
-        q.setJson_data("{\"id\":1,\"question\":{\"en\":\"Test\"},\"type\":\"T\",\"required\":true,\"items\":[1],\"options\":[],\"position\":0,\"ask_during_checkin\":false,\"identifier\":\"ABTBAB8S\",\"dependency_question\":null,\"dependency_value\":null}")
-        q.isRequired = true
+        val q = QuestionModel(
+            question = "Test",
+            type = QuestionType.T,
+            required = true,
+            identifier = "ABTBAB8S",
+            eventSlug = "test",
+            id = 1L,
+            serverId = 1L,
+            position = 0L,
+        )
+
         try {
             q.clean_answer("", q.options, true)
         } catch (e: QuestionLike.ValidationException) {
