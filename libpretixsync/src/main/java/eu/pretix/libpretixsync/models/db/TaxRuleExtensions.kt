@@ -14,6 +14,7 @@ fun TaxRule.toModel(): TaxRuleModel {
         serverId = this.server_id!!,
         rate = parseRate(json),
         includesTax = parseIncludesTax(json),
+        code = parseCode(json),
     )
 }
 
@@ -32,5 +33,17 @@ private fun parseIncludesTax(json: JSONObject): Boolean {
     } catch (e: JSONException) {
         e.printStackTrace()
         return false
+    }
+}
+
+private fun parseCode(json: JSONObject): String? {
+    try {
+        if (!json.has("code") or json.isNull("code")) {
+            return null
+        }
+        return json.getString("code")
+    } catch (e: JSONException) {
+        e.printStackTrace()
+        return null
     }
 }

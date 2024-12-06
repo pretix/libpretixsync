@@ -25,6 +25,7 @@ fun ReceiptLine.toModel() =
         voucherCode = voucher_code,
         useReusableMedium = use_reusable_medium,
         taxRate = tax_rate,
+        taxCode = tax_code,
         taxRule = tax_rule,
         taxValue = tax_value,
         eventDateFrom = SafeOffsetDateTimeMapper.decode(event_date_from),

@@ -50,6 +50,15 @@ private fun parsePrice(json: JSONObject): BigDecimal? {
     }
 }
 
+private fun parseTaxCode(json: JSONObject): String? {
+    try {
+        return json.optString("tax_code", null)
+    } catch (e: JSONException) {
+        e.printStackTrace()
+        return null
+    }
+}
+
 private fun parseTaxRate(json: JSONObject): BigDecimal? {
     try {
         return BigDecimal(json.getString("tax_rate"))

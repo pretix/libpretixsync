@@ -24,6 +24,7 @@ class OrderPosition(
     val price: BigDecimal? = null,
     val taxRate: BigDecimal? = null,
     val taxValue: BigDecimal? = null,
+    val taxCode: String? = null,
     val seatName: String? = null,
     val addonToServerId: Long? = null,
     val blocked: Boolean = false,
