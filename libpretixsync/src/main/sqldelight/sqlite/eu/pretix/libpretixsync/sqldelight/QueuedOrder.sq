@@ -1,0 +1,11 @@
+import kotlin.Boolean;
+
+CREATE TABLE QueuedOrder (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    error TEXT,
+    event_slug TEXT,
+    idempotency_key TEXT,
+    locked INTEGER AS Boolean DEFAULT 0,
+    payload TEXT,
+    receipt INTEGER REFERENCES Receipt (id) ON DELETE CASCADE
+);

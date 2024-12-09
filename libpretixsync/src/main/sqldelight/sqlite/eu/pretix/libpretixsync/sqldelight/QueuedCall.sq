@@ -1,0 +1,6 @@
+CREATE TABLE QueuedCall (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    body TEXT,
+    idempotency_key TEXT,
+    url TEXT
+);

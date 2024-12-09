@@ -1,0 +1,55 @@
+selectById:
+SELECT *
+FROM Closing
+WHERE id = ?;
+
+selectByServerId:
+SELECT *
+FROM Closing
+WHERE server_id = ?;
+
+selectClosedWithoutServerId:
+SELECT *
+FROM Closing
+WHERE
+    CAST(open AS INTEGER) = 0
+    AND server_id IS NULL;
+
+insert:
+INSERT INTO Closing (
+    cash_counted,
+    cashier_name,
+    cashier_numericid,
+    cashier_userid,
+    datetime,
+    dsfinvk_uploaded,
+    first_receipt,
+    invoice_settings,
+    json_data,
+    last_receipt,
+    open,
+    payment_sum,
+    payment_sum_cash,
+    server_id
+) VALUES (
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?
+);
+
+updateServerId:
+UPDATE Closing
+SET
+    server_id = ?
+WHERE id = ?;
