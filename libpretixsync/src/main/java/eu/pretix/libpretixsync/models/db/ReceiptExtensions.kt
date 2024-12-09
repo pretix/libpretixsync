@@ -6,7 +6,13 @@ import eu.pretix.libpretixsync.models.Receipt as ReceiptModel
 fun Receipt.toModel() =
     ReceiptModel(
         id = id,
-        eventSlug = event_slug!!,
+        eventSlug = if (event_slug == null && id == 1L) {
+            // This case occurs when upgrading a device from pre-sqldelight to post-sqldelight
+            // that previously was not ever properly used. It therefore contains only the receipt
+            // with id=1 and isOpen=true, that has eventSlug=null because it was created before
+            // the first event was selected.
+            ""
+        } else { event_slug!! },
         paymentType = ReceiptModel.PaymentType.valueOf(payment_type!!.uppercase()),
         currency = currency,
         orderCode = order_code,
