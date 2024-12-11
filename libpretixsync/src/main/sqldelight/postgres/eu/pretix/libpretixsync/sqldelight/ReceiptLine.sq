@@ -40,6 +40,7 @@ CREATE TABLE ReceiptLine (
     tax_rate numeric,
     tax_rule bigint,
     tax_value numeric,
+    tax_code character varying(255),
     type character varying(255),
     use_reusable_medium bigint,
     variation_id bigint,

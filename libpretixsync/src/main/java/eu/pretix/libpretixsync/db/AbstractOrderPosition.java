@@ -101,6 +101,15 @@ public class AbstractOrderPosition implements OrderPositionLike {
         }
     }
 
+    public String getTaxCode() {
+        try {
+            return getJSON().optString("tax_code", null);
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
     public BigDecimal getTaxRate() {
         try {
             return new BigDecimal(getJSON().getString("tax_rate"));

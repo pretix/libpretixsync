@@ -63,6 +63,8 @@ public class AbstractReceiptLine implements LocalObject {
 
     public Long tax_rule;
 
+    public String tax_code;
+
     public BigDecimal tax_value;
 
     @Nullable
@@ -196,6 +198,7 @@ public class AbstractReceiptLine implements LocalObject {
         jo.put("tax_rate", tax_rate != null ? tax_rate.setScale(2, RoundingMode.HALF_UP) : "0.00");
         jo.put("tax_value", tax_value != null ? tax_value.setScale(2, RoundingMode.HALF_UP) : "0.00");
         jo.put("tax_rule", tax_rule != null ? tax_rule : JSONObject.NULL);
+        jo.put("tax_code", tax_code != null ? tax_code : JSONObject.NULL);
         jo.put("secret", secret);
         jo.put("seat", seat_guid != null ? seat_guid : JSONObject.NULL);
         jo.put("subevent", subevent_id);

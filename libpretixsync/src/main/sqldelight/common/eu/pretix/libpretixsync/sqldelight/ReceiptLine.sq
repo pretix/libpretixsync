@@ -49,12 +49,14 @@ INSERT INTO ReceiptLine (
     tax_rate,
     tax_rule,
     tax_value,
+    tax_code,
     type,
     use_reusable_medium,
     variation_id,
     voucher_code
 )
 VALUES (
+    ?,
     ?,
     ?,
     ?,
