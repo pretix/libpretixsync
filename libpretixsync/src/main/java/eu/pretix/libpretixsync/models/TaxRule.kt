@@ -7,5 +7,5 @@ data class TaxRule(
     val serverId: Long,
     val rate: BigDecimal = BigDecimal("0.00"),
     val includesTax: Boolean = false,
-    val code: String?,
+    val code: String? = null,
 )

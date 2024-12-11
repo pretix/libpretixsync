@@ -29,6 +29,7 @@ fun OrderPosition.toModel(): OrderPositionModel {
         zipcode = json.optString("zipcode", null),
         price = parsePrice(json),
         taxRate = parseTaxRate(json),
+        taxCode = parseTaxCode(json),
         taxValue = parseTaxValue(json),
         seatName = parseSeatName(json),
         addonToServerId = parseAddonToServerId(json),
