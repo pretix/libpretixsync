@@ -440,6 +440,9 @@ public class Migrations {
     }
 
     public static void android_manual_migrations(Connection c, int oldVersion, int newVersion) throws SQLException {
+        if (oldVersion < 58 && newVersion >= 58) {
+            execIgnore(c, "UPDATE checkin SET listId = list WHERE (listId IS NULL OR listID = 0) AND list IS NOT NULL AND list > 0", new String[] {"no such column", "existiert", "syntax error"});
+        }
         if (oldVersion < 87 && newVersion >= 87) {
             execIgnore(c, "CREATE INDEX receipt_open ON receipt (open) WHERE open = 1;", new String[] {"already exists", "existiert bereits"});
         }
