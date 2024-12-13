@@ -1,9 +1,9 @@
 package eu.pretix.libpretixsync.models
 
-import eu.pretix.libpretixsync.db.AbstractItem.MediaPolicy
 import eu.pretix.libpretixsync.db.ItemAddOn
 import eu.pretix.libpretixsync.db.ItemBundle
 import eu.pretix.libpretixsync.db.ItemVariation
+import eu.pretix.libpretixsync.db.MediaPolicy
 import eu.pretix.libpretixsync.db.ReusableMediaType
 import org.json.JSONArray
 import org.json.JSONException
