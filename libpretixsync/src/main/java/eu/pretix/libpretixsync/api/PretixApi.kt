@@ -3,9 +3,9 @@ package eu.pretix.libpretixsync.api
 import eu.pretix.libpretixsync.DummySentryImplementation
 import eu.pretix.libpretixsync.SentryInterface
 import eu.pretix.libpretixsync.config.ConfigStore
-import eu.pretix.libpretixsync.db.AbstractQueuedCheckIn
 import eu.pretix.libpretixsync.db.Answer
 import eu.pretix.libpretixsync.models.Question
+import eu.pretix.libpretixsync.models.QueuedCheckIn
 import eu.pretix.libpretixsync.utils.NetUtils
 import eu.pretix.libpretixsync.utils.URLFragmentEncoder
 import okhttp3.MediaType
@@ -46,7 +46,7 @@ open class PretixApi(url: String, key: String, orgaSlug: String, version: Int, h
     fun redeem(eventSlug: String, secret: String, datetime: Date?, force: Boolean, nonce: String?, answers: List<Answer>?, listId: Long, ignore_unpaid: Boolean, pdf_data: Boolean, type: String?, source_type: String?, callTimeout: Long? = null, questions_supported: Boolean = true): ApiResponse {
         var dt: String? = null
         if (datetime != null) {
-            dt = AbstractQueuedCheckIn.formatDatetime(datetime)
+            dt = QueuedCheckIn.formatDatetime(datetime)
         }
         return redeem(eventSlug, secret, dt, force, nonce, answers, listId, ignore_unpaid, pdf_data, type, source_type, callTimeout, questions_supported)
     }
@@ -93,7 +93,7 @@ open class PretixApi(url: String, key: String, orgaSlug: String, version: Int, h
     fun redeem(lists: List<Long>, secret: String, datetime: Date?, force: Boolean, nonce: String?, answers: List<Answer>?, ignore_unpaid: Boolean, pdf_data: Boolean, type: String?, source_type: String?, callTimeout: Long? = null, questions_supported: Boolean = true): ApiResponse {
         var dt: String? = null
         if (datetime != null) {
-            dt = AbstractQueuedCheckIn.formatDatetime(datetime)
+            dt = QueuedCheckIn.formatDatetime(datetime)
         }
         return redeem(lists, secret, dt, force, nonce, answers, ignore_unpaid, pdf_data, type, source_type, callTimeout, questions_supported)
     }
