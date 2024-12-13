@@ -8,6 +8,11 @@ SELECT *
 FROM ReceiptLine
 WHERE id IN ?;
 
+selectForReceiptId:
+SELECT *
+FROM ReceiptLine
+WHERE receipt = :receipt_id;
+
 insert:
 INSERT INTO ReceiptLine (
     addon_to,

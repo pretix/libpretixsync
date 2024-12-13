@@ -8,6 +8,12 @@ import eu.pretix.libpretixsync.sqldelight.ClosingExtensionsKt;
 import eu.pretix.libpretixsync.sqldelight.QueuedCall;
 import eu.pretix.libpretixsync.sqldelight.QueuedCheckIn;
 import eu.pretix.libpretixsync.sqldelight.QueuedOrder;
+import eu.pretix.libpretixsync.sqldelight.Receipt;
+import eu.pretix.libpretixsync.sqldelight.ReceiptExtensionsKt;
+import eu.pretix.libpretixsync.sqldelight.ReceiptLine;
+import eu.pretix.libpretixsync.sqldelight.ReceiptLineExtensionsKt;
+import eu.pretix.libpretixsync.sqldelight.ReceiptPayment;
+import eu.pretix.libpretixsync.sqldelight.ReceiptPaymentExtensionsKt;
 import eu.pretix.libpretixsync.sqldelight.SyncDatabase;
 import eu.pretix.libpretixsync.utils.JSONUtils;
 import io.requery.sql.StatementExecutionException;
@@ -23,9 +29,6 @@ import java.util.concurrent.ExecutionException;
 import eu.pretix.libpretixsync.SentryInterface;
 import eu.pretix.libpretixsync.config.ConfigStore;
 import eu.pretix.libpretixsync.db.Answer;
-import eu.pretix.libpretixsync.db.Receipt;
-import eu.pretix.libpretixsync.db.ReceiptLine;
-import eu.pretix.libpretixsync.db.ReceiptPayment;
 import io.requery.BlockingEntityStore;
 import io.requery.Persistable;
 
@@ -566,11 +569,7 @@ public class SyncManager {
     protected void uploadReceipts(ProgressFeedback feedback) throws SyncException {
         sentry.addBreadcrumb("sync.queue", "Start receipt upload");
 
-        List<Receipt> receipts = dataStore.select(Receipt.class)
-                .where(Receipt.OPEN.eq(false))
-                .and(Receipt.SERVER_ID.isNull())
-                .get().toList();
-
+        List<Receipt> receipts = db.getReceiptQueries().selectClosedWithoutServerId().executeAsList();
         try {
             int i = 0;
             for (Receipt receipt : receipts) {
@@ -579,16 +578,18 @@ public class SyncManager {
                 }
                 i++;
 
-
-                JSONObject data = receipt.toJSON();
+                JSONObject data = new JSONObject(ReceiptExtensionsKt.toJSON(receipt));
                 JSONArray lines = new JSONArray();
                 JSONArray payments = new JSONArray();
-                for (ReceiptLine line : receipt.getLines()) {
+
+                List<ReceiptLine> dbLines = db.getReceiptLineQueries().selectForReceiptId(receipt.getId()).executeAsList();
+                for (ReceiptLine line : dbLines) {
                     // TODO: Manually add addon_to.positionid when switching to SQLDelight
-                    lines.put(line.toJSON());
+                    lines.put(ReceiptLineExtensionsKt.toJSON(line));
                 }
-                for (ReceiptPayment payment : receipt.getPayments()) {
-                    payments.put(payment.toJSON());
+                List<ReceiptPayment> dbPayments = db.getReceiptPaymentQueries().selectForReceiptId(receipt.getId()).executeAsList();
+                for (ReceiptPayment payment : dbPayments) {
+                    payments.put(ReceiptPaymentExtensionsKt.toJSON(payment));
                 }
                 data.put("lines", lines);
                 data.put("payments", payments);
@@ -597,8 +598,7 @@ public class SyncManager {
                         data
                 );
                 if (response.getResponse().code() == 201) {
-                    receipt.setServer_id(response.getData().getLong("receipt_id"));
-                    dataStore.update(receipt);
+                    db.getReceiptQueries().updateServerId(response.getData().getLong("receipt_id"), receipt.getId());
                 } else {
                     throw new SyncException(response.getData().toString());
                 }
