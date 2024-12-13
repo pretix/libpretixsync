@@ -1,1 +1,1 @@
--- Empty migration to set database version to 106
+ALTER TABLE ReceiptLine ADD COLUMN tax_code TEXT;
