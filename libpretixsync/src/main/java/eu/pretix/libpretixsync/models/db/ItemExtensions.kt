@@ -1,7 +1,7 @@
 package eu.pretix.libpretixsync.models.db
 
 import eu.pretix.libpretixsync.models.Item as ItemModel
-import eu.pretix.libpretixsync.db.AbstractItem.MediaPolicy
+import eu.pretix.libpretixsync.db.MediaPolicy
 import eu.pretix.libpretixsync.db.ReusableMediaType
 import eu.pretix.libpretixsync.sqldelight.Item
 import eu.pretix.libpretixsync.sqldelight.isGenerateTickets
