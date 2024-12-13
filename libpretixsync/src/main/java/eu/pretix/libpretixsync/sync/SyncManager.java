@@ -29,8 +29,6 @@ import java.util.concurrent.ExecutionException;
 import eu.pretix.libpretixsync.SentryInterface;
 import eu.pretix.libpretixsync.config.ConfigStore;
 import eu.pretix.libpretixsync.db.Answer;
-import io.requery.BlockingEntityStore;
-import io.requery.Persistable;
 
 public class SyncManager {
     public enum Profile {
@@ -42,7 +40,6 @@ public class SyncManager {
     protected ConfigStore configStore;
     protected long upload_interval;
     protected long download_interval;
-    protected BlockingEntityStore<Persistable> dataStore;
     protected SyncDatabase db;
     protected FileStorage fileStorage;
     protected Profile profile;
@@ -100,7 +97,6 @@ public class SyncManager {
             ConfigStore configStore,
             PretixApi api,
             SentryInterface sentry,
-            BlockingEntityStore<Persistable> dataStore,
             SyncDatabase db,
             FileStorage fileStorage,
             long upload_interval,
@@ -124,7 +120,6 @@ public class SyncManager {
         this.sentry = sentry;
         this.upload_interval = upload_interval;
         this.download_interval = download_interval;
-        this.dataStore = dataStore;
         this.db = db;
         this.fileStorage = fileStorage;
         this.profile = profile;
