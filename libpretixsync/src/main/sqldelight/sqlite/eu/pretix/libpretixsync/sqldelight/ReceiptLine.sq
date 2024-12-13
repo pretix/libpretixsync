@@ -43,6 +43,7 @@ CREATE TABLE ReceiptLine (
     tax_rate REAL AS BigDecimal,
     tax_rule INTEGER,
     tax_value REAL AS BigDecimal,
+    tax_code TEXT,
     type TEXT,
     use_reusable_medium INTEGER,
     variation_id INTEGER,

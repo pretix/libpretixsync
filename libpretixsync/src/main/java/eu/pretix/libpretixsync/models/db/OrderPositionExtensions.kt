@@ -29,6 +29,7 @@ fun OrderPosition.toModel(): OrderPositionModel {
         zipcode = json.optString("zipcode", null),
         price = parsePrice(json),
         taxRate = parseTaxRate(json),
+        taxCode = parseTaxCode(json),
         taxValue = parseTaxValue(json),
         seatName = parseSeatName(json),
         addonToServerId = parseAddonToServerId(json),
@@ -44,6 +45,15 @@ fun OrderPosition.toModel(): OrderPositionModel {
 private fun parsePrice(json: JSONObject): BigDecimal? {
     try {
         return BigDecimal(json.getString("price"))
+    } catch (e: JSONException) {
+        e.printStackTrace()
+        return null
+    }
+}
+
+private fun parseTaxCode(json: JSONObject): String? {
+    try {
+        return json.optString("tax_code", null)
     } catch (e: JSONException) {
         e.printStackTrace()
         return null
