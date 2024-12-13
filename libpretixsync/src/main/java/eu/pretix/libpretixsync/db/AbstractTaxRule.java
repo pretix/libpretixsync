@@ -34,6 +34,18 @@ public class AbstractTaxRule implements RemoteObject {
         }
     }
 
+    public String getCode() {
+        try {
+            if (!getJSON().has("code") || getJSON().isNull("code")) {
+                return null;
+            }
+            return getJSON().getString("code");
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
     public BigDecimal getRate() {
         try {
             return new BigDecimal(getJSON().getString("rate"));
