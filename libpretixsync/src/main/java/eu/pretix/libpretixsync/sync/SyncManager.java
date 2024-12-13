@@ -566,7 +566,7 @@ public class SyncManager {
                 }
                 i++;
 
-                JSONObject data = new JSONObject(ReceiptExtensionsKt.toJSON(receipt));
+                JSONObject data = ReceiptExtensionsKt.toJSON(receipt);
                 JSONArray lines = new JSONArray();
                 JSONArray payments = new JSONArray();
 
