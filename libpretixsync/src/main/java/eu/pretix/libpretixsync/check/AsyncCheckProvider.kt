@@ -7,7 +7,6 @@ import eu.pretix.libpretixsync.config.ConfigStore
 import eu.pretix.libpretixsync.crypto.isValidSignature
 import eu.pretix.libpretixsync.crypto.readPubkeyFromPem
 import eu.pretix.libpretixsync.crypto.sig1.TicketProtos
-import eu.pretix.libpretixsync.db.AbstractQueuedCheckIn
 import eu.pretix.libpretixsync.db.Answer
 import eu.pretix.libpretixsync.db.NonceGenerator
 import eu.pretix.libpretixsync.db.QuestionLike
@@ -66,7 +65,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
 
         val dt = now()
         val jdoc = JSONObject()
-        jdoc.put("datetime", AbstractQueuedCheckIn.formatDatetime(dt.toDate()))
+        jdoc.put("datetime", QueuedCheckIn.formatDatetime(dt.toDate()))
         if (raw_barcode.contains(Regex("[\\p{C}]"))) {
             jdoc.put("raw_barcode", "binary:" + Base64.encodeBase64(raw_barcode.toByteArray(Charset.defaultCharset())).toString(Charset.defaultCharset()))
         } else {
@@ -521,7 +520,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
                     answers = givenAnswers.toString(),
                     checkinListId = listId,
                     datetime = dt.toDate(),
-                    datetime_string = AbstractQueuedCheckIn.formatDatetime(dt.toDate()),
+                    datetime_string = QueuedCheckIn.formatDatetime(dt.toDate()),
                     event_slug = eventSlug,
                     nonce = nonce ?: NonceGenerator.nextNonce(),
                     secret = ticketid,
@@ -929,7 +928,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
                     answers = givenAnswers.toString(),
                     checkinListId = listId,
                     datetime = dt.toDate(),
-                    datetime_string = AbstractQueuedCheckIn.formatDatetime(dt.toDate()),
+                    datetime_string = QueuedCheckIn.formatDatetime(dt.toDate()),
                     event_slug = eventSlug,
                     nonce = nonce ?: NonceGenerator.nextNonce(),
                     secret = position.secret,
@@ -943,7 +942,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
                     position = position.id,
                     type = type.toString().lowercase(Locale.getDefault()),
                     datetime = dt.toDate(),
-                    json_data = "{\"local\": true, \"type\": \"${type.toString().lowercase(Locale.getDefault())}\", \"datetime\": \"${AbstractQueuedCheckIn.formatDatetime(dt.toDate())}\"}",
+                    json_data = "{\"local\": true, \"type\": \"${type.toString().lowercase(Locale.getDefault())}\", \"datetime\": \"${QueuedCheckIn.formatDatetime(dt.toDate())}\"}",
                 )
             }
         }
