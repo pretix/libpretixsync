@@ -3,6 +3,13 @@ SELECT *
 FROM Receipt
 WHERE id = ?;
 
+selectClosedWithoutServerId:
+SELECT *
+FROM Receipt
+WHERE
+    CAST(open AS INTEGER) = 0
+    AND server_id IS NULL;
+
 insert:
 INSERT INTO Receipt (
     id,
@@ -61,4 +68,10 @@ updateOrderCode:
 UPDATE Receipt
 SET
     order_code = ?
+WHERE id = ?;
+
+updateServerId:
+UPDATE Receipt
+SET
+    server_id = ?
 WHERE id = ?;
