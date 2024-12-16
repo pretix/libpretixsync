@@ -67,7 +67,6 @@ class Item(
                 v.description = variation.optJSONObject("description")
                 v.position = variation.getLong("position")
                 v.price = BigDecimal(variation.getString("price"))
-                v.listed_price = BigDecimal(variation.getString("price"))
                 v.server_id = variation.getLong("id")
                 v.value = variation.getJSONObject("value")
                 v.available_from = variation.optString("available_from")
