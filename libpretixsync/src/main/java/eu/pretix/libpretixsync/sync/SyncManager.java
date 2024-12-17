@@ -23,7 +23,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import eu.pretix.libpretixsync.SentryInterface;
@@ -571,9 +573,16 @@ public class SyncManager {
                 JSONArray payments = new JSONArray();
 
                 List<ReceiptLine> dbLines = db.getReceiptLineQueries().selectForReceiptId(receipt.getId()).executeAsList();
+
+                Map<Long, Long> lineIdtoPositionId = new HashMap<>();
+
                 for (ReceiptLine line : dbLines) {
-                    // TODO: Manually add addon_to.positionid when switching to SQLDelight
-                    lines.put(ReceiptLineExtensionsKt.toJSON(line));
+                    lineIdtoPositionId.put(line.getId(), line.getPositionid());
+                    JSONObject json = ReceiptLineExtensionsKt.toJSON(line);
+                    if (line.getAddon_to() != null) {
+                        json.put("addon_to", lineIdtoPositionId.get(line.getAddon_to()));
+                    }
+                    lines.put(json);
                 }
                 List<ReceiptPayment> dbPayments = db.getReceiptPaymentQueries().selectForReceiptId(receipt.getId()).executeAsList();
                 for (ReceiptPayment payment : dbPayments) {
