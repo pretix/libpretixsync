@@ -1,0 +1,1 @@
+UPDATE ReceiptLine SET tax_code = NULL WHERE tax_code = 'null';
