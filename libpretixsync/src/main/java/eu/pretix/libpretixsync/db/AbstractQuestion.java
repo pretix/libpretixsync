@@ -146,6 +146,7 @@ public class AbstractQuestion extends QuestionLike implements RemoteObject {
         return _resolvedDependency;
     }
 
+    @Override
     public List<String> getDependencyValues() {
         try {
             List<String> l = new ArrayList<>();

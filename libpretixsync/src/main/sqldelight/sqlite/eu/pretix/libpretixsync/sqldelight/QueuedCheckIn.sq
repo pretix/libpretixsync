@@ -1,0 +1,14 @@
+import java.util.Date;
+
+CREATE TABLE QueuedCheckIn (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    answers TEXT,
+    checkinListId INTEGER,
+    datetime TEXT AS Date,
+    datetime_string TEXT,
+    event_slug TEXT,
+    nonce TEXT,
+    secret TEXT,
+    source_type TEXT,
+    type TEXT
+);

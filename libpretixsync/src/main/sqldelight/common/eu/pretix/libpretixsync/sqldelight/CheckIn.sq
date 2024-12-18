@@ -1,0 +1,77 @@
+selectById:
+SELECT *
+FROM CheckIn
+WHERE id = ?;
+
+selectByPositionId:
+SELECT *
+FROM CheckIn
+WHERE position = :postion_id;
+
+selectPositionIdByListIdAndType:
+SELECT position
+FROM CheckIn
+WHERE listId = :list_server_id AND type = :type;
+
+count:
+SELECT COUNT(*)
+FROM CheckIn;
+
+deleteById:
+DELETE FROM CheckIn WHERE id = ?;
+
+deleteByIdList:
+DELETE FROM CheckIn WHERE id IN ?;
+
+insert:
+INSERT INTO CheckIn (
+    datetime,
+    json_data,
+    listId,
+    position,
+    server_id,
+    type
+)
+VALUES (
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?
+);
+
+updateFromJson:
+UPDATE CheckIn
+SET
+    datetime = ?,
+    json_data = ?,
+    listId = ?,
+    position = ?,
+    type = ?
+WHERE id = ?;
+
+selectForOrders:
+SELECT CheckIn.*
+FROM CheckIn
+LEFT JOIN OrderPosition ON CheckIn.position = OrderPosition.id
+LEFT JOIN orders ON OrderPosition.order_ref = orders.id
+-- Doing this WHERE IN even though we have a JOIN is entirely redundant.
+-- But we know that ``ids`` is of small size and this will trick SQLite into a
+-- more efficient query plan that avoids a full table scan :)
+WHERE position IN (
+    SELECT OrderPosition.id
+    FROM OrderPosition
+    WHERE OrderPosition.order_ref IN (
+        SELECT orders.id
+        FROM orders
+        WHERE orders.code IN :order_codes
+    )
+);
+
+-- for tests only:
+testCountByOrderPositionSecret:
+SELECT COUNT(*)
+FROM CheckIn
+LEFT JOIN OrderPosition ON CheckIn.position = OrderPosition.id
+WHERE OrderPosition.secret = :secret;
