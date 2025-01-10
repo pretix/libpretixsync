@@ -45,19 +45,8 @@ interface TicketCheckProvider {
 
         var currentValue: String? = null
 
-        var question: QuestionOutput
+        val question: QuestionOutput
             get() = QuestionOutput(_question, _jsonData)
-
-            set(value) {
-                this._question = Question(
-                    server_id = value.server_id,
-                    json_data = value.json_data,
-                    position = -1, //TODO
-                    required = false, //TODO
-                    id = -1,
-                    event_slug = null,
-                ).toModel()
-            }
 
         constructor(question: QuestionModel, jsonData: String, currentValue: String?) {
             this._question = question
