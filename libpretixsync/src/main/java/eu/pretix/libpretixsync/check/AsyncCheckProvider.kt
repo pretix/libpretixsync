@@ -396,37 +396,37 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
             data.put("now_isoweekday", dt.withZone(tz).dayOfWeek().get())
             data.put("entries_number", queuedCheckIns.filter { it.type == "entry" }.size)
             data.put("entries_today", queuedCheckIns.filter {
-                DateTime(it.fullDatetime).withZone(tz).toLocalDate() == dt.withZone(tz).toLocalDate() && it.type == "entry"
+                DateTime(it.fullDateTime).withZone(tz).toLocalDate() == dt.withZone(tz).toLocalDate() && it.type == "entry"
             }.size)
             data.put("entries_since", { cutoff: DateTime ->
                 queuedCheckIns.filter {
-                    DateTime(it.fullDatetime).withZone(tz).isAfter(cutoff.minus(Duration.millis(1))) && it.type == "entry"
+                    DateTime(it.fullDateTime).withZone(tz).isAfter(cutoff.minus(Duration.millis(1))) && it.type == "entry"
                 }.size
             })
             data.put("entries_before", { cutoff: DateTime ->
                 queuedCheckIns.filter {
-                    DateTime(it.fullDatetime).withZone(tz).isBefore(cutoff) && it.type == "entry"
+                    DateTime(it.fullDateTime).withZone(tz).isBefore(cutoff) && it.type == "entry"
                 }.size
             })
             data.put("entries_days_since", { cutoff: DateTime ->
                 queuedCheckIns.filter {
-                    DateTime(it.fullDatetime).withZone(tz).isAfter(cutoff.minus(Duration.millis(1))) && it.type == "entry"
+                    DateTime(it.fullDateTime).withZone(tz).isAfter(cutoff.minus(Duration.millis(1))) && it.type == "entry"
                 }.map {
-                    DateTime(it.fullDatetime).withZone(tz).toLocalDate()
+                    DateTime(it.fullDateTime).withZone(tz).toLocalDate()
                 }.toHashSet().size
             })
             data.put("entries_days_before", { cutoff: DateTime ->
                 queuedCheckIns.filter {
-                    DateTime(it.fullDatetime).withZone(tz).isBefore(cutoff) && it.type == "entry"
+                    DateTime(it.fullDateTime).withZone(tz).isBefore(cutoff) && it.type == "entry"
                 }.map {
-                    DateTime(it.fullDatetime).withZone(tz).toLocalDate()
+                    DateTime(it.fullDateTime).withZone(tz).toLocalDate()
                 }.toHashSet().size
             })
             data.put("entries_days", queuedCheckIns.filter { it.type == "entry" }.map {
-                DateTime(it.fullDatetime).withZone(tz).toLocalDate()
+                DateTime(it.fullDateTime).withZone(tz).toLocalDate()
             }.toHashSet().size)
             val minutes_since_entries = queuedCheckIns.filter { it.type == "entry" }.map {
-                Duration(DateTime(it.fullDatetime).withZone(tz), dt).toStandardMinutes().minutes
+                Duration(DateTime(it.fullDateTime).withZone(tz), dt).toStandardMinutes().minutes
             }
             data.put("minutes_since_last_entry", minutes_since_entries.minOrNull() ?: -1)
             data.put("minutes_since_first_entry", minutes_since_entries.maxOrNull() ?: -1)
@@ -509,7 +509,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
                     )
             if (!entry_allowed) {
                 res.isCheckinAllowed = false
-                res.firstScanned = queuedCheckIns.first().fullDatetime
+                res.firstScanned = queuedCheckIns.first().fullDateTime
                 res.type = TicketCheckProvider.CheckResult.Type.USED
                 storeFailedCheckin(eventSlug, listId, "already_redeemed", ticketid, type, item = decoded.item, variation = decoded.variation, subevent = decoded.subevent, nonce = nonce)
             } else {
@@ -719,7 +719,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
         val storedCheckIns = db.checkInQueries.selectByPositionId(position.id).executeAsList().map { it.toModel() }
         val checkIns = storedCheckIns.filter {
             it.listServerId == listId
-        }.sortedWith(compareBy({ it.fullDatetime }, { it.id }))
+        }.sortedWith(compareBy({ it.fullDateTime }, { it.id }))
 
         if (order.status != OrderModel.Status.PAID && order.status != OrderModel.Status.PENDING) {
             res.type = TicketCheckProvider.CheckResult.Type.CANCELED
@@ -798,37 +798,37 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
             data.put("now_isoweekday", dt.withZone(tz).dayOfWeek().get())
             data.put("entries_number", checkIns.filter { it.type == "entry" }.size)
             data.put("entries_today", checkIns.filter {
-                it.fullDatetime.withZone(tz).toLocalDate() == dt.withZone(tz).toLocalDate() && it.type == "entry"
+                it.fullDateTime.withZone(tz).toLocalDate() == dt.withZone(tz).toLocalDate() && it.type == "entry"
             }.size)
             data.put("entries_since", { cutoff: DateTime ->
                 checkIns.filter {
-                    it.fullDatetime.withZone(tz).isAfter(cutoff.minus(Duration.millis(1))) && it.type == "entry"
+                    it.fullDateTime.withZone(tz).isAfter(cutoff.minus(Duration.millis(1))) && it.type == "entry"
                 }.size
             })
             data.put("entries_days_since", { cutoff: DateTime ->
                 checkIns.filter {
-                    it.fullDatetime.withZone(tz).isAfter(cutoff.minus(Duration.millis(1))) && it.type == "entry"
+                    it.fullDateTime.withZone(tz).isAfter(cutoff.minus(Duration.millis(1))) && it.type == "entry"
                 }.map {
-                    it.fullDatetime.withZone(tz).toLocalDate()
+                    it.fullDateTime.withZone(tz).toLocalDate()
                 }.toHashSet().size
             })
             data.put("entries_before", { cutoff: DateTime ->
                 checkIns.filter {
-                    it.fullDatetime.withZone(tz).isBefore(cutoff) && it.type == "entry"
+                    it.fullDateTime.withZone(tz).isBefore(cutoff) && it.type == "entry"
                 }.size
             })
             data.put("entries_days_before", { cutoff: DateTime ->
                 checkIns.filter {
-                    it.fullDatetime.withZone(tz).isBefore(cutoff) && it.type == "entry"
+                    it.fullDateTime.withZone(tz).isBefore(cutoff) && it.type == "entry"
                 }.map {
-                    it.fullDatetime.withZone(tz).toLocalDate()
+                    it.fullDateTime.withZone(tz).toLocalDate()
                 }.toHashSet().size
             })
             data.put("entries_days", checkIns.filter { it.type == "entry" }.map {
-                it.fullDatetime.withZone(tz).toLocalDate()
+                it.fullDateTime.withZone(tz).toLocalDate()
             }.toHashSet().size)
             val minutes_since_entries = checkIns.filter { it.type == "entry" }.map {
-                Duration(it.fullDatetime.withZone(tz), dt).toStandardMinutes().minutes
+                Duration(it.fullDateTime.withZone(tz), dt).toStandardMinutes().minutes
             }
             data.put("minutes_since_last_entry", minutes_since_entries.minOrNull() ?: -1)
             data.put("minutes_since_first_entry", minutes_since_entries.maxOrNull() ?: -1)
@@ -917,7 +917,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
                     )
             if (!entry_allowed) {
                 res.isCheckinAllowed = false
-                res.firstScanned = checkIns.first().fullDatetime.toDate()
+                res.firstScanned = checkIns.first().fullDateTime.toDate()
                 res.type = TicketCheckProvider.CheckResult.Type.USED
                 storeFailedCheckin(eventSlug, list.serverId, "already_redeemed", position.secret!!, type, position = position.serverId, item = positionItem.serverId, variation = position.variationServerId, subevent = position.subEventServerId, nonce = nonce)
             } else {
@@ -1248,11 +1248,11 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
         return OffsetDateTime.ofInstant(instant, zoneId)
     }
 
-    private val CheckIn.fullDatetime : DateTime
+    private val CheckIn.fullDateTime : DateTime
         get() {
             // To avoid Joda Time code in the models, handle the case where we don't have a datetime value from JSON here
-            return if (this.datetime != null) {
-                DateTime(this.datetime.toInstant().toEpochMilli())
+            return if (this.dateTime != null) {
+                DateTime(this.dateTime.toInstant().toEpochMilli())
             } else {
                 val date = db.checkInQueries.selectById(this.id).executeAsOne().datetime
                 DateTime(date)
@@ -1260,6 +1260,6 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
         }
 
     // Replicates the behaviour of AbstractQueuedCheckIn.getFullDatetime()
-    private val QueuedCheckIn.fullDatetime : Date
+    private val QueuedCheckIn.fullDateTime : Date
         get() = DateTime(this.dateTime.toInstant().toEpochMilli()).toDate()
 }
