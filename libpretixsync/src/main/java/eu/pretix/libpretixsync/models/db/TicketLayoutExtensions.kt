@@ -1,12 +1,12 @@
-package eu.pretix.libpretixsync.database
+package eu.pretix.libpretixsync.models.db
 
-import eu.pretix.libpretixsync.sqldelight.BadgeLayout
+import eu.pretix.libpretixsync.sqldelight.TicketLayout
 import org.json.JSONArray
 import org.json.JSONObject
-import eu.pretix.libpretixsync.models.BadgeLayout as BadgeLayoutModel
+import eu.pretix.libpretixsync.models.TicketLayout as TicketLayoutModel
 
-fun BadgeLayout.toModel() =
-    BadgeLayoutModel(
+fun TicketLayout.toModel() =
+    TicketLayoutModel(
         id = this.id,
         backgroundFilename = this.background_filename,
         eventSlug = this.event_slug!!,
