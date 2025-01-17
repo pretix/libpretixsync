@@ -15,6 +15,6 @@ fun CheckIn.toModel(): CheckInModel {
         positionId = this.position,
         type = this.type,
         // Use date values from JSON, as they contain time zone information
-        datetime = SafeOffsetDateTimeMapper.decode(json, "datetime"),
+        dateTime = SafeOffsetDateTimeMapper.decode(json, "datetime"),
     )
 }
