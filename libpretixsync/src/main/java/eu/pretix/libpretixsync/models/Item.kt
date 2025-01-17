@@ -44,7 +44,7 @@ class Item(
     val mediaPolicy: MediaPolicy = MediaPolicy.NONE,
     val mediaType: ReusableMediaType = ReusableMediaType.NONE,
     val generateTickets: Boolean = false,
-    val checkInAttention: Boolean = false,
+    val requiresCheckInAttention: Boolean = false,
 
     variations: JSONArray = JSONArray(),
     bundles: JSONArray = JSONArray(),

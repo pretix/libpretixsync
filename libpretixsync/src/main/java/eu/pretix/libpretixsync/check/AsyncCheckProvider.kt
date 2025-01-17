@@ -370,7 +370,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
         if (variation != null) {
             res.variation = variation.stringValue
         }
-        val require_attention = item.checkInAttention
+        val require_attention = item.requiresCheckInAttention
         res.isRequireAttention = require_attention || (variation?.isCheckin_attention == true)
         res.checkinTexts = listOfNotNull(variation?.checkin_text?.trim(), item.checkInText?.trim()).filterNot { it.isBlank() }.filterNot { it.isBlank() || it == "null" }
 
@@ -708,7 +708,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
         res.eventSlug = list.eventSlug
         var require_attention = order.requiresCheckInAttention
         try {
-            require_attention = require_attention || item.checkInAttention
+            require_attention = require_attention || item.requiresCheckInAttention
         } catch (e: JSONException) {
             sentry.captureException(e)
         }
@@ -1110,7 +1110,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
             }
             var require_attention = order.requiresCheckInAttention
             try {
-                require_attention = require_attention || item.checkInAttention || variation?.isCheckin_attention == true
+                require_attention = require_attention || item.requiresCheckInAttention || variation?.isCheckin_attention == true
             } catch (e: JSONException) {
                 sentry.captureException(e)
             }
