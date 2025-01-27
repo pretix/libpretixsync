@@ -15,7 +15,7 @@ import io.requery.sql.TableCreationMode;
 
 public class Migrations {
     private static EntityModel model = Models.DEFAULT;
-    public static int CURRENT_VERSION = 107;
+    public static int CURRENT_VERSION = 108;
 
     private static void createVersionTable(Connection c, int version) throws SQLException {
         Statement s2 = c.createStatement();
@@ -438,6 +438,12 @@ public class Migrations {
             // Version 4.3.6 contained a bug that wrote stringified null into this column.
             execIgnore(c, "UPDATE ReceiptLine SET tax_code = NULL WHERE tax_code = 'null';", new String[] {"no such column", "existiert", "syntax error"});
             updateVersionTable(c, 107);
+        }
+        if (db_version < 108) {
+            execIgnore(c, "ALTER TABLE Receipt ADD invoice_name_parts TEXT NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            execIgnore(c, "ALTER TABLE Receipt ADD invoice_email TEXT NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            execIgnore(c, "ALTER TABLE Receipt ADD invoice_phone TEXT NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            updateVersionTable(c, 108);
         }
 
         // Note that the Android app currently does not use these queries!
