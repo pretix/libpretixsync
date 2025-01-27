@@ -28,6 +28,9 @@ INSERT INTO Receipt (
     fiscalisation_data,
     fiscalisation_qr,
     fiscalisation_text,
+    invoice_name_parts,
+    invoice_email,
+    invoice_phone,
     open,
     order_code,
     payment_data,
@@ -38,6 +41,9 @@ INSERT INTO Receipt (
     training
 )
 VALUES (
+    ?,
+    ?,
+    ?,
     ?,
     ?,
     ?,
