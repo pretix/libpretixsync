@@ -441,8 +441,8 @@ public class Migrations {
         }
         if (db_version < 108) {
             execIgnore(c, "ALTER TABLE Receipt ADD invoice_name_parts TEXT NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
-            execIgnore(c, "ALTER TABLE Receipt ADD invoice_email TEXT NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
-            execIgnore(c, "ALTER TABLE Receipt ADD invoice_phone TEXT NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            execIgnore(c, "ALTER TABLE Receipt ADD order_email TEXT NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            execIgnore(c, "ALTER TABLE Receipt ADD order_phone TEXT NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
             updateVersionTable(c, 108);
         }
 
