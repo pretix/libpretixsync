@@ -63,5 +63,8 @@ fun Receipt.toJSON(): JSONObject {
     jo.put("cashier", cashier_numericid)
     jo.put("training", training)
     jo.put("additional_text", additional_text)
+    jo.put("invoice_name_parts", if (invoice_name_parts != null) invoice_name_parts else JSONObject.NULL)
+    jo.put("order_email", if (order_email != null) order_email else JSONObject.NULL)
+    jo.put("order_phone", if (order_phone != null) order_phone else JSONObject.NULL)
     return jo
 }
