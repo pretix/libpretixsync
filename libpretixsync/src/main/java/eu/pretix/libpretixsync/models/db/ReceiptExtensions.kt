@@ -33,4 +33,7 @@ fun Receipt.toModel() =
         emailTo = email_to,
         closing = closing,
         additionalText = additional_text,
+        invoiceNameParts = invoice_name_parts,
+        orderEmail = order_email,
+        orderPhone = order_phone,
     )

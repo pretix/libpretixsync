@@ -95,6 +95,15 @@ public class AbstractReceipt implements LocalObject {
     @OneToMany
     public List<QueuedOrder> queuedorders;
 
+    @Nullable
+    public String invoice_name_parts;
+
+    @Nullable
+    public String order_email;
+
+    @Nullable
+    public String order_phone;
+
     @Override
     public JSONObject toJSON() throws JSONException {
         TimeZone tz = TimeZone.getTimeZone("UTC");
@@ -122,6 +131,9 @@ public class AbstractReceipt implements LocalObject {
         jo.put("cashier", cashier_numericid);
         jo.put("training", training);
         jo.put("additional_text", additional_text);
+        jo.put("invoice_name_parts", invoice_name_parts != null ? invoice_name_parts : JSONObject.NULL);
+        jo.put("order_email", order_email != null ? order_email : JSONObject.NULL);
+        jo.put("order_phone", order_phone != null ? order_phone : JSONObject.NULL);
         return jo;
     }
 }
