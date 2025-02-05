@@ -81,3 +81,11 @@ UPDATE Receipt
 SET
     server_id = ?
 WHERE id = ?;
+
+clearLocalOrderAnswerDataById:
+UPDATE Receipt
+SET
+    invoice_name_parts = NULL,
+    order_email = NULL,
+    order_phone = NULL
+WHERE id = ?;

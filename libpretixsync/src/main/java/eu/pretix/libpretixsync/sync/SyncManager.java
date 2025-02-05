@@ -596,6 +596,7 @@ public class SyncManager {
                 );
                 if (response.getResponse().code() == 201) {
                     db.getReceiptQueries().updateServerId(response.getData().getLong("receipt_id"), receipt.getId());
+                    db.getReceiptQueries().clearLocalOrderAnswerDataById(receipt.getId());
                 } else {
                     throw new SyncException(response.getData().toString());
                 }
