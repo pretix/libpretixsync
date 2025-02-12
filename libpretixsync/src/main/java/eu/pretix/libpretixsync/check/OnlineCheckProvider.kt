@@ -15,8 +15,6 @@ import eu.pretix.libpretixsync.sqldelight.SyncDatabase
 import eu.pretix.libpretixsync.sync.FileStorage
 import eu.pretix.libpretixsync.sync.OrderSyncAdapter
 import eu.pretix.libpretixsync.utils.cleanInput
-import io.requery.BlockingEntityStore
-import io.requery.Persistable
 import org.joda.time.format.ISODateTimeFormat
 import org.json.JSONException
 import org.json.JSONObject
