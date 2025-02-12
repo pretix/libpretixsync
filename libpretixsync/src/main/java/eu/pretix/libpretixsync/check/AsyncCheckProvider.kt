@@ -23,8 +23,6 @@ import eu.pretix.libpretixsync.utils.codec.binary.Base64
 import eu.pretix.libpretixsync.utils.codec.binary.Base64.decodeBase64
 import eu.pretix.libpretixsync.utils.logic.JsonLogic
 import eu.pretix.libpretixsync.utils.logic.truthy
-import io.requery.BlockingEntityStore
-import io.requery.Persistable
 import io.requery.query.*
 import org.joda.time.DateTime
 import org.joda.time.DateTimeZone
