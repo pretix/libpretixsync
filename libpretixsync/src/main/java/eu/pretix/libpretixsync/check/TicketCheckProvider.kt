@@ -40,17 +40,13 @@ interface TicketCheckProvider {
     }
 
     class QuestionAnswer {
-        private lateinit var _question: QuestionModel
-        private lateinit var _jsonData: String
+        // Either set by constructor or de-serialization
+        lateinit var question: QuestionOutput
 
         var currentValue: String? = null
 
-        val question: QuestionOutput
-            get() = QuestionOutput(_question, _jsonData)
-
         constructor(question: QuestionModel, jsonData: String, currentValue: String?) {
-            this._question = question
-            this._jsonData = jsonData
+            this.question = QuestionOutput(question, jsonData)
             this.currentValue = currentValue
         }
 
