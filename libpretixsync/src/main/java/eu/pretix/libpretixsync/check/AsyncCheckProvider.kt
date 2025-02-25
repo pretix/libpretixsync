@@ -40,7 +40,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
         this.sentry = sentry
     }
 
-    private fun storeFailedCheckin(eventSlug: String, listId: Long, error_reason: String, raw_barcode: String, type: TicketCheckProvider.CheckInType, position: Long? = null, item: Long? = null, variation: Long? = null, subevent: Long? = null, nonce: String?, eventsAndCheckinLists: Set<Map.Entry<String, Long>>? = null) {
+    private fun storeFailedCheckin(eventSlug: String, listId: Long, error_reason: String, raw_barcode: String, type: TicketCheckProvider.CheckInType, position: Long? = null, item: Long? = null, variation: Long? = null, subevent: Long? = null, nonce: String?, candidateCheckinLists: Collection<Long>? = null) {
         /*
            :<json boolean error_reason: One of ``canceled``, ``invalid``, ``unpaid``, ``product``, ``rules``, ``revoked``,
                                         ``incomplete``, ``already_redeemed``, ``blocked``, ``invalid_time``, or ``error``. Required.
@@ -71,7 +71,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
         if (item != null && item > 0) jdoc.put("item", item)
         if (variation != null && variation > 0) jdoc.put("variation", variation)
         if (subevent != null && subevent > 0) jdoc.put("subevent", subevent)
-        if (eventsAndCheckinLists != null) jdoc.put("events_and_checkin_lists", eventsAndCheckinLists)
+        if (candidateCheckinLists != null) jdoc.put("candidate_checkin_lists", candidateCheckinLists)
 
         val qo = QueuedCall()
         val api = PretixApi.fromConfig(config)  // todo: uses wrong http client
@@ -279,7 +279,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
         }
         if (decoded == null || event == null) {
             val firstentry = eventsAndCheckinLists.entries.first()
-            storeFailedCheckin(firstentry.key, firstentry.value, "invalid", ticketid, type, nonce = nonce, eventsAndCheckinLists=eventsAndCheckinLists.entries)
+            storeFailedCheckin(firstentry.key, firstentry.value, "invalid", ticketid, type, nonce = nonce, candidateCheckinLists=eventsAndCheckinLists.values)
             return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.INVALID, offline = true)
         }
         val listId = eventsAndCheckinLists[event.slug] ?: return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.ERROR, "Check-in list not set for event", offline = true)
