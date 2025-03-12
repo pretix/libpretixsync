@@ -1,0 +1,10 @@
+CREATE TABLE MediumKeySet (
+    id serial PRIMARY KEY NOT NULL,
+    active boolean NOT NULL,
+    diversification_key character varying(255),
+    json_data text,
+    media_type character varying(255),
+    organizer character varying(255),
+    public_id bigint,
+    uid_key character varying(255)
+);

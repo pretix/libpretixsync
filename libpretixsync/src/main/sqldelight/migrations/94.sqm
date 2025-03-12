@@ -1,0 +1,1 @@
+ALTER TABLE QueuedCheckIn ADD source_type TEXT NULL;
