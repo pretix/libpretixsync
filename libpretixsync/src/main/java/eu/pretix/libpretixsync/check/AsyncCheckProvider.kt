@@ -544,6 +544,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
         type: TicketCheckProvider.CheckInType,
         nonce: String?,
         allowQuestions: Boolean,
+        useOrderLocale: Boolean
     ): TicketCheckProvider.CheckResult {
         val ticketid_cleaned = cleanInput(ticketid, source_type)
 
@@ -697,6 +698,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
             res.variation = variation.stringValue
         }
 
+        res.locale = order.locale
         res.attendee_name = position.attendeeName
         res.seat = position.seatName
         res.orderCode = order.code
