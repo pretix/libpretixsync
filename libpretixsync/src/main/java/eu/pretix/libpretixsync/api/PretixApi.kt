@@ -43,16 +43,16 @@ open class PretixApi(url: String, key: String, orgaSlug: String, version: Int, h
     inner class ApiResponse(val data: JSONObject?, val response: Response)
 
     @Throws(ApiException::class, JSONException::class)
-    fun redeem(eventSlug: String, secret: String, datetime: Date?, force: Boolean, nonce: String?, answers: List<Answer>?, listId: Long, ignore_unpaid: Boolean, pdf_data: Boolean, type: String?, source_type: String?, callTimeout: Long? = null, questions_supported: Boolean = true): ApiResponse {
+    fun redeem(eventSlug: String, secret: String, datetime: Date?, force: Boolean, nonce: String?, answers: List<Answer>?, listId: Long, ignore_unpaid: Boolean, pdf_data: Boolean, type: String?, source_type: String?, callTimeout: Long? = null, questions_supported: Boolean = true, use_order_locale: Boolean = false): ApiResponse {
         var dt: String? = null
         if (datetime != null) {
             dt = QueuedCheckIn.formatDatetime(datetime)
         }
-        return redeem(eventSlug, secret, dt, force, nonce, answers, listId, ignore_unpaid, pdf_data, type, source_type, callTimeout, questions_supported)
+        return redeem(eventSlug, secret, dt, force, nonce, answers, listId, ignore_unpaid, pdf_data, type, source_type, callTimeout, questions_supported, use_order_locale)
     }
 
     @Throws(ApiException::class, JSONException::class)
-    open fun redeem(eventSlug: String, secret: String, datetime: String?, force: Boolean, nonce: String?, answers: List<Answer>?, listId: Long, ignore_unpaid: Boolean, pdf_data: Boolean, type: String?, source_type: String?, callTimeout: Long? = null, questions_supported: Boolean=true): ApiResponse {
+    open fun redeem(eventSlug: String, secret: String, datetime: String?, force: Boolean, nonce: String?, answers: List<Answer>?, listId: Long, ignore_unpaid: Boolean, pdf_data: Boolean, type: String?, source_type: String?, callTimeout: Long? = null, questions_supported: Boolean = true, use_order_locale: Boolean = false): ApiResponse {
         val body = JSONObject()
         if (datetime != null) {
             body.put("datetime", datetime)
@@ -82,6 +82,7 @@ open class PretixApi(url: String, key: String, orgaSlug: String, version: Int, h
         body.put("answers", answerbody)
         body.put("questions_supported", questions_supported)
         body.put("canceled_supported", true)
+        body.put("use_order_locale", use_order_locale)
         var pd = ""
         if (pdf_data) {
             pd = "?pdf_data=true"
@@ -90,7 +91,7 @@ open class PretixApi(url: String, key: String, orgaSlug: String, version: Int, h
     }
 
     @Throws(ApiException::class, JSONException::class)
-    fun redeem(lists: List<Long>, secret: String, datetime: Date?, force: Boolean, nonce: String?, answers: List<Answer>?, ignore_unpaid: Boolean, pdf_data: Boolean, type: String?, source_type: String?, callTimeout: Long? = null, questions_supported: Boolean = true): ApiResponse {
+    fun redeem(lists: List<Long>, secret: String, datetime: Date?, force: Boolean, nonce: String?, answers: List<Answer>?, ignore_unpaid: Boolean, pdf_data: Boolean, type: String?, source_type: String?, callTimeout: Long? = null, questions_supported: Boolean = true, use_order_locale: Boolean = false): ApiResponse {
         var dt: String? = null
         if (datetime != null) {
             dt = QueuedCheckIn.formatDatetime(datetime)
@@ -112,6 +113,7 @@ open class PretixApi(url: String, key: String, orgaSlug: String, version: Int, h
         source_type: String?,
         callTimeout: Long? = null,
         questions_supported: Boolean = true,
+        use_order_locale: Boolean = false,
         exchange_medium_type: String? = null,
         exchange_medium_identifier: String? = null,
     ): ApiResponse {
@@ -144,6 +146,7 @@ open class PretixApi(url: String, key: String, orgaSlug: String, version: Int, h
         body.put("answers", answerbody)
         body.put("questions_supported", questions_supported)
         body.put("canceled_supported", true)
+        body.put("use_order_locale", use_order_locale)
         body.put("secret", secret)
         val jlists = JSONArray()
         for (l in lists) {

@@ -83,6 +83,7 @@ interface TicketCheckProvider {
         var position: JSONObject? = null
         var eventSlug: String? = null
         var offline: Boolean = false
+        var locale: String? = null
         var requiredMediaPolicy: MediaPolicy? = null
         var requiredMediaType: ReusableMediaType? = null
 
@@ -172,6 +173,7 @@ interface TicketCheckProvider {
         type: CheckInType,
         nonce: String? = null,
         allowQuestions: Boolean = true,
+        useOrderLocale: Boolean = false,
         exchange_medium_type: String? = null,
         exchange_medium_identifier: String? = null,
     ): CheckResult

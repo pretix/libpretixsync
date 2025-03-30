@@ -50,6 +50,7 @@ class OnlineCheckProvider(
         type: TicketCheckProvider.CheckInType,
         nonce: String?,
         allowQuestions: Boolean,
+        useOrderLocale: Boolean,
         exchange_medium_type: String?,
         exchange_medium_identifier: String?,
     ): TicketCheckProvider.CheckResult {
@@ -74,6 +75,7 @@ class OnlineCheckProvider(
                     source_type,
                     callTimeout = if (fallback != null) fallbackTimeout.toLong() else null,
                     questions_supported = allowQuestions,
+                    use_order_locale = useOrderLocale,
                     exchange_medium_type = exchange_medium_type,
                     exchange_medium_identifier = exchange_medium_identifier,
                 )
@@ -216,6 +218,9 @@ class OnlineCheckProvider(
                     }
                     res.orderCode = posjson.optString("order")
                     res.positionId = posjson.optLong("positionid")
+                    if (posjson.has("order__locale")) {
+                        res.locale = posjson.getString("order__locale")
+                    }
                     res.position = posjson
                     val checkins = posjson.getJSONArray("checkins")
                     for (i in 0 until checkins.length()) {
