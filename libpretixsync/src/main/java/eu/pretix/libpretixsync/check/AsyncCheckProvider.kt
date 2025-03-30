@@ -540,6 +540,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
         type: TicketCheckProvider.CheckInType,
         nonce: String?,
         allowQuestions: Boolean,
+        useOrderLocale: Boolean
     ): TicketCheckProvider.CheckResult {
         val ticketid_cleaned = cleanInput(ticketid, source_type)
 
@@ -680,6 +681,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
             res.variation = variation.stringValue
         }
 
+        res.locale = position.getOrder().locale
         res.attendee_name = position.attendee_name
         res.seat = position.seatName
         res.orderCode = position.getOrder().getCode()

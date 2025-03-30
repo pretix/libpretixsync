@@ -104,7 +104,8 @@ class ProxyCheckProvider(private val config: ConfigStore, httpClientFactory: Htt
         with_badge_data: Boolean,
         type: TicketCheckProvider.CheckInType,
         nonce: String?,
-        allowQuestions: Boolean
+        allowQuestions: Boolean,
+        useOrderLocale: Boolean
     ): TicketCheckProvider.CheckResult {
         val data: MutableMap<String, Any> = HashMap()
         data["events_and_checkin_lists"] = eventsAndCheckinLists
@@ -115,6 +116,7 @@ class ProxyCheckProvider(private val config: ConfigStore, httpClientFactory: Htt
         data["source_type"] = source_type
         data["type"] = type
         data["allowQuestions"] = allowQuestions
+        data["useOrderLocale"] = useOrderLocale
         if (nonce != null) {
             data["nonce"] = nonce
         }
