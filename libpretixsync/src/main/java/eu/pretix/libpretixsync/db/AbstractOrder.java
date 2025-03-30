@@ -70,6 +70,15 @@ public class AbstractOrder implements RemoteObject {
         return false;
     }
 
+    public String getLocale() {
+        try {
+            return getJSON().getString("locale");
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
     public String getPaymentProvider() {
         try {
             return getJSON().getString("payment_provider");
