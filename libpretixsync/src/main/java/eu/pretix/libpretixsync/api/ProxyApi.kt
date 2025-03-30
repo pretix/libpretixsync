@@ -25,6 +25,7 @@ data class MultiCheckInput(
 
     // TODO: Check unused values
     val allowQuestions: Boolean,
+    val useOrderLocale: Boolean,
     val nonce: String?,
     val exchange_medium_type: String?,
     val exchange_medium_identifier: String?,

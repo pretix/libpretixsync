@@ -43,6 +43,7 @@ class FakePretixApi(var orgaSlug: String = "demo") : PretixApi("http://1.1.1.1/"
         source_type: String?,
         callTimeout: Long?,
         questions_supported: Boolean,
+        use_order_locale: Boolean,
         exchange_medium_type: String?,
         exchange_medium_identifier: String?,
     ): ApiResponse {
@@ -70,7 +71,8 @@ class FakePretixApi(var orgaSlug: String = "demo") : PretixApi("http://1.1.1.1/"
         type: String?,
         source_type: String?,
         callTimeout: Long?,
-        questions_supported: Boolean
+        questions_supported: Boolean,
+        use_order_locale: Boolean
     ): ApiResponse {
         redeemRequestSecret = secret
         redeemRequestDatetime = datetime

@@ -110,6 +110,7 @@ class ProxyCheckProvider(private val config: ConfigStore, httpClientFactory: Htt
         type: TicketCheckProvider.CheckInType,
         nonce: String?,
         allowQuestions: Boolean,
+        useOrderLocale: Boolean,
         exchange_medium_type: String?,
         exchange_medium_identifier: String?,
     ): TicketCheckProvider.CheckResult {
@@ -131,6 +132,7 @@ class ProxyCheckProvider(private val config: ConfigStore, httpClientFactory: Htt
             source_type = source_type,
             type = type.name,
             allowQuestions = allowQuestions,
+            useOrderLocale = useOrderLocale,
             nonce = nonce,
             exchange_medium_type = exchange_medium_type,
             exchange_medium_identifier = exchange_medium_identifier,
