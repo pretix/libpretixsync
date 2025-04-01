@@ -1,0 +1,12 @@
+import java.util.Date;
+
+CREATE TABLE Discount (
+    id serial AS Long PRIMARY KEY NOT NULL,
+    server_id bigint NOT NULL,
+    event_slug character varying(255) NOT NULL,
+    active boolean NOT NULL,
+    available_from DATE as Date,
+    available_until DATE as Date,
+    "position" bigint NOT NULL,
+    json_data text NOT NULL
+);

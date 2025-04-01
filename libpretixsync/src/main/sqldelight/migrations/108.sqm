@@ -1,0 +1,10 @@
+CREATE TABLE Discount (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    server_id INTEGER,
+    event_slug TEXT,
+    active INTEGER AS Boolean NOT NULL,
+    available_from TEXT AS Date,
+    available_until TEXT AS Date,
+    "position" INTEGER,
+    json_data TEXT
+);

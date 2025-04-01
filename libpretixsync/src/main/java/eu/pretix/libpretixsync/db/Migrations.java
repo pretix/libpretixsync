@@ -15,7 +15,7 @@ import io.requery.sql.TableCreationMode;
 
 public class Migrations {
     private static EntityModel model = Models.DEFAULT;
-    public static int CURRENT_VERSION = 108;
+    public static int CURRENT_VERSION = 109;
 
     private static void createVersionTable(Connection c, int version) throws SQLException {
         Statement s2 = c.createStatement();
@@ -492,6 +492,11 @@ public class Migrations {
             execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_record_proof;", new String[] {"no such column", "existiert", "syntax error"});
             execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_vaccinated_products;", new String[] {"no such column", "existiert", "syntax error"});
             updateVersionTable(c, 105);
+        }
+        if (oldVersion < 107 && newVersion >= 107) {
+            // Version 4.3.6 contained a bug that wrote stringified null into this column.
+            execIgnore(c, "UPDATE ReceiptLine SET tax_code = NULL WHERE tax_code = 'null';", new String[] {"no such column", "existiert", "syntax error"});
+            updateVersionTable(c, 107);
         }
         if (oldVersion < 107 && newVersion >= 107) {
             // Version 4.3.6 contained a bug that wrote stringified null into this column.

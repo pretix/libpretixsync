@@ -1,0 +1,60 @@
+selectById:
+SELECT *
+FROM Discount
+WHERE id = ?;
+
+selectByServerId:
+SELECT *
+FROM Discount
+WHERE server_id = ?;
+
+selectByEventSlug:
+SELECT *
+FROM Discount
+WHERE event_slug = ?;
+
+selectByServerIdListAndEventSlug:
+SELECT *
+FROM Discount
+WHERE server_id IN ? AND event_slug = ?;
+
+selectServerIdsByEventSlug:
+SELECT server_id
+FROM Discount
+WHERE event_slug = ?;
+
+deleteByServerId:
+DELETE FROM Discount
+WHERE server_id = ?;
+
+insert:
+INSERT INTO Discount
+(
+    server_id,
+    event_slug,
+    active,
+    available_from,
+    available_until,
+    "position",
+    json_data
+)
+VALUES (
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?
+);
+
+updateFromJson:
+UPDATE Discount
+SET
+    event_slug = ?,
+    active = ?,
+    available_from = ?,
+    available_until = ?,
+    "position" = ?,
+    json_data = ?
+WHERE id = ?;
