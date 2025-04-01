@@ -1,0 +1,13 @@
+import java.util.Date;
+import kotlin.Boolean;
+
+CREATE TABLE Discount (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    server_id INTEGER NOT NULL,
+    event_slug TEXT NOT NULL,
+    active INTEGER AS Boolean NOT NULL,
+    available_from TEXT AS Date,
+    available_until TEXT AS Date,
+    "position" INTEGER NOT NULL,
+    json_data TEXT NOT NULL
+);
