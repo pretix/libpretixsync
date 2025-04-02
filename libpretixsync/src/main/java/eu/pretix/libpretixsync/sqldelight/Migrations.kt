@@ -1,0 +1,20 @@
+package eu.pretix.libpretixsync.sqldelight
+
+import app.cash.sqldelight.db.AfterVersion
+
+object Migrations {
+    /**
+     * Lowest schema version that we can still migrate from
+     */
+    const val minSupportedVersion = 91L
+
+    /**
+     * AfterVersion callback that can be used in SQLDelight code migrations to crash if we encounter
+     * a schema version that we have no migrations for.
+     * Without it, SQLDelight might just increase the DB version without actually creating the
+     * correct schema.
+     */
+    val minVersionCallback = AfterVersion(minSupportedVersion - 1L) { _ ->
+        throw IllegalStateException("Unsupported database version. Minimum supported version is $minSupportedVersion")
+    }
+}
