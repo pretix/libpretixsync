@@ -6,7 +6,7 @@ object Migrations {
     /**
      * Lowest schema version that we can still migrate from
      */
-    const val minSupportedVersion = 91L
+    const val minSupportedVersion = 77L
 
     /**
      * AfterVersion callback that can be used in SQLDelight code migrations to crash if we encounter

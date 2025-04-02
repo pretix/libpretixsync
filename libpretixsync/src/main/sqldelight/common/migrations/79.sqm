@@ -1,0 +1,3 @@
+ALTER TABLE Receipt ADD subevent_text TEXT NULL;
+ALTER TABLE Receipt ADD event_date_from TEXT NULL;
+ALTER TABLE Receipt ADD event_date_to TEXT NULL;

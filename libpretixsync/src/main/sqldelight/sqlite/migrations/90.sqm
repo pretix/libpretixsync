@@ -1,0 +1,1 @@
+ALTER TABLE orders ADD valid_if_pending NUMERIC DEFAULT(0);

@@ -1,0 +1,2 @@
+ALTER TABLE Settings ADD covid_certificates_allow_other NUMERIC NULL;
+ALTER TABLE Settings ADD covid_certificates_record_proof_other NUMERIC NULL;

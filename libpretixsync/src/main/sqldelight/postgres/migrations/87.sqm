@@ -1,0 +1,3 @@
+ALTER TABLE Settings ALTER COLUMN pretixpos_additional_receipt_text TYPE TEXT;
+ALTER TABLE Settings ALTER COLUMN covid_certificates_allow_vaccinated_products TYPE TEXT;
+ALTER TABLE Settings ALTER COLUMN covid_certificates_combination_rules TYPE TEXT;
