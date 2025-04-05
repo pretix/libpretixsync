@@ -503,6 +503,24 @@ public class Migrations {
             execIgnore(c, "UPDATE ReceiptLine SET tax_code = NULL WHERE tax_code = 'null';", new String[] {"no such column", "existiert", "syntax error"});
             updateVersionTable(c, 107);
         }
+        if (oldVersion < 108 && newVersion >= 108) {
+            execIgnore(c, "CREATE TABLE Discount (\n" +
+                    "    id INTEGER PRIMARY KEY AUTOINCREMENT,\n" +
+                    "    server_id INTEGER,\n" +
+                    "    event_slug TEXT,\n" +
+                    "    active INTEGER AS Boolean NOT NULL,\n" +
+                    "    available_from TEXT AS Date,\n" +
+                    "    available_until TEXT AS Date,\n" +
+                    "    \"position\" INTEGER,\n" +
+                    "    json_data TEXT\n" +
+                    ");\n", new String[] {});
+            updateVersionTable(c, 108);
+        }
+        if (oldVersion < 109 && newVersion >= 109) {
+            execIgnore(c, "ALTER TABLE ReceiptLine ADD line_price_gross REAL AS BigDecimal;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            execIgnore(c, "ALTER TABLE ReceiptLine ADD discount_id INTEGER;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            updateVersionTable(c, 109);
+        }
     }
 
     private static void create_drop(DataSource dataSource) {
