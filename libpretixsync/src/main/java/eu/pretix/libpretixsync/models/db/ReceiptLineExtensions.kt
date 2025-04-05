@@ -48,4 +48,6 @@ fun ReceiptLine.toModel() =
         giftCardId = gift_card_id,
         giftCardSecret = gift_card_secret,
         priceCalculatedFromNet = price_calculated_from_net == true,
+        linePriceGross = line_price_gross ?: price,
+        discountId = discount_id,
     )

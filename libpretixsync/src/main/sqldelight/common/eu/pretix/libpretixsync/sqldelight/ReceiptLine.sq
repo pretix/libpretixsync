@@ -58,9 +58,13 @@ INSERT INTO ReceiptLine (
     type,
     use_reusable_medium,
     variation_id,
-    voucher_code
+    voucher_code,
+    line_price_gross,
+    discount_id
 )
 VALUES (
+    ?,
+    ?,
     ?,
     ?,
     ?,
