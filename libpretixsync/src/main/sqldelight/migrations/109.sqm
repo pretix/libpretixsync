@@ -1,0 +1,4 @@
+import java.math.BigDecimal;
+
+ALTER TABLE ReceiptLine ADD line_price_gross REAL AS BigDecimal;
+ALTER TABLE ReceiptLine ADD discount_id INTEGER;

@@ -181,6 +181,12 @@ public class AbstractReceiptLine implements LocalObject {
     @Column(nullable = true)
     public Long use_reusable_medium;
 
+    @Column(nullable = true)
+    public BigDecimal line_price_gross;
+
+    @Column(nullable = true)
+    public Long discount_id;
+
     @Override
     public JSONObject toJSON() throws JSONException {
         JSONObject jo = new JSONObject();
@@ -227,6 +233,8 @@ public class AbstractReceiptLine implements LocalObject {
         jo.put("use_reusable_medium", use_reusable_medium);
         jo.put("gift_card", gift_card_id);
         jo.put("gift_card_secret", gift_card_secret);
+        jo.put("line_price_gross", line_price_gross != null ? line_price_gross : JSONObject.NULL);
+        jo.put("discount", discount_id != null ? discount_id : JSONObject.NULL);
         return jo;
     }
 }
