@@ -1,2 +1,2 @@
-ALTER TABLE Settings ADD covid_certificates_record_proof NUMERIC NULL;
-ALTER TABLE Settings ADD covid_certificates_allow_vaccinated_products TEXT NULL;
+ALTER TABLE Settings ADD covid_certificates_record_proof INTEGER;
+ALTER TABLE Settings ADD covid_certificates_allow_vaccinated_products TEXT;

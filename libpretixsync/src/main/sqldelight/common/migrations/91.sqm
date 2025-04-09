@@ -1,1 +1,1 @@
-ALTER TABLE ReceiptLine ADD requested_valid_from TEXT NULL;
+ALTER TABLE ReceiptLine ADD requested_valid_from TEXT;

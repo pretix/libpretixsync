@@ -1,2 +1,2 @@
-ALTER TABLE orders ADD checkin_text TEXT NULL;
-ALTER TABLE Item ADD checkin_text TEXT NULL;
+ALTER TABLE orders ADD checkin_text TEXT;
+ALTER TABLE Item ADD checkin_text TEXT;
