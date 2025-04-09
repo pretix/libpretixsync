@@ -128,6 +128,19 @@ sqldelight {
             packageName = "eu.pretix.libpretixsync.sqldelight"
             srcDirs('src/main/sqldelight/sqlite', 'src/main/sqldelight/common', 'src/main/sqldelight/migrations')
 
+            // SQLDelight supports migration validation by running the migrations against a database file from a
+            // previous version and comparing the result against the current schema.
+            //
+            // The database dumps can be generated with the Gradle task `generateMainSyncDatabaseSchema`, which will
+            // place a .db file in `schemaOutputDirectory` (e.g. 100.db for schema version 100).
+            //
+            // Unfortunately, the validation is buggy for complex schemas (see https://github.com/sqldelight/sqldelight/issues/4759)
+            // and will hang or run out of memory in the current release.
+            //
+            // Running the `verifyMainSyncDatabaseMigration` is still helpful to check the syntax of the migrations.
+            schemaOutputDirectory.set(file("src/main/sqldelight/sqlite"))
+
+
             // Oldest dialect supported by SQLDelight 2.0.2
             // In Android projects, it will auto-select based on SDK
             // but not go lower than 3.18 (Android 9 is still on 3.8)
