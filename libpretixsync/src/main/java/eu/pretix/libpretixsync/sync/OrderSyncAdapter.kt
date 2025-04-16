@@ -3,9 +3,9 @@ package eu.pretix.libpretixsync.sync
 import app.cash.sqldelight.TransactionWithoutReturn
 import eu.pretix.libpretixsync.api.ApiException
 import eu.pretix.libpretixsync.api.PretixApi
-import eu.pretix.libpretixsync.db.Migrations
 import eu.pretix.libpretixsync.sqldelight.CheckIn
 import eu.pretix.libpretixsync.sqldelight.Item
+import eu.pretix.libpretixsync.sqldelight.Migrations
 import eu.pretix.libpretixsync.sqldelight.OrderPosition
 import eu.pretix.libpretixsync.sqldelight.ResourceSyncStatus
 import eu.pretix.libpretixsync.sqldelight.SyncDatabase

@@ -3,7 +3,7 @@ package eu.pretix.libpretixsync.sync
 import app.cash.sqldelight.TransactionWithoutReturn
 import app.cash.sqldelight.db.QueryResult
 import eu.pretix.libpretixsync.api.PretixApi
-import eu.pretix.libpretixsync.db.Migrations
+import eu.pretix.libpretixsync.sqldelight.Migrations
 import eu.pretix.libpretixsync.sqldelight.Question
 import eu.pretix.libpretixsync.sqldelight.SyncDatabase
 import eu.pretix.libpretixsync.sync.SyncManager.ProgressFeedback

@@ -4,6 +4,13 @@ import app.cash.sqldelight.db.AfterVersion
 
 object Migrations {
     /**
+     * Current database version
+     *
+     * Must be updated manually and kept in sync with the SQLDelight migrations.
+     */
+    const val CURRENT_VERSION = 108L
+
+    /**
      * Lowest schema version that we can still migrate from
      */
     const val MIN_SUPPORTED_VERSION = 77L

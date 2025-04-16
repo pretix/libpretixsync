@@ -4,7 +4,7 @@ import app.cash.sqldelight.TransactionWithoutReturn
 import eu.pretix.libpretixsync.api.ApiException
 import eu.pretix.libpretixsync.api.PretixApi
 import eu.pretix.libpretixsync.api.ResourceNotModified
-import eu.pretix.libpretixsync.db.Migrations
+import eu.pretix.libpretixsync.sqldelight.Migrations
 import eu.pretix.libpretixsync.sqldelight.SyncDatabase
 import eu.pretix.libpretixsync.sync.SyncManager.CanceledState
 import eu.pretix.libpretixsync.sync.SyncManager.ProgressFeedback

@@ -2,8 +2,8 @@ package eu.pretix.libpretixsync.sync
 
 import app.cash.sqldelight.TransactionWithoutReturn
 import eu.pretix.libpretixsync.api.PretixApi
-import eu.pretix.libpretixsync.db.Migrations
 import eu.pretix.libpretixsync.sqldelight.Event
+import eu.pretix.libpretixsync.sqldelight.Migrations
 import eu.pretix.libpretixsync.sqldelight.SyncDatabase
 import eu.pretix.libpretixsync.sync.SyncManager.ProgressFeedback
 import eu.pretix.libpretixsync.utils.JSONUtils
