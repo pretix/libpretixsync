@@ -5,7 +5,6 @@ import eu.pretix.libpretixsync.api.PretixApi
 import eu.pretix.libpretixsync.models.db.toModel
 import eu.pretix.libpretixsync.sqldelight.SyncDatabase
 import eu.pretix.libpretixsync.sync.SyncManager.ProgressFeedback
-import io.requery.RollbackException
 import org.json.JSONException
 import java.time.Duration
 import kotlin.math.max
@@ -18,9 +17,6 @@ class OrderCleanup(val db: SyncDatabase, val fileStorage: FileStorage, val api: 
         }
         try {
             SubEventSyncAdapter(db, eventSlug, sid.toString(), api, syncCycleId) { }.download()
-        } catch (e: RollbackException) {
-            subeventsDeletionDate[sid] = null
-            return null
         } catch (e: JSONException) {
             subeventsDeletionDate[sid] = null
             return null

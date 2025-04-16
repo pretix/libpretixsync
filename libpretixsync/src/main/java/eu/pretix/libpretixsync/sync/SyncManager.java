@@ -16,7 +16,6 @@ import eu.pretix.libpretixsync.sqldelight.ReceiptPayment;
 import eu.pretix.libpretixsync.sqldelight.ReceiptPaymentExtensionsKt;
 import eu.pretix.libpretixsync.sqldelight.SyncDatabase;
 import eu.pretix.libpretixsync.utils.JSONUtils;
-import io.requery.sql.StatementExecutionException;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -190,14 +189,6 @@ public class SyncManager {
             configStore.setLastFailedSync(0);
             if (feedback != null) {
                 feedback.postFeedback("Sync completed.");
-            }
-        } catch (StatementExecutionException e) {
-            if (e.getCause() != null && e.getCause().getMessage().contains("SQLITE_BUSY")) {
-                configStore.setLastFailedSync(System.currentTimeMillis());
-                configStore.setLastFailedSyncMsg("Local database was locked");
-                return new SyncResult(true, download, e);
-            } else {
-                throw e;
             }
         } catch (SyncException e) {
             configStore.setLastFailedSync(System.currentTimeMillis());
