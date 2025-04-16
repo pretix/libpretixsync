@@ -306,9 +306,9 @@ public class Migrations {
             updateVersionTable(c, 79);
         }
         if (db_version < 80) {
-            execIgnore(c, "ALTER TABLE Receipt ADD subevent_text TEXT NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
-            execIgnore(c, "ALTER TABLE Receipt ADD event_date_from TEXT NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
-            execIgnore(c, "ALTER TABLE Receipt ADD event_date_to TEXT NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            execIgnore(c, "ALTER TABLE ReceiptLine ADD subevent_text TEXT NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            execIgnore(c, "ALTER TABLE ReceiptLine ADD event_date_from TEXT NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            execIgnore(c, "ALTER TABLE ReceiptLine ADD event_date_to TEXT NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
             updateVersionTable(c, 80);
         }
         if (db_version < 82) {
