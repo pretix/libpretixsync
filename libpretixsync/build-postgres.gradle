@@ -90,10 +90,6 @@ check.dependsOn jacocoTestReport
 dependencies {
     implementation "com.squareup.okhttp3:okhttp:$okhttp_version"
     testFixturesImplementation "com.squareup.okhttp3:okhttp:$okhttp_version"
-    implementation "io.requery:requery:$requery_version"
-    testFixturesImplementation "io.requery:requery:$requery_version"
-    implementation "io.requery:requery-kotlin:$requery_version"
-    testFixturesImplementation "io.requery:requery-kotlin:$requery_version"
     implementation "joda-time:joda-time:$joda_version"
 
     implementation "org.json:json:$json_version"
@@ -110,7 +106,6 @@ dependencies {
 
     implementation "app.cash.sqldelight:jdbc-driver:$sqldelight_version"
 
-    kapt "io.requery:requery-processor:$requery_version"
     annotationProcessor "javax.annotation:jsr250-api:$jsr250_version"
 
     testFixturesImplementation "junit:junit:$junit_version"
