@@ -6,6 +6,7 @@ import java.time.OffsetDateTime
 
 data class SubEvent(
     val id: Long,
+    val serverId: Long,
     val name: String,
     val dateFrom: OffsetDateTime,
     val dateTo: OffsetDateTime? = null,

@@ -13,6 +13,7 @@ fun SubEvent.toModel(): SubEventModel {
 
     return SubEventModel(
         id = this.id,
+        serverId = this.server_id!!,
         name = parseName(json),
         // Use date values from JSON, as they contain time zone information
         dateFrom = SafeOffsetDateTimeMapper.decode(json, "date_from")!!,
