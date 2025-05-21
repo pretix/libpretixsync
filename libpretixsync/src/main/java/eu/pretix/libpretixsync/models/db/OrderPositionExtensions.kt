@@ -19,7 +19,7 @@ fun OrderPosition.toModel(): OrderPositionModel {
         positionId = this.positionid!!,
         secret = this.secret,
         subEventServerId = this.subevent_id,
-        variationServerId = this.variation_id,
+        variationServerId = parseVariationId(json),
         attendeeNameParts = json.optJSONObject("attendee_name_parts"),
         city = json.optString("city", null),
         company = json.optString("company", null),
@@ -41,6 +41,19 @@ fun OrderPosition.toModel(): OrderPositionModel {
         attendeeEmail = this.attendee_email,
         attendeeName = this.attendee_name,
     )
+}
+
+private fun parseVariationId(json: JSONObject): Long? {
+    try {
+        val `var`: Long = json.optLong("variation", 0L)
+        if (`var` == 0L) {
+            return null
+        }
+        return `var`
+    } catch (e: JSONException) {
+        e.printStackTrace()
+        return null
+    }
 }
 
 private fun parsePrice(json: JSONObject): BigDecimal? {
