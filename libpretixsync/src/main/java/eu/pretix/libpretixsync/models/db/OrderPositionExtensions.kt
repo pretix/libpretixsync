@@ -45,11 +45,11 @@ fun OrderPosition.toModel(): OrderPositionModel {
 
 private fun parseVariationId(json: JSONObject): Long? {
     try {
-        val `var`: Long = json.optLong("variation", 0L)
-        if (`var` == 0L) {
+        val value: Long = json.optLong("variation", 0L)
+        if (value == 0L) {
             return null
         }
-        return `var`
+        return value
     } catch (e: JSONException) {
         e.printStackTrace()
         return null
