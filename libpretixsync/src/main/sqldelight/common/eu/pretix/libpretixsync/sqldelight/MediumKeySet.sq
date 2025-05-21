@@ -1,3 +1,7 @@
+selectAll:
+SELECT *
+FROM MediumKeySet;
+
 selectByPublicId:
 SELECT *
 FROM MediumKeySet
