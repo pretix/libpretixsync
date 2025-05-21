@@ -7,7 +7,7 @@ import java.time.OffsetDateTime
 
 class OrderPosition(
     val id: Long,
-    val itemId: Long,
+    val itemId: Long, // TODO: Server ID
     val serverId: Long? = null,
     val orderId: Long,
     val positionId: Long,
@@ -31,6 +31,7 @@ class OrderPosition(
     val validFrom: OffsetDateTime? = null,
     val validUntil: OffsetDateTime? = null,
     val answers: Map<Long, String>? = null,
+    val answersWithOptionIds: Map<Long, String>? = null,
     attendeeEmail: String? = null,
     attendeeName: String? = null,
 ) : OrderPositionLike {

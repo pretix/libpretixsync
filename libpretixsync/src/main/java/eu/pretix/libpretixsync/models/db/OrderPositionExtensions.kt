@@ -37,6 +37,7 @@ fun OrderPosition.toModel(): OrderPositionModel {
         validFrom = SafeOffsetDateTimeMapper.decode(json, "valid_from"),
         validUntil = SafeOffsetDateTimeMapper.decode(json, "valid_until"),
         answers = parseAnswers(json),
+        answersWithOptionIds = parseAnswersWithOptionIds(json),
         attendeeEmail = this.attendee_email,
         attendeeName = this.attendee_name,
     )
@@ -123,6 +124,33 @@ private fun parseAnswers(json: JSONObject): Map<Long, String>? {
         val res: MutableMap<Long, String> = HashMap()
         for (i in 0 until arr.length()) {
             res[arr.getJSONObject(i).getLong("question")] = arr.getJSONObject(i).getString("answer")
+        }
+        return res
+    } catch (e: JSONException) {
+        e.printStackTrace()
+        return null
+    }
+}
+
+private fun parseAnswersWithOptionIds(json: JSONObject): Map<Long, String>? {
+    try {
+        val arr: JSONArray = json.getJSONArray("answers")
+        val res: MutableMap<Long, String> = HashMap()
+        for (i in 0 until arr.length()) {
+            val a = arr.getJSONObject(i)
+            val opts = a.getJSONArray("options")
+            if (opts.length() > 0) {
+                val aw = StringBuilder()
+                for (j in 0 until opts.length()) {
+                    if (aw.length > 0) {
+                        aw.append(",")
+                    }
+                    aw.append(opts.getLong(j))
+                }
+                res[a.getLong("question")] = aw.toString()
+            } else {
+                res[a.getLong("question")] = a.getString("answer")
+            }
         }
         return res
     } catch (e: JSONException) {

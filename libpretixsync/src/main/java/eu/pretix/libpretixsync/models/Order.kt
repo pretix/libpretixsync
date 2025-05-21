@@ -1,6 +1,8 @@
 package eu.pretix.libpretixsync.models
 
-data class Order(
+import java.math.BigDecimal
+
+class Order(
     val id: Long,
     val eventSlug: String,
     val requiresCheckInAttention: Boolean,
@@ -11,6 +13,8 @@ data class Order(
     val email: String? = null,
     val requiresApproval: Boolean = false,
     val validIfPending: Boolean = false,
+    val total: BigDecimal? = null,
+    val pendingTotal: BigDecimal? = null,
 ) {
 
     val hasValidStatus = when (status) {

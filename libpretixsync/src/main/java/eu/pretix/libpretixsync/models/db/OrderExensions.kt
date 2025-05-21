@@ -2,11 +2,9 @@ package eu.pretix.libpretixsync.models.db
 
 import eu.pretix.libpretixsync.models.Order
 import eu.pretix.libpretixsync.sqldelight.Orders
-import eu.pretix.libpretixsync.sqldelight.SafeOffsetDateTimeMapper
-import org.joda.time.DateTime
-import org.joda.time.format.ISODateTimeFormat
 import org.json.JSONException
 import org.json.JSONObject
+import java.math.BigDecimal
 
 fun Orders.toModel(): Order {
     val json = JSONObject(this.json_data!!)
@@ -22,6 +20,8 @@ fun Orders.toModel(): Order {
         email = this.email,
         requiresApproval = parseRequiresApproval(json),
         validIfPending = this.valid_if_pending ?: false,
+        total = parseTotal(json),
+        pendingTotal = parsePendingTotal(json),
     )
 }
 
@@ -40,5 +40,45 @@ private fun parseRequiresApproval(json: JSONObject): Boolean {
     } catch (e: JSONException) {
         e.printStackTrace()
         return false
+    }
+}
+
+private fun parseTotal(json: JSONObject): BigDecimal? {
+    try {
+        return BigDecimal(json.getString("total"))
+    } catch (e: JSONException) {
+        e.printStackTrace()
+        return null
+    }
+}
+
+private fun parsePendingTotal(json: JSONObject): BigDecimal? {
+    try {
+        var total = BigDecimal(json.getString("total"))
+        if (json.getString("status") == "c") {
+            total = BigDecimal.ZERO
+        }
+
+        var paymentSum = BigDecimal.ZERO
+        val payments = json.getJSONArray("payments")
+        for (i in 0 until payments.length()) {
+            val payment = payments.getJSONObject(i)
+            if (payment.getString("state").matches("^(confirmed|refunded)$".toRegex())) {
+                paymentSum = paymentSum.add(BigDecimal(payment.getString("amount")))
+            }
+        }
+
+        var refundSum = BigDecimal.ZERO
+        val refunds = json.getJSONArray("refunds")
+        for (i in 0 until refunds.length()) {
+            val refund = refunds.getJSONObject(i)
+            if (refund.getString("state").matches("^(done|transit|created)$".toRegex())) {
+                refundSum = refundSum.add(BigDecimal(refund.getString("amount")))
+            }
+        }
+        return total.subtract(paymentSum).add(refundSum)
+    } catch (e: JSONException) {
+        e.printStackTrace()
+        return null
     }
 }
