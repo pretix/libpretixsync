@@ -1,5 +1,6 @@
 package eu.pretix.libpretixsync.models
 
+import org.json.JSONArray
 import java.math.BigDecimal
 
 class Order(
@@ -15,6 +16,8 @@ class Order(
     val validIfPending: Boolean = false,
     val total: BigDecimal? = null,
     val pendingTotal: BigDecimal? = null,
+    val payments: JSONArray = JSONArray(),
+    val refunds: JSONArray = JSONArray(),
 ) {
 
     val hasValidStatus = when (status) {

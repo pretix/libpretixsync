@@ -2,6 +2,7 @@ package eu.pretix.libpretixsync.models.db
 
 import eu.pretix.libpretixsync.models.Order
 import eu.pretix.libpretixsync.sqldelight.Orders
+import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
 import java.math.BigDecimal
@@ -22,6 +23,8 @@ fun Orders.toModel(): Order {
         validIfPending = this.valid_if_pending ?: false,
         total = parseTotal(json),
         pendingTotal = parsePendingTotal(json),
+        payments = parsePayments(json),
+        refunds = parseRefunds(json),
     )
 }
 
@@ -80,5 +83,23 @@ private fun parsePendingTotal(json: JSONObject): BigDecimal? {
     } catch (e: JSONException) {
         e.printStackTrace()
         return null
+    }
+}
+
+private fun parsePayments(json: JSONObject): JSONArray {
+    try {
+        return json.getJSONArray("payments")
+    } catch (e: JSONException) {
+        e.printStackTrace()
+        return JSONArray()
+    }
+}
+
+private fun parseRefunds(json: JSONObject): JSONArray {
+    try {
+        return json.getJSONArray("refunds")
+    } catch (e: JSONException) {
+        e.printStackTrace()
+        return JSONArray()
     }
 }
