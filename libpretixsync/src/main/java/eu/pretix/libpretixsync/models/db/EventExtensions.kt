@@ -26,6 +26,7 @@ fun Event.toModel(): EventModel {
         hasSeating = parseHasSeating(json),
         seatCategoryMapping = json.getJSONObject("seat_category_mapping"),
         validKeys = parseValidKeys(json),
+        isInTestMode = parseTestMode(json),
     )
 }
 
@@ -74,5 +75,13 @@ fun parseValidKeys(json: JSONObject): JSONObject? {
         json.optJSONObject("valid_keys")
     } catch (e: JSONException) {
         null
+    }
+}
+
+private fun parseTestMode(json: JSONObject): Boolean {
+    return try {
+        json.optBoolean("testmode", false)
+    } catch (e: JSONException) {
+        false
     }
 }

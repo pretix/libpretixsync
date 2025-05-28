@@ -18,4 +18,5 @@ data class Event(
     val hasSeating: Boolean = false,
     val seatCategoryMapping: JSONObject = JSONObject(),
     val validKeys: JSONObject? = null,
+    val isInTestMode: Boolean = false,
 )
