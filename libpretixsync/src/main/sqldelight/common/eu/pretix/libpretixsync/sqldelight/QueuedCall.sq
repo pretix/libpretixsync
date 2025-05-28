@@ -7,6 +7,10 @@ SELECT *
 FROM QueuedCall
 WHERE id = ?;
 
+count:
+SELECT COUNT(*)
+FROM QueuedCall;
+
 delete:
 DELETE FROM QueuedCall
 WHERE id = ?;

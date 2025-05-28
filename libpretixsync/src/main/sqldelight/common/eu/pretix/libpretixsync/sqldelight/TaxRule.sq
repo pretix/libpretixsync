@@ -8,6 +8,11 @@ SELECT *
 FROM TaxRule
 WHERE server_id = ?;
 
+selectByEventSlug:
+SELECT *
+FROM TaxRule
+WHERE event_slug = ?;
+
 selectByServerIdListAndEventSlug:
 SELECT *
 FROM TaxRule
