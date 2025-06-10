@@ -15,7 +15,7 @@ import io.requery.sql.TableCreationMode;
 
 public class Migrations {
     private static EntityModel model = Models.DEFAULT;
-    public static int CURRENT_VERSION = 109;
+    public static int CURRENT_VERSION = 110;
 
     private static void createVersionTable(Connection c, int version) throws SQLException {
         Statement s2 = c.createStatement();
@@ -449,6 +449,10 @@ public class Migrations {
             execIgnore(c,"CREATE INDEX receipt_server_id ON Receipt(server_id);", new String[] {"already exists", "existiert bereits"});
             updateVersionTable(c, 109);
         }
+        if (db_version < 110) {
+            execIgnore(c,"ALTER TABLE Cashier ADD COLUMN nfc_uid TEXT;", new String[] {"already exists", "existiert bereits"});
+            updateVersionTable(c, 110);
+        }
 
         // Note that the Android app currently does not use these queries!
 
@@ -505,6 +509,10 @@ public class Migrations {
         if (oldVersion < 109 && newVersion >= 109) {
             execIgnore(c, "CREATE INDEX receipt_server_id ON Receipt(server_id);", new String[] {"already exists", "existiert bereits"});
             updateVersionTable(c, 109);
+        }
+        if (oldVersion < 110 && newVersion >= 110) {
+            execIgnore(c,"ALTER TABLE Cashier ADD COLUMN nfc_uid TEXT;", new String[] {"already exists", "existiert bereits"});
+            updateVersionTable(c, 110);
         }
     }
 

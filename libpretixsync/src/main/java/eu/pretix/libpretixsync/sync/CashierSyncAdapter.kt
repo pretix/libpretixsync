@@ -53,6 +53,7 @@ class CashierSyncAdapter(
             json_data = jsonobj.toString(),
             name = jsonobj.getString("name"),
             pin = if (jsonobj.isNull("pin")) "" else jsonobj.getString("pin"),
+            nfc_uid = if (jsonobj.isNull("nfc_uid")) "" else jsonobj.getString("nfc_uid"),
             server_id = jsonobj.getLong("id"),
             userid = jsonobj.getString("userid"),
         )
@@ -64,6 +65,7 @@ class CashierSyncAdapter(
             json_data = jsonobj.toString(),
             name = jsonobj.getString("name"),
             pin = if (jsonobj.isNull("pin")) "" else jsonobj.getString("pin"),
+            nfc_uid = if (jsonobj.isNull("nfc_uid")) "" else jsonobj.getString("nfc_uid"),
             userid = jsonobj.getString("userid"),
             id = obj.id,
         )

@@ -27,6 +27,8 @@ public class AbstractCashier implements RemoteObject, CashierLike {
 
     public String pin;
 
+    public String nfc_uid;
+
     @Column(value = BuildConfig.BOOLEAN_FALSE, nullable = false)
     public boolean active;
 
@@ -84,6 +86,11 @@ public class AbstractCashier implements RemoteObject, CashierLike {
         } catch (JSONException e) {
             return false;
         }
+    }
+
+    @Override
+    public boolean hasNfcUid() {
+        return !this.nfc_uid.isBlank();
     }
 
     @Override
