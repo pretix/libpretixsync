@@ -14,6 +14,7 @@ fun Cashier.toModel(): CashierModel {
         name = this.name!!,
         active = this.active,
         pin = this.pin!!,
+        nfcUid = this.nfc_uid ?: "",
         team = json.optJSONObject("team"),
     )
 }

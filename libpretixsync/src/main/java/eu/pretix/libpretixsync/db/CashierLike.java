@@ -7,6 +7,8 @@ public interface CashierLike {
 
     boolean hasPermission(String permission);
 
+    boolean hasNfcUid();
+
     Long getNumericId();
 
     String getUserId();
