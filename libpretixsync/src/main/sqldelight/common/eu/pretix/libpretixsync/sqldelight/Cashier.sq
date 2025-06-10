@@ -8,6 +8,11 @@ SELECT *
 FROM Cashier
 WHERE id = ?;
 
+selectByNfcUid:
+SELECT *
+FROM Cashier
+WHERE nfc_uid = ?;
+
 selectByServerIdList:
 SELECT *
 FROM Cashier
@@ -28,10 +33,12 @@ INSERT INTO Cashier
     json_data,
     name,
     pin,
+    nfc_uid,
     server_id,
     userid
 )
 VALUES (
+    ?,
     ?,
     ?,
     ?,
@@ -47,5 +54,6 @@ SET
     json_data = ?,
     name = ?,
     pin = ?,
+    nfc_uid = ?,
     userid = ?
 WHERE id = ?;

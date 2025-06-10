@@ -6,6 +6,7 @@ CREATE TABLE Cashier (
     json_data text,
     name character varying(255),
     pin character varying(255),
+    nfc_uid character varying(255),
     server_id bigint,
     userid character varying(255)
 );
