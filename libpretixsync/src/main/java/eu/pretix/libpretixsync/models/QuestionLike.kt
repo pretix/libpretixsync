@@ -1,6 +1,7 @@
-package eu.pretix.libpretixsync.db
+package eu.pretix.libpretixsync.models
 
 import eu.pretix.libpretixsync.check.QuestionType
+import eu.pretix.libpretixsync.db.QuestionOption
 import eu.pretix.libpretixsync.utils.EmailValidator
 import java.math.BigDecimal
 import java.text.ParseException

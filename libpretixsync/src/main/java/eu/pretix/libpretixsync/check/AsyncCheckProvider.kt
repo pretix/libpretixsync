@@ -9,7 +9,7 @@ import eu.pretix.libpretixsync.crypto.readPubkeyFromPem
 import eu.pretix.libpretixsync.crypto.sig1.TicketProtos
 import eu.pretix.libpretixsync.db.Answer
 import eu.pretix.libpretixsync.db.NonceGenerator
-import eu.pretix.libpretixsync.db.QuestionLike
+import eu.pretix.libpretixsync.models.QuestionLike
 import eu.pretix.libpretixsync.models.CheckIn
 import eu.pretix.libpretixsync.models.Event
 import eu.pretix.libpretixsync.models.Order as OrderModel

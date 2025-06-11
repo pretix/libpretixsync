@@ -1,7 +1,6 @@
 package eu.pretix.libpretixsync.models
 
 import eu.pretix.libpretixsync.check.QuestionType
-import eu.pretix.libpretixsync.db.QuestionLike
 import eu.pretix.libpretixsync.db.QuestionOption
 
 class Question(

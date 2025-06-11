@@ -1,6 +1,7 @@
 package eu.pretix.libpretixsync.db
 
 import eu.pretix.libpretixsync.check.QuestionType
+import eu.pretix.libpretixsync.models.QuestionLike
 import org.junit.Assert.fail
 import org.junit.Test
 import eu.pretix.libpretixsync.models.Question as QuestionModel

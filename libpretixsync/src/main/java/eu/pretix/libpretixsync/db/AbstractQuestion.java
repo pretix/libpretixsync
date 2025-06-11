@@ -7,6 +7,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import eu.pretix.libpretixsync.check.QuestionType;
+import eu.pretix.libpretixsync.models.QuestionLike;
 import eu.pretix.libpretixsync.utils.I18nString;
 import io.requery.*;
 
