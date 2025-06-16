@@ -86,7 +86,7 @@ class OrderCleanup(val store: BlockingEntityStore<Persistable>, val fileStorage:
                         deltime = System.currentTimeMillis()
                     }
                     for (sId in subeventIds) {
-                        if (sId == null) {
+                        if (sId == null || sId == 0L) {
                             deltime = System.currentTimeMillis() + 1000L * 3600 * 24 * 365 * 20 // should never happen, if it does, don't delete this any time soon
                             break
                         }
