@@ -1,7 +1,5 @@
 package eu.pretix.libpretixsync.db;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import org.joda.time.DateTime;
 import org.joda.time.format.ISODateTimeFormat;
 import org.json.JSONArray;
@@ -12,13 +10,12 @@ import java.io.IOException;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.math.BigDecimal;
-import java.nio.charset.Charset;
 
 import eu.pretix.libpretixsync.utils.I18nString;
 
 public class ItemVariation implements Serializable {
     private Long server_id;
-    private BigDecimal listed_price;
+    private BigDecimal display_price;
     private BigDecimal price;
     private boolean active;
     private JSONObject description;
@@ -42,8 +39,8 @@ public class ItemVariation implements Serializable {
         this.price = price;
     }
 
-    public void setListed_price(BigDecimal listed_price) {
-        this.listed_price = listed_price;
+    public void setDisplay_price(BigDecimal display_price) {
+        this.display_price = display_price;
     }
 
     public void setActive(boolean active) {
@@ -70,7 +67,7 @@ public class ItemVariation implements Serializable {
         return price;
     }
 
-    public BigDecimal getListedPrice() { return listed_price; }
+    public BigDecimal getDisplayPrice() { return display_price; }
 
     public boolean isActive() {
         return active;
@@ -140,8 +137,8 @@ public class ItemVariation implements Serializable {
         this.hide_without_voucher = hide_without_voucher;
     }
 
-    public BigDecimal getListed_price() {
-        return listed_price;
+    public BigDecimal getDisplay_price() {
+        return display_price;
     }
 
     public boolean isCheckin_attention() {
@@ -175,7 +172,7 @@ public class ItemVariation implements Serializable {
             jsonObject.put("available_from", available_from);
             jsonObject.put("available_until", available_until);
             jsonObject.put("hide_without_voucher", hide_without_voucher);
-            jsonObject.put("listed_price", listed_price);
+            jsonObject.put("display_price", display_price);
             jsonObject.put("checkin_attention", checkin_attention);
             jsonObject.put("checkin_text", checkin_text);
         } catch (JSONException e) {
@@ -211,7 +208,7 @@ public class ItemVariation implements Serializable {
             hide_without_voucher = jsonObject.getBoolean("hide_without_voucher");
             checkin_attention = jsonObject.getBoolean("checkin_attention");
             checkin_text = jsonObject.optString("checkin_text");
-            listed_price = !jsonObject.isNull("listed_price") ? new BigDecimal(jsonObject.getString("listed_price")) : null;
+            display_price = !jsonObject.isNull("display_price") ? new BigDecimal(jsonObject.getString("display_price")) : null;
         } catch (JSONException e) {
             e.printStackTrace();
         }

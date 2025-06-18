@@ -1,0 +1,4 @@
+ALTER TABLE ReceiptLine ADD listed_price NUMERIC NULL;
+ALTER TABLE ReceiptLine ADD price_after_voucher NUMERIC NULL;
+ALTER TABLE ReceiptLine ADD custom_price_input NUMERIC NULL;
+ALTER TABLE ReceiptLine ADD voucher_code TEXT NULL;

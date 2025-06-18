@@ -4,9 +4,10 @@ plugins {
     id 'jacoco'
     id 'org.jetbrains.kotlin.jvm'
     id 'org.jetbrains.kotlin.kapt'
-    id 'com.google.protobuf' version '0.9.4'
+    id 'com.google.protobuf'
     id 'com.github.gmazzo.buildconfig' version '5.3.5'
     id 'org.gradle.idea'
+    id 'app.cash.sqldelight'
 }
 apply from: 'versions.gradle'
 
@@ -104,6 +105,8 @@ dependencies {
     implementation "net.i2p.crypto:eddsa:$eddsa_version"
     implementation "com.google.protobuf:protobuf-javalite:$protobuf_version"
 
+    implementation "app.cash.sqldelight:sqlite-driver:$sqldelight_version"
+
     kapt "io.requery:requery-processor:$requery_version"
     annotationProcessor "javax.annotation:jsr250-api:$jsr250_version"
 
@@ -118,3 +121,30 @@ task copyTestResources(type: Copy) {
     into "${buildDir}/classes/test"
 }
 processTestResources.dependsOn copyTestResources
+
+sqldelight {
+    databases {
+        SyncDatabase {
+            packageName = "eu.pretix.libpretixsync.sqldelight"
+            srcDirs('src/main/sqldelight/sqlite', 'src/main/sqldelight/common', 'src/main/sqldelight/migrations')
+
+            // SQLDelight supports migration validation by running the migrations against a database file from a
+            // previous version and comparing the result against the current schema.
+            //
+            // The database dumps can be generated with the Gradle task `generateMainSyncDatabaseSchema`, which will
+            // place a .db file in `schemaOutputDirectory` (e.g. 100.db for schema version 100).
+            //
+            // Unfortunately, the validation is buggy for complex schemas (see https://github.com/sqldelight/sqldelight/issues/4759)
+            // and will hang or run out of memory in the current release.
+            //
+            // Running the `verifyMainSyncDatabaseMigration` is still helpful to check the syntax of the migrations.
+            schemaOutputDirectory.set(file("src/main/sqldelight/sqlite"))
+
+
+            // Oldest dialect supported by SQLDelight 2.0.2
+            // In Android projects, it will auto-select based on SDK
+            // but not go lower than 3.18 (Android 9 is still on 3.8)
+            dialect "app.cash.sqldelight:sqlite-3-18-dialect:$sqldelight_version"
+        }
+    }
+}

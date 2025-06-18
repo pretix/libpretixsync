@@ -1,0 +1,28 @@
+selectAll:
+SELECT *
+FROM QueuedCall;
+
+selectById:
+SELECT *
+FROM QueuedCall
+WHERE id = ?;
+
+count:
+SELECT COUNT(*)
+FROM QueuedCall;
+
+delete:
+DELETE FROM QueuedCall
+WHERE id = ?;
+
+insert:
+INSERT INTO QueuedCall (
+    body,
+    idempotency_key,
+    url
+)
+VALUES (
+    ?,
+    ?,
+    ?
+);

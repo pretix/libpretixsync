@@ -3,8 +3,6 @@ package eu.pretix.libpretixsync.setup
 import eu.pretix.libpretixsync.api.PretixApi
 import eu.pretix.libpretixsync.config.ConfigStore
 import eu.pretix.libpretixsync.utils.I18nString
-import io.requery.BlockingEntityStore
-import io.requery.Persistable
 import org.joda.time.DateTime
 import org.joda.time.Hours
 import org.json.JSONObject
@@ -12,7 +10,7 @@ import java.io.IOException
 import java.net.URLEncoder
 
 
-class EventManager(private val store: BlockingEntityStore<Persistable>, private val api: PretixApi, private val conf: ConfigStore, private val require_live: Boolean) {
+class EventManager(private val api: PretixApi, private val conf: ConfigStore, private val require_live: Boolean) {
     val eventMap = HashMap<String, PretixApi.ApiResponse>()
 
     fun getAvailableEvents() : List<RemoteEvent> {

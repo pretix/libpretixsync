@@ -1,0 +1,3 @@
+-- ALTER TABLE DROP COLUMN only supported for SQLite 3.35.5 and up
+
+--ALTER TABLE Item DROP COLUMN badge_layout_id;

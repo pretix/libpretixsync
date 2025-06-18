@@ -1,0 +1,54 @@
+selectById:
+SELECT *
+FROM ItemCategory
+WHERE id = ?;
+
+selectByServerId:
+SELECT *
+FROM ItemCategory
+WHERE server_id = ?;
+
+selectByEventSlug:
+SELECT *
+FROM ItemCategory
+WHERE event_slug = ?;
+
+selectByServerIdListAndEventSlug:
+SELECT *
+FROM ItemCategory
+WHERE server_id IN ? AND event_slug = ?;
+
+selectServerIdsByEventSlug:
+SELECT server_id
+FROM ItemCategory
+WHERE event_slug = ?;
+
+deleteByServerId:
+DELETE FROM ItemCategory
+WHERE server_id = ?;
+
+insert:
+INSERT INTO ItemCategory
+(
+    event_slug,
+    is_addon,
+    json_data,
+    "position",
+    server_id
+)
+VALUES (
+    ?,
+    ?,
+    ?,
+    ?,
+    ?
+);
+
+updateFromJson:
+UPDATE ItemCategory
+SET
+    event_slug = ?,
+    is_addon = ?,
+    json_data = ?,
+    "position" = ?
+WHERE id = ?;

@@ -32,5 +32,6 @@
   "bundles": [],
   "original_price": null,
   "require_approval": false,
-  "generate_tickets": null
+  "generate_tickets": null,
+  "issue_giftcard": false
 }

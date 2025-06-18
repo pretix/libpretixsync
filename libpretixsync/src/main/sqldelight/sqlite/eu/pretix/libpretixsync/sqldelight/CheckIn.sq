@@ -1,0 +1,11 @@
+import java.util.Date;
+
+CREATE TABLE CheckIn (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    datetime TEXT AS Date,
+    json_data TEXT,
+    listId INTEGER,
+    position INTEGER REFERENCES OrderPosition (id) ON DELETE CASCADE,
+    server_id INTEGER,
+    type TEXT
+);

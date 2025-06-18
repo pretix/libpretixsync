@@ -1,0 +1,10 @@
+import kotlin.Boolean;
+
+CREATE TABLE BadgeLayout (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    background_filename TEXT,
+    event_slug TEXT ,
+    is_default INTEGER AS Boolean NOT NULL,
+    json_data TEXT,
+    server_id integer
+);

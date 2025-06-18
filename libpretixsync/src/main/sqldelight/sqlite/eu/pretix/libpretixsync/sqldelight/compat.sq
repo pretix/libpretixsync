@@ -1,0 +1,125 @@
+-- Dialect-specific queries
+-- Cannot be part of the table-specific .sq files, as they would generate conflicting query classes
+
+-- Switch to RETURNING once it is also supported by SQLite
+getLastInsertedOrderId:
+SELECT last_insert_rowid();
+
+-- Switch to RETURNING once it is also supported by SQLite
+getLastInsertedCheckInId:
+SELECT last_insert_rowid();
+
+-- Switch to RETURNING once it is also supported by SQLite
+getLastInsertedCheckInListId:
+SELECT last_insert_rowid();
+
+-- Switch to RETURNING once it is also supported by SQLite
+getLastInsertedOrderPositionId:
+SELECT last_insert_rowid();
+
+-- Switch to RETURNING once it is also supported by SQLite
+getLastInsertedQuestionId:
+SELECT last_insert_rowid();
+
+-- Switch to RETURNING once it is also supported by SQLite
+getLastInsertedQuotaId:
+SELECT last_insert_rowid();
+
+truncateCheckIn:
+DELETE FROM CheckIn;
+
+truncateOrderPosition:
+DELETE FROM OrderPosition;
+
+truncateOrder:
+DELETE FROM orders;
+
+truncateResourceSyncStatus:
+DELETE FROM ResourceSyncStatus;
+
+truncateReusableMedium:
+DELETE FROM ReusableMedium;
+
+truncateAllTables {
+    DELETE FROM BadgeLayout;
+    DELETE FROM BadgeLayoutItem;
+    DELETE FROM BlockedTicketSecret;
+    DELETE FROM CachedPdfImage;
+    DELETE FROM Cashier;
+    DELETE FROM CheckIn;
+    DELETE FROM CheckInList;
+    DELETE FROM CheckInList_Item;
+    DELETE FROM Closing;
+    DELETE FROM Event;
+    DELETE FROM Item;
+    DELETE FROM ItemCategory;
+    DELETE FROM MediumKeySet;
+    DELETE FROM orders;
+    DELETE FROM OrderPosition;
+    DELETE FROM Question;
+    DELETE FROM Question_Item;
+    DELETE FROM QueuedCall;
+    DELETE FROM QueuedCheckIn;
+    DELETE FROM QueuedOrder;
+    DELETE FROM Quota;
+    DELETE FROM Quota_Item;
+    DELETE FROM Receipt;
+    DELETE FROM ReceiptLine;
+    DELETE FROM ReceiptPayment;
+    DELETE FROM ResourceSyncStatus;
+    DELETE FROM ReusableMedium;
+    DELETE FROM RevokedTicketSecret;
+    DELETE FROM Settings;
+    DELETE FROM SubEvent;
+    DELETE FROM TaxRule;
+    DELETE FROM TicketLayout;
+}
+
+searchOrderPosition:
+SELECT OrderPosition.*
+FROM OrderPosition
+LEFT JOIN orders ON OrderPosition.order_ref = orders.id
+LEFT JOIN Item ON OrderPosition.item = Item.id
+WHERE (
+    UPPER(OrderPosition.secret) LIKE :queryStartsWith
+    OR UPPER(OrderPosition.attendee_name) LIKE :queryContains
+    OR UPPER(OrderPosition.attendee_email) LIKE :queryContains
+    OR UPPER(orders.email) LIKE :queryContains
+    OR UPPER(orders.code) LIKE :queryStartsWith
+)
+AND (
+    CASE WHEN (:use_event_filter) THEN (orders.event_slug IN :event_filter) ELSE 0 END
+    OR CASE WHEN (:use_event_item_filter) THEN (orders.event_slug IN :event_item_filter_events AND OrderPosition.item IN :event_item_filter_items) ELSE 0 END
+    OR CASE WHEN (:use_event_subevent_filter) THEN (orders.event_slug IN :event_subevent_filter_events AND OrderPosition.subevent_id IN :event_subevent_filter_subevents) ELSE 0 END
+    OR CASE WHEN (:use_all_filter) THEN (orders.event_slug IN :all_filter_events AND OrderPosition.item IN :all_filter_items AND OrderPosition.subevent_id IN :all_filter_subevents) ELSE 0 END
+)
+LIMIT :limit
+OFFSET :offset;
+
+countOrderPositionForStatus:
+-- TODO: Check if DISTINCT is required here
+SELECT COUNT(DISTINCT OrderPosition.id)
+FROM OrderPosition
+LEFT JOIN orders ON OrderPosition.order_ref = orders.id
+WHERE(
+    orders.event_slug = :event_slug
+    AND CASE WHEN (:include_pending)
+        THEN orders.status IN ('p', 'n')
+        ELSE (orders.status = 'p' OR (orders.status = 'n' AND orders.valid_if_pending = 1))
+    END
+    AND CASE WHEN (:subevent_id > 0) THEN OrderPosition.subevent_id = :subevent_id ELSE 1 END
+    AND CASE WHEN (:not_all_items) THEN OrderPosition.item IN :list_item_ids ELSE 1 END
+    AND CASE WHEN (:only_checked_in_list_server_id > 0) THEN
+        (OrderPosition.id IN (SELECT position FROM CheckIn WHERE listId = :only_checked_in_list_server_id AND type = 'entry'))
+    ELSE
+        1
+    END
+    AND OrderPosition.item = :item_id
+    AND CASE WHEN (:variation_id > 0) THEN OrderPosition.variation_id = :variation_id ELSE 1 END
+);
+
+lockQueuedOrder:
+UPDATE QueuedOrder
+SET
+    locked = 1
+WHERE id = ?;

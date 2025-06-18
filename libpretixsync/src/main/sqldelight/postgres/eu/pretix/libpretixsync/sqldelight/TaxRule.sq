@@ -1,0 +1,8 @@
+import kotlin.Long;
+
+CREATE TABLE TaxRule (
+    id serial AS Long PRIMARY KEY NOT NULL,
+    event_slug character varying(255),
+    json_data text,
+    server_id bigint
+);

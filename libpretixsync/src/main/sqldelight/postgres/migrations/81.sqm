@@ -1,0 +1,1 @@
+ALTER TABLE Settings ADD covid_certificates_record_validity_time boolean NULL;

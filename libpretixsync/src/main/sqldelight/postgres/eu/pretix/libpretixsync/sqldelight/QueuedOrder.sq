@@ -1,0 +1,11 @@
+import kotlin.Long;
+
+CREATE TABLE QueuedOrder (
+    id serial AS Long PRIMARY KEY NOT NULL,
+    error character varying(255),
+    event_slug character varying(255),
+    idempotency_key character varying(255),
+    locked boolean DEFAULT FALSE,
+    payload character varying(255),
+    receipt bigint REFERENCES Receipt (id) ON DELETE CASCADE
+);

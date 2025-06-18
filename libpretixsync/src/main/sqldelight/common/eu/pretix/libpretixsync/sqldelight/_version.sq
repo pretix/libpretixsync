@@ -1,0 +1,14 @@
+selectVersion:
+SELECT version
+FROM _version
+LIMIT 1;
+
+deleteVersion:
+DELETE FROM _version;
+
+insertVersion:
+INSERT INTO _version (
+    version
+) VALUES (
+    ?
+);
