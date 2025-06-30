@@ -49,7 +49,8 @@ class OnlineCheckProvider(
         with_badge_data: Boolean,
         type: TicketCheckProvider.CheckInType,
         nonce: String?,
-        allowQuestions: Boolean
+        allowQuestions: Boolean,
+        useOrderLocale: Boolean
     ): TicketCheckProvider.CheckResult {
         val ticketid_cleaned = cleanInput(ticketid, source_type)
         val nonce_cleaned = nonce ?: NonceGenerator.nextNonce()
@@ -188,6 +189,9 @@ class OnlineCheckProvider(
                     }
                     res.orderCode = posjson.optString("order")
                     res.positionId = posjson.optLong("positionid")
+                    if (posjson.has("order__locale")) {
+                        res.locale = posjson.getString("order__locale")
+                    }
                     res.position = posjson
                     val checkins = posjson.getJSONArray("checkins")
                     for (i in 0 until checkins.length()) {
