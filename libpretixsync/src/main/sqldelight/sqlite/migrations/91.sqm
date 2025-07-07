@@ -1,0 +1,11 @@
+ALTER TABLE ReceiptLine ADD requested_valid_from TEXT;
+
+CREATE TABLE BlockedTicketSecret (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    blocked INTEGER NOT NULL,
+    event_slug TEXT,
+    json_data TEXT,
+    secret TEXT,
+    server_id INTEGER,
+    updated TEXT
+);

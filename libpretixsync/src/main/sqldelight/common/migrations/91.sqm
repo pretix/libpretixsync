@@ -1,1 +1,0 @@
-ALTER TABLE ReceiptLine ADD requested_valid_from TEXT;
