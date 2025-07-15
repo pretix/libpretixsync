@@ -1,1 +1,11 @@
 ALTER TABLE orders ADD valid_if_pending INTEGER DEFAULT(0);
+
+CREATE TABLE BlockedTicketSecret (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    blocked INTEGER NOT NULL,
+    event_slug TEXT,
+    json_data TEXT,
+    secret TEXT,
+    server_id INTEGER,
+    updated TEXT
+);
