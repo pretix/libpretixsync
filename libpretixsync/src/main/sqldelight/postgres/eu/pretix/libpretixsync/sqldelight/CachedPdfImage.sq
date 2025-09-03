@@ -6,3 +6,7 @@ CREATE TABLE CachedPdfImage (
     key character varying(255),
     orderposition_id bigint
 );
+
+CREATE INDEX CachedPdfImage_etag_index ON CachedPdfImage (etag);
+CREATE INDEX CachedPdfImage_key_index ON CachedPdfImage (key);
+CREATE INDEX CachedPdfImage_orderposition_id_index ON CachedPdfImage (orderposition_id);

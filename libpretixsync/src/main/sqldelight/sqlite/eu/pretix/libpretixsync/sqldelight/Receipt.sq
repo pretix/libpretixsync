@@ -31,4 +31,5 @@ CREATE TABLE Receipt (
     training INTEGER AS Boolean DEFAULT 0 NOT NULL
 );
 
+CREATE INDEX Receipt_closing_index ON Receipt (closing);
 CREATE INDEX receipt_server_id ON Receipt(server_id);

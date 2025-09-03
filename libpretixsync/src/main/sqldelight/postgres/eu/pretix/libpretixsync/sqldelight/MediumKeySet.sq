@@ -10,3 +10,5 @@ CREATE TABLE MediumKeySet (
     public_id bigint,
     uid_key character varying(255)
 );
+
+CREATE INDEX MediumKeySet_public_id_index ON MediumKeySet (public_id);

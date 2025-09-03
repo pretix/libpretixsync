@@ -12,3 +12,6 @@ CREATE TABLE orders (
     status character varying(255),
     valid_if_pending boolean DEFAULT FALSE
 );
+
+CREATE INDEX orders_code_index ON orders (code);
+CREATE INDEX orders_event_slug_index ON orders (event_slug);

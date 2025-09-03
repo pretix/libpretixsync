@@ -12,3 +12,6 @@ CREATE TABLE orders (
     status TEXT,
     valid_if_pending INTEGER AS Boolean DEFAULT 0
 );
+
+CREATE INDEX orders_code_index ON orders (code);
+CREATE INDEX orders_event_slug_index ON orders (event_slug);

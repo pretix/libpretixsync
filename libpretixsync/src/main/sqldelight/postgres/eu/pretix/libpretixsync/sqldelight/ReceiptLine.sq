@@ -53,3 +53,6 @@ CREATE TABLE ReceiptLine (
     addon_to bigint,
     FOREIGN KEY (addon_to) REFERENCES ReceiptLine (id) ON DELETE CASCADE
 );
+
+CREATE INDEX ReceiptLine_addon_to_index ON ReceiptLine (addon_to);
+CREATE INDEX ReceiptLine_receipt_index ON ReceiptLine (receipt);
