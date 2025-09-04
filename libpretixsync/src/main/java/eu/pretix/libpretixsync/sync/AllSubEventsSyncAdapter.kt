@@ -138,25 +138,15 @@ class AllSubEventsSyncAdapter(
             // able to continue properly.
             if (firstResponseTimestamp != null) {
                 if (resourceSyncStatus == null) {
-                    val status = if (completed) {
-                        "complete"
-                    } else {
-                        null
+                    if (completed) {
+                        db.resourceSyncStatusQueries.insert(
+                            event_slug = "__all__",
+                            meta = null,
+                            resource = "subevents",
+                            last_modified = firstResponseTimestamp,
+                            status = "complete",
+                        )
                     }
-
-                    val lastModified = if (completed) {
-                        firstResponseTimestamp
-                    } else {
-                        null
-                    }
-
-                    db.resourceSyncStatusQueries.insert(
-                        event_slug = "__all__",
-                        last_modified = lastModified,
-                        meta = null,
-                        resource = "subevents",
-                        status = status,
-                    )
                 } else {
                     if (completed) {
                         db.resourceSyncStatusQueries.updateLastModified(
