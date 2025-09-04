@@ -7,6 +7,6 @@ CREATE TABLE Cashier (
     name TEXT,
     pin TEXT,
     nfc_uid TEXT,
-    server_id INTEGER NOT NULL,
+    server_id INTEGER,
     userid TEXT
 );
