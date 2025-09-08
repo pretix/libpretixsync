@@ -130,12 +130,6 @@ class AllSubEventsSyncAdapter(
                 event_slug = "__all__",
             ).executeAsOneOrNull()
 
-            // We need to cache the response timestamp of the *first* page in the result set to make
-            // sure we don't miss anything between this and the next run.
-            //
-            // If the download failed, completed will be false. In case this was a full fetch
-            // (i.e. no timestamp was stored beforehand) we will still store the timestamp to be
-            // able to continue properly.
             if (completed && firstResponseTimestamp != null) {
                 if (resourceSyncStatus == null) {
                     db.resourceSyncStatusQueries.insert(
