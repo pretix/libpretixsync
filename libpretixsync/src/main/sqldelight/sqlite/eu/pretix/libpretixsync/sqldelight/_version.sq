@@ -1,3 +1,0 @@
-CREATE TABLE _version (
-    version INTEGER
-);
