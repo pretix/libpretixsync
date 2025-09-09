@@ -1,10 +1,10 @@
-import java.util.Date;
+import java.time.OffsetDateTime;
 import kotlin.Long;
 
 CREATE TABLE Event (
     id serial AS Long PRIMARY KEY NOT NULL,
     currency character varying(255),
-    date_from DATE AS Date,
+    date_from DATE AS OffsetDateTime,
     date_to DATE AS Date,
     has_subevents boolean NOT NULL,
     json_data text,

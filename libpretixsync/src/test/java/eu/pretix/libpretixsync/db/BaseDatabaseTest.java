@@ -71,8 +71,8 @@ public abstract class BaseDatabaseTest {
                         bigDecimalAdapter
                 ),
                 new Event.Adapter(
-                        dateAdapter,
-                        dateAdapter
+                        offsetDateTimeAdapter,
+                        offsetDateTimeAdapter
                 ),
                 new QueuedCheckIn.Adapter(
                         dateAdapter

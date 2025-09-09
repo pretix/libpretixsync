@@ -6,8 +6,8 @@ import eu.pretix.libpretixsync.api.PretixApi
 import eu.pretix.libpretixsync.sqldelight.Event
 import eu.pretix.libpretixsync.sqldelight.SyncDatabase
 import eu.pretix.libpretixsync.sync.SyncManager.ProgressFeedback
-import org.joda.time.format.ISODateTimeFormat
 import org.json.JSONObject
+import java.time.OffsetDateTime
 
 class AllEventsSyncAdapter(
     db: SyncDatabase,
@@ -51,13 +51,9 @@ class AllEventsSyncAdapter(
     }
 
     override fun insert(jsonobj: JSONObject) {
-        val dateFrom =
-            ISODateTimeFormat.dateTimeParser().parseDateTime(jsonobj.getString("date_from"))
-                .toDate()
-
+        val dateFrom = OffsetDateTime.parse(jsonobj.getString("date_from"))
         val dateTo = if (!jsonobj.isNull("date_to")) {
-            ISODateTimeFormat.dateTimeParser().parseDateTime(jsonobj.getString("date_to"))
-                .toDate()
+            OffsetDateTime.parse(jsonobj.getString("date_to"))
         } else {
             null
         }
@@ -74,12 +70,9 @@ class AllEventsSyncAdapter(
     }
 
     override fun update(obj: Event, jsonobj: JSONObject) {
-        val dateFrom =
-            ISODateTimeFormat.dateTimeParser().parseDateTime(jsonobj.getString("date_from"))
-                .toDate()
-
+        val dateFrom = OffsetDateTime.parse(jsonobj.getString("date_from"))
         val dateTo = if (!jsonobj.isNull("date_to")) {
-            ISODateTimeFormat.dateTimeParser().parseDateTime(jsonobj.getString("date_to")).toDate()
+            OffsetDateTime.parse(jsonobj.getString("date_to"))
         } else {
             null
         }
