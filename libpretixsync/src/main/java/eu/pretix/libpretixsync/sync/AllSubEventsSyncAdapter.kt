@@ -9,11 +9,11 @@ import eu.pretix.libpretixsync.sqldelight.ResourceSyncStatus
 import eu.pretix.libpretixsync.sqldelight.SubEvent
 import eu.pretix.libpretixsync.sqldelight.SyncDatabase
 import eu.pretix.libpretixsync.sync.SyncManager.ProgressFeedback
-import org.joda.time.format.ISODateTimeFormat
 import org.json.JSONException
 import org.json.JSONObject
 import java.io.UnsupportedEncodingException
 import java.net.URLEncoder
+import java.time.OffsetDateTime
 import java.util.concurrent.ExecutionException
 
 class AllSubEventsSyncAdapter(
@@ -61,12 +61,9 @@ class AllSubEventsSyncAdapter(
     }
 
     override fun insert(jsonobj: JSONObject) {
-        val dateFrom =
-            ISODateTimeFormat.dateTimeParser().parseDateTime(jsonobj.getString("date_from"))
-                .toDate()
-
+        val dateFrom = OffsetDateTime.parse(jsonobj.getString("date_from"))
         val dateTo = if (!jsonobj.isNull("date_to")) {
-            ISODateTimeFormat.dateTimeParser().parseDateTime(jsonobj.getString("date_to")).toDate()
+            OffsetDateTime.parse(jsonobj.getString("date_to"))
         } else {
             null
         }
@@ -82,12 +79,9 @@ class AllSubEventsSyncAdapter(
     }
 
     override fun update(obj: SubEvent, jsonobj: JSONObject) {
-        val dateFrom =
-            ISODateTimeFormat.dateTimeParser().parseDateTime(jsonobj.getString("date_from"))
-                .toDate()
-
+        val dateFrom = OffsetDateTime.parse(jsonobj.getString("date_from"))
         val dateTo = if (!jsonobj.isNull("date_to")) {
-            ISODateTimeFormat.dateTimeParser().parseDateTime(jsonobj.getString("date_to")).toDate()
+            OffsetDateTime.parse(jsonobj.getString("date_to"))
         } else {
             null
         }

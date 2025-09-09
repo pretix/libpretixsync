@@ -5,6 +5,7 @@ import eu.pretix.libpretixsync.sqldelight.BigDecimalAdapter;
 import eu.pretix.libpretixsync.sqldelight.CheckIn;
 import eu.pretix.libpretixsync.sqldelight.Closing;
 import eu.pretix.libpretixsync.sqldelight.Event;
+import eu.pretix.libpretixsync.sqldelight.JavaOffsetDateTimeAdapter;
 import eu.pretix.libpretixsync.sqldelight.JavaUtilDateAdapter;
 import eu.pretix.libpretixsync.sqldelight.QueuedCheckIn;
 import eu.pretix.libpretixsync.sqldelight.Receipt;
@@ -55,6 +56,7 @@ public abstract class BaseDatabaseTest {
         SyncDatabase.Companion.getSchema().create(driver);
 
         JavaUtilDateAdapter dateAdapter = new JavaUtilDateAdapter();
+        JavaOffsetDateTimeAdapter offsetDateTimeAdapter = new JavaOffsetDateTimeAdapter();
         BigDecimalAdapter bigDecimalAdapter = new BigDecimalAdapter();
 
         db = SyncDatabase.Companion.invoke(
@@ -93,8 +95,8 @@ public abstract class BaseDatabaseTest {
                         bigDecimalAdapter
                 ),
                 new SubEvent.Adapter(
-                        dateAdapter,
-                        dateAdapter
+                        offsetDateTimeAdapter,
+                        offsetDateTimeAdapter
                 )
         );
     }

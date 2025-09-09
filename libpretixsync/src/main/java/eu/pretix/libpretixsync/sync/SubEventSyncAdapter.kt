@@ -10,6 +10,7 @@ import eu.pretix.libpretixsync.utils.JSONUtils
 import org.joda.time.format.ISODateTimeFormat
 import org.json.JSONException
 import org.json.JSONObject
+import java.time.OffsetDateTime
 
 class SubEventSyncAdapter(
     db: SyncDatabase,
@@ -42,12 +43,9 @@ class SubEventSyncAdapter(
     }
 
     override fun insert(jsonobj: JSONObject) {
-        val dateFrom =
-            ISODateTimeFormat.dateTimeParser().parseDateTime(jsonobj.getString("date_from"))
-                .toDate()
-
+        val dateFrom = OffsetDateTime.parse(jsonobj.getString("date_from"))
         val dateTo = if (!jsonobj.isNull("date_to")) {
-            ISODateTimeFormat.dateTimeParser().parseDateTime(jsonobj.getString("date_to")).toDate()
+            OffsetDateTime.parse(jsonobj.getString("date_to"))
         } else {
             null
         }
@@ -63,12 +61,9 @@ class SubEventSyncAdapter(
     }
 
     override fun update(obj: SubEvent, jsonobj: JSONObject) {
-        val dateFrom =
-            ISODateTimeFormat.dateTimeParser().parseDateTime(jsonobj.getString("date_from"))
-                .toDate()
-
+        val dateFrom = OffsetDateTime.parse(jsonobj.getString("date_from"))
         val dateTo = if (!jsonobj.isNull("date_to")) {
-            ISODateTimeFormat.dateTimeParser().parseDateTime(jsonobj.getString("date_to")).toDate()
+            OffsetDateTime.parse(jsonobj.getString("date_to"))
         } else {
             null
         }
