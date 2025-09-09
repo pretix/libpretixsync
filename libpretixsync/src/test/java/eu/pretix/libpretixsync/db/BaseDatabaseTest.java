@@ -82,8 +82,8 @@ public abstract class BaseDatabaseTest {
                         offsetDateTimeAdapter
                 ),
                 new ReceiptLine.Adapter(
-                        dateAdapter,
-                        dateAdapter,
+                        offsetDateTimeAdapter,
+                        offsetDateTimeAdapter,
                         bigDecimalAdapter,
                         bigDecimalAdapter,
                         bigDecimalAdapter,

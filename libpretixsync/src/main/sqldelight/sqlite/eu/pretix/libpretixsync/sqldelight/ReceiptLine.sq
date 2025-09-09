@@ -1,5 +1,5 @@
 import java.math.BigDecimal;
-import java.util.Date;
+import java.time.OffsetDateTime;
 import kotlin.Boolean;
 
 CREATE TABLE ReceiptLine (
@@ -15,10 +15,10 @@ CREATE TABLE ReceiptLine (
     attendee_zipcode TEXT,
     canceled INTEGER AS Boolean NOT NULL,
     canceled_because_of_receipt INTEGER AS Boolean DEFAULT 0,
-    cart_expires TEXT AS Date,
+    cart_expires TEXT AS OffsetDateTime,
     cart_id TEXT,
     cart_position_id INTEGER,
-    created TEXT AS Date,
+    created TEXT AS OffsetDateTime,
     custom_price_input REAL AS BigDecimal,
     event_date_from TEXT,
     event_date_to TEXT,

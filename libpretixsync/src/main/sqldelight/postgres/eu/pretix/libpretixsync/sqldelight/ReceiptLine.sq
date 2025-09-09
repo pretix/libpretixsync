@@ -1,4 +1,4 @@
-import java.util.Date;
+import java.time.OffsetDateTime;
 import kotlin.Long;
 
 CREATE TABLE ReceiptLine (
@@ -13,10 +13,10 @@ CREATE TABLE ReceiptLine (
     attendee_zipcode character varying(255),
     canceled boolean NOT NULL,
     canceled_because_of_receipt boolean DEFAULT FALSE,
-    cart_expires DATE AS Date,
+    cart_expires DATE AS OffsetDateTime,
     cart_id character varying(255),
     cart_position_id bigint,
-    created DATE AS Date,
+    created DATE AS OffsetDateTime,
     custom_price_input numeric,
     event_date_from character varying(255),
     event_date_to character varying(255),
