@@ -3,12 +3,12 @@ package eu.pretix.libpretixsync.models
 import org.json.JSONArray
 import org.json.JSONObject
 import java.math.BigDecimal
-import java.util.Date
+import java.time.OffsetDateTime
 
 data class Closing(
     val id: Long,
     val serverId: Long?,
-    val datetime: Date?,
+    val datetime: OffsetDateTime?,
     val open: Boolean,
     val firstReceiptId: Long?,
     val lastReceiptId: Long?,

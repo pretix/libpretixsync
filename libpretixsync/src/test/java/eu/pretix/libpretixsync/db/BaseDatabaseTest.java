@@ -66,7 +66,7 @@ public abstract class BaseDatabaseTest {
                 ),
                 new Closing.Adapter(
                         bigDecimalAdapter,
-                        dateAdapter,
+                        offsetDateTimeAdapter,
                         bigDecimalAdapter,
                         bigDecimalAdapter
                 ),

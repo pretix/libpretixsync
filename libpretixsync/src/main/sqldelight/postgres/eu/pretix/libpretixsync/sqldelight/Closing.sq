@@ -1,5 +1,5 @@
 import java.math.BigDecimal;
-import java.util.Date;
+import java.time.OffsetDateTime;
 import kotlin.Long;
 
 CREATE TABLE Closing (
@@ -8,7 +8,7 @@ CREATE TABLE Closing (
     cashier_name character varying(255),
     cashier_numericid bigint,
     cashier_userid character varying(255),
-    datetime DATE AS Date,
+    datetime DATE AS OffsetDateTime,
     dsfinvk_uploaded boolean,
     first_receipt bigint,
     invoice_settings character varying(255),
