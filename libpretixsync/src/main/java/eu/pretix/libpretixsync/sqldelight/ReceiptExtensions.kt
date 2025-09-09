@@ -2,13 +2,14 @@ package eu.pretix.libpretixsync.sqldelight
 
 import org.json.JSONObject
 import java.text.SimpleDateFormat
+import java.time.ZoneId
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 import java.util.TimeZone
 
 fun Receipt.toJSON(): JSONObject {
-    val tz = TimeZone.getTimeZone("UTC")
-    val df = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
-    df.timeZone = tz
+    val df = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'").withZone(ZoneOffset.UTC)
     val jo = JSONObject()
     jo.put("receipt_id", id)
     jo.put("event", if (event_slug != null) event_slug else JSONObject.NULL)

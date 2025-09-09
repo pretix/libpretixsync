@@ -1,4 +1,4 @@
-import java.util.Date;
+import java.time.OffsetDateTime;
 import kotlin.Long;
 
 CREATE TABLE Receipt (
@@ -10,8 +10,8 @@ CREATE TABLE Receipt (
     cashier_userid character varying(255),
     chosen_cart_id character varying(255),
     currency character varying(255) DEFAULT 'EUR' NOT NULL,
-    datetime_closed DATE AS Date,
-    datetime_opened DATE AS Date,
+    datetime_closed DATE AS OffsetDateTime,
+    datetime_opened DATE AS OffsetDateTime,
     email_to character varying(255),
     event_slug character varying(255),
     fiscalisation_data character varying(255),

@@ -1,14 +1,14 @@
 package eu.pretix.libpretixsync.models
 
-import java.util.Date
+import java.time.OffsetDateTime
 
 data class Receipt(
     val id: Long,
     val eventSlug: String,
     val paymentType: PaymentType,
     val currency: String,
-    val dateTimeOpened: Date,
-    val dateTimeClosed: Date? = null,
+    val dateTimeOpened: OffsetDateTime,
+    val dateTimeClosed: OffsetDateTime? = null,
     val isTraining: Boolean,
     val isCanceled: Boolean,
     val isOpen: Boolean = false,

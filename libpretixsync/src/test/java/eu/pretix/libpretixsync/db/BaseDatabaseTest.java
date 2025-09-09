@@ -78,8 +78,8 @@ public abstract class BaseDatabaseTest {
                         dateAdapter
                 ),
                 new Receipt.Adapter(
-                        dateAdapter,
-                        dateAdapter
+                        offsetDateTimeAdapter,
+                        offsetDateTimeAdapter
                 ),
                 new ReceiptLine.Adapter(
                         dateAdapter,

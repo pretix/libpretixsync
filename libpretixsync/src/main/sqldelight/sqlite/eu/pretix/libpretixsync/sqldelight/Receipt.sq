@@ -1,4 +1,4 @@
-import java.util.Date;
+import java.time.OffsetDateTime;
 import kotlin.Boolean;
 
 CREATE TABLE Receipt (
@@ -11,8 +11,8 @@ CREATE TABLE Receipt (
     chosen_cart_id TEXT,
     closing INTEGER REFERENCES Closing (id) ON DELETE CASCADE,
     currency TEXT DEFAULT 'EUR' NOT NULL,
-    datetime_closed TEXT AS Date,
-    datetime_opened TEXT AS Date,
+    datetime_closed TEXT AS OffsetDateTime,
+    datetime_opened TEXT AS OffsetDateTime,
     email_to TEXT,
     event_slug TEXT,
     fiscalisation_data TEXT,
