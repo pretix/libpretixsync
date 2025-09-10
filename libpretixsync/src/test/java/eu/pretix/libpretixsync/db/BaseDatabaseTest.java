@@ -55,14 +55,13 @@ public abstract class BaseDatabaseTest {
         driver = new JdbcSqliteDriver(sourceUrl, new Properties());
         SyncDatabase.Companion.getSchema().create(driver);
 
-        JavaUtilDateAdapter dateAdapter = new JavaUtilDateAdapter();
         JavaOffsetDateTimeAdapter offsetDateTimeAdapter = new JavaOffsetDateTimeAdapter();
         BigDecimalAdapter bigDecimalAdapter = new BigDecimalAdapter();
 
         db = SyncDatabase.Companion.invoke(
                 driver,
                 new CheckIn.Adapter(
-                        dateAdapter
+                        offsetDateTimeAdapter
                 ),
                 new Closing.Adapter(
                         bigDecimalAdapter,
@@ -75,7 +74,7 @@ public abstract class BaseDatabaseTest {
                         offsetDateTimeAdapter
                 ),
                 new QueuedCheckIn.Adapter(
-                        dateAdapter
+                        offsetDateTimeAdapter
                 ),
                 new Receipt.Adapter(
                         offsetDateTimeAdapter,

@@ -1,11 +1,11 @@
-import java.util.Date;
+import java.time.OffsetDateTime;
 import kotlin.Long;
 
 CREATE TABLE QueuedCheckIn (
     id serial AS Long PRIMARY KEY NOT NULL,
     answers character varying(255),
     checkinListId bigint,
-    datetime DATE AS Date,
+    datetime DATE AS OffsetDateTime,
     datetime_string character varying(255),
     event_slug character varying(255),
     nonce character varying(255),

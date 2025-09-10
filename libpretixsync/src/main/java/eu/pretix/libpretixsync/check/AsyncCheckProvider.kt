@@ -35,7 +35,9 @@ import java.lang.Exception
 import java.nio.charset.Charset
 import java.time.Instant
 import java.time.OffsetDateTime
-import java.util.*
+import java.time.ZoneOffset
+import java.util.Date
+import java.util.Locale
 
 class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDatabase) : TicketCheckProvider {
     private var sentry: SentryInterface = DummySentryImplementation()
@@ -62,7 +64,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
 
         val dt = now()
         val jdoc = JSONObject()
-        jdoc.put("datetime", QueuedCheckIn.formatDatetime(dt.toDate()))
+        jdoc.put("datetime", QueuedCheckIn.formatDatetime(dt.toOffsetDateTime()))
         if (raw_barcode.contains(Regex("[\\p{C}]"))) {
             jdoc.put("raw_barcode", "binary:" + Base64.encodeBase64(raw_barcode.toByteArray(Charset.defaultCharset())).toString(Charset.defaultCharset()))
         } else {
@@ -183,7 +185,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
         return jsonLogic
     }
 
-    private data class SignedTicketData(val seed: String, val item: Long, val variation: Long?, val subevent: Long?, val validFrom: DateTime?, val validUntil: DateTime?)
+    private data class SignedTicketData(val seed: String, val item: Long, val variation: Long?, val subevent: Long?, val validFrom: OffsetDateTime?, val validUntil: OffsetDateTime?)
 
     @ExperimentalUnsignedTypes
     private fun decodePretixSig1(event: Event, qrcode: String): SignedTicketData? {
@@ -215,8 +217,8 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
                         ticket.item,
                         ticket.variation,
                         ticket.subevent,
-                        if (ticket.hasValidFromUnixTime() && ticket.validFromUnixTime > 0) DateTime(ticket.validFromUnixTime * 1000) else null,
-                        if (ticket.hasValidUntilUnixTime() && ticket.validUntilUnixTime > 0) DateTime(ticket.validUntilUnixTime * 1000) else null
+                        if (ticket.hasValidFromUnixTime() && ticket.validFromUnixTime > 0) OffsetDateTime.ofInstant(Instant.ofEpochMilli(ticket.validFromUnixTime * 1000), ZoneOffset.UTC) else null,
+                        if (ticket.hasValidUntilUnixTime() && ticket.validUntilUnixTime > 0) OffsetDateTime.ofInstant(Instant.ofEpochMilli(ticket.validUntilUnixTime * 1000), ZoneOffset.UTC) else null
                 )
             }
         }
@@ -317,11 +319,11 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
         }
 
         if (type != TicketCheckProvider.CheckInType.EXIT) {
-            if (decoded.validFrom?.isAfter(now()) == true) {
+            if (decoded.validFrom?.isAfter(now().toOffsetDateTime()) == true) {
                 storeFailedCheckin(eventSlug, listId, "invalid_time", ticketid, type, item = decoded.item, variation = decoded.variation, subevent = decoded.subevent, nonce = nonce)
                 return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.INVALID_TIME, offline = true)
             }
-            if (decoded.validUntil?.isBefore(now()) == true) {
+            if (decoded.validUntil?.isBefore(now().toOffsetDateTime()) == true) {
                 storeFailedCheckin(eventSlug, listId, "invalid_time", ticketid, type, item = decoded.item, variation = decoded.variation, subevent = decoded.subevent, nonce = nonce)
                 return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.INVALID_TIME, offline = true)
             }
@@ -516,8 +518,8 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
                 db.queuedCheckInQueries.insert(
                     answers = givenAnswers.toString(),
                     checkinListId = listId,
-                    datetime = dt.toDate(),
-                    datetime_string = QueuedCheckIn.formatDatetime(dt.toDate()),
+                    datetime = dt.toOffsetDateTime(),
+                    datetime_string = QueuedCheckIn.formatDatetime(dt.toOffsetDateTime()),
                     event_slug = eventSlug,
                     nonce = nonce ?: NonceGenerator.nextNonce(),
                     secret = ticketid,
@@ -741,14 +743,14 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
 
         if (type != TicketCheckProvider.CheckInType.EXIT) {
             val validFrom = position.validFrom
-            if (validFrom != null && validFrom.isAfter(javaTimeNow())) {
+            if (validFrom != null && validFrom.isAfter(now().toOffsetDateTime())) {
                 res.type = TicketCheckProvider.CheckResult.Type.INVALID_TIME
                 res.isCheckinAllowed = false
                 storeFailedCheckin(eventSlug, list.serverId, "invalid_time", position.secret!!, type, position = position.serverId, item = positionItem.serverId, variation = position.variationServerId, subevent = position.subEventServerId, nonce = nonce)
                 return res
             }
             val validUntil = position.validUntil
-            if (validUntil != null && validUntil.isBefore(javaTimeNow())) {
+            if (validUntil != null && validUntil.isBefore(now().toOffsetDateTime())) {
                 res.type = TicketCheckProvider.CheckResult.Type.INVALID_TIME
                 res.isCheckinAllowed = false
                 storeFailedCheckin(eventSlug, list.serverId, "invalid_time", position.secret!!, type, position = position.serverId, item = positionItem.serverId, variation = position.variationServerId, subevent = position.subEventServerId, nonce = nonce)
@@ -924,8 +926,8 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
                 db.queuedCheckInQueries.insert(
                     answers = givenAnswers.toString(),
                     checkinListId = listId,
-                    datetime = dt.toDate(),
-                    datetime_string = QueuedCheckIn.formatDatetime(dt.toDate()),
+                    datetime = dt.toOffsetDateTime(),
+                    datetime_string = QueuedCheckIn.formatDatetime(dt.toOffsetDateTime()),
                     event_slug = eventSlug,
                     nonce = nonce ?: NonceGenerator.nextNonce(),
                     secret = position.secret,
@@ -938,8 +940,8 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
                     listId = listId,
                     position = position.id,
                     type = type.toString().lowercase(Locale.getDefault()),
-                    datetime = dt.toDate(),
-                    json_data = "{\"local\": true, \"type\": \"${type.toString().lowercase(Locale.getDefault())}\", \"datetime\": \"${QueuedCheckIn.formatDatetime(dt.toDate())}\"}",
+                    datetime = dt.toOffsetDateTime(),
+                    json_data = "{\"local\": true, \"type\": \"${type.toString().lowercase(Locale.getDefault())}\", \"datetime\": \"${QueuedCheckIn.formatDatetime(dt.toOffsetDateTime())}\"}",
                 )
             }
         }
@@ -1238,10 +1240,9 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
         return overrideNow ?: DateTime()
     }
 
-    private fun javaTimeNow(): OffsetDateTime {
-        val jodaNow = now()
-        val instant = Instant.ofEpochMilli(jodaNow.millis)
-        val zoneId = jodaNow.zone.toTimeZone().toZoneId()
+    private fun DateTime.toOffsetDateTime(): OffsetDateTime {
+        val instant = Instant.ofEpochMilli(this.millis)
+        val zoneId = this.zone.toTimeZone().toZoneId()
         return OffsetDateTime.ofInstant(instant, zoneId)
     }
 

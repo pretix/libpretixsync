@@ -23,6 +23,7 @@ import org.json.JSONObject
 import java.io.IOException
 import java.io.UnsupportedEncodingException
 import java.net.URLEncoder
+import java.time.OffsetDateTime
 import eu.pretix.libpretixsync.sqldelight.Orders as Order
 
 class OrderSyncAdapter(
@@ -216,7 +217,7 @@ class OrderSyncAdapter(
                 val ciobj = known.remove(listid)!!
 
                 db.checkInQueries.updateFromJson(
-                    datetime = ISODateTimeFormat.dateTimeParser().parseDateTime(ci.getString("datetime")).toDate(),
+                    datetime = OffsetDateTime.parse(ci.getString("datetime")),
                     json_data = ci.toString(),
                     listId = listid,
                     position = positionId,
@@ -226,7 +227,7 @@ class OrderSyncAdapter(
             } else {
                 val ciobj = CheckIn(
                     id = -1,
-                    datetime = ISODateTimeFormat.dateTimeParser().parseDateTime(ci.getString("datetime")).toDate(),
+                    datetime = OffsetDateTime.parse(ci.getString("datetime")),
                     json_data = ci.toString(),
                     listId = listid,
                     position = positionId,

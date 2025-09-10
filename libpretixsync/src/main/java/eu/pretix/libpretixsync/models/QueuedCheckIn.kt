@@ -1,11 +1,9 @@
 package eu.pretix.libpretixsync.models
 
-import java.text.DateFormat
-import java.text.SimpleDateFormat
 import java.time.OffsetDateTime
-import java.util.Date
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 import java.util.Locale
-import java.util.TimeZone
 
 data class QueuedCheckIn(
     val id: Long,
@@ -21,13 +19,12 @@ data class QueuedCheckIn(
     companion object {
         // Migrated from AbstractQueuedCheckIn
         // TODO: Find a better place for this?
-        fun formatDatetime(date: Date): String {
-            val tz = TimeZone.getTimeZone("UTC")
-            val df: DateFormat = SimpleDateFormat(
-                "yyyy-MM-dd'T'HH:mm:ss'Z'",
+        fun formatDatetime(date: OffsetDateTime): String {
+            val df = DateTimeFormatter.ofPattern(
+                "yyyy-MM-dd'T'HH:mm:ss'Z'", // Quoted "Z" to indicate UTC, no timezone offset
                 Locale.ENGLISH
-            ) // Quoted "Z" to indicate UTC, no timezone offset
-            df.timeZone = tz
+            ).withZone(ZoneOffset.UTC)
+
             return df.format(date)
         }
     }

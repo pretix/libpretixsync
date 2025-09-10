@@ -1,8 +1,8 @@
-import java.util.Date;
+import java.time.OffsetDateTime;
 
 CREATE TABLE CheckIn (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    datetime TEXT AS Date,
+    datetime TEXT AS OffsetDateTime,
     json_data TEXT,
     listId INTEGER,
     position INTEGER REFERENCES OrderPosition (id) ON DELETE CASCADE,

@@ -1,9 +1,9 @@
-import java.util.Date;
+import java.time.OffsetDateTime;
 import kotlin.Long;
 
 CREATE TABLE CheckIn (
     id serial AS Long PRIMARY KEY NOT NULL,
-    datetime DATE AS Date,
+    datetime DATE AS OffsetDateTime,
     json_data text,
     listId bigint,
     server_id bigint,
