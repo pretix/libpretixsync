@@ -2,14 +2,11 @@ package eu.pretix.libpretixsync.sqldelight
 
 import org.json.JSONObject
 import java.math.RoundingMode
-import java.text.DateFormat
-import java.text.SimpleDateFormat
-import java.util.TimeZone
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 
 fun Closing.toJSON(): JSONObject {
-    val tz = TimeZone.getTimeZone("UTC")
-    val df: DateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
-    df.timeZone = tz
+    val df = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'").withZone(ZoneOffset.UTC)
 
     val jo = JSONObject()
     jo.put("closing_id", id)
