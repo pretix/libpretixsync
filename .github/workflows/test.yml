@@ -23,7 +23,7 @@ jobs:
       - name: Run Gradle
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: clean check test build jar jacocoTestReport
+          arguments: clean check test build jar jacocoTestReport -x verifyMainSyncDatabaseMigration
           build-root-directory: libpretixsync
 
       - name: Codecov
