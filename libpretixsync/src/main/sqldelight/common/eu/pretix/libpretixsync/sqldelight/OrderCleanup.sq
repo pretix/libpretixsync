@@ -1,0 +1,71 @@
+countOrders:
+SELECT COUNT(*)
+FROM orders
+WHERE
+    event_slug = :event_slug
+    AND (deleteAfterTimestamp IS NULL OR deleteAfterTimestamp < 1);
+
+selectOrderIds:
+SELECT id
+FROM orders
+WHERE
+    event_slug = :event_slug
+    AND (deleteAfterTimestamp IS NULL OR deleteAfterTimestamp < 1)
+LIMIT 100;
+
+selectSubEventIdsForOrder:
+SELECT subevent_id
+FROM OrderPosition
+WHERE order_ref = :order_id;
+
+updateDeleteAfterTimestamp:
+UPDATE orders
+SET
+    deleteAfterTimestamp = :delete_after_timestamp
+WHERE id = :id;
+
+selectOrderIdsToDelete:
+SELECT orders.id
+FROM orders
+WHERE
+    (deleteAfterTimestamp < :current_timestamp AND deleteAfterTimestamp < 1)
+    AND (orders.id NOT IN (
+        SELECT order_ref
+        FROM OrderPosition
+        WHERE OrderPosition.subevent_id = :sub_event_id
+    ))
+LIMIT 200;
+
+countOrdersByIdList:
+SELECT COUNT(*)
+FROM orders
+WHERE id IN :ids;
+
+deleteOrders:
+DELETE FROM orders
+WHERE id IN :ids;
+
+selectOldEventSlugs:
+SELECT event_slug
+FROM orders
+WHERE event_slug NOT IN :keep_slugs
+GROUP BY orders.event_slug
+ORDER BY orders.event_slug;
+
+selectOrderIdsForOldEvent:
+SELECT id
+FROM orders
+WHERE event_slug = ?
+LIMIT 200;
+
+-- WITH deleted_rows AS (
+--     DELETE FROM MyTable RETURNING *
+-- )
+-- SELECT COUNT(*) FROM deleted_rows;
+
+-- store.select(Order.ID)
+-- .where(Order.DELETE_AFTER_TIMESTAMP.lt(System.currentTimeMillis()).
+-- and(Order.DELETE_AFTER_TIMESTAMP.gt(1L)))
+-- .and(Order.ID.notIn(store.select(OrderPosition.ORDER_ID).
+-- from(OrderPosition::class.java).where(OrderPosition.SUBEVENT_ID.eq(subeventId)))).
+-- limit(200).get().toList()

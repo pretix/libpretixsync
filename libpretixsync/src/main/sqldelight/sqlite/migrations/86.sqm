@@ -1,0 +1,4 @@
+CREATE INDEX receiptline_receipt ON ReceiptLine (receipt);
+CREATE INDEX receiptline_addon_to ON ReceiptLine (addon_to);
+CREATE INDEX receiptpayment_receipt ON ReceiptPayment (receipt);
+CREATE INDEX receipt_open ON Receipt (open) WHERE open = 1;

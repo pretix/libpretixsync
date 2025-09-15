@@ -1,35 +1,35 @@
 package eu.pretix.libpretixsync.sync;
 
 import eu.pretix.libpretixsync.api.*;
-import eu.pretix.libpretixsync.db.ReusableMedium;
+import eu.pretix.libpretixsync.models.Question;
+import eu.pretix.libpretixsync.models.db.QuestionExtensionsKt;
+import eu.pretix.libpretixsync.sqldelight.Closing;
+import eu.pretix.libpretixsync.sqldelight.ClosingExtensionsKt;
+import eu.pretix.libpretixsync.sqldelight.QueuedCall;
+import eu.pretix.libpretixsync.sqldelight.QueuedCheckIn;
+import eu.pretix.libpretixsync.sqldelight.QueuedOrder;
+import eu.pretix.libpretixsync.sqldelight.Receipt;
+import eu.pretix.libpretixsync.sqldelight.ReceiptExtensionsKt;
+import eu.pretix.libpretixsync.sqldelight.ReceiptLine;
+import eu.pretix.libpretixsync.sqldelight.ReceiptLineExtensionsKt;
+import eu.pretix.libpretixsync.sqldelight.ReceiptPayment;
+import eu.pretix.libpretixsync.sqldelight.ReceiptPaymentExtensionsKt;
+import eu.pretix.libpretixsync.sqldelight.SyncDatabase;
 import eu.pretix.libpretixsync.utils.JSONUtils;
-import io.requery.sql.StatementExecutionException;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import eu.pretix.libpretixsync.SentryInterface;
 import eu.pretix.libpretixsync.config.ConfigStore;
 import eu.pretix.libpretixsync.db.Answer;
-import eu.pretix.libpretixsync.db.CheckIn;
-import eu.pretix.libpretixsync.db.Closing;
-import eu.pretix.libpretixsync.db.Order;
-import eu.pretix.libpretixsync.db.OrderPosition;
-import eu.pretix.libpretixsync.db.Question;
-import eu.pretix.libpretixsync.db.QueuedCall;
-import eu.pretix.libpretixsync.db.QueuedCheckIn;
-import eu.pretix.libpretixsync.db.QueuedOrder;
-import eu.pretix.libpretixsync.db.Receipt;
-import eu.pretix.libpretixsync.db.ReceiptLine;
-import eu.pretix.libpretixsync.db.ReceiptPayment;
-import eu.pretix.libpretixsync.db.ResourceSyncStatus;
-import io.requery.BlockingEntityStore;
-import io.requery.Persistable;
 
 public class SyncManager {
     public enum Profile {
@@ -41,7 +41,7 @@ public class SyncManager {
     protected ConfigStore configStore;
     protected long upload_interval;
     protected long download_interval;
-    protected BlockingEntityStore<Persistable> dataStore;
+    protected SyncDatabase db;
     protected FileStorage fileStorage;
     protected Profile profile;
     protected boolean with_pdf_data;
@@ -98,7 +98,7 @@ public class SyncManager {
             ConfigStore configStore,
             PretixApi api,
             SentryInterface sentry,
-            BlockingEntityStore<Persistable> dataStore,
+            SyncDatabase db,
             FileStorage fileStorage,
             long upload_interval,
             long download_interval,
@@ -121,7 +121,7 @@ public class SyncManager {
         this.sentry = sentry;
         this.upload_interval = upload_interval;
         this.download_interval = download_interval;
-        this.dataStore = dataStore;
+        this.db = db;
         this.fileStorage = fileStorage;
         this.profile = profile;
         this.with_pdf_data = with_pdf_data;
@@ -189,14 +189,6 @@ public class SyncManager {
             configStore.setLastFailedSync(0);
             if (feedback != null) {
                 feedback.postFeedback("Sync completed.");
-            }
-        } catch (StatementExecutionException e) {
-            if (e.getCause() != null && e.getCause().getMessage().contains("SQLITE_BUSY")) {
-                configStore.setLastFailedSync(System.currentTimeMillis());
-                configStore.setLastFailedSyncMsg("Local database was locked");
-                return new SyncResult(true, download, e);
-            } else {
-                throw e;
             }
         } catch (SyncException e) {
             configStore.setLastFailedSync(System.currentTimeMillis());
@@ -302,13 +294,6 @@ public class SyncManager {
             configStore.setLastFailedSync(System.currentTimeMillis());
             configStore.setLastFailedSyncMsg(e.getMessage());
         }
-
-        // This is kind of a manual migration, added in 2020-19. Remove at some late point in time
-        try {
-            dataStore.raw("UPDATE checkin SET listId = list WHERE (listId IS NULL OR listID = 0) AND list IS NOT NULL AND list > 0");
-        } catch (Exception e) {
-            // old column doesn't exist? ignore!
-        }
     }
 
     protected void upload(ProgressFeedback feedback) throws SyncException {
@@ -369,7 +354,7 @@ public class SyncManager {
             configStore.setDeviceKnownGateID(gateID);
 
             if (vdata.has("medium_key_sets")) {
-                MediumKeySetSyncAdapter mkssa = new MediumKeySetSyncAdapter(dataStore, fileStorage, api, configStore.getSyncCycleId(), null, vdata.getJSONArray("medium_key_sets"));
+                MediumKeySetSyncAdapter mkssa = new MediumKeySetSyncAdapter(db, fileStorage, api, configStore.getSyncCycleId(), null, vdata.getJSONArray("medium_key_sets"));
                 mkssa.download();
             }
 
@@ -395,7 +380,7 @@ public class SyncManager {
 
             if (profile == Profile.PRETIXPOS) {
                 try {
-                    download(new CashierSyncAdapter(dataStore, fileStorage, api, configStore.getSyncCycleId(), feedback));
+                    download(new CashierSyncAdapter(db, fileStorage, api, configStore.getSyncCycleId(), feedback));
                 } catch (NotFoundApiException e) {
                     // ignore, this is only supported from a later pretixpos-backend version
                 }
@@ -404,7 +389,7 @@ public class SyncManager {
                 }
             }
 
-            download(new AllSubEventsSyncAdapter(dataStore, fileStorage, api, configStore.getSyncCycleId(), feedback));
+            download(new AllSubEventsSyncAdapter(db, fileStorage, api, configStore.getSyncCycleId(), feedback));
             List<String> slugs;
             if (overrideEventSlug != null) {
                 slugs = new ArrayList<>();
@@ -418,58 +403,58 @@ public class SyncManager {
                     subEvent = overrideSubeventId;
                 }
                 try {
-                    download(new EventSyncAdapter(dataStore, eventSlug, eventSlug, api, configStore.getSyncCycleId(), feedback));
+                    download(new EventSyncAdapter(db, eventSlug, eventSlug, api, configStore.getSyncCycleId(), feedback));
                 } catch (PermissionDeniedApiException e) {
                     e.eventSlug = eventSlug;
                     throw e;
                 }
-                download(new ItemCategorySyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
-                download(new ItemSyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
-                download(new QuestionSyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
+                download(new ItemCategorySyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
+                download(new ItemSyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
+                download(new QuestionSyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
                 if (profile == Profile.PRETIXPOS) {
-                    download(new QuotaSyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback, subEvent));
-                    download(new TaxRuleSyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
-                    download(new TicketLayoutSyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), salesChannel, feedback));
+                    download(new QuotaSyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback, subEvent));
+                    download(new TaxRuleSyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
+                    download(new TicketLayoutSyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback, salesChannel));
                 }
-                download(new BadgeLayoutSyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
-                download(new BadgeLayoutItemSyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
-                download(new CheckInListSyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback, subEvent));
+                download(new BadgeLayoutSyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
+                download(new BadgeLayoutItemSyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
+                download(new CheckInListSyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback, subEvent));
                 if (profile == Profile.PRETIXSCAN || profile == Profile.PRETIXSCAN_ONLINE) {
                     // We don't need these on pretixPOS, so we can save some traffic
                     try {
-                        download(new RevokedTicketSecretSyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
+                        download(new RevokedTicketSecretSyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
                     } catch (NotFoundApiException e) {
                         // ignore, this is only supported from pretix 3.12.
                     }
                     try {
-                        download(new BlockedTicketSecretSyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
+                        download(new BlockedTicketSecretSyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
                     } catch (NotFoundApiException e) {
                         // ignore, this is only supported from pretix 4.17.
                     }
                 }
                 if (profile == Profile.PRETIXSCAN && !skip_orders) {
-                    OrderSyncAdapter osa = new OrderSyncAdapter(dataStore, fileStorage, eventSlug, subEvent, with_pdf_data, false, api, configStore.getSyncCycleId(), feedback);
+                    OrderSyncAdapter osa = new OrderSyncAdapter(db, fileStorage, eventSlug, subEvent, with_pdf_data, false, api, configStore.getSyncCycleId(), feedback);
                     download(osa);
                     try {
-                        download(new ReusableMediaSyncAdapter(dataStore, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
+                        download(new ReusableMediaSyncAdapter(db, fileStorage, api, configStore.getSyncCycleId(), feedback));
                     } catch (NotFoundApiException e) {
                         // ignore, this is only supported from pretix 4.19.
                     }
                 }
 
                 try {
-                    download(new SettingsSyncAdapter(dataStore, eventSlug, eventSlug, api, configStore.getSyncCycleId(), feedback));
+                    download(new SettingsSyncAdapter(db, eventSlug, eventSlug, api, configStore.getSyncCycleId(), feedback));
                 } catch (ApiException e) {
                     // Older pretix installations
                     // We don't need these on pretixSCAN, so we can save some traffic
                     if (profile == Profile.PRETIXPOS) {
-                        download(new InvoiceSettingsSyncAdapter(dataStore, eventSlug, eventSlug, api, configStore.getSyncCycleId(), feedback));
+                        download(new InvoiceSettingsSyncAdapter(db, eventSlug, eventSlug, api, configStore.getSyncCycleId(), feedback));
                     }
                 }
             }
 
             if (profile == Profile.PRETIXSCAN && !skip_orders && overrideEventSlug == null) {
-                OrderCleanup oc = new OrderCleanup(dataStore, fileStorage, api, configStore.getSyncCycleId(), feedback);
+                OrderCleanup oc = new OrderCleanup(db, fileStorage, api, configStore.getSyncCycleId(), feedback);
                 if ((System.currentTimeMillis() - configStore.getLastCleanup()) > 3600 * 1000 * 12) {
                     for (String eventSlug : configStore.getSynchronizedEvents()) {
                         oc.deleteOldSubevents(eventSlug, overrideSubeventId > 0L ? overrideSubeventId : configStore.getSelectedSubeventForEvent(eventSlug));
@@ -479,12 +464,12 @@ public class SyncManager {
                     configStore.setLastCleanup(System.currentTimeMillis());
                 }
             } else if (profile == Profile.PRETIXSCAN_ONLINE && overrideEventSlug == null) {
-                dataStore.delete(CheckIn.class).get().value();
-                dataStore.delete(OrderPosition.class).get().value();
-                dataStore.delete(Order.class).get().value();
-                dataStore.delete(ResourceSyncStatus.class).where(ResourceSyncStatus.RESOURCE.like("order%")).get().value();
+                db.getCompatQueries().truncateCheckIn();
+                db.getCompatQueries().truncateOrderPosition();
+                db.getCompatQueries().truncateOrder();
+                db.getResourceSyncStatusQueries().deleteByResourceFilter("order%");
                 if ((System.currentTimeMillis() - configStore.getLastCleanup()) > 3600 * 1000 * 12) {
-                    OrderCleanup oc = new OrderCleanup(dataStore, fileStorage, api, configStore.getSyncCycleId(), feedback);
+                    OrderCleanup oc = new OrderCleanup(db, fileStorage, api, configStore.getSyncCycleId(), feedback);
                     oc.deleteOldPdfImages();
                     configStore.setLastCleanup(System.currentTimeMillis());
                 }
@@ -492,12 +477,11 @@ public class SyncManager {
 
 
         } catch (DeviceAccessRevokedException e) {
-            int deleted = 0;
-            deleted += dataStore.delete(CheckIn.class).get().value();
-            deleted += dataStore.delete(OrderPosition.class).get().value();
-            deleted += dataStore.delete(Order.class).get().value();
-            deleted += dataStore.delete(ReusableMedium.class).get().value();
-            deleted += dataStore.delete(ResourceSyncStatus.class).get().value();
+            db.getCompatQueries().truncateCheckIn();
+            db.getCompatQueries().truncateOrderPosition();
+            db.getCompatQueries().truncateOrder();
+            db.getCompatQueries().truncateReusableMedium();
+            db.getCompatQueries().truncateResourceSyncStatus();
             throw new SyncException(e.getMessage());
         } catch (JSONException e) {
             e.printStackTrace();
@@ -517,8 +501,9 @@ public class SyncManager {
     protected void uploadQueuedCalls(ProgressFeedback feedback) throws SyncException {
         sentry.addBreadcrumb("sync.queue", "Start queuedcall upload");
 
-        List<QueuedCall> calls = dataStore.select(QueuedCall.class)
-                .get().toList();
+
+
+        List<QueuedCall> calls = db.getQueuedCallQueries().selectAll().executeAsList();
         String url = "";
         int i = 0;
         for (QueuedCall call : calls) {
@@ -527,14 +512,14 @@ public class SyncManager {
                     feedback.postFeedback("Uploading queued calls (" + i + "/" + calls.size() + ") …");
                 }
                 i++;
-                url = call.url;
+                url = call.getUrl();
                 PretixApi.ApiResponse response = api.postResource(
-                        call.url,
-                        new JSONObject(call.body),
-                        call.idempotency_key
+                        call.getUrl(),
+                        new JSONObject(call.getBody()),
+                        call.getIdempotency_key()
                 );
                 if (response.getResponse().code() < 500) {
-                    dataStore.delete(call);
+                    db.getQueuedCallQueries().delete(call.getId());
                     if (response.getResponse().code() >= 400) {
                         sentry.captureException(new ApiException("Received response (" + response.getResponse().code() + ") for queued call: " + response.getData().toString()));
                         // We ignore 400s, because we can't do something about them
@@ -548,7 +533,7 @@ public class SyncManager {
             } catch (NotFoundApiException e) {
                 if (url.contains("/failed_checkins/") || url.contains("/printlog/")) {
                     // ignore this one: old pretix systems don't have it
-                    dataStore.delete(call);
+                    db.getQueuedCallQueries().delete(call.getId());
                 } else {
                     sentry.addBreadcrumb("sync.queue", "API Error: " + e.getMessage());
                     throw new SyncException(e.getMessage());
@@ -565,11 +550,7 @@ public class SyncManager {
     protected void uploadReceipts(ProgressFeedback feedback) throws SyncException {
         sentry.addBreadcrumb("sync.queue", "Start receipt upload");
 
-        List<Receipt> receipts = dataStore.select(Receipt.class)
-                .where(Receipt.OPEN.eq(false))
-                .and(Receipt.SERVER_ID.isNull())
-                .get().toList();
-
+        List<Receipt> receipts = db.getReceiptQueries().selectClosedWithoutServerId().executeAsList();
         try {
             int i = 0;
             for (Receipt receipt : receipts) {
@@ -577,14 +558,26 @@ public class SyncManager {
                     feedback.postFeedback("Uploading receipts (" + i + "/" + receipts.size() + ") …");
                 }
                 i++;
-                JSONObject data = receipt.toJSON();
+
+                JSONObject data = ReceiptExtensionsKt.toJSON(receipt);
                 JSONArray lines = new JSONArray();
                 JSONArray payments = new JSONArray();
-                for (ReceiptLine line : receipt.getLines()) {
-                    lines.put(line.toJSON());
+
+                List<ReceiptLine> dbLines = db.getReceiptLineQueries().selectForReceiptId(receipt.getId()).executeAsList();
+
+                Map<Long, Long> lineIdtoPositionId = new HashMap<>();
+
+                for (ReceiptLine line : dbLines) {
+                    lineIdtoPositionId.put(line.getId(), line.getPositionid());
+                    JSONObject json = ReceiptLineExtensionsKt.toJSON(line);
+                    if (line.getAddon_to() != null) {
+                        json.put("addon_to", lineIdtoPositionId.get(line.getAddon_to()));
+                    }
+                    lines.put(json);
                 }
-                for (ReceiptPayment payment : receipt.getPayments()) {
-                    payments.put(payment.toJSON());
+                List<ReceiptPayment> dbPayments = db.getReceiptPaymentQueries().selectForReceiptId(receipt.getId()).executeAsList();
+                for (ReceiptPayment payment : dbPayments) {
+                    payments.put(ReceiptPaymentExtensionsKt.toJSON(payment));
                 }
                 data.put("lines", lines);
                 data.put("payments", payments);
@@ -593,8 +586,8 @@ public class SyncManager {
                         data
                 );
                 if (response.getResponse().code() == 201) {
-                    receipt.setServer_id(response.getData().getLong("receipt_id"));
-                    dataStore.update(receipt);
+                    db.getReceiptQueries().updateServerId(response.getData().getLong("receipt_id"), receipt.getId());
+                    db.getReceiptQueries().clearLocalOrderAnswerDataById(receipt.getId());
                 } else {
                     throw new SyncException(response.getData().toString());
                 }
@@ -613,10 +606,7 @@ public class SyncManager {
     protected void uploadOrders(ProgressFeedback feedback) throws SyncException {
         sentry.addBreadcrumb("sync.queue", "Start order upload");
 
-        List<QueuedOrder> orders = dataStore.select(QueuedOrder.class)
-                .where(QueuedOrder.ERROR.isNull())
-                .and(QueuedOrder.LOCKED.eq(false))
-                .get().toList();
+        List<QueuedOrder> orders = db.getQueuedOrderQueries().selectUnlockedWithoutError().executeAsList();
 
         try {
             int i = 0;
@@ -626,8 +616,7 @@ public class SyncManager {
                 }
                 i++;
 
-                qo.setLocked(true);
-                dataStore.update(qo, QueuedOrder.LOCKED);
+                db.getCompatQueries().lockQueuedOrder(qo.getId());
                 Long startedAt = System.currentTimeMillis();
                 PretixApi.ApiResponse resp = api.postResource(
                         api.eventResourceUrl(qo.getEvent_slug(), "orders") + "?pdf_data=true&force=true",
@@ -635,18 +624,15 @@ public class SyncManager {
                         qo.getIdempotency_key()
                 );
                 if (resp.getResponse().code() == 201) {
-                    Receipt r = qo.getReceipt();
-                    r.setOrder_code(resp.getData().getString("code"));
-                    dataStore.update(r, Receipt.ORDER_CODE);
-                    dataStore.delete(qo);
-                    (new OrderSyncAdapter(dataStore, fileStorage, qo.getEvent_slug(), null, true, true, api, configStore.getSyncCycleId(), null)).standaloneRefreshFromJSON(resp.getData());
+                    db.getReceiptQueries().updateOrderCode(resp.getData().getString("code"), qo.getReceipt());
+                    db.getQueuedOrderQueries().delete(qo.getId());
+                    (new OrderSyncAdapter(db, fileStorage, qo.getEvent_slug(), null, true, true, api, configStore.getSyncCycleId(), null)).standaloneRefreshFromJSON(resp.getData());
                     if (connectivityFeedback != null) {
                         connectivityFeedback.recordSuccess(System.currentTimeMillis() - startedAt);
                     }
                 } else if (resp.getResponse().code() == 400) {
                     // TODO: User feedback or log in some way?
-                    qo.setError(resp.getData().toString());
-                    dataStore.update(qo);
+                    db.getQueuedOrderQueries().updateError(resp.getData().toString(), qo.getId());
                 }
             }
         } catch (JSONException e) {
@@ -669,10 +655,7 @@ public class SyncManager {
     protected void uploadClosings(ProgressFeedback feedback) throws SyncException {
         sentry.addBreadcrumb("sync.queue", "Start closings upload");
 
-        List<Closing> closings = dataStore.select(Closing.class)
-                .where(Closing.OPEN.eq(false))
-                .and(Closing.SERVER_ID.isNull())
-                .get().toList();
+        List<Closing> closings = db.getClosingQueries().selectClosedWithoutServerId().executeAsList();
 
         try {
             int i = 0;
@@ -683,11 +666,10 @@ public class SyncManager {
                 i++;
                 PretixApi.ApiResponse response = api.postResource(
                         api.organizerResourceUrl("posdevices/" + configStore.getPosId() + "/closings"),
-                        closing.toJSON()
+                        ClosingExtensionsKt.toJSON(closing)
                 );
                 if (response.getResponse().code() == 201) {
-                    closing.setServer_id(response.getData().getLong("closing_id"));
-                    dataStore.update(closing);
+                    db.getClosingQueries().updateServerId(response.getData().getLong("closing_id"), closing.getId());
                 } else {
                     throw new SyncException(response.getData().toString());
                 }
@@ -706,8 +688,7 @@ public class SyncManager {
     protected void uploadCheckins(ProgressFeedback feedback) throws SyncException {
         sentry.addBreadcrumb("sync.queue", "Start check-in upload");
 
-        List<QueuedCheckIn> queued = dataStore.select(QueuedCheckIn.class)
-                .get().toList();
+        List<QueuedCheckIn> queued = db.getQueuedCheckInQueries().selectAll().executeAsList();
 
         try {
             int i = 0;
@@ -721,8 +702,18 @@ public class SyncManager {
                     JSONArray ja = new JSONArray(qci.getAnswers());
                     for (int j = 0; j < ja.length(); j++) {
                         JSONObject jo = ja.getJSONObject(j);
-                        Question q = new Question();
-                        q.setServer_id(jo.getLong("question"));
+
+                        Question q = QuestionExtensionsKt.toModel(
+                            new eu.pretix.libpretixsync.sqldelight.Question(
+                                -1L,
+                                null,
+                                "{}",
+                                -1L,
+                                false,
+                                jo.getLong("question")
+                            )
+                        );
+
                         answers.add(new Answer(q, jo.getString("answer"), null));
                     }
                 } catch (JSONException e) {
@@ -736,9 +727,9 @@ public class SyncManager {
                 }
                 if (qci.getDatetime_string() == null || qci.getDatetime_string().equals("")) {
                     // Backwards compatibility
-                    ar = api.redeem(qci.getEvent_slug(), qci.getSecret(), qci.getDatetime(), true, qci.getNonce(), answers, qci.checkinListId, false, false, qci.getType(), st, null, false);
+                    ar = api.redeem(qci.getEvent_slug(), qci.getSecret(), qci.getDatetime(), true, qci.getNonce(), answers, qci.getCheckinListId(), false, false, qci.getType(), st, null, false);
                 } else {
-                    ar = api.redeem(qci.getEvent_slug(), qci.getSecret(), qci.getDatetime_string(), true, qci.getNonce(), answers, qci.checkinListId, false, false, qci.getType(), st, null, false);
+                    ar = api.redeem(qci.getEvent_slug(), qci.getSecret(), qci.getDatetime_string(), true, qci.getNonce(), answers, qci.getCheckinListId(), false, false, qci.getType(), st, null, false);
                 }
                 if (connectivityFeedback != null) {
                     connectivityFeedback.recordSuccess(System.currentTimeMillis() - startedAt);
@@ -746,12 +737,12 @@ public class SyncManager {
                 JSONObject response = ar.getData();
                 String status = response.optString("status", null);
                 if ("ok".equals(status)) {
-                    dataStore.delete(qci);
+                    db.getQueuedCheckInQueries().delete(qci.getId());
                 } else if (ar.getResponse().code() == 404 || ar.getResponse().code() == 400) {
                     // There's no point in re-trying a 404 or 400 since it won't change on later uploads.
                     // Modern pretix versions already log this case and handle it if possible, nothing
                     // we can do here.
-                    dataStore.delete(qci);
+                    db.getQueuedCheckInQueries().delete(qci.getId());
                 } // Else: will be retried later
             }
         } catch (JSONException e) {

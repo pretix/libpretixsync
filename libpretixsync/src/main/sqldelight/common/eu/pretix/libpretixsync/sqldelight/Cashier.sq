@@ -1,0 +1,51 @@
+selectByServerId:
+SELECT *
+FROM Cashier
+WHERE server_id = ?;
+
+selectById:
+SELECT *
+FROM Cashier
+WHERE id = ?;
+
+selectByServerIdList:
+SELECT *
+FROM Cashier
+WHERE server_id IN ?;
+
+selectServerIds:
+SELECT server_id
+FROM Cashier;
+
+deleteByServerId:
+DELETE FROM Cashier
+WHERE server_id = ?;
+
+insert:
+INSERT INTO Cashier
+(
+    active,
+    json_data,
+    name,
+    pin,
+    server_id,
+    userid
+)
+VALUES (
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?
+);
+
+updateFromJson:
+UPDATE Cashier
+SET
+    active = ?,
+    json_data = ?,
+    name = ?,
+    pin = ?,
+    userid = ?
+WHERE id = ?;

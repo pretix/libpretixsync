@@ -1,0 +1,12 @@
+import java.util.Date;
+import kotlin.Boolean;
+
+CREATE TABLE SubEvent (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    active INTEGER AS Boolean NOT NULL,
+    date_from TEXT AS Date,
+    date_to TEXT AS Date,
+    event_slug TEXT,
+    json_data TEXT,
+    server_id INTEGER
+);

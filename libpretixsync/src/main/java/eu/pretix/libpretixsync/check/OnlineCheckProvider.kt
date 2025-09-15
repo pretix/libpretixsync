@@ -8,15 +8,13 @@ import eu.pretix.libpretixsync.api.PretixApi
 import eu.pretix.libpretixsync.api.TimeoutApiException
 import eu.pretix.libpretixsync.config.ConfigStore
 import eu.pretix.libpretixsync.db.Answer
-import eu.pretix.libpretixsync.db.CheckInList
-import eu.pretix.libpretixsync.db.Item
 import eu.pretix.libpretixsync.db.NonceGenerator
-import eu.pretix.libpretixsync.db.Question
+import eu.pretix.libpretixsync.models.db.toModel
+import eu.pretix.libpretixsync.sqldelight.Question
+import eu.pretix.libpretixsync.sqldelight.SyncDatabase
 import eu.pretix.libpretixsync.sync.FileStorage
 import eu.pretix.libpretixsync.sync.OrderSyncAdapter
 import eu.pretix.libpretixsync.utils.cleanInput
-import io.requery.BlockingEntityStore
-import io.requery.Persistable
 import org.joda.time.format.ISODateTimeFormat
 import org.json.JSONException
 import org.json.JSONObject
@@ -26,7 +24,7 @@ import java.util.*
 class OnlineCheckProvider(
     private val config: ConfigStore,
     httpClientFactory: HttpClientFactory?,
-    private val dataStore: BlockingEntityStore<Persistable>,
+    private val db: SyncDatabase,
     private val fileStore: FileStorage,
     private val fallback: TicketCheckProvider? = null,
     private val fallbackTimeout: Int = 30000
@@ -104,12 +102,16 @@ class OnlineCheckProvider(
                     val required_answers: MutableList<TicketCheckProvider.QuestionAnswer> = ArrayList()
                     for (i in 0 until response.getJSONArray("questions").length()) {
                         val q = response.getJSONArray("questions").getJSONObject(i)
-                        val question = Question()
-                        question.setServer_id(q.getLong("id"))
-                        question.isRequired = q.getBoolean("required")
-                        question.setPosition(q.getLong("position"))
-                        question.setJson_data(q.toString())
-                        required_answers.add(TicketCheckProvider.QuestionAnswer(question, ""))
+
+                        val question = Question(
+                            server_id = q.getLong("id"),
+                            required = q.getBoolean("required"),
+                            position = q.getLong("position"),
+                            json_data = q.toString(),
+                            id = -1,
+                            event_slug = null,
+                        ).toModel()
+                        required_answers.add(TicketCheckProvider.QuestionAnswer(question, q.toString(), ""))
                     }
                     res.requiredAnswers = required_answers
                 } else {
@@ -141,12 +143,12 @@ class OnlineCheckProvider(
                             response.getJSONObject("list").getBoolean("include_pending")
                         } else {
                             // pretix < 4.12, no multi-scan supported
-                            val list = dataStore.select(CheckInList::class.java)
-                                    .where(CheckInList.SERVER_ID.eq(eventsAndCheckinLists.values.first()))
-                                    .and(CheckInList.EVENT_SLUG.eq(eventsAndCheckinLists.keys.first()))
-                                    .get().firstOrNull()
-                                    ?: throw CheckException("Check-in list not found")
-                            list.isInclude_pending
+                            val list = db.checkInListQueries.selectByServerIdAndEventSlug(
+                                server_id = eventsAndCheckinLists.values.first(),
+                                event_slug = eventsAndCheckinLists.keys.first(),
+                            ).executeAsOneOrNull()?.toModel()
+                                ?: throw CheckException("Check-in list not found")
+                            list.includePending
                         }
                         res.isCheckinAllowed = includePending && response.has("position") && response.getJSONObject("position").optString("order__status", "n") == "n"
                     } else if ("product" == reason) {
@@ -168,9 +170,7 @@ class OnlineCheckProvider(
 
                 if (response.has("position")) {
                     val posjson = response.getJSONObject("position")
-                    val item = dataStore.select(Item::class.java)
-                            .where(Item.SERVER_ID.eq(posjson.getLong("item")))
-                            .get().firstOrNull()
+                    val item = db.itemQueries.selectByServerId(posjson.getLong("item")).executeAsOneOrNull()?.toModel()
                     if (item != null) {
                         res.ticket = item.internalName
                         if (posjson.optLong("variation", 0) > 0) {
@@ -203,7 +203,7 @@ class OnlineCheckProvider(
                             val pdfdata = posjson.getJSONObject("pdf_data")
                             if (pdfdata.has("images")) {
                                 val images = pdfdata.getJSONObject("images")
-                                OrderSyncAdapter.updatePdfImages(dataStore, fileStore, api, posjson.getLong("id"), images)
+                                OrderSyncAdapter.updatePdfImages(db, fileStore, api, posjson.getLong("id"), images)
                             }
                         }
                     } catch (e: Exception) {
@@ -218,18 +218,17 @@ class OnlineCheckProvider(
                             val value = a.getString("answer")
                             val q = a.get("question")
                             if (q is JSONObject) {  // pretix version supports the expand parameter
-                                val question = Question()
-                                question.setServer_id(q.getLong("id"))
-                                question.isRequired = q.getBoolean("required")
-                                question.setPosition(q.getLong("position"))
-                                question.setJson_data(q.toString())
-                                if (question.isShowDuringCheckin) {
-                                    shownAnswers.add(
-                                        TicketCheckProvider.QuestionAnswer(
-                                            question,
-                                            value
-                                        )
-                                    )
+                                val question = Question(
+                                    server_id = q.getLong("id"),
+                                    required = q.getBoolean("required"),
+                                    position = q.getLong("position"),
+                                    json_data = q.toString(),
+                                    id = -1,
+                                    event_slug = null,
+                                ).toModel()
+
+                                if (question.showDuringCheckIn) {
+                                    shownAnswers.add(TicketCheckProvider.QuestionAnswer(question, q.toString(), value))
                                 }
                             }
                         }
@@ -335,9 +334,7 @@ class OnlineCheckProvider(
             for (i in 0 until resdata.length()) {
                 val res = resdata.getJSONObject(i)
                 val sr = TicketCheckProvider.SearchResult()
-                val item = dataStore.select(Item::class.java)
-                        .where(Item.SERVER_ID.eq(res.getLong("item")))
-                        .get().firstOrNull()
+                val item = db.itemQueries.selectByServerId(res.getLong("item")).executeAsOneOrNull()?.toModel()
                 if (item != null) {
                     sr.ticket = item.internalName
                     if (res.optLong("variation", 0) > 0) {
@@ -386,10 +383,10 @@ class OnlineCheckProvider(
             val response = api.status(eventSlug, listId)
             val r = parseStatusResponse(response.data!!)
 
-            val list = dataStore.select(CheckInList::class.java)
-                    .where(CheckInList.SERVER_ID.eq(listId))
-                    .and(CheckInList.EVENT_SLUG.eq(eventSlug))
-                    .get().firstOrNull()
+            val list = db.checkInListQueries.selectByServerIdAndEventSlug(
+                server_id = listId,
+                event_slug = eventSlug,
+            ).executeAsOneOrNull()
             if (list != null) {
                 r.eventName += " – " + list.name
             }

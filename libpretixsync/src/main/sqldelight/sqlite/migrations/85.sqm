@@ -1,0 +1,4 @@
+ALTER TABLE ReceiptLine ADD listed_price INTEGER;
+ALTER TABLE ReceiptLine ADD price_after_voucher INTEGER;
+ALTER TABLE ReceiptLine ADD custom_price_input INTEGER;
+ALTER TABLE ReceiptLine ADD voucher_code TEXT;

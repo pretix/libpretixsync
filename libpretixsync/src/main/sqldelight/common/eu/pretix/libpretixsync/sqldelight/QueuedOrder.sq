@@ -1,0 +1,38 @@
+selectById:
+SELECT *
+FROM QueuedOrder
+WHERE id = ?;
+
+selectUnlockedWithoutError:
+SELECT *
+FROM QueuedOrder
+WHERE CAST(locked AS INTEGER) = 0 AND error IS NULL;
+
+delete:
+DELETE FROM QueuedOrder
+WHERE id = ?;
+
+insert:
+INSERT INTO QueuedOrder
+(
+    error,
+    event_slug,
+    idempotency_key,
+    locked,
+    payload,
+    receipt
+)
+VALUES(
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?
+);
+
+updateError:
+UPDATE QueuedOrder
+SET
+    error = ?
+WHERE id = ?;

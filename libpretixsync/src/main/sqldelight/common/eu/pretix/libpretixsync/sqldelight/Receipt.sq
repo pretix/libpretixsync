@@ -1,0 +1,91 @@
+selectById:
+SELECT *
+FROM Receipt
+WHERE id = ?;
+
+selectClosedWithoutServerId:
+SELECT *
+FROM Receipt
+WHERE
+    CAST(open AS INTEGER) = 0
+    AND server_id IS NULL;
+
+insert:
+INSERT INTO Receipt (
+    id,
+    additional_text,
+    canceled,
+    cashier_name,
+    cashier_numericid,
+    cashier_userid,
+    chosen_cart_id,
+    closing,
+    currency,
+    datetime_closed,
+    datetime_opened,
+    email_to,
+    event_slug,
+    fiscalisation_data,
+    fiscalisation_qr,
+    fiscalisation_text,
+    invoice_name_parts,
+    open,
+    order_code,
+    order_email,
+    order_phone,
+    payment_data,
+    payment_type,
+    printed,
+    server_id,
+    started,
+    training
+)
+VALUES (
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?
+);
+
+updateOrderCode:
+UPDATE Receipt
+SET
+    order_code = ?
+WHERE id = ?;
+
+updateServerId:
+UPDATE Receipt
+SET
+    server_id = ?
+WHERE id = ?;
+
+clearLocalOrderAnswerDataById:
+UPDATE Receipt
+SET
+    invoice_name_parts = NULL,
+    order_email = NULL,
+    order_phone = NULL
+WHERE id = ?;

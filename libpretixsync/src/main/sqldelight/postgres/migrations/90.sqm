@@ -1,0 +1,11 @@
+ALTER TABLE orders ADD valid_if_pending boolean DEFAULT(false);
+
+CREATE TABLE BlockedTicketSecret (
+    id serial PRIMARY KEY NOT NULL,
+    blocked boolean NOT NULL,
+    event_slug character varying(255),
+    json_data text,
+    secret character varying(255),
+    server_id bigint,
+    updated character varying(255)
+);

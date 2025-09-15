@@ -1,0 +1,12 @@
+import java.util.Date;
+import kotlin.Long;
+
+CREATE TABLE CheckIn (
+    id serial AS Long PRIMARY KEY NOT NULL,
+    datetime DATE AS Date,
+    json_data text,
+    listId bigint,
+    server_id bigint,
+    type character varying(255),
+    "position" bigint REFERENCES OrderPosition (id) ON DELETE CASCADE
+);

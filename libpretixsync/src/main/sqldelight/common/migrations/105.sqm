@@ -1,0 +1,1 @@
+ALTER TABLE ReceiptLine ADD COLUMN tax_code TEXT;

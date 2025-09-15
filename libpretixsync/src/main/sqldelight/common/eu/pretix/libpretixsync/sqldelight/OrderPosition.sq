@@ -1,0 +1,82 @@
+selectById:
+SELECT *
+FROM OrderPosition
+WHERE id = ?;
+
+selectByIdList:
+SELECT *
+FROM OrderPosition
+WHERE id IN ?;
+
+selectByServerId:
+SELECT *
+FROM OrderPosition
+WHERE server_id = ?;
+
+selectForOrder:
+SELECT *
+FROM OrderPosition
+WHERE order_ref = :order_id;
+
+selectBySecretAndEventSlugs:
+SELECT OrderPosition.*
+FROM OrderPosition
+LEFT JOIN orders ON OrderPosition.order_ref = orders.id
+WHERE OrderPosition.secret = :secret
+AND orders.event_slug IN :event_slugs;
+
+selectByServerIdAndEventSlugs:
+SELECT OrderPosition.*
+FROM OrderPosition
+LEFT JOIN orders ON OrderPosition.order_ref = orders.id
+WHERE OrderPosition.server_id = :server_id
+AND orders.event_slug IN :event_slugs;
+
+count:
+SELECT COUNT(*)
+FROM OrderPosition;
+
+deleteByServerIdList:
+DELETE FROM OrderPosition
+WHERE server_id IN ?;
+
+insert:
+INSERT INTO OrderPosition (
+    attendee_email,
+    attendee_name,
+    item,
+    json_data,
+    order_ref,
+    positionid,
+    secret,
+    server_id,
+    subevent_id,
+    variation_id
+)
+VALUES (
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?
+);
+
+updateFromJson:
+UPDATE OrderPosition
+SET
+    attendee_email = ?,
+    attendee_name = ?,
+    item = ?,
+    json_data = ?,
+    order_ref = ?,
+    positionid = ?,
+    secret = ?,
+    server_id = ?,
+    subevent_id = ?,
+    variation_id = ?
+WHERE id = ?;

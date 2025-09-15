@@ -1,0 +1,108 @@
+selectById:
+SELECT *
+FROM ReceiptLine
+WHERE id = ?;
+
+selectByIdList:
+SELECT *
+FROM ReceiptLine
+WHERE id IN ?;
+
+selectForReceiptId:
+SELECT *
+FROM ReceiptLine
+WHERE receipt = :receipt_id;
+
+insert:
+INSERT INTO ReceiptLine (
+    addon_to,
+    answers,
+    attendee_city,
+    attendee_company,
+    attendee_country,
+    attendee_email,
+    attendee_name,
+    attendee_street,
+    attendee_zipcode,
+    canceled,
+    canceled_because_of_receipt,
+    cart_expires,
+    cart_id,
+    cart_position_id,
+    created,
+    custom_price_input,
+    event_date_from,
+    event_date_to,
+    gift_card_id,
+    gift_card_secret,
+    is_bundled,
+    item_id,
+    listed_price,
+    positionid,
+    price,
+    price_after_voucher,
+    price_calculated_from_net,
+    receipt,
+    remote_error,
+    requested_valid_from,
+    sale_text,
+    seat_guid,
+    seat_name,
+    secret,
+    subevent_id,
+    subevent_text,
+    tax_rate,
+    tax_rule,
+    tax_value,
+    tax_code,
+    type,
+    use_reusable_medium,
+    variation_id,
+    voucher_code
+)
+VALUES (
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?
+);

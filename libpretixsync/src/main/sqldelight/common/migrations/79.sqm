@@ -1,0 +1,3 @@
+ALTER TABLE ReceiptLine ADD subevent_text TEXT;
+ALTER TABLE ReceiptLine ADD event_date_from TEXT;
+ALTER TABLE ReceiptLine ADD event_date_to TEXT;

@@ -1,0 +1,12 @@
+CREATE TABLE ReusableMedium (
+    id serial PRIMARY KEY NOT NULL,
+    active boolean NOT NULL,
+    customer_id bigint,
+    expires character varying(255),
+    identifier character varying(255),
+    json_data text,
+    linked_giftcard_id bigint,
+    linked_orderposition_id bigint,
+    server_id bigint,
+    type character varying(255)
+);

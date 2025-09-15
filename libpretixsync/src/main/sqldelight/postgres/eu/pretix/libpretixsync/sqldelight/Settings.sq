@@ -1,0 +1,15 @@
+import kotlin.Long;
+
+CREATE TABLE Settings (
+    id serial AS Long PRIMARY KEY,
+    address text,
+    city character varying(255),
+    country character varying(255),
+    json_data text,
+    name character varying(255),
+    pretixpos_additional_receipt_text text,
+    slug character varying(255),
+    tax_id character varying(255),
+    vat_id character varying(255),
+    zipcode character varying(255)
+);

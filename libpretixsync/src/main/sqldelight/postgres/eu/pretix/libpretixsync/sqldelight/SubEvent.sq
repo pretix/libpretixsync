@@ -1,0 +1,12 @@
+import java.util.Date;
+import kotlin.Long;
+
+CREATE TABLE SubEvent (
+    id serial AS Long PRIMARY KEY NOT NULL,
+    active boolean NOT NULL,
+    date_from DATE AS Date,
+    date_to DATE AS Date,
+    event_slug character varying(255),
+    json_data text,
+    server_id bigint
+);

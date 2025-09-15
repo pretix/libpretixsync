@@ -15,7 +15,7 @@ import io.requery.sql.TableCreationMode;
 
 public class Migrations {
     private static EntityModel model = Models.DEFAULT;
-    public static int CURRENT_VERSION = 105;
+    public static int CURRENT_VERSION = 109;
 
     private static void createVersionTable(Connection c, int version) throws SQLException {
         Statement s2 = c.createStatement();
@@ -306,9 +306,9 @@ public class Migrations {
             updateVersionTable(c, 79);
         }
         if (db_version < 80) {
-            execIgnore(c, "ALTER TABLE Receipt ADD subevent_text TEXT NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
-            execIgnore(c, "ALTER TABLE Receipt ADD event_date_from TEXT NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
-            execIgnore(c, "ALTER TABLE Receipt ADD event_date_to TEXT NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            execIgnore(c, "ALTER TABLE ReceiptLine ADD subevent_text TEXT NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            execIgnore(c, "ALTER TABLE ReceiptLine ADD event_date_from TEXT NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            execIgnore(c, "ALTER TABLE ReceiptLine ADD event_date_to TEXT NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
             updateVersionTable(c, 80);
         }
         if (db_version < 82) {
@@ -430,6 +430,25 @@ public class Migrations {
             execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_vaccinated_products;", new String[] {"no such column", "existiert", "syntax error"});
             updateVersionTable(c, 105);
         }
+        if (db_version < 106) {
+            execIgnore(c, "ALTER TABLE receiptline ADD tax_code TEXT NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            updateVersionTable(c, 106);
+        }
+        if (db_version < 107) {
+            // Version 4.3.6 contained a bug that wrote stringified null into this column.
+            execIgnore(c, "UPDATE ReceiptLine SET tax_code = NULL WHERE tax_code = 'null';", new String[] {"no such column", "existiert", "syntax error"});
+            updateVersionTable(c, 107);
+        }
+        if (db_version < 108) {
+            execIgnore(c, "ALTER TABLE Receipt ADD invoice_name_parts TEXT NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            execIgnore(c, "ALTER TABLE Receipt ADD order_email TEXT NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            execIgnore(c, "ALTER TABLE Receipt ADD order_phone TEXT NULL;", new String[] {"duplicate column name", "already exists", "existiert bereits"});
+            updateVersionTable(c, 108);
+        }
+        if (db_version < 109) {
+            execIgnore(c,"CREATE INDEX receipt_server_id ON Receipt(server_id);", new String[] {"already exists", "existiert bereits"});
+            updateVersionTable(c, 109);
+        }
 
         // Note that the Android app currently does not use these queries!
 
@@ -440,6 +459,9 @@ public class Migrations {
     }
 
     public static void android_manual_migrations(Connection c, int oldVersion, int newVersion) throws SQLException {
+        if (oldVersion < 58 && newVersion >= 58) {
+            execIgnore(c, "UPDATE checkin SET listId = list WHERE (listId IS NULL OR listID = 0) AND list IS NOT NULL AND list > 0", new String[] {"no such column", "existiert", "syntax error"});
+        }
         if (oldVersion < 87 && newVersion >= 87) {
             execIgnore(c, "CREATE INDEX receipt_open ON receipt (open) WHERE open = 1;", new String[] {"already exists", "existiert bereits"});
         }
@@ -474,6 +496,15 @@ public class Migrations {
             execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_record_proof;", new String[] {"no such column", "existiert", "syntax error"});
             execIgnore(c, "ALTER TABLE settings DROP COLUMN covid_certificates_allow_vaccinated_products;", new String[] {"no such column", "existiert", "syntax error"});
             updateVersionTable(c, 105);
+        }
+        if (oldVersion < 107 && newVersion >= 107) {
+            // Version 4.3.6 contained a bug that wrote stringified null into this column.
+            execIgnore(c, "UPDATE ReceiptLine SET tax_code = NULL WHERE tax_code = 'null';", new String[] {"no such column", "existiert", "syntax error"});
+            updateVersionTable(c, 107);
+        }
+        if (oldVersion < 109 && newVersion >= 109) {
+            execIgnore(c, "CREATE INDEX receipt_server_id ON Receipt(server_id);", new String[] {"already exists", "existiert bereits"});
+            updateVersionTable(c, 109);
         }
     }
 

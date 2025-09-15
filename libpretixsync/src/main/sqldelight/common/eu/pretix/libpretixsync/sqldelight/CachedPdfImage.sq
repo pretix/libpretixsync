@@ -1,0 +1,45 @@
+selectForOrderPosition:
+SELECT *
+FROM CachedPdfImage
+WHERE orderposition_id = :order_position_server_id;
+
+selectForOrderPositionAndKey:
+SELECT *
+FROM CachedPdfImage
+WHERE
+    orderposition_id = :order_position_server_id
+    AND key = :key;
+
+updateEtag:
+UPDATE CachedPdfImage
+SET
+    etag = ?
+WHERE id = ?;
+
+insert:
+INSERT INTO CachedPdfImage(
+    etag,
+    key,
+    orderposition_id
+)
+VALUES (
+    :etag,
+    :key,
+    :order_position_server_id
+);
+
+deleteUnseen:
+DELETE FROM CachedPdfImage
+WHERE
+    orderposition_id = :order_position_server_id
+    AND etag NOT IN :seen_etags;
+
+deleteOld:
+DELETE FROM CachedPdfImage
+WHERE
+    orderposition_id NOT IN (SELECT server_id FROM OrderPosition);
+
+countEtag:
+SELECT COUNT(*)
+FROM CachedPdfImage
+WHERE etag = ?;

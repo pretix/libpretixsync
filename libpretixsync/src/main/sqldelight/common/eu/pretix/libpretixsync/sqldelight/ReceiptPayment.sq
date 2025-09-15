@@ -1,0 +1,24 @@
+selectById:
+SELECT *
+FROM ReceiptPayment
+WHERE id = ?;
+
+selectForReceiptId:
+SELECT *
+FROM ReceiptPayment
+WHERE receipt = :receipt_id;
+
+insert:
+INSERT INTO ReceiptPayment (
+    amount,
+    detailsJson,
+    payment_type,
+    receipt,
+    status
+) VALUES (
+    ?,
+    ?,
+    ?,
+    ?,
+    ?
+);

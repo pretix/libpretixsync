@@ -1,0 +1,12 @@
+import kotlin.Boolean;
+
+CREATE TABLE MediumKeySet (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    active INTEGER AS Boolean NOT NULL,
+    diversification_key TEXT,
+    json_data TEXT,
+    media_type TEXT,
+    organizer TEXT,
+    public_id INTEGER,
+    uid_key TEXT
+);

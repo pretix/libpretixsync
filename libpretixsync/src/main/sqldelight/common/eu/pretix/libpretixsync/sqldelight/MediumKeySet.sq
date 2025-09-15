@@ -1,0 +1,52 @@
+selectAll:
+SELECT *
+FROM MediumKeySet;
+
+selectByPublicId:
+SELECT *
+FROM MediumKeySet
+WHERE public_id = ?;
+
+selectPublicIds:
+SELECT public_id
+FROM MediumKeySet;
+
+selectByPublicIdList:
+SELECT *
+FROM MediumKeySet
+WHERE public_id IN ?;
+
+deleteByPublicId:
+DELETE FROM MediumKeySet
+WHERE public_id = ?;
+
+insert:
+INSERT INTO MediumKeySet(
+    active,
+    diversification_key,
+    json_data,
+    media_type,
+    organizer,
+    public_id,
+    uid_key
+) VALUES (
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?
+);
+
+updateFromJson:
+UPDATE MediumKeySet
+SET
+    active = ?,
+    diversification_key = ?,
+    json_data = ?,
+    media_type = ?,
+    organizer = ?,
+    public_id = ?,
+    uid_key = ?
+WHERE id = ?;

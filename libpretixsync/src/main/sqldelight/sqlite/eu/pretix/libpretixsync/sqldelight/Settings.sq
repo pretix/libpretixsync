@@ -1,0 +1,15 @@
+import kotlin.Boolean;
+
+CREATE TABLE Settings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    address TEXT,
+    city TEXT,
+    country TEXT,
+    json_data TEXT,
+    name TEXT,
+    pretixpos_additional_receipt_text TEXT,
+    slug TEXT,
+    tax_id TEXT,
+    vat_id TEXT,
+    zipcode TEXT
+);

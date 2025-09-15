@@ -1,0 +1,13 @@
+CREATE TABLE OrderPosition (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    attendee_email TEXT,
+    attendee_name TEXT,
+    item INTEGER REFERENCES Item (id) ON DELETE CASCADE,
+    json_data TEXT,
+    order_ref INTEGER REFERENCES orders (id) ON DELETE CASCADE,
+    positionid INTEGER,
+    secret TEXT,
+    server_id INTEGER,
+    subevent_id INTEGER,
+    variation_id INTEGER
+);

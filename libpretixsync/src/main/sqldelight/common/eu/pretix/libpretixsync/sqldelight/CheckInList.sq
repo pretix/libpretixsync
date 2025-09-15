@@ -1,0 +1,99 @@
+selectByServerId:
+SELECT *
+FROM CheckInList
+WHERE server_id = ?;
+
+selectByEventSlug:
+SELECT *
+FROM CheckInList
+WHERE event_slug = ?;
+
+selectByServerIdAndEventSlug:
+SELECT *
+FROM CheckInList
+WHERE server_id = ? AND event_slug = ?;
+
+selectByServerIdListAndEventSlug:
+SELECT *
+FROM CheckInList
+WHERE server_id IN ? AND event_slug = ?;
+
+selectServerIdsByEventSlug:
+SELECT server_id
+FROM CheckInList
+WHERE event_slug = ?;
+
+deleteByServerId:
+DELETE FROM CheckInList
+WHERE server_id = ?;
+
+insert:
+INSERT INTO CheckInList(
+    all_items,
+    event_slug,
+    include_pending,
+    json_data,
+    name,
+    server_id,
+    subevent_id
+) VALUES(
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?
+);
+
+updateFromJson:
+UPDATE CheckInList
+SET
+    all_items = ?,
+    event_slug = ?,
+    include_pending = ?,
+    json_data = ?,
+    name = ?,
+    subevent_id = ?
+WHERE id = ?;
+
+selectRelationsForList:
+SELECT *
+FROM CheckInList_Item
+WHERE CheckInListId = :checkin_list_id;
+
+insertItemRelation:
+INSERT INTO CheckInList_Item(
+    ItemId,
+    CheckInListId
+) VALUES(
+    :item_id,
+    :checkin_list_id
+);
+
+deleteItemRelation:
+DELETE FROM CheckInList_Item
+WHERE ItemId = :item_id AND CheckInListId = :checkin_list_id;
+
+deleteItemRelationsForList:
+DELETE FROM CheckInList_Item
+WHERE CheckInListId = :checkin_list_id;
+
+selectItemIdsForList:
+-- We must select at least two columns, otherwise we get different result types between
+-- SQLite and Postgres since the ItemId column is only defined as NOT NULL in Postgres
+SELECT ItemId AS id, CheckInListId
+FROM CheckInList_Item
+WHERE CheckInListId = :checkin_list_id;
+
+checkIfItemIsInList:
+SELECT COUNT(*)
+FROM CheckInList_Item
+WHERE CheckInListId = :checkin_list_id AND ItemId = :item_id;
+
+-- for tests only:
+testUpdateJsonData:
+UPDATE CheckInList
+SET
+    json_data = ?
+WHERE id = ?;

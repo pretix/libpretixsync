@@ -1,0 +1,53 @@
+selectById:
+SELECT *
+FROM Event
+WHERE id = ?;
+
+selectSlugs:
+SELECT slug
+FROM Event;
+
+selectBySlug:
+SELECT *
+FROM Event
+WHERE slug = ?;
+
+selectBySlugList:
+SELECT *
+FROM Event
+WHERE slug IN ?;
+
+deleteBySlug:
+DELETE FROM Event
+WHERE slug = ?;
+
+insert:
+INSERT INTO Event (
+    currency,
+    date_from,
+    date_to,
+    has_subevents,
+    json_data,
+    live,
+    slug
+)
+VALUES (
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?
+);
+
+updateFromJson:
+UPDATE Event
+SET
+    currency = ?,
+    date_from = ?,
+    date_to = ?,
+    has_subevents = ?,
+    json_data = ?,
+    live = ?
+WHERE slug = ?;

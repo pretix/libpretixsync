@@ -1,0 +1,16 @@
+import kotlin.Boolean;
+
+CREATE TABLE Item (
+    id INTEGER PRIMARY KEY AUTOINCREMENT ,
+    active INTEGER AS Boolean NOT NULL,
+    admission INTEGER AS Boolean NOT NULL,
+    category_id INTEGER,
+    checkin_text TEXT,
+    event_slug TEXT,
+    json_data TEXT,
+    picture_filename TEXT,
+    position INTEGER,
+    server_id INTEGER NOT NULL,
+    ticket_layout_id INTEGER,
+    ticket_layout_pretixpos_id INTEGER
+);

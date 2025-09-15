@@ -11,6 +11,7 @@
   "options": [],
   "position": 0,
   "ask_during_checkin": true,
+  "show_during_checkin": true,
   "identifier": "ABTBAB8S",
   "dependency_question": null,
   "dependency_value": null

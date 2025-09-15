@@ -1,0 +1,2 @@
+ALTER TABLE ReceiptLine ADD gift_card_id INTEGER;
+ALTER TABLE ReceiptLine ADD gift_card_secret TEXT;

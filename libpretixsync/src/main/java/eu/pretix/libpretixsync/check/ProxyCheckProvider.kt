@@ -11,9 +11,14 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import eu.pretix.libpretixsync.DummySentryImplementation
 import eu.pretix.libpretixsync.SentryInterface
 import eu.pretix.libpretixsync.api.ApiException
+import eu.pretix.libpretixsync.api.CheckInputAnswer
+import eu.pretix.libpretixsync.api.CheckInputQuestion
 import eu.pretix.libpretixsync.api.HttpClientFactory
+import eu.pretix.libpretixsync.api.MultiCheckInput
+import eu.pretix.libpretixsync.api.SearchInput
 import eu.pretix.libpretixsync.config.ConfigStore
 import eu.pretix.libpretixsync.db.Answer
+import eu.pretix.libpretixsync.models.Question
 import eu.pretix.libpretixsync.serialization.JSONArrayDeserializer
 import eu.pretix.libpretixsync.serialization.JSONArraySerializer
 import eu.pretix.libpretixsync.serialization.JSONObjectDeserializer
@@ -106,18 +111,27 @@ class ProxyCheckProvider(private val config: ConfigStore, httpClientFactory: Htt
         nonce: String?,
         allowQuestions: Boolean
     ): TicketCheckProvider.CheckResult {
-        val data: MutableMap<String, Any> = HashMap()
-        data["events_and_checkin_lists"] = eventsAndCheckinLists
-        data["ticketid"] = ticketid
-        data["answers"] = answers ?: emptyList<Answer>()
-        data["ignore_unpaid"] = ignore_unpaid
-        data["with_badge_data"] = with_badge_data
-        data["source_type"] = source_type
-        data["type"] = type
-        data["allowQuestions"] = allowQuestions
-        if (nonce != null) {
-            data["nonce"] = nonce
-        }
+        val answersInput = answers?.map {
+            val questionModel = it.question as Question // TODO: Can we avoid the cast?
+            CheckInputAnswer(
+                question = CheckInputQuestion(server_id = questionModel.serverId),
+                value = it.value,
+                options = it.options,
+            )
+        } ?: emptyList()
+
+        val data = MultiCheckInput(
+            events_and_checkin_lists = eventsAndCheckinLists,
+            ticketid = ticketid,
+            answers = answersInput,
+            ignore_unpaid = ignore_unpaid,
+            with_badge_data = with_badge_data,
+            source_type = source_type,
+            type = type.name,
+            allowQuestions = allowQuestions,
+            nonce = nonce,
+        )
+
         return try {
             val request = Request.Builder()
                     .url(config.apiUrl + "/proxyapi/v1/rpc/check/")  // todo: does not yet exist
@@ -146,10 +160,12 @@ class ProxyCheckProvider(private val config: ConfigStore, httpClientFactory: Htt
 
     @Throws(CheckException::class)
     override fun search(eventsAndCheckinLists: Map<String, Long>, query: String, page: Int): List<TicketCheckProvider.SearchResult> {
-        val data: MutableMap<String, Any> = HashMap()
-        data["events_and_checkin_lists"] = eventsAndCheckinLists
-        data["query"] = query
-        data["page"] = page
+        val data = SearchInput(
+            events_and_checkin_lists = eventsAndCheckinLists,
+            query = query,
+            page = page,
+        )
+
         return try {
             val request = Request.Builder()
                     .url(config.apiUrl + "/proxyapi/v1/rpc/search/")

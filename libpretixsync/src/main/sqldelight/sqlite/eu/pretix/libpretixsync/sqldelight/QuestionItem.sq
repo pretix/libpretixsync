@@ -1,0 +1,5 @@
+CREATE TABLE Question_Item (
+    ItemId INTEGER REFERENCES Item (id) ON DELETE CASCADE,
+    QuestionId INTEGER REFERENCES Question (id) ON DELETE CASCADE,
+    PRIMARY KEY (ItemId, QuestionId)
+);

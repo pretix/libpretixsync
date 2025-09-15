@@ -68,4 +68,19 @@ public class ItemAddOn implements Serializable {
     public void setPriceIncluded(boolean priceIncluded) {
         this.priceIncluded = priceIncluded;
     }
+
+    public JSONObject toJSON() {
+        JSONObject jsonObject = new JSONObject();
+        try {
+            jsonObject.put("addon_category", addonCategoryId);
+            jsonObject.put("min_count", minCount);
+            jsonObject.put("max_count", maxCount);
+            jsonObject.put("position", position);
+            jsonObject.put("multi_allowed", multiAllowed);
+            jsonObject.put("price_included", priceIncluded);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return jsonObject;
+    }
 }

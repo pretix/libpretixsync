@@ -1,0 +1,120 @@
+selectAll:
+SELECT *
+FROM Item;
+
+selectByServerId:
+SELECT *
+FROM Item
+WHERE server_id = ?;
+
+selectById:
+SELECT *
+FROM Item
+WHERE id = ?;
+
+selectByEventSlug:
+SELECT *
+FROM Item
+WHERE event_slug = ?;
+
+selectByServerIdAndEventSlug:
+SELECT *
+FROM Item
+WHERE server_id = ? AND event_slug = ?;
+
+selectByServerIdListAndEventSlug:
+SELECT *
+FROM Item
+WHERE server_id IN ? AND event_slug = ?;
+
+selectServerIdsByEventSlug:
+SELECT server_id
+FROM Item
+WHERE event_slug = ?;
+
+selectByTicketLayoutId:
+SELECT *
+FROM Item
+WHERE ticket_layout_id = ?;
+
+selectByTicketLayoutPretixposId:
+SELECT *
+FROM Item
+WHERE ticket_layout_pretixpos_id = ?;
+
+selectForCheckInList:
+SELECT Item.*
+FROM Item
+WHERE Item.id IN (
+    SELECT CheckInList_Item.ItemId
+    FROM CheckInList_Item
+    WHERE CheckInList_Item.CheckInListId = :check_in_list_id
+);
+
+getWithOutdatedTicketLayoutId:
+SELECT *
+FROM Item
+WHERE server_id NOT IN :server_id_not_in AND ticket_layout_id = ?;
+
+getWithOutdatedTicketLayoutPretixposId:
+SELECT *
+FROM Item
+WHERE server_id NOT IN :server_id_not_in AND ticket_layout_pretixpos_id = ?;
+
+updateTicketLayoutId:
+UPDATE Item
+SET
+    ticket_layout_id = ?
+WHERE id = ?;
+
+updateTicketLayoutPretixposId:
+UPDATE Item
+SET
+    ticket_layout_pretixpos_id = ?
+WHERE id = ?;
+
+deleteByServerId:
+DELETE FROM Item
+WHERE server_id = ?;
+
+insert:
+INSERT INTO Item
+(
+    active,
+    admission,
+    category_id,
+    checkin_text,
+    event_slug,
+    json_data,
+    picture_filename,
+    position,
+    server_id,
+    ticket_layout_id,
+    ticket_layout_pretixpos_id
+)
+VALUES (
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?
+);
+
+updateFromJson:
+UPDATE Item
+SET
+    active = ?,
+    admission = ?,
+    category_id = ?,
+    checkin_text = ?,
+    event_slug = ?,
+    json_data = ?,
+    picture_filename = ?,
+    position = ?
+WHERE id = ?;
