@@ -8,3 +8,6 @@ CREATE TABLE ResourceSyncStatus (
     resource character varying(255),
     status character varying(255)
 );
+
+CREATE INDEX ResourceSyncStatus_event_slug_index ON ResourceSyncStatus (event_slug);
+CREATE INDEX ResourceSyncStatus_resource_index ON ResourceSyncStatus (resource);

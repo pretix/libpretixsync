@@ -12,3 +12,6 @@ CREATE TABLE ReusableMedium (
     server_id bigint,
     type character varying(255)
 );
+
+CREATE INDEX ReusableMedium_identifier_index ON ReusableMedium (identifier);
+CREATE INDEX ReusableMedium_server_id_index ON ReusableMedium (server_id);

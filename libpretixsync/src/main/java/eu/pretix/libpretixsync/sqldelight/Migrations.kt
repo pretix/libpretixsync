@@ -29,4 +29,15 @@ object Migrations {
     val minVersionCallback = AfterVersion(MIN_SUPPORTED_VERSION - 1L) { _ ->
         throw IllegalStateException("Unsupported database version. Minimum supported version is $MIN_SUPPORTED_VERSION")
     }
+
+    /**
+     * Clear ResourceSyncStatus at the end of every migration to force a full sync.
+     */
+    val clearResourceSyncStatusCallback = AfterVersion(CURRENT_VERSION - 1L) { driver ->
+        driver.execute(
+            identifier = null,
+            sql = "DELETE FROM ResourceSyncStatus;",
+            parameters = 0,
+        )
+    }
 }

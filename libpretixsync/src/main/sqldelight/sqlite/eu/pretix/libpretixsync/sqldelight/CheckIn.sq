@@ -9,3 +9,7 @@ CREATE TABLE CheckIn (
     server_id INTEGER,
     type TEXT
 );
+
+CREATE INDEX CheckIn_listId_index ON CheckIn (listId);
+CREATE INDEX CheckIn_position_index ON CheckIn (position);
+CREATE INDEX CheckIn_server_id_index ON CheckIn (server_id);

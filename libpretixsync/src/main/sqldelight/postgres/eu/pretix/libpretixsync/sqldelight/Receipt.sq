@@ -30,3 +30,6 @@ CREATE TABLE Receipt (
     training boolean DEFAULT FALSE NOT NULL,
     closing bigint REFERENCES Closing (id) ON DELETE CASCADE
 );
+
+CREATE INDEX Receipt_closing_index ON Receipt (closing);
+CREATE INDEX receipt_server_id ON Receipt(server_id);

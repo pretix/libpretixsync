@@ -6,3 +6,6 @@ CREATE TABLE ResourceSyncStatus (
     resource TEXT,
     status TEXT
 );
+
+CREATE INDEX ResourceSyncStatus_event_slug_index ON ResourceSyncStatus (event_slug);
+CREATE INDEX ResourceSyncStatus_resource_index ON ResourceSyncStatus (resource);

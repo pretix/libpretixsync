@@ -87,10 +87,6 @@ check.dependsOn jacocoTestReport
 dependencies {
     implementation "com.squareup.okhttp3:okhttp:$okhttp_version"
     testFixturesImplementation "com.squareup.okhttp3:okhttp:$okhttp_version"
-    implementation "io.requery:requery:$requery_version"
-    testFixturesImplementation "io.requery:requery:$requery_version"
-    implementation "io.requery:requery-kotlin:$requery_version"
-    testFixturesImplementation "io.requery:requery-kotlin:$requery_version"
     implementation "joda-time:joda-time:$joda_version"
 
     implementation "org.json:json:$json_version"
@@ -107,7 +103,6 @@ dependencies {
 
     implementation "app.cash.sqldelight:sqlite-driver:$sqldelight_version"
 
-    kapt "io.requery:requery-processor:$requery_version"
     annotationProcessor "javax.annotation:jsr250-api:$jsr250_version"
 
     testFixturesImplementation "junit:junit:$junit_version"
@@ -141,7 +136,7 @@ sqldelight {
             schemaOutputDirectory.set(file("src/main/sqldelight/sqlite"))
 
 
-            // Oldest dialect supported by SQLDelight 2.0.2
+            // Oldest dialect supported by SQLDelight 2.1.0
             // In Android projects, it will auto-select based on SDK
             // but not go lower than 3.18 (Android 9 is still on 3.8)
             dialect "app.cash.sqldelight:sqlite-3-18-dialect:$sqldelight_version"

@@ -136,34 +136,20 @@ class AllSubEventsSyncAdapter(
             // If the download failed, completed will be false. In case this was a full fetch
             // (i.e. no timestamp was stored beforehand) we will still store the timestamp to be
             // able to continue properly.
-            if (firstResponseTimestamp != null) {
+            if (completed && firstResponseTimestamp != null) {
                 if (resourceSyncStatus == null) {
-                    val status = if (completed) {
-                        "complete"
-                    } else {
-                        null
-                    }
-
-                    val lastModified = if (completed) {
-                        firstResponseTimestamp
-                    } else {
-                        null
-                    }
-
                     db.resourceSyncStatusQueries.insert(
                         event_slug = "__all__",
-                        last_modified = lastModified,
                         meta = null,
                         resource = "subevents",
-                        status = status,
+                        last_modified = firstResponseTimestamp,
+                        status = "complete",
                     )
                 } else {
-                    if (completed) {
-                        db.resourceSyncStatusQueries.updateLastModified(
-                            last_modified = firstResponseTimestamp,
-                            id = resourceSyncStatus.id,
-                        )
-                    }
+                    db.resourceSyncStatusQueries.updateLastModified(
+                        last_modified = firstResponseTimestamp,
+                        id = resourceSyncStatus.id,
+                    )
                 }
             } else if (completed && resourceSyncStatus != null) {
                 db.resourceSyncStatusQueries.updateStatus(

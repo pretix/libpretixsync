@@ -13,3 +13,6 @@ CREATE TABLE OrderPosition (
     item bigint REFERENCES Item (id) ON DELETE CASCADE,
     order_ref bigint REFERENCES orders (id) ON DELETE CASCADE
 );
+
+CREATE INDEX OrderPosition_order_ref_index ON OrderPosition (order_ref);
+CREATE INDEX OrderPosition_secret_index ON OrderPosition (secret);

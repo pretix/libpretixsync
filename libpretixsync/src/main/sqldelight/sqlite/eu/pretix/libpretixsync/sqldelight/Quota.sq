@@ -10,3 +10,5 @@ CREATE TABLE Quota (
     size INTEGER,
     subevent_id INTEGER
 );
+
+CREATE INDEX Quota_subevent_id_index ON Quota (subevent_id);

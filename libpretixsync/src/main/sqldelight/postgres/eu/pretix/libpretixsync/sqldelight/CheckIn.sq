@@ -10,3 +10,7 @@ CREATE TABLE CheckIn (
     type character varying(255),
     "position" bigint REFERENCES OrderPosition (id) ON DELETE CASCADE
 );
+
+CREATE INDEX CheckIn_listId_index ON CheckIn (listId);
+CREATE INDEX CheckIn_position_index ON CheckIn (position);
+CREATE INDEX CheckIn_server_id_index ON CheckIn (server_id);

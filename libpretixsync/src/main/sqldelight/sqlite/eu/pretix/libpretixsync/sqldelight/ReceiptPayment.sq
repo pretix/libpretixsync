@@ -8,3 +8,5 @@ CREATE TABLE ReceiptPayment (
     receipt INTEGER REFERENCES Receipt (id) ON DELETE CASCADE,
     status TEXT
 );
+
+CREATE INDEX ReceiptPayment_receipt_index ON ReceiptPayment (receipt);

@@ -11,3 +11,6 @@ CREATE TABLE OrderPosition (
     subevent_id INTEGER,
     variation_id INTEGER
 );
+
+CREATE INDEX OrderPosition_order_ref_index ON OrderPosition (order_ref);
+CREATE INDEX OrderPosition_secret_index ON OrderPosition (secret);

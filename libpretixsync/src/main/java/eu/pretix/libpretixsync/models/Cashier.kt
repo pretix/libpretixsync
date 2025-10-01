@@ -8,6 +8,7 @@ class Cashier(
     val id: Long,
     val active: Boolean,
     private val pin: String,
+    private val nfcUid: String,
     name: String,
     numericId: Long? = null,
     userId: String? = null,
@@ -64,6 +65,10 @@ class Cashier(
         } catch (e: JSONException) {
             return false
         }
+    }
+
+    override fun hasNfcUid(): Boolean {
+        return this.nfcUid.isNotBlank()
     }
 
     override fun getNumericId(): Long? {

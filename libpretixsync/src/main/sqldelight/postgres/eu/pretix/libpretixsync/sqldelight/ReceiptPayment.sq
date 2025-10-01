@@ -8,3 +8,5 @@ CREATE TABLE ReceiptPayment (
     status character varying(255),
     receipt bigint REFERENCES Receipt (id) ON DELETE CASCADE
 );
+
+CREATE INDEX ReceiptPayment_receipt_index ON ReceiptPayment (receipt);
