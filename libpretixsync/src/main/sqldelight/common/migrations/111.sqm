@@ -1,0 +1,15 @@
+import java.math.BigDecimal;
+
+CREATE TABLE Discount (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    server_id INTEGER,
+    event_slug TEXT,
+    active INTEGER AS Boolean NOT NULL,
+    available_from TEXT AS Date,
+    available_until TEXT AS Date,
+    "position" INTEGER,
+    json_data TEXT
+);
+
+ALTER TABLE ReceiptLine ADD line_price_gross REAL AS BigDecimal;
+ALTER TABLE ReceiptLine ADD discount_id INTEGER;
