@@ -53,5 +53,7 @@ fun ReceiptLine.toJSON(): JSONObject {
     jo.put("use_reusable_medium", use_reusable_medium)
     jo.put("gift_card", gift_card_id)
     jo.put("gift_card_secret", gift_card_secret)
+    jo.put("line_price_gross", line_price_gross ?: JSONObject.NULL)
+    jo.put("discount", discount_id ?: JSONObject.NULL)
     return jo
 }
