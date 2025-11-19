@@ -5,7 +5,7 @@ plugins {
     id 'org.jetbrains.kotlin.jvm'
     id 'org.jetbrains.kotlin.kapt'
     id 'com.google.protobuf'
-    id 'com.github.gmazzo.buildconfig' version '5.3.5'
+    id 'com.github.gmazzo.buildconfig'
     id 'org.gradle.idea'
     id 'app.cash.sqldelight'
 }
@@ -16,8 +16,8 @@ repositories {
     mavenCentral()
 }
 
-group 'eu.pretix.pretixdesk'
-version '1.0'
+group = 'eu.pretix.pretixdesk'
+version = '1.0'
 
 compileJava.options.encoding = 'UTF-8'
 compileTestJava.options.encoding = 'UTF-8'
@@ -38,6 +38,9 @@ kotlin {
     }
 }
 java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(11))
     }
@@ -45,10 +48,10 @@ java {
 
 idea {
     module {
-        sourceDirs += compileJava.options.annotationProcessorGeneratedSourcesDirectory
-        generatedSourceDirs += compileJava.options.annotationProcessorGeneratedSourcesDirectory
-        testSourceDirs += compileTestJava.options.annotationProcessorGeneratedSourcesDirectory
-        generatedSourceDirs += compileTestJava.options.annotationProcessorGeneratedSourcesDirectory
+        sourceDirs += compileJava.options.generatedSourceOutputDirectory.getAsFile().getOrNull()
+        generatedSourceDirs += compileJava.options.generatedSourceOutputDirectory.getAsFile().getOrNull()
+        testSources.from(compileTestJava.options.generatedSourceOutputDirectory.getAsFile().getOrNull())
+        generatedSourceDirs += compileTestJava.options.generatedSourceOutputDirectory.getAsFile().getOrNull()
     }
 }
 
@@ -111,9 +114,9 @@ dependencies {
     testImplementation "org.xerial:sqlite-jdbc:$sqlite_jdbc_version"
 }
 
-task copyTestResources(type: Copy) {
+tasks.register('copyTestResources', Copy) {
     from "${projectDir}/src/test/resources", "${projectDir}/src/main/resources"
-    into "${buildDir}/classes/test"
+    into layout.buildDirectory.dir("classes/test")
 }
 processTestResources.dependsOn copyTestResources
 
