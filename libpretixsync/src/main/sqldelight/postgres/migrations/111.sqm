@@ -11,3 +11,6 @@ CREATE TABLE Discount (
     "position" bigint NOT NULL,
     json_data text NOT NULL
 );
+
+ALTER TABLE ReceiptLine ADD line_price_gross numeric;
+ALTER TABLE ReceiptLine ADD discount_id bigint;
