@@ -1,0 +1,1 @@
+ALTER TABLE ReusableMedium DROP COLUMN linked_orderposition_id;

@@ -12,7 +12,6 @@ fun ReusableMedium.toModel(): ReusableMediumModel {
         expires = this.expires,
         identifier = this.identifier,
         linkedGiftCardId = this.linked_giftcard_id,
-        linkedOrderPositionServerId = this.linked_orderposition_id,
         type = this.type,
     )
 }

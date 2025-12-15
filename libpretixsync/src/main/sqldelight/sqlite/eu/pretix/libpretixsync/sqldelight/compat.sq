@@ -25,6 +25,10 @@ SELECT last_insert_rowid();
 getLastInsertedQuotaId:
 SELECT last_insert_rowid();
 
+-- Switch to RETURNING once it is also supported by SQLite
+getLastInsertedReusableMediumId:
+SELECT last_insert_rowid();
+
 truncateCheckIn:
 DELETE FROM CheckIn;
 

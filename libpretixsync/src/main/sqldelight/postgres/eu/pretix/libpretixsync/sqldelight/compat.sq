@@ -25,6 +25,10 @@ SELECT currval('question_id_seq') AS Long;
 getLastInsertedQuotaId:
 SELECT currval('quota_id_seq') AS Long;
 
+-- Switch to RETURNING once it is also supported by SQLite
+getLastInsertedReusableMediumId:
+SELECT currval('reusablemedium_id_seq') AS Long;
+
 truncateCheckIn:
 TRUNCATE CheckIn;
 

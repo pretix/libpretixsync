@@ -8,6 +8,5 @@ data class ReusableMedium(
     val expires: String?,
     val identifier: String?,
     val linkedGiftCardId: Long?,
-    val linkedOrderPositionServerId: Long?,
     val type: String?,
 )

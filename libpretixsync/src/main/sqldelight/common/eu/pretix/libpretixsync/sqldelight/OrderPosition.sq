@@ -32,6 +32,14 @@ LEFT JOIN orders ON OrderPosition.order_ref = orders.id
 WHERE OrderPosition.server_id = :server_id
 AND orders.event_slug IN :event_slugs;
 
+selectByReusableMediumIdAndEventSlugs:
+SELECT OrderPosition.*
+FROM OrderPosition
+LEFT JOIN ReusableMedium_OrderPosition ON ReusableMedium_OrderPosition.OrderPositionId = OrderPosition.id
+LEFT JOIN orders ON OrderPosition.order_ref = orders.id
+WHERE ReusableMedium_OrderPosition.ReusableMediumId = :reusablemedium_id
+AND orders.event_slug IN :event_slugs;
+
 count:
 SELECT COUNT(*)
 FROM OrderPosition;

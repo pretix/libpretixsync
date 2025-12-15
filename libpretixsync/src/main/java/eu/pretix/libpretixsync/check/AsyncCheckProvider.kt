@@ -561,8 +561,8 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
                 event_slugs = eventsAndCheckinLists.keys.toList(),
             ).executeAsOneOrNull()?.toModel()
             if (medium != null) {
-                val tickets = db.orderPositionQueries.selectByServerIdAndEventSlugs(
-                    server_id = medium.linkedOrderPositionServerId,
+                val tickets = db.orderPositionQueries.selectByReusableMediumIdAndEventSlugs(
+                    reusablemedium_id = medium.id,
                     event_slugs = eventsAndCheckinLists.keys.toList(),
                 ).executeAsList().map { it.toModel() }
                 return checkOfflineWithData(

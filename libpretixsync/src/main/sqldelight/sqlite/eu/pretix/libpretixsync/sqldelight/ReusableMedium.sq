@@ -8,7 +8,6 @@ CREATE TABLE ReusableMedium (
     identifier TEXT,
     json_data TEXT,
     linked_giftcard_id INTEGER,
-    linked_orderposition_id INTEGER,
     server_id INTEGER,
     type TEXT
 );
