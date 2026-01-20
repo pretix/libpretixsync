@@ -1,6 +1,5 @@
 CREATE TABLE ResuableMedium_OrderPosition (
-    ReusableMediumId bigint NOT NULL REFERENCES ReusableMedium(id) ON DELETE CASCADE,
-    OrderPositionId bigint NOT NULL REFERENCES OrderPosition(id) ON DELETE CASCADE,
+    ReusableMediumId integer NOT NULL REFERENCES ReusableMedium(id) ON DELETE CASCADE,
+    OrderPositionId integer NOT NULL REFERENCES OrderPosition(id) ON DELETE CASCADE,
     CONSTRAINT resuablemedium_orderposition_pkey PRIMARY KEY (ReusableMediumId, OrderPositionId)
 );
--- FIXME: is bigint correct? should they be a serial? or should a java import be added here?
