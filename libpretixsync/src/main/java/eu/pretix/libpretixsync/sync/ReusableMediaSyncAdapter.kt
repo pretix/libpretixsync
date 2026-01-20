@@ -84,8 +84,7 @@ class ReusableMediaSyncAdapter(
         val existingRelations = db.reusableMediumQueries.selectRelationsForReusableMedium(obj.id)
             .executeAsList()
             .map {
-                // Not-null assertion needed for SQLite
-                it.OrderPositionId!!
+                it.OrderPositionId
             }
             .toSet()
 
