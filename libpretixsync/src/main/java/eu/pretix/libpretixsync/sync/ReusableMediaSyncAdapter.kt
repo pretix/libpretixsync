@@ -117,9 +117,8 @@ class ReusableMediaSyncAdapter(
         }
 
         val newIds = if (orderpositionids.isNotEmpty()) {
-            db.orderPositionQueries.selectByReusableMediumIdAndEventSlugs(
+            db.orderPositionQueries.selectByReusableMediumId(
                 reusablemedium_id = rmId,
-                event_slugs = listOf(eventSlug), // FIXME: is event_slugs needed here?
             ).executeAsList().map { it.id }.toSet()
         } else {
             emptySet()
