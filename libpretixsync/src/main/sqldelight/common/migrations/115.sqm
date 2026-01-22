@@ -1,0 +1,6 @@
+CREATE INDEX IF NOT EXISTS Item_event_slug_index ON Item (event_slug);
+CREATE INDEX IF NOT EXISTS Item_server_id_index ON Item (server_id);
+CREATE INDEX IF NOT EXISTS Quota_server_id_index ON Quota (server_id);
+CREATE INDEX IF NOT EXISTS Receipt_canceled_index ON Receipt (canceled);
+CREATE INDEX IF NOT EXISTS ReceiptLine_canceled_index ON ReceiptLine (canceled);
+CREATE INDEX IF NOT EXISTS SubEvent_server_id_index ON SubEvent (server_id);

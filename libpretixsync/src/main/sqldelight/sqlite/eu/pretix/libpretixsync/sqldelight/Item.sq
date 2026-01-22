@@ -14,3 +14,6 @@ CREATE TABLE Item (
     ticket_layout_id INTEGER,
     ticket_layout_pretixpos_id INTEGER
 );
+
+CREATE INDEX Item_event_slug_index ON Item (event_slug);
+CREATE INDEX Item_server_id_index ON Item (server_id);

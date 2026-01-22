@@ -10,3 +10,5 @@ CREATE TABLE SubEvent (
     json_data text,
     server_id bigint
 );
+
+CREATE INDEX SubEvent_server_id_index ON SubEvent (server_id);
