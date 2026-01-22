@@ -55,3 +55,4 @@ CREATE TABLE ReceiptLine (
 
 CREATE INDEX ReceiptLine_addon_to_index ON ReceiptLine (addon_to);
 CREATE INDEX ReceiptLine_receipt_index ON ReceiptLine (receipt);
+CREATE INDEX ReceiptLine_canceled_index ON ReceiptLine (canceled);

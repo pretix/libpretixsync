@@ -33,3 +33,5 @@ CREATE TABLE Receipt (
 
 CREATE INDEX Receipt_closing_index ON Receipt (closing);
 CREATE INDEX receipt_server_id ON Receipt(server_id);
+CREATE INDEX Receipt_canceled_index ON Receipt (canceled);
+
