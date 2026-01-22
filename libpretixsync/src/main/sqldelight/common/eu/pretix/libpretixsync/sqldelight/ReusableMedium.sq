@@ -15,7 +15,8 @@ WHERE server_id IN ?;
 selectForCheck:
 SELECT ReusableMedium.*
 FROM ReusableMedium
-LEFT JOIN OrderPosition ON ReusableMedium.linked_orderposition_id = OrderPosition.server_id
+LEFT JOIN ReusableMedium_OrderPosition ON ReusableMedium_OrderPosition.OrderPositionId = ReusableMedium.id
+LEFT JOIN OrderPosition ON ReusableMedium_OrderPosition.OrderPositionId = OrderPosition.id
 LEFT JOIN orders ON OrderPosition.order_ref = orders.id
 WHERE ReusableMedium.identifier = :identifier
 AND ReusableMedium.type = :type
@@ -33,11 +34,9 @@ INSERT INTO ReusableMedium(
     identifier,
     json_data,
     linked_giftcard_id,
-    linked_orderposition_id,
     server_id,
     type
 ) VALUES(
-    ?,
     ?,
     ?,
     ?,
@@ -57,6 +56,27 @@ SET
     identifier = ?,
     json_data = ?,
     linked_giftcard_id = ?,
-    linked_orderposition_id = ?,
     type = ?
 WHERE id = ?;
+
+selectRelationsForReusableMedium:
+SELECT *
+FROM ReusableMedium_OrderPosition
+WHERE ReusableMediumId = :reusablemedium_id;
+
+insertOrderPositionRelation:
+INSERT INTO ReusableMedium_OrderPosition(
+    ReusableMediumId,
+    OrderPositionId
+) VALUES(
+    :reusablemedium_id,
+    :orderposition_id
+);
+
+deleteOrderPositionRelation:
+DELETE FROM ReusableMedium_OrderPosition
+WHERE ReusableMediumId = :reusablemedium_id AND OrderPositionId = :orderposition_id;
+
+deleteOrderPositionRelationsForReusableMedium:
+DELETE FROM ReusableMedium_OrderPosition
+WHERE ReusableMediumId = :reusablemedium_id;

@@ -1,0 +1,5 @@
+CREATE TABLE ReusableMedium_OrderPosition (
+    ReusableMediumId INTEGER NOT NULL REFERENCES ReusableMedium (id) ON DELETE CASCADE,
+    OrderPositionId INTEGER NOT NULL REFERENCES OrderPosition (id) ON DELETE CASCADE,
+    PRIMARY KEY (ReusableMediumId, OrderPositionId)
+);

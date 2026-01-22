@@ -62,20 +62,32 @@ class ReusableMediaSyncAdapter(
     }
 
     override fun insert(jsonobj: JSONObject) {
-        db.reusableMediumQueries.insert(
-            active = jsonobj.getBoolean("active"),
-            customer_id = jsonobj.optLong("customer"),
-            expires = jsonobj.optString("expires"),
-            identifier = jsonobj.getString("identifier"),
-            json_data = jsonobj.toString(),
-            linked_giftcard_id = jsonobj.optLong("linked_giftcard"),
-            linked_orderposition_id = jsonobj.optLong("linked_orderposition"),
-            server_id = jsonobj.getLong("id"),
-            type = jsonobj.getString("type"),
-        )
+        val rmId = db.reusableMediumQueries.transactionWithResult {
+            db.reusableMediumQueries.insert(
+                active = jsonobj.getBoolean("active"),
+                customer_id = jsonobj.optLong("customer"),
+                expires = jsonobj.optString("expires"),
+                identifier = jsonobj.getString("identifier"),
+                json_data = jsonobj.toString(),
+                linked_giftcard_id = jsonobj.optLong("linked_giftcard"),
+                server_id = jsonobj.getLong("id"),
+                type = jsonobj.getString("type"),
+            )
+
+            db.compatQueries.getLastInsertedReusableMediumId().executeAsOne()
+        }
+
+        upsertOrderPositionRelations(rmId, emptySet(), jsonobj)
     }
 
     override fun update(obj: ReusableMedium, jsonobj: JSONObject) {
+        val existingRelations = db.reusableMediumQueries.selectRelationsForReusableMedium(obj.id)
+            .executeAsList()
+            .map {
+                it.OrderPositionId
+            }
+            .toSet()
+
         db.reusableMediumQueries.updateFromJson(
             active = jsonobj.getBoolean("active"),
             customer_id = jsonobj.optLong("customer"),
@@ -83,13 +95,52 @@ class ReusableMediaSyncAdapter(
             identifier = jsonobj.getString("identifier"),
             json_data = jsonobj.toString(),
             linked_giftcard_id = jsonobj.optLong("linked_giftcard"),
-            linked_orderposition_id = jsonobj.optLong("linked_orderposition"),
             type = jsonobj.getString("type"),
             id = obj.id,
         )
+
+        upsertOrderPositionRelations(obj.id, existingRelations, jsonobj)
+    }
+
+    private fun upsertOrderPositionRelations(rmId: Long, existingIds: Set<Long>, jsonobj: JSONObject) {
+        // backwards compatibility with 'linked_orderposition'
+        val orderpositionsarr = jsonobj.optJSONArray("linked_orderpositions")
+        val orderpositionids = ArrayList<Long>(orderpositionsarr.length())
+        if (orderpositionsarr != null) {
+            for (i in 0 until orderpositionsarr.length()) {
+                orderpositionids.add(orderpositionsarr.getLong(i))
+            }
+        } else {
+            if (jsonobj.has("linked_orderposition") && !jsonobj.isNull("linked_orderposition")) {
+                orderpositionids.add(jsonobj.getLong("linked_orderposition"))
+            }
+        }
+
+        val newIds = if (orderpositionids.isNotEmpty()) {
+            db.orderPositionQueries.selectByReusableMediumId(
+                reusablemedium_id = rmId,
+            ).executeAsList().map { it.id }.toSet()
+        } else {
+            emptySet()
+        }
+
+        for (newId in newIds - existingIds) {
+            db.reusableMediumQueries.insertOrderPositionRelation(
+                orderposition_id = newId,
+                reusablemedium_id = rmId,
+            )
+        }
+        for (oldId in existingIds - newIds) {
+            db.reusableMediumQueries.deleteOrderPositionRelation(
+                orderposition_id = oldId,
+                reusablemedium_id = rmId,
+            )
+        }
     }
 
     override fun delete(key: Long) {
+        val rm = db.reusableMediumQueries.selectByServerId(key).executeAsOne()
+        db.reusableMediumQueries.deleteOrderPositionRelationsForReusableMedium(rm.id)
         db.reusableMediumQueries.deleteByServerId(key)
     }
 

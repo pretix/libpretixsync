@@ -1,0 +1,7 @@
+INSERT INTO ReusableMedium_OrderPosition ( ReusableMediumId, OrderPositionId )
+SELECT ReusableMedium.id, OrderPosition.id
+FROM ReusableMedium
+LEFT JOIN OrderPosition ON ReusableMedium.linked_orderposition_id = OrderPosition.server_id
+WHERE ReusableMedium.linked_orderposition_id IS NOT NULL;
+
+UPDATE ReusableMedium SET linked_orderposition_id = NULL;
