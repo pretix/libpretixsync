@@ -105,7 +105,7 @@ class ReusableMediaSyncAdapter(
     private fun upsertOrderPositionRelations(rmId: Long, existingIds: Set<Long>, jsonobj: JSONObject) {
         // backwards compatibility with 'linked_orderposition'
         val orderpositionsarr = jsonobj.optJSONArray("linked_orderpositions")
-        val orderpositionids = ArrayList<Long>(orderpositionsarr.length())
+        val orderpositionids = ArrayList<Long>(orderpositionsarr?.length() ?: 0)
         if (orderpositionsarr != null) {
             for (i in 0 until orderpositionsarr.length()) {
                 orderpositionids.add(orderpositionsarr.getLong(i))
