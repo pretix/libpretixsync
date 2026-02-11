@@ -42,7 +42,8 @@ class FakePretixApi : PretixApi("http://1.1.1.1/", "a", "demo", 1, DefaultHttpCl
         type: String?,
         source_type: String?,
         callTimeout: Long?,
-        questions_supported: Boolean
+        questions_supported: Boolean,
+        use_order_locale: Boolean
     ): ApiResponse {
         redeemRequestSecret = secret
         redeemRequestDatetime = datetime
@@ -68,7 +69,8 @@ class FakePretixApi : PretixApi("http://1.1.1.1/", "a", "demo", 1, DefaultHttpCl
         type: String?,
         source_type: String?,
         callTimeout: Long?,
-        questions_supported: Boolean
+        questions_supported: Boolean,
+        use_order_locale: Boolean
     ): ApiResponse {
         redeemRequestSecret = secret
         redeemRequestDatetime = datetime

@@ -25,6 +25,7 @@ fun Orders.toModel(): Order {
         pendingTotal = parsePendingTotal(json),
         payments = parsePayments(json),
         refunds = parseRefunds(json),
+        locale = parseLocale(json),
     )
 }
 
@@ -101,5 +102,14 @@ private fun parseRefunds(json: JSONObject): JSONArray {
     } catch (e: JSONException) {
         e.printStackTrace()
         return JSONArray()
+    }
+}
+
+private fun parseLocale(json: JSONObject): String? {
+    try {
+        return json.getString("locale")
+    } catch (e: JSONException) {
+        e.printStackTrace()
+        return null
     }
 }
