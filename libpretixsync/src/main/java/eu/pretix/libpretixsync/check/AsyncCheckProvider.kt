@@ -333,7 +333,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
                 item_id = decoded.item,
             ).executeAsOne()
             if (is_in_list == 0L) {
-                storeFailedCheckin(eventSlug, listId, "product", ticketid, type, subevent = decoded.subevent, nonce = nonce)
+                storeFailedCheckin(eventSlug, listId, "product", ticketid, type, item = decoded.item, variation = decoded.variation, subevent = decoded.subevent, nonce = nonce)
                 return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.PRODUCT, offline = true)
             }
         }
