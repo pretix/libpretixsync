@@ -348,7 +348,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
             event_slug = eventSlug,
         ).executeAsOneOrNull()?.toModel()
         if (item == null) {
-            storeFailedCheckin(eventSlug, listId, "product", ticketid, type, subevent = decoded.subevent, nonce = nonce)
+            storeFailedCheckin(eventSlug, listId, "error", ticketid, type, subevent = decoded.subevent, nonce = nonce)
             return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.ERROR, "Item not found", offline = true)
         }
 
@@ -618,8 +618,8 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
 
         val eventSlug = order.eventSlug
         val event = db.eventQueries.selectBySlug(eventSlug).executeAsOneOrNull()?.toModel()
-
                 ?: return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.ERROR, "Event not found", offline = true)
+
         val listId = eventsAndCheckinLists[eventSlug] ?: return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.ERROR, "No check-in list selected", offline = true)
         val list = db.checkInListQueries.selectByServerIdAndEventSlug(
             server_id = listId,
