@@ -759,7 +759,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
         if (!list.allItems) {
             val is_in_list = db.checkInListQueries.checkIfItemIsInList(
                 checkin_list_id = list.id,
-                item_id = item.id,
+                item_id = item.serverId,
             ).executeAsOne()
             if (is_in_list == 0L) {
                 storeFailedCheckin(eventSlug, list.serverId, "product", position.secret!!, type, position = position.serverId, item = positionItem.serverId, variation = position.variationServerId, subevent = position.subEventServerId, nonce = nonce)

@@ -38,6 +38,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         EventSyncAdapter(db, "demo2", "demo2", fakeApi!!, "", null).standaloneRefreshFromJSON(jsonResource("events/event2.json"))
         ItemSyncAdapter(db, FakeFileStorage(), "demo", fakeApi!!, "", null).standaloneRefreshFromJSON(jsonResource("items/item1.json"))
         ItemSyncAdapter(db, FakeFileStorage(), "demo", fakeApi!!, "", null).standaloneRefreshFromJSON(jsonResource("items/item2.json"))
+        ItemSyncAdapter(db, FakeFileStorage(), "demo", fakeApi!!, "", null).standaloneRefreshFromJSON(jsonResource("items/item3.json"))
         ItemSyncAdapter(db, FakeFileStorage(), "demo2", fakeApi!!, "", null).standaloneRefreshFromJSON(jsonResource("items/event2-item3.json"))
         CheckInListSyncAdapter(db, FakeFileStorage(), "demo", fakeApi!!, "", null, 0).standaloneRefreshFromJSON(
             jsonResource("checkinlists/list1.json")
@@ -56,6 +57,9 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         )
         CheckInListSyncAdapter(db, FakeFileStorage(), "demo", fakeApi!!, "", null, 0).standaloneRefreshFromJSON(
             jsonResource("checkinlists/list6.json")
+        )
+        CheckInListSyncAdapter(db, FakeFileStorage(), "demo", fakeApi!!, "", null, 0).standaloneRefreshFromJSON(
+            jsonResource("checkinlists/list10.json")
         )
         CheckInListSyncAdapter(db, FakeFileStorage(), "demo2", fakeApi!!, "", null, 0).standaloneRefreshFromJSON(
             jsonResource("checkinlists/event2-list7.json")
@@ -1015,7 +1019,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         assertEquals("All", sr.eventName)
         assertEquals(19, sr.totalTickets)
         assertEquals(2, sr.alreadyScanned)
-        assertEquals(2, sr.items!!.size)
+        assertEquals(3, sr.items!!.size)
         val i = sr.items!![0]
         assertEquals(1, i.id)
         assertEquals(8, i.total)
@@ -1027,6 +1031,14 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
     @Test
     fun testSignedAndValid() {
         val r = p!!.check(mapOf("demo" to 1L), "E4BibyTSylQOgeKjuMPiTDxi5HXPuTVsx1qCli3IL0143gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKAEAPAQA")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+        assertEquals(db.queuedCheckInQueries.count().executeAsOne(), 1L)
+    }
+
+    @Test
+    fun testSignedAndValidServerId() {
+        // Regression test: make sure that signed checkin passes even if local item id != server item id
+        val r = p!!.check(mapOf("demo" to 10L), "==QCiFO1apLFypH1BXorPlbn4efNA0aCAsO1Z2hsmY/hKTI3/UVSlON/Vw8WSYof/1tz5tepBltUAg4GnzpOBSSlqARYhFWYhFWYhFWCKAEANAQA")
         assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
         assertEquals(db.queuedCheckInQueries.count().executeAsOne(), 1L)
     }
