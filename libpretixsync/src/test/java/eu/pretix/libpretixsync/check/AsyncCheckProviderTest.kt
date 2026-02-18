@@ -76,6 +76,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         osa.standaloneRefreshFromJSON(jsonResource("orders/order7.json"))
         osa.standaloneRefreshFromJSON(jsonResource("orders/order8.json"))
         osa.standaloneRefreshFromJSON(jsonResource("orders/order9.json"))
+        osa.standaloneRefreshFromJSON(jsonResource("orders/order10.json"))
         val osa2 = OrderSyncAdapter(db, FakeFileStorage(), "demo2", 0, true, false, fakeApi!!, "", null)
         osa2.standaloneRefreshFromJSON(jsonResource("orders/event2-order1.json"))
     }
@@ -92,6 +93,18 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         val qciList = db.queuedCheckInQueries.selectAll().executeAsList()
         assertEquals(1, qciList.size.toLong())
         assertEquals("kfndgffgyw4tdgcacx6bb3bgemq69cxj", qciList[0].secret)
+    }
+
+    @Test
+    fun testSimpleSuccessFilteredList() {
+        val r = p!!.check(mapOf("demo" to 10L), "order10_item1_secret_verysecret")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+        assertEquals("Regular ticket", r.ticket)
+        assertEquals(null, r.variation)
+
+        val qciList = db.queuedCheckInQueries.selectAll().executeAsList()
+        assertEquals(1, qciList.size.toLong())
+        assertEquals("order10_item1_secret_verysecret", qciList[0].secret)
     }
 
     @Test
@@ -1017,7 +1030,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
     fun testStatusInfo() {
         val sr = p!!.status("demo", 1L)
         assertEquals("All", sr.eventName)
-        assertEquals(19, sr.totalTickets)
+        assertEquals(20, sr.totalTickets)
         assertEquals(2, sr.alreadyScanned)
         assertEquals(3, sr.items!!.size)
         val i = sr.items!![0]
