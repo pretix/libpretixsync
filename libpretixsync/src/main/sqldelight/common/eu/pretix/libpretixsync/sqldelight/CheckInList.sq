@@ -86,11 +86,11 @@ SELECT ItemId AS id, CheckInListId
 FROM CheckInList_Item
 WHERE CheckInListId = :checkin_list_id;
 
-checkIfItemIsInList:
+checkIfItemIsInListByServerId:
 SELECT COUNT(*)
 FROM CheckInList_Item
 LEFT JOIN Item ON CheckInList_Item.ItemId = Item.id
-WHERE CheckInListId = :checkin_list_id AND Item.server_id = :item_id;
+WHERE CheckInListId = :checkin_list_id AND Item.server_id = :item_server_id;
 
 -- for tests only:
 testUpdateJsonData:
