@@ -34,8 +34,8 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         fakeApi = FakePretixApi()
         p = AsyncCheckProvider(configStore!!, db)
 
-        EventSyncAdapter(db, "demo", "demo", fakeApi!!, "", null).standaloneRefreshFromJSON(jsonResource("events/event1.json"))
-        EventSyncAdapter(db, "demo2", "demo2", fakeApi!!, "", null).standaloneRefreshFromJSON(jsonResource("events/event2.json"))
+        EventSyncAdapter(db, FakeFileStorage(), "demo", "demo", fakeApi!!, "", null).standaloneRefreshFromJSON(jsonResource("events/event1.json"))
+        EventSyncAdapter(db, FakeFileStorage(), "demo2", "demo2", fakeApi!!, "", null).standaloneRefreshFromJSON(jsonResource("events/event2.json"))
         ItemSyncAdapter(db, FakeFileStorage(), "demo", fakeApi!!, "", null).standaloneRefreshFromJSON(jsonResource("items/item1.json"))
         ItemSyncAdapter(db, FakeFileStorage(), "demo", fakeApi!!, "", null).standaloneRefreshFromJSON(jsonResource("items/item2.json"))
         ItemSyncAdapter(db, FakeFileStorage(), "demo", fakeApi!!, "", null).standaloneRefreshFromJSON(jsonResource("items/item3.json"))
@@ -64,7 +64,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         CheckInListSyncAdapter(db, FakeFileStorage(), "demo2", fakeApi!!, "", null, 0).standaloneRefreshFromJSON(
             jsonResource("checkinlists/event2-list7.json")
         )
-        SubEventSyncAdapter(db, "demo", "14", fakeApi!!, "", null).standaloneRefreshFromJSON(jsonResource("subevents/subevent1.json"))
+        SubEventSyncAdapter(db, FakeFileStorage(), "demo", "14", fakeApi!!, "", null).standaloneRefreshFromJSON(jsonResource("subevents/subevent1.json"))
 
         val osa = OrderSyncAdapter(db, FakeFileStorage(), "demo", 0, true, false, fakeApi!!, "", null)
         osa.standaloneRefreshFromJSON(jsonResource("orders/order1.json"))
