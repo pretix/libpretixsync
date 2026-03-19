@@ -6,6 +6,7 @@ import eu.pretix.libpretixsync.sync.SyncManager.ProgressFeedback
 
 class InvoiceSettingsSyncAdapter(
     db: SyncDatabase,
+    fileStorage: FileStorage,
     eventSlug: String,
     key: String,
     api: PretixApi,
@@ -13,6 +14,7 @@ class InvoiceSettingsSyncAdapter(
     feedback: ProgressFeedback? = null,
 ) : SettingsSyncAdapter(
     db = db,
+    fileStorage = fileStorage,
     eventSlug = eventSlug,
     key = key,
     api = api,

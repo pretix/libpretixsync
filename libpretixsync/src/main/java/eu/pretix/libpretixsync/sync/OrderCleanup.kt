@@ -16,7 +16,7 @@ class OrderCleanup(val db: SyncDatabase, val fileStorage: FileStorage, val api: 
             return subeventsDeletionDate[sid]
         }
         try {
-            SubEventSyncAdapter(db, eventSlug, sid.toString(), api, syncCycleId) { }.download()
+            SubEventSyncAdapter(db, fileStorage, eventSlug, sid.toString(), api, syncCycleId) { }.download()
         } catch (e: JSONException) {
             subeventsDeletionDate[sid] = null
             return null
