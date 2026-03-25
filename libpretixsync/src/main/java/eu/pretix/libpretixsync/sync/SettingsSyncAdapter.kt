@@ -51,7 +51,7 @@ open class SettingsSyncAdapter(
     override fun insert(jsonobj: JSONObject) {
         var jsonobj = jsonobj
         listOf("pretixkiosk_screensaver_image").forEach { fieldName ->
-            jsonobj = processAndUpdateJSONdataWithPicutre(jsonobj, fieldName, null)
+            jsonobj = processAndUpdateJSONdataWithPicture(jsonobj, fieldName, null)
         }
 
         db.settingsQueries.insert(
@@ -72,7 +72,7 @@ open class SettingsSyncAdapter(
         var jsonobj = jsonobj
         val objjsondata = JSONObject(obj.json_data)
         listOf("pretixkiosk_screensaver_image").forEach { fieldName ->
-            jsonobj = processAndUpdateJSONdataWithPicutre(jsonobj, fieldName, if (objjsondata.isNull(fieldName)) null else objjsondata.getString(fieldName))
+            jsonobj = processAndUpdateJSONdataWithPicture(jsonobj, fieldName, if (objjsondata.isNull(fieldName)) null else objjsondata.getString(fieldName))
         }
 
         db.settingsQueries.updateFromJson(
@@ -93,7 +93,7 @@ open class SettingsSyncAdapter(
         db.settingsQueries.transaction(false, body)
     }
 
-    private fun processAndUpdateJSONdataWithPicutre(jsonobj: JSONObject, fieldName: String, oldFilename: String?): JSONObject {
+    private fun processAndUpdateJSONdataWithPicture(jsonobj: JSONObject, fieldName: String, oldFilename: String?): JSONObject {
         if (jsonobj.has(fieldName)) {
             val pictureFilename = processPicture(jsonobj, fieldName, oldFilename)
 
