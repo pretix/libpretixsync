@@ -18,6 +18,7 @@ class Order(
     val pendingTotal: BigDecimal? = null,
     val payments: JSONArray = JSONArray(),
     val refunds: JSONArray = JSONArray(),
+    val locale: String? = null,
 ) {
 
     val hasValidStatus = when (status) {
