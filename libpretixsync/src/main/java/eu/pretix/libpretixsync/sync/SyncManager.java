@@ -403,7 +403,7 @@ public class SyncManager {
                     subEvent = overrideSubeventId;
                 }
                 try {
-                    download(new EventSyncAdapter(db, eventSlug, eventSlug, api, configStore.getSyncCycleId(), feedback));
+                    download(new EventSyncAdapter(db, fileStorage, eventSlug, eventSlug, api, configStore.getSyncCycleId(), feedback));
                 } catch (PermissionDeniedApiException e) {
                     e.eventSlug = eventSlug;
                     throw e;
@@ -444,12 +444,12 @@ public class SyncManager {
                 }
 
                 try {
-                    download(new SettingsSyncAdapter(db, eventSlug, eventSlug, api, configStore.getSyncCycleId(), feedback));
+                    download(new SettingsSyncAdapter(db, fileStorage, eventSlug, eventSlug, api, configStore.getSyncCycleId(), feedback));
                 } catch (ApiException e) {
                     // Older pretix installations
                     // We don't need these on pretixSCAN, so we can save some traffic
                     if (profile == Profile.PRETIXPOS) {
-                        download(new InvoiceSettingsSyncAdapter(db, eventSlug, eventSlug, api, configStore.getSyncCycleId(), feedback));
+                        download(new InvoiceSettingsSyncAdapter(db, fileStorage, eventSlug, eventSlug, api, configStore.getSyncCycleId(), feedback));
                     }
                 }
             }
