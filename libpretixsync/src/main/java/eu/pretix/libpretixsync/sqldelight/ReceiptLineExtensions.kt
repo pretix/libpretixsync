@@ -17,7 +17,7 @@ fun ReceiptLine.toJSON(): JSONObject {
     jo.put("custom_price_input", custom_price_input?.setScale(2, RoundingMode.HALF_UP))
     jo.put("voucher_code", voucher_code)
     jo.put("price", price?.setScale(2, RoundingMode.HALF_UP))
-    jo.put("tax_rate", tax_rate?.setScale(2, RoundingMode.HALF_UP))
+    jo.put("tax_rate", tax_rate?.setScale(4, RoundingMode.HALF_UP))
     jo.put("tax_value", tax_value?.setScale(2, RoundingMode.HALF_UP) ?: "0.00")
     jo.put("tax_rule", tax_rule ?: JSONObject.NULL)
     jo.put("tax_code", tax_code ?: JSONObject.NULL)
