@@ -554,7 +554,29 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
             event_slugs = eventsAndCheckinLists.keys.toList(),
         ).executeAsList().map { it.toModel() }
 
-        if (tickets.size == 0) {
+        if (tickets.size == 1) {
+            return checkOfflineWithData(eventsAndCheckinLists, ticketid_cleaned, tickets, answers, ignore_unpaid, type, nonce = nonce, allowQuestions = allowQuestions)
+        } else if (tickets.size > 1) {
+            val eventSlug = db.orderQueries.selectById(tickets[0].orderId).executeAsOne().event_slug!!
+            val itemServerId = db.itemQueries.selectById(tickets[0].itemId).executeAsOne().server_id
+            storeFailedCheckin(
+                eventSlug,
+                eventsAndCheckinLists[eventSlug] ?: return TicketCheckProvider.CheckResult(
+                    TicketCheckProvider.CheckResult.Type.ERROR,
+                    "No check-in list selected",
+                    offline = true
+                ),
+                "ambiguous",
+                ticketid_cleaned,
+                type,
+                position = tickets[0].serverId,
+                item = itemServerId,
+                variation = tickets[0].variationServerId,
+                subevent = tickets[0].subEventServerId,
+                nonce = nonce,
+            )
+            return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.AMBIGUOUS)
+        } else {
             val medium = db.reusableMediumQueries.selectForCheck(
                 identifier = ticketid_cleaned,
                 type = source_type,
@@ -585,28 +607,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
                 nonce,
                 allowQuestions,
             )
-        } else if (tickets.size > 1) {
-            val eventSlug = db.orderQueries.selectById(tickets[0].orderId).executeAsOne().event_slug!!
-            val itemServerId = db.itemQueries.selectById(tickets[0].itemId).executeAsOne().server_id
-            storeFailedCheckin(
-                eventSlug,
-                eventsAndCheckinLists[eventSlug] ?: return TicketCheckProvider.CheckResult(
-                    TicketCheckProvider.CheckResult.Type.ERROR,
-                    "No check-in list selected",
-                    offline = true
-                ),
-                "ambiguous",
-                ticketid_cleaned,
-                type,
-                position = tickets[0].serverId,
-                item = itemServerId,
-                variation = tickets[0].variationServerId,
-                subevent = tickets[0].subEventServerId,
-                nonce = nonce,
-            )
-            return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.AMBIGUOUS)
         }
-        return checkOfflineWithData(eventsAndCheckinLists, ticketid_cleaned, tickets, answers, ignore_unpaid, type, nonce = nonce, allowQuestions = allowQuestions)
     }
 
     private fun checkOfflineWithData(eventsAndCheckinLists: Map<String, Long>, secret: String, tickets: List<OrderPositionModel>, answers: List<Answer>?, ignore_unpaid: Boolean, type: TicketCheckProvider.CheckInType, nonce: String?, allowQuestions: Boolean): TicketCheckProvider.CheckResult {
