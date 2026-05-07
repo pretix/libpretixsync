@@ -11,6 +11,7 @@ import eu.pretix.libpretixsync.db.Answer
 import eu.pretix.libpretixsync.db.NonceGenerator
 import eu.pretix.libpretixsync.db.QuestionLike
 import eu.pretix.libpretixsync.models.CheckIn
+import eu.pretix.libpretixsync.models.CheckInList
 import eu.pretix.libpretixsync.models.Event
 import eu.pretix.libpretixsync.models.Order as OrderModel
 import eu.pretix.libpretixsync.models.OrderPosition as OrderPositionModel
@@ -615,22 +616,30 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
         }
     }
 
-    private fun filterPositions(eventsAndCheckinLists: Map<String, Long>, positions: List<OrderPositionModel>): List<OrderPositionModel> {
+    data class PositionFilteringError(
+        val position: OrderPositionModel,
+        val eventSlug: String,
+        val list: CheckInList?,
+        val error: TicketCheckProvider.CheckResult.Type,
+        val message: String
+    )
+
+    private fun filterPositions(eventsAndCheckinLists: Map<String, Long>, positions: List<OrderPositionModel>): Pair<List<OrderPositionModel>, List<PositionFilteringError>> {
         val results = mutableListOf<OrderPositionModel>()
-        val errors = mutableListOf<Pair<OrderPositionModel, String>>()
+        val errors = mutableListOf<PositionFilteringError>()
         positions.forEach { position ->
             val order = db.orderQueries.selectById(position.orderId).executeAsOne().toModel()
 
             val eventSlug = order.eventSlug
             val event = db.eventQueries.selectBySlug(eventSlug).executeAsOneOrNull()?.toModel()
             if (event == null) {
-                errors.add(Pair(position, "Event not found"))
+                errors.add(PositionFilteringError(position, eventSlug, null, TicketCheckProvider.CheckResult.Type.ERROR, "Event not found"))
                 return@forEach
             }
 
             val listId = eventsAndCheckinLists[eventSlug]
             if (listId == null) {
-                errors.add(Pair(position, "No check-in list selected"))
+                errors.add(PositionFilteringError(position, eventSlug, null, TicketCheckProvider.CheckResult.Type.ERROR, "No check-in list selected"))
                 return@forEach
             }
 
@@ -640,12 +649,12 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
             ).executeAsOneOrNull()?.toModel()
 
             if (list == null) {
-                errors.add(Pair(position, "Check-in list not found"))
+                errors.add(PositionFilteringError(position, eventSlug, null, TicketCheckProvider.CheckResult.Type.ERROR, "Check-in list not found"))
                 return@forEach
             }
 
             // server side: 3a.
-            val resultingPositions = mutableSetOf(position)
+            var resultingPositions = mutableSetOf(position)
             if (list.addonMatch) {
                 // Add-on matching, as per spec, but only if we have data, it's impossible in data-less mode
                 val candidates = mutableListOf(position)
@@ -656,7 +665,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
                     it.addonToServerId == position.serverId
                 })
                 // server side: 3b.
-                if (!list.allItems) {
+                val filteredCandidates = if (!list.allItems) {
                     val items = db.checkInListQueries.selectItemIdsForList(list.id)
                         .executeAsList()
                         .map {
@@ -669,32 +678,31 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
                             db.itemQueries.selectById(candidate.itemId).executeAsOne()
                         items.contains(candidateItem.id)
                     }
-                    if (candidates.isEmpty()) {
-                        errors.add(Pair(position, "PRODUCT"))
-                    } else {
-                        resultingPositions.addAll(candidates)
-                    }
                 } else {
                     // This is a useless configuration that the backend won't allow, but we'll still handle
                     // it here for completeness
-                    resultingPositions.addAll(candidates)
+                    candidates
+                }
+
+                if (filteredCandidates.isEmpty()) {
+                    errors.add(PositionFilteringError(position, eventSlug, list, TicketCheckProvider.CheckResult.Type.PRODUCT, "PRODUCT"))
+                } else if (filteredCandidates.size > 1) {
+                    errors.add(PositionFilteringError(position, eventSlug, list, TicketCheckProvider.CheckResult.Type.AMBIGUOUS, "AMBIGUOUS"))
+                } else {
+                    resultingPositions.add(filteredCandidates[0])
                 }
             }
 
             // 3c.
             val nowOdt = javaTimeNow()
-            resultingPositions.filter { op ->
+            resultingPositions = resultingPositions.filter { op ->
                 (op.validFrom == null || op.validFrom < nowOdt) && (op.validUntil == null || op.validUntil > nowOdt)
-            }
+            }.toMutableSet()
 
             results.addAll(resultingPositions)
         }
 
-        if (errors.isNotEmpty()) {
-            // FIXME
-        }
-
-        return results
+        return Pair(results, errors)
     }
 
     private fun checkOfflineWithData(
@@ -710,11 +718,26 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
         // !!! When extending this, also extend checkOfflineWithoutData !!!
         val dt = now()
 
-        val positions = filterPositions(eventsAndCheckinLists, tickets)
+        val (positions, err) = filterPositions(eventsAndCheckinLists, tickets)
+        if (err.isNotEmpty()) {
+            val firstError = err.first()
+            val item = db.itemQueries.selectById(firstError.position.itemId).executeAsOne().toModel()
+            if (firstError.error == TicketCheckProvider.CheckResult.Type.PRODUCT && firstError.list != null) {
+                storeFailedCheckin(firstError.eventSlug, firstError.list.serverId, "product", secret, type, position = firstError.position.serverId, item = item.serverId, variation = firstError.position.variationServerId, subevent = firstError.position.subEventServerId, nonce = nonce)
+            }
+            if (firstError.error == TicketCheckProvider.CheckResult.Type.AMBIGUOUS && firstError.list != null) {
+                storeFailedCheckin(firstError.eventSlug, firstError.list.serverId, "ambiguous", secret, type, position = firstError.position.serverId, item = item.serverId, variation = firstError.position.variationServerId, subevent = firstError.position.subEventServerId, nonce = nonce)
+            }
+            return TicketCheckProvider.CheckResult(
+                firstError.error,
+                firstError.message,
+                offline = true
+            )
+        }
         if (positions.isEmpty()) {
             return TicketCheckProvider.CheckResult(
                 TicketCheckProvider.CheckResult.Type.ERROR,
-                "Event not found",
+                "No matching ticket found",
                 offline = true
             )
         }
@@ -724,6 +747,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
                 offline = true
             )
         }
+
         val position = positions[0]
 
         val order = db.orderQueries.selectById(position.orderId).executeAsOne().toModel()
@@ -739,22 +763,6 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
             event_slug = eventSlug,
         ).executeAsOneOrNull()?.toModel()
             ?: return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.ERROR, "Check-in list not found", offline = true)
-
-        /*
-        val position = if (list.addonMatch) {
-            // FIXME: we need to somehow still migrate these failed checkins
-            if (filteredCandidates.isEmpty()) {
-                storeFailedCheckin(eventSlug, list.serverId, "product", secret, type, position = tickets[0].serverId, item = item.serverId, variation = tickets[0].variationServerId, subevent = tickets[0].subEventServerId, nonce = nonce)
-                return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.PRODUCT, offline = true)
-            } else if (filteredCandidates.size > 1) {
-                storeFailedCheckin(eventSlug, list.serverId, "ambiguous", secret, type, position = tickets[0].serverId, item = item.serverId, variation = tickets[0].variationServerId, subevent = tickets[0].subEventServerId, nonce = nonce)
-                return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.AMBIGUOUS, offline = true)
-            }
-            filteredCandidates[0]
-        } else {
-            tickets[0]
-        }
-        */
 
         val positionItem = if (position.id == tickets[0].id) {
             item
