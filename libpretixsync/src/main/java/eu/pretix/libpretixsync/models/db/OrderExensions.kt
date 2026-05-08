@@ -87,19 +87,9 @@ private fun parsePendingTotal(json: JSONObject): BigDecimal? {
 }
 
 private fun parsePayments(json: JSONObject): JSONArray {
-    try {
-        return json.getJSONArray("payments")
-    } catch (e: JSONException) {
-        e.printStackTrace()
-        return JSONArray()
-    }
+    return json.optJSONArray("payments")
 }
 
-private fun parseRefunds(json: JSONObject): JSONArray {
-    try {
-        return json.getJSONArray("refunds")
-    } catch (e: JSONException) {
-        e.printStackTrace()
-        return JSONArray()
-    }
+private fun parseRefunds(json: JSONObject): JSONArray? {
+    return json.optJSONArray("refunds")
 }
