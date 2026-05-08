@@ -80,6 +80,7 @@ interface TicketCheckProvider {
         var position: JSONObject? = null
         var eventSlug: String? = null
         var offline: Boolean = false
+        var locale: String? = null
 
         constructor(type: Type?, message: String?, offline: Boolean = false) {
             this.type = type
@@ -157,7 +158,7 @@ interface TicketCheckProvider {
     class StatusResult(var eventName: String?, var totalTickets: Int, var alreadyScanned: Int, var currentlyInside: Int?, var items: List<StatusResultItem>?) {
     }
 
-    fun check(eventsAndCheckinLists: Map<String, Long>, ticketid: String, source_type: String, answers: List<Answer>?, ignore_unpaid: Boolean, with_badge_data: Boolean, type: CheckInType, nonce: String? = null, allowQuestions: Boolean = true): CheckResult
+    fun check(eventsAndCheckinLists: Map<String, Long>, ticketid: String, source_type: String, answers: List<Answer>?, ignore_unpaid: Boolean, with_badge_data: Boolean, type: CheckInType, nonce: String? = null, allowQuestions: Boolean = true, useOrderLocale: Boolean = false): CheckResult
     fun check(eventsAndCheckinLists: Map<String, Long>, ticketid: String): CheckResult
     @Throws(CheckException::class)
     fun search(eventsAndCheckinLists: Map<String, Long>, query: String, page: Int): List<SearchResult>
