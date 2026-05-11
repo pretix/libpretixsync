@@ -89,6 +89,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
         )
     }
 
+    @Suppress("UNCHECKED_CAST")
     private fun initJsonLogic(event: Event, subeventId: Long, tz: DateTimeZone): JsonLogic {
         val jsonLogic = JsonLogic()
         jsonLogic.addOperation("objectList") { l, _ -> l }
@@ -621,7 +622,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
         val eventSlug: String,
         val list: CheckInList?,
         val error: TicketCheckProvider.CheckResult.Type,
-        val message: String
+        val message: String? = null
     )
 
     private fun filterPositions(eventsAndCheckinLists: Map<String, Long>, positions: List<OrderPositionModel>): Pair<List<OrderPositionModel>, List<PositionFilteringError>> {
@@ -657,7 +658,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
             var resultingPositions = mutableSetOf(position)
             if (list.addonMatch) {
                 // Add-on matching, as per spec, but only if we have data, it's impossible in data-less mode
-                val candidates = mutableListOf(position)
+                val candidates = mutableListOf<OrderPositionModel>()
 
                 val orderPositions = db.orderPositionQueries.selectForOrder(order.id).executeAsList()
                     .map { it.toModel() }
@@ -685,19 +686,21 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
                 }
 
                 if (filteredCandidates.isEmpty()) {
-                    errors.add(PositionFilteringError(position, eventSlug, list, TicketCheckProvider.CheckResult.Type.PRODUCT, "PRODUCT"))
+                    errors.add(PositionFilteringError(position, eventSlug, list, TicketCheckProvider.CheckResult.Type.PRODUCT))
                 } else if (filteredCandidates.size > 1) {
-                    errors.add(PositionFilteringError(position, eventSlug, list, TicketCheckProvider.CheckResult.Type.AMBIGUOUS, "AMBIGUOUS"))
+                    errors.add(PositionFilteringError(position, eventSlug, list, TicketCheckProvider.CheckResult.Type.AMBIGUOUS))
                 } else {
                     resultingPositions.add(filteredCandidates[0])
                 }
             }
 
-            // 3c.
-            val nowOdt = javaTimeNow()
-            resultingPositions = resultingPositions.filter { op ->
-                (op.validFrom == null || op.validFrom < nowOdt) && (op.validUntil == null || op.validUntil > nowOdt)
-            }.toMutableSet()
+            // server side: 3c.
+            if (resultingPositions.size > 1) {
+                val nowOdt = javaTimeNow()
+                resultingPositions = resultingPositions.filter { op ->
+                    (op.validFrom == null || op.validFrom < nowOdt) && (op.validUntil == null || op.validUntil > nowOdt)
+                }.toMutableSet()
+            }
 
             results.addAll(resultingPositions)
         }

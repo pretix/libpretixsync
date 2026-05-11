@@ -5,10 +5,12 @@ import app.cash.sqldelight.db.QueryResult
 import eu.pretix.libpretixsync.api.ApiException
 import eu.pretix.libpretixsync.api.PretixApi
 import eu.pretix.libpretixsync.api.ResourceNotModified
+import eu.pretix.libpretixsync.sqldelight.Migrations
 import eu.pretix.libpretixsync.sqldelight.ResourceSyncStatus
 import eu.pretix.libpretixsync.sqldelight.ReusableMedium
 import eu.pretix.libpretixsync.sqldelight.SyncDatabase
 import eu.pretix.libpretixsync.sync.SyncManager.ProgressFeedback
+import eu.pretix.libpretixsync.utils.JSONUtils
 import org.json.JSONException
 import org.json.JSONObject
 import java.io.UnsupportedEncodingException
@@ -291,6 +293,23 @@ class ReusableMediaSyncAdapter(
             }
         }
         return d
+    }
+
+    @Throws(JSONException::class)
+    fun standaloneRefreshFromJSON(data: JSONObject) {
+        val known = db.reusableMediumQueries.selectByServerId(data.getLong("id")).executeAsOneOrNull()
+
+        // Store object
+        data.put("__libpretixsync_dbversion", Migrations.CURRENT_VERSION)
+        data.put("__libpretixsync_syncCycleId", syncCycleId)
+        if (known == null) {
+            insert(data)
+        } else {
+            val old = JSONObject(known.json_data!!)
+            if (!JSONUtils.similar(data, old)) {
+                update(known, data)
+            }
+        }
     }
 
 }
