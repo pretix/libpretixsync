@@ -1,0 +1,38 @@
+{
+  "name": {
+    "en": "Event 2"
+  },
+  "slug": "event2",
+  "live": true,
+  "testmode": true,
+  "currency": "EUR",
+  "date_from": "2026-05-31T00:00:00Z",
+  "date_to": null,
+  "date_admission": null,
+  "is_public": true,
+  "presale_start": null,
+  "presale_end": null,
+  "location": {},
+  "geo_lat": null,
+  "geo_lon": null,
+  "has_subevents": false,
+  "meta_data": {},
+  "seating_plan": null,
+  "plugins": [
+    "pretix.plugins.sendmail",
+    "pretix.plugins.statistics",
+    "pretix.plugins.ticketoutputpdf"
+  ],
+  "seat_category_mapping": {},
+  "timezone": "UTC",
+  "item_meta_properties": {},
+  "valid_keys": {
+    "pretix_sig1": []
+  },
+  "all_sales_channels": true,
+  "limit_sales_channels": [],
+  "sales_channels": [
+    "pretixpos",
+    "web"
+  ]
+}
