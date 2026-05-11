@@ -33,16 +33,17 @@ class AsyncCheckProviderReusableMediumTest : BaseDatabaseTest() {
         CheckInListSyncAdapter(db, FakeFileStorage(), "event1", fakeApi!!, "", null, 0).standaloneRefreshFromJSON(
             jsonResource("checkinlists/rmevent1-list1.json")
         )
-        val rmsa = ReusableMediaSyncAdapter(db, FakeFileStorage(), fakeApi!!, "", null)
-        rmsa.standaloneRefreshFromJSON(jsonResource("reusablemedia/mtrmt-medium1.json"))
-        rmsa.standaloneRefreshFromJSON(jsonResource("reusablemedia/mtrmt-medium2.json"))
-        rmsa.standaloneRefreshFromJSON(jsonResource("reusablemedia/mtrmt-medium3.json"))
-        rmsa.standaloneRefreshFromJSON(jsonResource("reusablemedia/mtrmt-medium4.json"))
 
         val osa = OrderSyncAdapter(db, FakeFileStorage(), "event1", 0, true, false, fakeApi!!, "", null)
         osa.standaloneRefreshFromJSON(jsonResource("orders/rmevent1-order1.json"))
         val osa2 = OrderSyncAdapter(db, FakeFileStorage(), "event2", 0, true, false, fakeApi!!, "", null)
         osa2.standaloneRefreshFromJSON(jsonResource("orders/rmevent2-order1.json"))
+
+        val rmsa = ReusableMediaSyncAdapter(db, FakeFileStorage(), fakeApi!!, "", null)
+        rmsa.standaloneRefreshFromJSON(jsonResource("reusablemedia/mtrmt-medium1.json"))
+        rmsa.standaloneRefreshFromJSON(jsonResource("reusablemedia/mtrmt-medium2.json"))
+        rmsa.standaloneRefreshFromJSON(jsonResource("reusablemedia/mtrmt-medium3.json"))
+        rmsa.standaloneRefreshFromJSON(jsonResource("reusablemedia/mtrmt-medium4.json"))
     }
 
     @Test
@@ -54,7 +55,10 @@ class AsyncCheckProviderReusableMediumTest : BaseDatabaseTest() {
     @Test
     fun testTwoTicketsTimesOverlappingDifferentEvents() {
         val r = p!!.check(mapOf("event1" to 35L), "2222")
-        assertEquals(TicketCheckProvider.CheckResult.Type.AMBIGUOUS, r.type)
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+        assertEquals("Regular ticket", r.ticket)
+        assertEquals("W0JKM", r.orderCode)
+        assertEquals(1L, r.positionId)
     }
 
     @Test
@@ -66,6 +70,9 @@ class AsyncCheckProviderReusableMediumTest : BaseDatabaseTest() {
     @Test
     fun testTwoTicketsTimesNonOverlappingDifferentEvents() {
         val r = p!!.check(mapOf("event1" to 35L), "4444")
-        assertEquals(TicketCheckProvider.CheckResult.Type.AMBIGUOUS, r.type)
+        assertEquals(TicketCheckProvider.CheckResult.Type.INVALID, r.type)
+        // assertEquals("Regular ticket", r.ticket)
+        // assertEquals("W0JKM", r.orderCode)
+        // assertEquals(3L, r.positionId)
     }
 }

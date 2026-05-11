@@ -13,7 +13,7 @@ FROM ReusableMedium
 WHERE server_id IN ?;
 
 selectForCheck:
-SELECT ReusableMedium.*
+SELECT DISTINCT ReusableMedium.*
 FROM ReusableMedium
 LEFT JOIN ReusableMedium_OrderPosition ON ReusableMedium_OrderPosition.OrderPositionId = ReusableMedium.id
 LEFT JOIN OrderPosition ON ReusableMedium_OrderPosition.OrderPositionId = OrderPosition.id
