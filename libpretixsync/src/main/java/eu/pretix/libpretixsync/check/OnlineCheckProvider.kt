@@ -93,6 +93,16 @@ class OnlineCheckProvider(
                 res.type = TicketCheckProvider.CheckResult.Type.INVALID
             } else {
                 val response = responseObj.data!!
+
+                if (responseObj.response.code == 400 && !response.has("status")) {
+                    if (response.has("lists")) {
+                        // Kind of a special case handling, but regular problem for users and just
+                        // passing through the error messages from the server is not generally helpful
+                        // since user's don't know what a primary key is etc
+                        throw CheckException("Check-in list not found")
+                    }
+                }
+
                 val status = response.getString("status")
                 if ("ok" == status) {
                     res.type = TicketCheckProvider.CheckResult.Type.VALID

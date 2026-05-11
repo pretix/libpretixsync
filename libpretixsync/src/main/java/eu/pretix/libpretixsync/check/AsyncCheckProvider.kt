@@ -328,12 +328,12 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
         }
 
         if (!list.allItems) {
-            val is_in_list = db.checkInListQueries.checkIfItemIsInList(
+            val is_in_list = db.checkInListQueries.checkIfItemIsInListByServerId(
                 checkin_list_id = list.id,
-                item_id = decoded.item,
+                item_server_id = decoded.item,
             ).executeAsOne()
             if (is_in_list == 0L) {
-                storeFailedCheckin(eventSlug, listId, "product", ticketid, type, subevent = decoded.subevent, nonce = nonce)
+                storeFailedCheckin(eventSlug, listId, "product", ticketid, type, item = decoded.item, variation = decoded.variation, subevent = decoded.subevent, nonce = nonce)
                 return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.PRODUCT, offline = true)
             }
         }
@@ -348,7 +348,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
             event_slug = eventSlug,
         ).executeAsOneOrNull()?.toModel()
         if (item == null) {
-            storeFailedCheckin(eventSlug, listId, "product", ticketid, type, subevent = decoded.subevent, nonce = nonce)
+            storeFailedCheckin(eventSlug, listId, "error", ticketid, type, subevent = decoded.subevent, nonce = nonce)
             return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.ERROR, "Item not found", offline = true)
         }
 
@@ -618,8 +618,8 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
 
         val eventSlug = order.eventSlug
         val event = db.eventQueries.selectBySlug(eventSlug).executeAsOneOrNull()?.toModel()
-
                 ?: return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.ERROR, "Event not found", offline = true)
+
         val listId = eventsAndCheckinLists[eventSlug] ?: return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.ERROR, "No check-in list selected", offline = true)
         val list = db.checkInListQueries.selectByServerIdAndEventSlug(
             server_id = listId,
@@ -757,9 +757,9 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
         }
 
         if (!list.allItems) {
-            val is_in_list = db.checkInListQueries.checkIfItemIsInList(
+            val is_in_list = db.checkInListQueries.checkIfItemIsInListByServerId(
                 checkin_list_id = list.id,
-                item_id = item.id,
+                item_server_id = item.serverId,
             ).executeAsOne()
             if (is_in_list == 0L) {
                 storeFailedCheckin(eventSlug, list.serverId, "product", position.secret!!, type, position = position.serverId, item = positionItem.serverId, variation = position.variationServerId, subevent = position.subEventServerId, nonce = nonce)

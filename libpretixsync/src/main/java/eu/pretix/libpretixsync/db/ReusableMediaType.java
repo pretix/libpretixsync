@@ -13,4 +13,8 @@ public enum ReusableMediaType {
     private ReusableMediaType(String serverName) {
         this.serverName = serverName;
     }
+
+    public boolean isNfcBased() {
+        return this.serverName.startsWith("nfc_");
+    }
 }

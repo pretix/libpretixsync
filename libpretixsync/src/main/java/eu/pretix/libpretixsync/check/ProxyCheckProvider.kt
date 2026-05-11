@@ -150,7 +150,9 @@ class ProxyCheckProvider(private val config: ConfigStore, httpClientFactory: Htt
             e.printStackTrace()
             TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.ERROR, e.message)
         } catch (e: CheckException) {
-            TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.ERROR, e.message)
+            val r = TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.ERROR, e.message)
+            r.reasonExplanation = e.message
+            r
         }
     }
 
