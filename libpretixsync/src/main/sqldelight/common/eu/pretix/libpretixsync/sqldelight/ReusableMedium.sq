@@ -15,7 +15,7 @@ WHERE server_id IN ?;
 selectForCheck:
 SELECT DISTINCT ReusableMedium.*
 FROM ReusableMedium
-LEFT JOIN ReusableMedium_OrderPosition ON ReusableMedium_OrderPosition.OrderPositionId = ReusableMedium.id
+LEFT JOIN ReusableMedium_OrderPosition ON ReusableMedium_OrderPosition.ReusableMediumId = ReusableMedium.id
 LEFT JOIN OrderPosition ON ReusableMedium_OrderPosition.OrderPositionId = OrderPosition.id
 LEFT JOIN orders ON OrderPosition.order_ref = orders.id
 WHERE ReusableMedium.identifier = :identifier
