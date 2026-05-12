@@ -10,6 +10,7 @@ import eu.pretix.pretixscan.scanproxy.tests.test.FakeConfigStore
 import eu.pretix.pretixscan.scanproxy.tests.test.FakeFileStorage
 import eu.pretix.pretixscan.scanproxy.tests.test.FakePretixApi
 import eu.pretix.pretixscan.scanproxy.tests.test.jsonResource
+import org.joda.time.format.ISODateTimeFormat
 import org.junit.Before
 import org.junit.Test
 
@@ -44,6 +45,14 @@ class AsyncCheckProviderReusableMediumTest : BaseDatabaseTest() {
         rmsa.standaloneRefreshFromJSON(jsonResource("reusablemedia/mtrmt-medium2.json"))
         rmsa.standaloneRefreshFromJSON(jsonResource("reusablemedia/mtrmt-medium3.json"))
         rmsa.standaloneRefreshFromJSON(jsonResource("reusablemedia/mtrmt-medium4.json"))
+        rmsa.standaloneRefreshFromJSON(jsonResource("reusablemedia/mtrmt-medium5.json"))
+        rmsa.standaloneRefreshFromJSON(jsonResource("reusablemedia/mtrmt-medium6.json"))
+    }
+
+    @Test
+    fun testMediumNotActive() {
+        val r = p!!.check(mapOf("event1" to 35L), "5555")
+        assertEquals(TicketCheckProvider.CheckResult.Type.INVALID, r.type)
     }
 
     @Test

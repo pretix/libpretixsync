@@ -1,0 +1,20 @@
+{
+  "id": 32,
+  "organizer": "mtrmt",
+  "created": "2026-05-12T09:22:31.207209Z",
+  "updated": "2026-05-12T09:22:31.207247Z",
+  "type": "barcode",
+  "identifier": "6666",
+  "claim_token": null,
+  "label": null,
+  "active": true,
+  "expires": "2000-12-31T00:00:00Z",
+  "customer": null,
+  "linked_orderpositions": [18701],
+  "linked_giftcard": null,
+  "info": {
+
+  },
+  "notes": "Medium expired",
+  "linked_orderposition": 18701
+}
