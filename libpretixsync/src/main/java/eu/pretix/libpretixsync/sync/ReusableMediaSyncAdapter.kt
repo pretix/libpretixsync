@@ -11,6 +11,7 @@ import eu.pretix.libpretixsync.sqldelight.ReusableMedium
 import eu.pretix.libpretixsync.sqldelight.SyncDatabase
 import eu.pretix.libpretixsync.sync.SyncManager.ProgressFeedback
 import eu.pretix.libpretixsync.utils.JSONUtils
+import org.joda.time.format.ISODateTimeFormat
 import org.json.JSONException
 import org.json.JSONObject
 import java.io.UnsupportedEncodingException
@@ -64,11 +65,17 @@ class ReusableMediaSyncAdapter(
     }
 
     override fun insert(jsonobj: JSONObject) {
+        val expires = if (!jsonobj.isNull("expires")) {
+            ISODateTimeFormat.dateTimeParser().parseDateTime(jsonobj.getString("expires")).toDate()
+        } else {
+            null
+        }
+
         val rmId = db.reusableMediumQueries.transactionWithResult {
             db.reusableMediumQueries.insert(
                 active = jsonobj.getBoolean("active"),
                 customer_id = jsonobj.optLong("customer"),
-                expires = jsonobj.optString("expires"),
+                expires = expires,
                 identifier = jsonobj.getString("identifier"),
                 json_data = jsonobj.toString(),
                 linked_giftcard_id = jsonobj.optLong("linked_giftcard"),
@@ -90,10 +97,16 @@ class ReusableMediaSyncAdapter(
             }
             .toSet()
 
+        val expires = if (!jsonobj.isNull("expires")) {
+            ISODateTimeFormat.dateTimeParser().parseDateTime(jsonobj.getString("expires")).toDate()
+        } else {
+            null
+        }
+
         db.reusableMediumQueries.updateFromJson(
             active = jsonobj.getBoolean("active"),
             customer_id = jsonobj.optLong("customer"),
-            expires = jsonobj.optString("expires"),
+            expires = expires,
             identifier = jsonobj.getString("identifier"),
             json_data = jsonobj.toString(),
             linked_giftcard_id = jsonobj.optLong("linked_giftcard"),
