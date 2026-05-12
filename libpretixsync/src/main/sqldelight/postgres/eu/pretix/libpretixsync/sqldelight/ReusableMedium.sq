@@ -4,7 +4,7 @@ CREATE TABLE ReusableMedium (
     id serial AS Long PRIMARY KEY NOT NULL,
     active boolean NOT NULL,
     customer_id bigint,
-    expires character varying(255),
+    expires DATE AS Date,
     identifier character varying(255),
     json_data text,
     linked_giftcard_id bigint,
