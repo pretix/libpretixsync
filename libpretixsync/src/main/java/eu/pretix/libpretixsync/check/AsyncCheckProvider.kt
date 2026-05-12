@@ -587,6 +587,14 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
                 event_slugs = eventsAndCheckinLists.keys.toList(),
             ).executeAsOneOrNull()?.toModel()
             if (medium != null) {
+                if (!medium.active) {
+                    return TicketCheckProvider.CheckResult(
+                        TicketCheckProvider.CheckResult.Type.INVALID,
+                        "Medium not active",
+                        offline = true
+                    )
+                }
+
                 // there may be multiple tickets / orderpositions linked to this medium
                 // e.g. a medium linked to tickets in multiple, different events or
                 // a medium that's linked to two tickets, one currently valid and one expired or in the future.
