@@ -34,6 +34,9 @@ class AsyncCheckProviderReusableMediumTest : BaseDatabaseTest() {
         CheckInListSyncAdapter(db, FakeFileStorage(), "event1", fakeApi!!, "", null, 0).standaloneRefreshFromJSON(
             jsonResource("checkinlists/rmevent1-list1.json")
         )
+        CheckInListSyncAdapter(db, FakeFileStorage(), "event2", fakeApi!!, "", null, 0).standaloneRefreshFromJSON(
+            jsonResource("checkinlists/rmevent2-list1.json")
+        )
 
         val osa = OrderSyncAdapter(db, FakeFileStorage(), "event1", 0, true, false, fakeApi!!, "", null)
         osa.standaloneRefreshFromJSON(jsonResource("orders/rmevent1-order1.json"))
@@ -85,10 +88,18 @@ class AsyncCheckProviderReusableMediumTest : BaseDatabaseTest() {
 
     @Test
     fun testTwoTicketsTimesNonOverlappingDifferentEvents() {
-        val r = p!!.check(mapOf("event1" to 35L), "4444")
-        assertEquals(TicketCheckProvider.CheckResult.Type.INVALID, r.type)
-        // assertEquals("Regular ticket", r.ticket)
-        // assertEquals("W0JKM", r.orderCode)
-        // assertEquals(3L, r.positionId)
+        p!!.setNow(ISODateTimeFormat.dateTime().parseDateTime("2026-01-05T00:00:01.000Z"))
+        var r = p!!.check(mapOf("event1" to 35L), "4444")
+        assertEquals(TicketCheckProvider.CheckResult.Type.INVALID_TIME, r.type)
+
+        r = p!!.check(mapOf("event2" to 36L), "4444")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+
+        p!!.setNow(ISODateTimeFormat.dateTime().parseDateTime("2027-01-05T00:00:01.000Z"))
+        r = p!!.check(mapOf("event1" to 35L), "4444")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+
+        r = p!!.check(mapOf("event2" to 36L), "4444")
+        assertEquals(TicketCheckProvider.CheckResult.Type.INVALID_TIME, r.type)
     }
 }
