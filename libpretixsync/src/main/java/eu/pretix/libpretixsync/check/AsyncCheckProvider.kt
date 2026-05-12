@@ -595,6 +595,14 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
                     )
                 }
 
+                if (medium.expires?.isBefore(javaTimeNow()) == true) {
+                    return TicketCheckProvider.CheckResult(
+                        TicketCheckProvider.CheckResult.Type.CANCELED,
+                        "Medium expired",
+                        offline = true
+                    )
+                }
+
                 // there may be multiple tickets / orderpositions linked to this medium
                 // e.g. a medium linked to tickets in multiple, different events or
                 // a medium that's linked to two tickets, one currently valid and one expired or in the future.
