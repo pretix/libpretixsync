@@ -283,8 +283,8 @@
       "seat": null,
       "canceled": false,
       "tax_code": null,
-      "valid_from": null,
-      "valid_until": null,
+      "valid_from": "2026-01-01T00:00:00Z",
+      "valid_until": "2026-05-01T23:59:59Z",
       "blocked": null,
       "voucher_budget_use": null,
       "plugin_data": {
@@ -325,8 +325,8 @@
       "seat": null,
       "canceled": false,
       "tax_code": null,
-      "valid_from": null,
-      "valid_until": null,
+      "valid_from": "2026-09-01T00:00:00Z",
+      "valid_until": "2026-12-31T23:59:59Z",
       "blocked": null,
       "voucher_budget_use": null,
       "plugin_data": {

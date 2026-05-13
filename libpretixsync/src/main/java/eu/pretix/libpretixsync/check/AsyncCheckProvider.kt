@@ -642,7 +642,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
     )
 
     private fun filterPositions(eventsAndCheckinLists: Map<String, Long>, positions: List<OrderPositionModel>): Pair<List<OrderPositionModel>, List<PositionFilteringError>> {
-        val results = mutableListOf<OrderPositionModel>()
+        var results = mutableListOf<OrderPositionModel>()
         val errors = mutableListOf<PositionFilteringError>()
         positions.forEach { position ->
             val order = db.orderQueries.selectById(position.orderId).executeAsOne().toModel()
@@ -710,15 +710,66 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
                 }
             }
 
-            // server side: 3c.
-            if (resultingPositions.size > 1) {
-                val nowOdt = javaTimeNow()
-                resultingPositions = resultingPositions.filter { op ->
-                    (op.validFrom == null || op.validFrom < nowOdt) && (op.validUntil == null || op.validUntil > nowOdt)
-                }.toMutableSet()
+            results.addAll(resultingPositions)
+        }
+
+        // server side: 3c.
+        if (results.size > 1) {
+            val nowOdt = javaTimeNow()
+            results = results.filter { op ->
+                (op.validFrom == null || op.validFrom < nowOdt) && (op.validUntil == null || op.validUntil > nowOdt)
+            }.toMutableList()
+        }
+
+        // None of the positions is valid today or has the correct product, too bad!
+        // We try to improve  the error message by selecting the product that will "work next" or - if none matches - "worked last".
+        if (results.isEmpty()) {
+            val nowOdt = javaTimeNow()
+            var nearestCandidate: OrderPositionModel? = null
+
+            positions.forEach {
+                if (it.validFrom != null &&
+                    (it.validFrom > nowOdt ||
+                    (nearestCandidate != null && it.validFrom < nearestCandidate.validFrom))) {
+                    nearestCandidate = it
+                }
             }
 
-            results.addAll(resultingPositions)
+            if (nearestCandidate == null) {
+                positions.forEach {
+                    if (it.validUntil != null &&
+                        (it.validUntil < nowOdt ||
+                                (nearestCandidate != null && it.validUntil > nearestCandidate.validUntil))) {
+                        nearestCandidate = it
+                    }
+                }
+            }
+
+            if (nearestCandidate != null) {
+                val order = db.orderQueries.selectById(nearestCandidate.orderId).executeAsOne().toModel()
+
+                val eventSlug = order.eventSlug
+                val event = db.eventQueries.selectBySlug(eventSlug).executeAsOneOrNull()?.toModel()
+                if (event == null) {
+                    return Pair(listOf(), listOf(PositionFilteringError(nearestCandidate, eventSlug, null, TicketCheckProvider.CheckResult.Type.ERROR, "Event not found")))
+                }
+
+                val listId = eventsAndCheckinLists[eventSlug]
+                if (listId == null) {
+                    return Pair(listOf(), listOf(PositionFilteringError(nearestCandidate, eventSlug, null, TicketCheckProvider.CheckResult.Type.ERROR, "No check-in list selected")))
+                }
+
+                val list = db.checkInListQueries.selectByServerIdAndEventSlug(
+                    server_id = listId,
+                    event_slug = eventSlug,
+                ).executeAsOneOrNull()?.toModel()
+
+                if (list == null) {
+                    return Pair(listOf(), listOf(PositionFilteringError(nearestCandidate, eventSlug, null, TicketCheckProvider.CheckResult.Type.ERROR, "Check-in list not found")))
+                }
+
+                return Pair(listOf(), listOf(PositionFilteringError(nearestCandidate, eventSlug, list, TicketCheckProvider.CheckResult.Type.INVALID_TIME)))
+            }
         }
 
         return Pair(results, errors)
@@ -740,18 +791,28 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
         val (positions, err) = filterPositions(eventsAndCheckinLists, tickets)
         if (err.isNotEmpty()) {
             val firstError = err.first()
+            val order = db.orderQueries.selectById(firstError.position.orderId).executeAsOne().toModel()
             val item = db.itemQueries.selectById(firstError.position.itemId).executeAsOne().toModel()
-            if (firstError.error == TicketCheckProvider.CheckResult.Type.PRODUCT && firstError.list != null) {
-                storeFailedCheckin(firstError.eventSlug, firstError.list.serverId, "product", secret, type, position = firstError.position.serverId, item = item.serverId, variation = firstError.position.variationServerId, subevent = firstError.position.subEventServerId, nonce = nonce)
+            if (firstError.list != null) {
+                when (firstError.error) {
+                    TicketCheckProvider.CheckResult.Type.PRODUCT ->
+                        storeFailedCheckin(firstError.eventSlug, firstError.list.serverId, "product", secret, type, position = firstError.position.serverId, item = item.serverId, variation = firstError.position.variationServerId, subevent = firstError.position.subEventServerId, nonce = nonce)
+                    TicketCheckProvider.CheckResult.Type.AMBIGUOUS ->
+                        storeFailedCheckin(firstError.eventSlug, firstError.list.serverId, "ambiguous", secret, type, position = firstError.position.serverId, item = item.serverId, variation = firstError.position.variationServerId, subevent = firstError.position.subEventServerId, nonce = nonce)
+                    TicketCheckProvider.CheckResult.Type.INVALID_TIME ->
+                        storeFailedCheckin(firstError.eventSlug, firstError.list.serverId, "invalid_time", secret, type, position = firstError.position.serverId, item = item.serverId, variation = firstError.position.variationServerId, subevent = firstError.position.subEventServerId, nonce = nonce)
+                    else -> {}
+                }
             }
-            if (firstError.error == TicketCheckProvider.CheckResult.Type.AMBIGUOUS && firstError.list != null) {
-                storeFailedCheckin(firstError.eventSlug, firstError.list.serverId, "ambiguous", secret, type, position = firstError.position.serverId, item = item.serverId, variation = firstError.position.variationServerId, subevent = firstError.position.subEventServerId, nonce = nonce)
-            }
+
             return TicketCheckProvider.CheckResult(
                 firstError.error,
                 firstError.message,
                 offline = true
-            )
+            ).apply {
+                orderCode = order.code
+                positionId = firstError.position.positionId
+            }
         }
         if (positions.isEmpty()) {
             return TicketCheckProvider.CheckResult(
