@@ -4,7 +4,7 @@ import eu.pretix.libpretixsync.config.ConfigStore
 import eu.pretix.libpretixsync.api.PretixApi
 import org.json.JSONObject
 
-class FakeConfigStore : ConfigStore {
+class FakeConfigStore(var organizer_slug: String = "demo", var event_slug: String = "demo") : ConfigStore {
     private var last_download: Long = 0
     private var last_sync: Long = 0
     private var last_cleanup: Long = 0
@@ -70,11 +70,11 @@ class FakeConfigStore : ConfigStore {
     }
 
     override fun getOrganizerSlug(): String {
-        return "demo"
+        return organizer_slug
     }
 
     val eventSlug: String
-        get() = "demo"
+        get() = event_slug
     val subEventId: Long?
         get() = null
 
@@ -136,7 +136,7 @@ class FakeConfigStore : ConfigStore {
     }
 
     override fun getSynchronizedEvents(): List<String> {
-        return listOf("demo")
+        return listOf(event_slug)
     }
 
     override fun getSelectedSubeventForEvent(event: String): Long? {
