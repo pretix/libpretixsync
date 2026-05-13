@@ -50,6 +50,7 @@ class AsyncCheckProviderReusableMediumTest : BaseDatabaseTest() {
         rmsa.standaloneRefreshFromJSON(jsonResource("reusablemedia/mtrmt-medium4.json"))
         rmsa.standaloneRefreshFromJSON(jsonResource("reusablemedia/mtrmt-medium5.json"))
         rmsa.standaloneRefreshFromJSON(jsonResource("reusablemedia/mtrmt-medium6.json"))
+        rmsa.standaloneRefreshFromJSON(jsonResource("reusablemedia/mtrmt-medium7.json"))
     }
 
     @Test
@@ -82,8 +83,17 @@ class AsyncCheckProviderReusableMediumTest : BaseDatabaseTest() {
 
     @Test
     fun testTwoTicketsTimesNonOverlappingSameEvent() {
-        val r = p!!.check(mapOf("event1" to 35L), "3333")
-        assertEquals(TicketCheckProvider.CheckResult.Type.AMBIGUOUS, r.type)
+        p!!.setNow(ISODateTimeFormat.dateTime().parseDateTime("2026-01-01T00:00:01.000Z"))
+        var r = p!!.check(mapOf("event1" to 35L), "3333")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+        assertEquals("W0JKM", r.orderCode)
+        assertEquals(1L, r.positionId)
+
+        p!!.setNow(ISODateTimeFormat.dateTime().parseDateTime("2027-01-01T00:00:01.000Z"))
+        r = p!!.check(mapOf("event1" to 35L), "3333")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+        assertEquals("W0JKM", r.orderCode)
+        assertEquals(3L, r.positionId)
     }
 
     @Test
@@ -101,5 +111,30 @@ class AsyncCheckProviderReusableMediumTest : BaseDatabaseTest() {
 
         r = p!!.check(mapOf("event2" to 36L), "4444")
         assertEquals(TicketCheckProvider.CheckResult.Type.INVALID_TIME, r.type)
+    }
+
+    @Test
+    fun testTwoTicketsTimesNonOverlappingSpaceBetweenSameEvent() {
+        p!!.setNow(ISODateTimeFormat.dateTime().parseDateTime("2026-01-01T00:00:01.000Z"))
+        var r = p!!.check(mapOf("event1" to 35L), "7777")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+        assertEquals("W0JKM-6", r.orderCodeAndPositionId())
+
+        p!!.setNow(ISODateTimeFormat.dateTime().parseDateTime("2026-09-01T00:00:01.000Z"))
+        r = p!!.check(mapOf("event1" to 35L), "7777")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+        assertEquals("W0JKM-7", r.orderCodeAndPositionId())
+
+        // use the candidate that will "work next"
+        p!!.setNow(ISODateTimeFormat.dateTime().parseDateTime("2026-08-01T00:00:01.000Z"))
+        r = p!!.check(mapOf("event1" to 35L), "7777")
+        assertEquals(TicketCheckProvider.CheckResult.Type.INVALID_TIME, r.type)
+        assertEquals("W0JKM-7", r.orderCodeAndPositionId())
+
+        // no candidate in the future, use closest from the past
+        p!!.setNow(ISODateTimeFormat.dateTime().parseDateTime("2027-01-01T00:00:01.000Z"))
+        r = p!!.check(mapOf("event1" to 35L), "7777")
+        assertEquals(TicketCheckProvider.CheckResult.Type.INVALID_TIME, r.type)
+        assertEquals("W0JKM-7", r.orderCodeAndPositionId())
     }
 }
