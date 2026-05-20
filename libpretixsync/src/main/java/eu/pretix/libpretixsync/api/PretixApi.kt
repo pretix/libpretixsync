@@ -129,6 +129,7 @@ open class PretixApi(url: String, key: String, orgaSlug: String, version: Int, h
         body.put("answers", answerbody)
         body.put("questions_supported", questions_supported)
         body.put("canceled_supported", true)
+        body.put("media_exchange_supported", true)
         body.put("secret", secret)
         val jlists = JSONArray()
         for (l in lists) {
