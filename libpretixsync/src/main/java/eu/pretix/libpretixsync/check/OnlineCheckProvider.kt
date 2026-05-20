@@ -163,6 +163,8 @@ class OnlineCheckProvider(
                         res.isCheckinAllowed = includePending && response.has("position") && response.getJSONObject("position").optString("order__status", "n") == "n"
                     } else if ("product" == reason) {
                         res.type = TicketCheckProvider.CheckResult.Type.PRODUCT
+                    } else if ("already_exchanged" == reason) {
+                        res.type = TicketCheckProvider.CheckResult.Type.ALREADY_EXCHANGED
                     } else {
                         res.type = TicketCheckProvider.CheckResult.Type.ERROR
                     }

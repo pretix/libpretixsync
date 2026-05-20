@@ -22,6 +22,12 @@ WHERE ReusableMedium.identifier = :identifier
 AND ReusableMedium.type = :type
 AND orders.event_slug IN :event_slugs;
 
+selectByLinkedOrderPosition:
+SELECT ReusableMedium.*
+FROM ReusableMedium
+LEFT JOIN ReusableMedium_OrderPosition ON ReusableMedium_OrderPosition.OrderPositionId = ReusableMedium.id
+WHERE OrderPositionId = :order_position_id;
+
 deleteByServerId:
 DELETE FROM ReusableMedium
 WHERE server_id = ?;

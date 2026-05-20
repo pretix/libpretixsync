@@ -781,6 +781,15 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
             return res
         }
 
+        val linkedReusableMedium = db.reusableMediumQueries.selectByLinkedOrderPosition(position.positionId)
+            .executeAsOneOrNull()?.toModel()
+        if (linkedReusableMedium != null) {
+            res.type = TicketCheckProvider.CheckResult.Type.ALREADY_EXCHANGED
+            res.isCheckinAllowed = false
+            storeFailedCheckin(eventSlug, list.serverId, "already_exchanged", position.secret!!, type, position = position.serverId, item = positionItem.serverId, variation = position.variationServerId, subevent = position.subEventServerId, nonce = nonce)
+            return res
+        }
+
         // !!! When extending this, also extend checkOfflineWithoutData !!!
 
         val rules = list.rules
