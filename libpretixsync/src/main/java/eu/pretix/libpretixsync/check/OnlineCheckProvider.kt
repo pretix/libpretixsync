@@ -8,7 +8,9 @@ import eu.pretix.libpretixsync.api.PretixApi
 import eu.pretix.libpretixsync.api.TimeoutApiException
 import eu.pretix.libpretixsync.config.ConfigStore
 import eu.pretix.libpretixsync.db.Answer
+import eu.pretix.libpretixsync.db.MediaPolicy
 import eu.pretix.libpretixsync.db.NonceGenerator
+import eu.pretix.libpretixsync.db.ReusableMediaType
 import eu.pretix.libpretixsync.models.db.toModel
 import eu.pretix.libpretixsync.sqldelight.Question
 import eu.pretix.libpretixsync.sqldelight.SyncDatabase
@@ -124,6 +126,16 @@ class OnlineCheckProvider(
                         required_answers.add(TicketCheckProvider.QuestionAnswer(question, q.toString(), ""))
                     }
                     res.requiredAnswers = required_answers
+                } else if ("exchange" == status){
+                    res.type = TicketCheckProvider.CheckResult.Type.EXCHANGE_REQUIRED
+                    try {
+                        res.requiredMediaPolicy =
+                            MediaPolicy.valueOf(response.optString("media_policy"))
+                        res.requiredMediaType =
+                            ReusableMediaType.valueOf(response.optString("media_type"))
+                    } catch (_: IllegalArgumentException) {
+                        // silently fall back to null
+                    }
                 } else {
                     val reason = response.optString("reason")
                     if ("already_redeemed" == reason) {

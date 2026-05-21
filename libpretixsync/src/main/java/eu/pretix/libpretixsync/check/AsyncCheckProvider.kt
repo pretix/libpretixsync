@@ -970,6 +970,8 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
             return res
         }
 
+        // FIXME: support media exchange, throw EXCHANGE_REQUIRED
+
         // !!! When extending this, also extend checkOfflineWithoutData !!!
 
         val rules = list.rules
