@@ -2,6 +2,8 @@ package eu.pretix.libpretixsync.check
 
 import eu.pretix.libpretixsync.SentryInterface
 import eu.pretix.libpretixsync.db.Answer
+import eu.pretix.libpretixsync.db.MediaPolicy
+import eu.pretix.libpretixsync.db.ReusableMediaType
 import eu.pretix.libpretixsync.models.db.toModel
 import eu.pretix.libpretixsync.sqldelight.Question
 import eu.pretix.libpretixsync.models.Question as QuestionModel
@@ -57,7 +59,7 @@ interface TicketCheckProvider {
     class CheckResult {
         enum class Type {
             INVALID, VALID, USED, ERROR, UNPAID, BLOCKED, INVALID_TIME, CANCELED, PRODUCT, RULES,
-            ANSWERS_REQUIRED, AMBIGUOUS, REVOKED, UNAPPROVED, ALREADY_EXCHANGED
+            ANSWERS_REQUIRED, AMBIGUOUS, REVOKED, UNAPPROVED, ALREADY_EXCHANGED, EXCHANGE_REQUIRED
         }
 
         var type: Type? = null
@@ -80,6 +82,8 @@ interface TicketCheckProvider {
         var position: JSONObject? = null
         var eventSlug: String? = null
         var offline: Boolean = false
+        var requiredMediaPolicy: MediaPolicy? = null
+        var requiredMediaType: ReusableMediaType? = null
 
         constructor(type: Type?, message: String?, offline: Boolean = false) {
             this.type = type
