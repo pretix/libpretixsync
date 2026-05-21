@@ -208,9 +208,9 @@ private fun parseHasFreePrice(json: JSONObject): Boolean {
 private fun parseMediaPolicy(json: JSONObject): MediaPolicy {
     return try {
         val mp: String = json.optString("media_policy") ?: return MediaPolicy.NONE
-        if (mp == "reuse") return MediaPolicy.REUSE
-        if (mp == "new") return MediaPolicy.NEW
-        if (mp == "reuse_or_new") MediaPolicy.REUSE_OR_NEW else MediaPolicy.NONE
+        MediaPolicy.valueOf(mp)
+    } catch (_: IllegalArgumentException) {
+        MediaPolicy.NONE
     } catch (e: JSONException) {
         e.printStackTrace()
         MediaPolicy.NONE
