@@ -130,9 +130,9 @@ class OnlineCheckProvider(
                     res.type = TicketCheckProvider.CheckResult.Type.EXCHANGE_REQUIRED
                     try {
                         res.requiredMediaPolicy =
-                            MediaPolicy.valueOf(response.optString("media_policy"))
+                            MediaPolicy.getByServerName(response.optString("media_policy"))
                         res.requiredMediaType =
-                            ReusableMediaType.valueOf(response.optString("media_type"))
+                            ReusableMediaType.getByServerName(response.optString("media_type"))
                     } catch (_: IllegalArgumentException) {
                         // silently fall back to null
                     }
