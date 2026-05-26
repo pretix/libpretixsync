@@ -1,6 +1,6 @@
-package eu.pretix.libpretixsync.db;
+package eu.pretix.libpretixsync.db
 
-public enum ReusableMediaType {
+enum class ReusableMediaType(val serverName: String?) {
     NONE(null),
     BARCODE("barcode"),
     NFC_UID("nfc_uid"),
@@ -8,13 +8,12 @@ public enum ReusableMediaType {
     NFC_MF0AES("nfc_mf0aes"),
     UNSUPPORTED(null);
 
-    public final String serverName;
-
-    private ReusableMediaType(String serverName) {
-        this.serverName = serverName;
+    fun isNfcBased(): Boolean {
+        return this.serverName?.startsWith("nfc_") ?: false;
     }
 
-    public boolean isNfcBased() {
-        return this.serverName.startsWith("nfc_");
+    companion object {
+        private val map = ReusableMediaType.entries.associateBy(ReusableMediaType::serverName)
+        fun getByServerName(serverName: String?) = map[serverName]
     }
 }
