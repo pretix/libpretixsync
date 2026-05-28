@@ -8,8 +8,10 @@ import eu.pretix.libpretixsync.crypto.isValidSignature
 import eu.pretix.libpretixsync.crypto.readPubkeyFromPem
 import eu.pretix.libpretixsync.crypto.sig1.TicketProtos
 import eu.pretix.libpretixsync.db.Answer
+import eu.pretix.libpretixsync.db.MediaPolicy
 import eu.pretix.libpretixsync.db.NonceGenerator
 import eu.pretix.libpretixsync.db.QuestionLike
+import eu.pretix.libpretixsync.db.ReusableMediaType
 import eu.pretix.libpretixsync.models.CheckIn
 import eu.pretix.libpretixsync.models.CheckInList
 import eu.pretix.libpretixsync.models.Event
@@ -961,16 +963,25 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
             return res
         }
 
+        val settings = db.settingsQueries.selectBySlug(eventSlug).executeAsOneOrNull()?.toModel()
+        val reusableMediaUsageEnforced = (settings?.json?.optBoolean("reusable_media_usage_enforced", false) == true)
+
         val linkedReusableMedium = db.reusableMediumQueries.selectByLinkedOrderPosition(position.positionId)
             .executeAsOneOrNull()?.toModel()
-        if (linkedReusableMedium != null) {
-            res.type = TicketCheckProvider.CheckResult.Type.ALREADY_EXCHANGED
-            res.isCheckinAllowed = false
-            storeFailedCheckin(eventSlug, list.serverId, "already_exchanged", position.secret!!, type, position = position.serverId, item = positionItem.serverId, variation = position.variationServerId, subevent = position.subEventServerId, nonce = nonce)
-            return res
-        }
 
-        // FIXME: support media exchange, throw EXCHANGE_REQUIRED
+        if (positionItem.mediaPolicy != MediaPolicy.NONE && positionItem.mediaType != ReusableMediaType.NONE) {
+            if (linkedReusableMedium == null) {
+                res.type = TicketCheckProvider.CheckResult.Type.EXCHANGE_REQUIRED
+                res.isCheckinAllowed = false
+                storeFailedCheckin(eventSlug, list.serverId, "exchange", position.secret!!, type, position = position.serverId, item = positionItem.serverId, variation = position.variationServerId, subevent = position.subEventServerId, nonce = nonce)
+                return res
+            } else if (reusableMediaUsageEnforced) {
+                res.type = TicketCheckProvider.CheckResult.Type.ALREADY_EXCHANGED
+                res.isCheckinAllowed = false
+                storeFailedCheckin(eventSlug, list.serverId, "already_exchanged", position.secret!!, type, position = position.serverId, item = positionItem.serverId, variation = position.variationServerId, subevent = position.subEventServerId, nonce = nonce)
+                return res
+            }
+        }
 
         // !!! When extending this, also extend checkOfflineWithoutData !!!
 
