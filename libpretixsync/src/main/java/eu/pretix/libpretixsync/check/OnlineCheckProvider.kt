@@ -49,7 +49,10 @@ class OnlineCheckProvider(
         with_badge_data: Boolean,
         type: TicketCheckProvider.CheckInType,
         nonce: String?,
-        allowQuestions: Boolean
+        allowQuestions: Boolean,
+        media_type: String?,
+        media_identifier: String?,
+        media_action: String?,
     ): TicketCheckProvider.CheckResult {
         val ticketid_cleaned = cleanInput(ticketid, source_type)
         val nonce_cleaned = nonce ?: NonceGenerator.nextNonce()
@@ -72,6 +75,9 @@ class OnlineCheckProvider(
                     source_type,
                     callTimeout = if (fallback != null) fallbackTimeout.toLong() else null,
                     questions_supported = allowQuestions,
+                    media_type = media_type,
+                    media_identifier = media_identifier,
+                    media_action = media_action,
                 )
             } else {
                 if (eventsAndCheckinLists.size != 1) throw CheckException("Multi-event scan not supported by server.")

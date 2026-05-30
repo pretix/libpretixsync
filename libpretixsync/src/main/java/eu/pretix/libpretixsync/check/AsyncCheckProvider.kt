@@ -284,7 +284,14 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
         return RSAResult(givenAnswers, requiredAnswers, shownAnswers, askQuestions)
     }
 
-    private fun checkOfflineWithoutData(eventsAndCheckinLists: Map<String, Long>, ticketid: String, type: TicketCheckProvider.CheckInType, answers: List<Answer>?, nonce: String?, allowQuestions: Boolean): TicketCheckProvider.CheckResult {
+    private fun checkOfflineWithoutData(
+        eventsAndCheckinLists: Map<String, Long>,
+        ticketid: String,
+        type: TicketCheckProvider.CheckInType,
+        answers: List<Answer>?,
+        nonce: String?,
+        allowQuestions: Boolean
+    ): TicketCheckProvider.CheckResult {
         val dt = now()
         val events = db.eventQueries.selectBySlugList(eventsAndCheckinLists.keys.toList())
             .executeAsList()
@@ -549,10 +556,15 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
         type: TicketCheckProvider.CheckInType,
         nonce: String?,
         allowQuestions: Boolean,
+        media_type: String?,
+        media_identifier: String?,
+        media_action: String?,
     ): TicketCheckProvider.CheckResult {
         val ticketid_cleaned = cleanInput(ticketid, source_type)
 
         sentry.addBreadcrumb("provider.check", "offline check started")
+
+        // FIXME: we don't do offline reusable media exchange, error out if set
 
         val tickets = db.orderPositionQueries.selectBySecretAndEventSlugs(
             secret = ticketid_cleaned,
