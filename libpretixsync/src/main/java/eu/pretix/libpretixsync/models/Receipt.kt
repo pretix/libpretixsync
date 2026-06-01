@@ -32,6 +32,7 @@ data class Receipt(
     enum class PaymentType(val value: String) {
         CASH("cash"),
         SUMUP("sumup"),
+        SUMUP_CLOUD("sumup_cloud"),
         IZETTLE("izettle"),
         IZETTLE_QRC("izettle_qrc"),
         STRIPE_TERMINAL("stripe_terminal"),
