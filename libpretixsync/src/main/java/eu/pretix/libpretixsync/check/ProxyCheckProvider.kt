@@ -89,8 +89,8 @@ class ProxyCheckProvider(private val config: ConfigStore, httpClientFactory: Htt
         } else if (response.code >= 400) {
             response.close()
             try {
-                throw CheckException(JSONObject("body").optString("title", "?"))
-            } catch (e: JSONException) {
+                throw CheckException(JSONObject(body).optString("title", "?"))
+            } catch (_: JSONException) {
                 throw ApiException(body)
             }
         } else if (response.code >= 405) {
