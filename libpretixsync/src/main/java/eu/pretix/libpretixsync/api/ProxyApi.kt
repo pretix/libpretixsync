@@ -26,9 +26,9 @@ data class MultiCheckInput(
     // TODO: Check unused values
     val allowQuestions: Boolean,
     val nonce: String?,
-    val media_type: String?,
-    val media_identifier: String?,
-    val media_action: String?,
+    val exchange_medium_type: String?,
+    val exchange_medium_identifier: String?,
+    val exchange_link_action: String?,
 )
 
 data class CheckInput(

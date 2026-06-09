@@ -556,9 +556,9 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
         type: TicketCheckProvider.CheckInType,
         nonce: String?,
         allowQuestions: Boolean,
-        media_type: String?,
-        media_identifier: String?,
-        media_action: String?,
+        exchange_medium_type: String?,
+        exchange_medium_identifier: String?,
+        exchange_link_action: String?,
     ): TicketCheckProvider.CheckResult {
         val ticketid_cleaned = cleanInput(ticketid, source_type)
 

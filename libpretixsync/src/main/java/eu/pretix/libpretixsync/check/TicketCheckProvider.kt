@@ -171,9 +171,9 @@ interface TicketCheckProvider {
         type: CheckInType,
         nonce: String? = null,
         allowQuestions: Boolean = true,
-        media_type: String? = null,
-        media_identifier: String? = null,
-        media_action: String? = null,
+        exchange_medium_type: String? = null,
+        exchange_medium_identifier: String? = null,
+        exchange_link_action: String? = null,
     ): CheckResult
 
     fun check(eventsAndCheckinLists: Map<String, Long>, ticketid: String): CheckResult
