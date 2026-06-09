@@ -6,7 +6,7 @@ enum class ReusableMediaType(val serverName: String?) {
     NFC_UID("nfc_uid"),
 
     NFC_MF0AES("nfc_mf0aes"),
-    UNSUPPORTED(null);
+    UNSUPPORTED("unsupported");
 
     fun isNfcBased(): Boolean {
         return this.serverName?.startsWith("nfc_") ?: false;
