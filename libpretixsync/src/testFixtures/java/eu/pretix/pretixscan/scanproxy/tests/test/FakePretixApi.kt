@@ -45,7 +45,6 @@ class FakePretixApi : PretixApi("http://1.1.1.1/", "a", "demo", 1, DefaultHttpCl
         questions_supported: Boolean,
         exchange_medium_type: String?,
         exchange_medium_identifier: String?,
-        exchange_link_action: String?,
     ): ApiResponse {
         redeemRequestSecret = secret
         redeemRequestDatetime = datetime

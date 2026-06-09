@@ -555,7 +555,6 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
         allowQuestions: Boolean,
         exchange_medium_type: String?,
         exchange_medium_identifier: String?,
-        exchange_link_action: String?,
     ): TicketCheckProvider.CheckResult {
         val ticketid_cleaned = cleanInput(ticketid, source_type)
 
@@ -807,11 +806,12 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
         val settings = db.settingsQueries.selectBySlug(eventSlug).executeAsOneOrNull()?.toModel()
         val reusableMediaUsageEnforced = (settings?.json?.optBoolean("reusable_media_usage_enforced", false) == true)
 
-        val linkedReusableMedium = db.reusableMediumQueries.selectByLinkedOrderPosition(position.positionId)
-            .executeAsOneOrNull()?.toModel()
+        val hasLinkedReusableMedium =
+            db.reusableMediumQueries.selectByLinkedOrderPosition(position.positionId)
+                .executeAsList().isNotEmpty()
 
         if (positionItem.mediaPolicy != MediaPolicy.NONE && positionItem.mediaType != ReusableMediaType.NONE) {
-            if (linkedReusableMedium == null) {
+            if (!hasLinkedReusableMedium) {
                 res.type = TicketCheckProvider.CheckResult.Type.EXCHANGE_REQUIRED
                 res.isCheckinAllowed = false
                 storeFailedCheckin(eventSlug, list.serverId, "exchange", position.secret!!, type, position = position.serverId, item = positionItem.serverId, variation = position.variationServerId, subevent = position.subEventServerId, nonce = nonce)

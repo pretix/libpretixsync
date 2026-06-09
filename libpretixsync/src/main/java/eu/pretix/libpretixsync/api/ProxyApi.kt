@@ -28,7 +28,6 @@ data class MultiCheckInput(
     val nonce: String?,
     val exchange_medium_type: String?,
     val exchange_medium_identifier: String?,
-    val exchange_link_action: String?,
 )
 
 data class CheckInput(
