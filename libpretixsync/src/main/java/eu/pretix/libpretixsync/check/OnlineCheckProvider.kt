@@ -52,7 +52,6 @@ class OnlineCheckProvider(
         allowQuestions: Boolean,
         exchange_medium_type: String?,
         exchange_medium_identifier: String?,
-        exchange_link_action: String?,
     ): TicketCheckProvider.CheckResult {
         val ticketid_cleaned = cleanInput(ticketid, source_type)
         val nonce_cleaned = nonce ?: NonceGenerator.nextNonce()
@@ -77,7 +76,6 @@ class OnlineCheckProvider(
                     questions_supported = allowQuestions,
                     exchange_medium_type = exchange_medium_type,
                     exchange_medium_identifier = exchange_medium_identifier,
-                    exchange_link_action = exchange_link_action,
                 )
             } else {
                 if (eventsAndCheckinLists.size != 1) throw CheckException("Multi-event scan not supported by server.")
