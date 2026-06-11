@@ -560,7 +560,13 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
 
         sentry.addBreadcrumb("provider.check", "offline check started")
 
-        // FIXME: we don't do offline reusable media exchange, error out if set
+        if (exchange_medium_type != null || exchange_medium_identifier != null) {
+            return TicketCheckProvider.CheckResult(
+                TicketCheckProvider.CheckResult.Type.ERROR,
+                "Media exchange is not supported in offline mode",
+                offline = true
+            )
+        }
 
         val tickets = db.orderPositionQueries.selectBySecretAndEventSlugs(
             secret = ticketid_cleaned,
@@ -812,8 +818,9 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
 
         if (positionItem.mediaPolicy != MediaPolicy.NONE && positionItem.mediaType != ReusableMediaType.NONE) {
             if (!hasLinkedReusableMedium) {
-                res.type = TicketCheckProvider.CheckResult.Type.EXCHANGE_REQUIRED
+                res.type = TicketCheckProvider.CheckResult.Type.ERROR // EXCHANGE_REQUIRED, but not in offline mode
                 res.isCheckinAllowed = false
+                res.reasonExplanation = "This ticket needs to be exchanged, but this isn't possible while offline"
                 storeFailedCheckin(eventSlug, list.serverId, "exchange", position.secret!!, type, position = position.serverId, item = positionItem.serverId, variation = position.variationServerId, subevent = position.subEventServerId, nonce = nonce)
                 return res
             } else if (reusableMediaUsageEnforced) {
