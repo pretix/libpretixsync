@@ -25,7 +25,7 @@ AND orders.event_slug IN :event_slugs;
 selectByLinkedOrderPosition:
 SELECT ReusableMedium.*
 FROM ReusableMedium
-LEFT JOIN ReusableMedium_OrderPosition ON ReusableMedium_OrderPosition.OrderPositionId = ReusableMedium.id
+LEFT JOIN ReusableMedium_OrderPosition ON ReusableMedium_OrderPosition.ReusableMediumId = ReusableMedium.id
 WHERE OrderPositionId = :order_position_id;
 
 deleteByServerId:

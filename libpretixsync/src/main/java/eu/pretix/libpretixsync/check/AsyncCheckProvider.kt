@@ -984,7 +984,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
         val reusableMediaUsageEnforced = (settings?.json?.optBoolean("reusable_media_usage_enforced", false) == true)
 
         val hasLinkedReusableMedium =
-            db.reusableMediumQueries.selectByLinkedOrderPosition(position.positionId)
+            db.reusableMediumQueries.selectByLinkedOrderPosition(position.id)
                 .executeAsList().isNotEmpty()
 
         if (positionItem.mediaPolicy != MediaPolicy.NONE && positionItem.mediaType != ReusableMediaType.NONE) {
