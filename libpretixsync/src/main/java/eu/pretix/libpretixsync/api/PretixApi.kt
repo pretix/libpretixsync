@@ -194,25 +194,6 @@ open class PretixApi(url: String, key: String, orgaSlug: String, version: Int, h
         }
     }
 
-    open fun loadMedium(type: String, identifier: String): ApiResponse {
-        val payload = JSONObject()
-        payload.put("type", type)
-        payload.put("identifier", identifier)
-        return postResource(
-            organizerResourceUrl("reusablemedia") + "lookup/?expand=linked_orderposition&expand=linked_orderpositions&expand=linked_giftcard&expand=linked_giftcard.owner_ticket",
-            payload
-        )
-    }
-
-    open fun linkMedium(reusableMediumId: Long, orderPositionId: Long): ApiResponse {
-        val payload = JSONObject()
-        payload.put("linked_orderposition", orderPositionId)
-        return patchResource(
-            organizerResourceUrl("reusablemedia/${reusableMediumId}"),
-            payload
-        )
-    }
-
     fun apiURL(suffix: String): String {
         return try {
             URL(URL(url), "/api/v1/$suffix").toString()
