@@ -606,7 +606,10 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
                 event_slugs = eventsAndCheckinLists.keys.toList(),
             ).executeAsOneOrNull()?.toModel()
             if (medium != null) {
+                val firstentry = eventsAndCheckinLists.entries.first()
                 if (!medium.active) {
+                    // FIXME: note that this was an medium source
+                    storeFailedCheckin(firstentry.key, firstentry.value, "invalid", ticketid, type, nonce = nonce)
                     return TicketCheckProvider.CheckResult(
                         TicketCheckProvider.CheckResult.Type.INVALID,
                         "Medium not active",
@@ -615,8 +618,10 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
                 }
 
                 if (medium.expires?.isBefore(javaTimeNow()) == true) {
+                    // FIXME: note that this was an medium source
+                    storeFailedCheckin(firstentry.key, firstentry.value, "invalid", ticketid, type, nonce = nonce)
                     return TicketCheckProvider.CheckResult(
-                        TicketCheckProvider.CheckResult.Type.CANCELED,
+                        TicketCheckProvider.CheckResult.Type.INVALID,
                         "Medium expired",
                         offline = true
                     )
@@ -991,7 +996,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
 
         if (positionItem.mediaPolicy != MediaPolicy.NONE && positionItem.mediaType != ReusableMediaType.NONE && !mediumUsed) {
             if (!hasLinkedReusableMedium) {
-                res.type = TicketCheckProvider.CheckResult.Type.ERROR // EXCHANGE_REQUIRED, but not in offline mode
+                res.type = TicketCheckProvider.CheckResult.Type.EXCHANGE_REQUIRED_OFFLINE
                 res.isCheckinAllowed = false
                 res.reasonExplanation = "This ticket needs to be exchanged, but this isn't possible while offline"
                 storeFailedCheckin(eventSlug, list.serverId, "exchange", position.secret!!, type, position = position.serverId, item = positionItem.serverId, variation = position.variationServerId, subevent = position.subEventServerId, nonce = nonce)
