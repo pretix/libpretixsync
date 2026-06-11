@@ -577,7 +577,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
         ).executeAsList().map { it.toModel() }
 
         if (tickets.size == 1) {
-            return checkOfflineWithData(eventsAndCheckinLists, ticketid_cleaned, tickets, answers, ignore_unpaid, type, nonce = nonce, allowQuestions = allowQuestions)
+            return checkOfflineWithData(eventsAndCheckinLists, ticketid_cleaned, tickets, answers, ignore_unpaid, type, nonce = nonce, allowQuestions = allowQuestions, mediumUsed = false)
         } else if (tickets.size > 1) {
             val eventSlug = db.orderQueries.selectById(tickets[0].orderId).executeAsOne().event_slug!!
             val itemServerId = db.itemQueries.selectById(tickets[0].itemId).executeAsOne().server_id
@@ -638,6 +638,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
                     type,
                     nonce,
                     allowQuestions,
+                    mediumUsed = true
                 )
             }
 
@@ -802,7 +803,8 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
         ignore_unpaid: Boolean,
         type: TicketCheckProvider.CheckInType,
         nonce: String?,
-        allowQuestions: Boolean
+        allowQuestions: Boolean,
+        mediumUsed: Boolean
     ): TicketCheckProvider.CheckResult {
         // !!! When extending this, also extend checkOfflineWithoutData !!!
         val dt = now()
@@ -987,7 +989,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
             db.reusableMediumQueries.selectByLinkedOrderPosition(position.id)
                 .executeAsList().isNotEmpty()
 
-        if (positionItem.mediaPolicy != MediaPolicy.NONE && positionItem.mediaType != ReusableMediaType.NONE) {
+        if (positionItem.mediaPolicy != MediaPolicy.NONE && positionItem.mediaType != ReusableMediaType.NONE && !mediumUsed) {
             if (!hasLinkedReusableMedium) {
                 res.type = TicketCheckProvider.CheckResult.Type.ERROR // EXCHANGE_REQUIRED, but not in offline mode
                 res.isCheckinAllowed = false
