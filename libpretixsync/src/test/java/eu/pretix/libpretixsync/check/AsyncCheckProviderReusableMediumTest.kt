@@ -63,7 +63,7 @@ class AsyncCheckProviderReusableMediumTest : BaseDatabaseTest() {
     fun testMediumExpired() {
         p!!.setNow(ISODateTimeFormat.dateTime().parseDateTime("2026-01-01T00:00:01.000Z"))
         val r = p!!.check(mapOf("event1" to 35L), "6666")
-        assertEquals(TicketCheckProvider.CheckResult.Type.CANCELED, r.type)
+        assertEquals(TicketCheckProvider.CheckResult.Type.INVALID, r.type)
     }
 
     @Test
