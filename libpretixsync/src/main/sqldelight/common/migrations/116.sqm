@@ -1,0 +1,1 @@
+UPDATE ReusableMedium SET expires = NULL WHERE expires = 'null';

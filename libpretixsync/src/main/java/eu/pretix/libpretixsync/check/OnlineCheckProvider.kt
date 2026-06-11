@@ -8,7 +8,9 @@ import eu.pretix.libpretixsync.api.PretixApi
 import eu.pretix.libpretixsync.api.TimeoutApiException
 import eu.pretix.libpretixsync.config.ConfigStore
 import eu.pretix.libpretixsync.db.Answer
+import eu.pretix.libpretixsync.db.MediaPolicy
 import eu.pretix.libpretixsync.db.NonceGenerator
+import eu.pretix.libpretixsync.db.ReusableMediaType
 import eu.pretix.libpretixsync.models.db.toModel
 import eu.pretix.libpretixsync.sqldelight.Question
 import eu.pretix.libpretixsync.sqldelight.SyncDatabase
@@ -47,7 +49,9 @@ class OnlineCheckProvider(
         with_badge_data: Boolean,
         type: TicketCheckProvider.CheckInType,
         nonce: String?,
-        allowQuestions: Boolean
+        allowQuestions: Boolean,
+        exchange_medium_type: String?,
+        exchange_medium_identifier: String?,
     ): TicketCheckProvider.CheckResult {
         val ticketid_cleaned = cleanInput(ticketid, source_type)
         val nonce_cleaned = nonce ?: NonceGenerator.nextNonce()
@@ -70,6 +74,8 @@ class OnlineCheckProvider(
                     source_type,
                     callTimeout = if (fallback != null) fallbackTimeout.toLong() else null,
                     questions_supported = allowQuestions,
+                    exchange_medium_type = exchange_medium_type,
+                    exchange_medium_identifier = exchange_medium_identifier,
                 )
             } else {
                 if (eventsAndCheckinLists.size != 1) throw CheckException("Multi-event scan not supported by server.")
@@ -124,6 +130,16 @@ class OnlineCheckProvider(
                         required_answers.add(TicketCheckProvider.QuestionAnswer(question, q.toString(), ""))
                     }
                     res.requiredAnswers = required_answers
+                } else if ("exchange" == status){
+                    res.type = TicketCheckProvider.CheckResult.Type.EXCHANGE_REQUIRED
+                    try {
+                        res.requiredMediaPolicy =
+                            MediaPolicy.getByServerName(response.optString("media_policy"))
+                        res.requiredMediaType =
+                            ReusableMediaType.getByServerName(response.optString("media_type"))
+                    } catch (_: IllegalArgumentException) {
+                        // silently fall back to null
+                    }
                 } else {
                     val reason = response.optString("reason")
                     if ("already_redeemed" == reason) {
@@ -163,6 +179,8 @@ class OnlineCheckProvider(
                         res.isCheckinAllowed = includePending && response.has("position") && response.getJSONObject("position").optString("order__status", "n") == "n"
                     } else if ("product" == reason) {
                         res.type = TicketCheckProvider.CheckResult.Type.PRODUCT
+                    } else if ("already_exchanged" == reason) {
+                        res.type = TicketCheckProvider.CheckResult.Type.ALREADY_EXCHANGED
                     } else {
                         res.type = TicketCheckProvider.CheckResult.Type.ERROR
                     }

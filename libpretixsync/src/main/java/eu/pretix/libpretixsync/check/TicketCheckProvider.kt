@@ -2,6 +2,8 @@ package eu.pretix.libpretixsync.check
 
 import eu.pretix.libpretixsync.SentryInterface
 import eu.pretix.libpretixsync.db.Answer
+import eu.pretix.libpretixsync.db.MediaPolicy
+import eu.pretix.libpretixsync.db.ReusableMediaType
 import eu.pretix.libpretixsync.models.db.toModel
 import eu.pretix.libpretixsync.sqldelight.Question
 import eu.pretix.libpretixsync.models.Question as QuestionModel
@@ -57,7 +59,8 @@ interface TicketCheckProvider {
     class CheckResult {
         enum class Type {
             INVALID, VALID, USED, ERROR, UNPAID, BLOCKED, INVALID_TIME, CANCELED, PRODUCT, RULES,
-            ANSWERS_REQUIRED, AMBIGUOUS, REVOKED, UNAPPROVED
+            ANSWERS_REQUIRED, AMBIGUOUS, REVOKED, UNAPPROVED, ALREADY_EXCHANGED, MEDIUM_INVALID,
+            MEDIUM_EXISTS, EXCHANGE_REQUIRED, EXCHANGE_REQUIRED_OFFLINE
         }
 
         var type: Type? = null
@@ -80,6 +83,8 @@ interface TicketCheckProvider {
         var position: JSONObject? = null
         var eventSlug: String? = null
         var offline: Boolean = false
+        var requiredMediaPolicy: MediaPolicy? = null
+        var requiredMediaType: ReusableMediaType? = null
 
         constructor(type: Type?, message: String?, offline: Boolean = false) {
             this.type = type
@@ -157,7 +162,20 @@ interface TicketCheckProvider {
     class StatusResult(var eventName: String?, var totalTickets: Int, var alreadyScanned: Int, var currentlyInside: Int?, var items: List<StatusResultItem>?) {
     }
 
-    fun check(eventsAndCheckinLists: Map<String, Long>, ticketid: String, source_type: String, answers: List<Answer>?, ignore_unpaid: Boolean, with_badge_data: Boolean, type: CheckInType, nonce: String? = null, allowQuestions: Boolean = true): CheckResult
+    fun check(
+        eventsAndCheckinLists: Map<String, Long>,
+        ticketid: String,
+        source_type: String,
+        answers: List<Answer>?,
+        ignore_unpaid: Boolean,
+        with_badge_data: Boolean,
+        type: CheckInType,
+        nonce: String? = null,
+        allowQuestions: Boolean = true,
+        exchange_medium_type: String? = null,
+        exchange_medium_identifier: String? = null,
+    ): CheckResult
+
     fun check(eventsAndCheckinLists: Map<String, Long>, ticketid: String): CheckResult
     @Throws(CheckException::class)
     fun search(eventsAndCheckinLists: Map<String, Long>, query: String, page: Int): List<SearchResult>

@@ -99,7 +99,22 @@ open class PretixApi(url: String, key: String, orgaSlug: String, version: Int, h
     }
 
     @Throws(ApiException::class, JSONException::class)
-    open fun redeem(lists: List<Long>, secret: String, datetime: String?, force: Boolean, nonce: String?, answers: List<Answer>?, ignore_unpaid: Boolean, pdf_data: Boolean, type: String?, source_type: String?, callTimeout: Long? = null, questions_supported: Boolean = true): ApiResponse {
+    open fun redeem(
+        lists: List<Long>,
+        secret: String,
+        datetime: String?,
+        force: Boolean,
+        nonce: String?,
+        answers: List<Answer>?,
+        ignore_unpaid: Boolean,
+        pdf_data: Boolean,
+        type: String?,
+        source_type: String?,
+        callTimeout: Long? = null,
+        questions_supported: Boolean = true,
+        exchange_medium_type: String? = null,
+        exchange_medium_identifier: String? = null,
+    ): ApiResponse {
         val body = JSONObject()
         if (datetime != null) {
             body.put("datetime", datetime)
@@ -135,6 +150,8 @@ open class PretixApi(url: String, key: String, orgaSlug: String, version: Int, h
             jlists.put(l)
         }
         body.put("lists", jlists)
+        if (exchange_medium_type != null) body.put("exchange_medium_type", exchange_medium_type)
+        if (exchange_medium_identifier != null) body.put("exchange_medium_identifier", exchange_medium_identifier)
         var pd = "?expand=answers.question"
         if (pdf_data) {
             pd += "&pdf_data=true"

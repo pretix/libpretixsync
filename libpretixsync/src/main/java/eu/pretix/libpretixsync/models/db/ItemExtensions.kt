@@ -208,9 +208,9 @@ private fun parseHasFreePrice(json: JSONObject): Boolean {
 private fun parseMediaPolicy(json: JSONObject): MediaPolicy {
     return try {
         val mp: String = json.optString("media_policy") ?: return MediaPolicy.NONE
-        if (mp == "reuse") return MediaPolicy.REUSE
-        if (mp == "new") return MediaPolicy.NEW
-        if (mp == "reuse_or_new") MediaPolicy.REUSE_OR_NEW else MediaPolicy.NONE
+        MediaPolicy.getByServerName(mp) ?: return MediaPolicy.NONE
+    } catch (_: IllegalArgumentException) {
+        MediaPolicy.NONE
     } catch (e: JSONException) {
         e.printStackTrace()
         MediaPolicy.NONE
@@ -220,9 +220,7 @@ private fun parseMediaPolicy(json: JSONObject): MediaPolicy {
 private fun parseMediaType(json: JSONObject): ReusableMediaType {
     return try {
         val mp: String = json.optString("media_type") ?: return ReusableMediaType.NONE
-        if (mp == "barcode") return ReusableMediaType.BARCODE
-        if (mp == "nfc_uid") return ReusableMediaType.NFC_UID
-        if (mp == "nfc_mf0aes") ReusableMediaType.NFC_MF0AES else ReusableMediaType.UNSUPPORTED
+        ReusableMediaType.getByServerName(mp) ?: ReusableMediaType.UNSUPPORTED
     } catch (e: JSONException) {
         e.printStackTrace()
         ReusableMediaType.NONE

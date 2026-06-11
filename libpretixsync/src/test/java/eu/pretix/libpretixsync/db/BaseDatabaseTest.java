@@ -11,6 +11,7 @@ import eu.pretix.libpretixsync.sqldelight.QueuedCheckIn;
 import eu.pretix.libpretixsync.sqldelight.Receipt;
 import eu.pretix.libpretixsync.sqldelight.ReceiptLine;
 import eu.pretix.libpretixsync.sqldelight.ReceiptPayment;
+import eu.pretix.libpretixsync.sqldelight.ReusableMedium;
 import eu.pretix.libpretixsync.sqldelight.SubEvent;
 import eu.pretix.libpretixsync.sqldelight.SyncDatabase;
 import org.junit.After;
@@ -97,6 +98,9 @@ public abstract class BaseDatabaseTest {
                 ),
                 new ReceiptPayment.Adapter(
                         bigDecimalAdapter
+                ),
+                new ReusableMedium.Adapter(
+                        dateAdapter
                 ),
                 new SubEvent.Adapter(
                         dateAdapter,

@@ -8,7 +8,7 @@ import org.json.JSONException
 import org.json.JSONObject
 import java.io.File
 
-class FakePretixApi : PretixApi("http://1.1.1.1/", "a", "demo", 1, DefaultHttpClientFactory()) {
+class FakePretixApi(var orgaSlug: String = "demo") : PretixApi("http://1.1.1.1/", "a", orgaSlug, 1, DefaultHttpClientFactory()) {
     val redeemResponses: MutableList<(() -> ApiResponse)> = ArrayList()
     val statusResponses: MutableList<(() -> ApiResponse)> = ArrayList()
     val searchResponses: MutableList<(() -> ApiResponse)> = ArrayList()
@@ -42,7 +42,9 @@ class FakePretixApi : PretixApi("http://1.1.1.1/", "a", "demo", 1, DefaultHttpCl
         type: String?,
         source_type: String?,
         callTimeout: Long?,
-        questions_supported: Boolean
+        questions_supported: Boolean,
+        exchange_medium_type: String?,
+        exchange_medium_identifier: String?,
     ): ApiResponse {
         redeemRequestSecret = secret
         redeemRequestDatetime = datetime

@@ -1,0 +1,17 @@
+{
+  "id": 36,
+  "name": "Default",
+  "all_products": true,
+  "limit_products": [],
+  "subevent": null,
+  "checkin_count": 0,
+  "position_count": 8,
+  "include_pending": false,
+  "allow_multiple_entries": false,
+  "allow_entry_after_exit": true,
+  "rules": {},
+  "exit_all_at": null,
+  "addon_match": false,
+  "ignore_in_statistics": false,
+  "consider_tickets_used": true
+}

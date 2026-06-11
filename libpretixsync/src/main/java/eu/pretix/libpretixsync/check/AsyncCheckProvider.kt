@@ -8,9 +8,12 @@ import eu.pretix.libpretixsync.crypto.isValidSignature
 import eu.pretix.libpretixsync.crypto.readPubkeyFromPem
 import eu.pretix.libpretixsync.crypto.sig1.TicketProtos
 import eu.pretix.libpretixsync.db.Answer
+import eu.pretix.libpretixsync.db.MediaPolicy
 import eu.pretix.libpretixsync.db.NonceGenerator
 import eu.pretix.libpretixsync.db.QuestionLike
+import eu.pretix.libpretixsync.db.ReusableMediaType
 import eu.pretix.libpretixsync.models.CheckIn
+import eu.pretix.libpretixsync.models.CheckInList
 import eu.pretix.libpretixsync.models.Event
 import eu.pretix.libpretixsync.models.Order as OrderModel
 import eu.pretix.libpretixsync.models.OrderPosition as OrderPositionModel
@@ -36,6 +39,7 @@ import java.nio.charset.Charset
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.util.*
+import kotlin.collections.filter
 
 class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDatabase) : TicketCheckProvider {
     private var sentry: SentryInterface = DummySentryImplementation()
@@ -87,6 +91,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
         )
     }
 
+    @Suppress("UNCHECKED_CAST")
     private fun initJsonLogic(event: Event, subeventId: Long, tz: DateTimeZone): JsonLogic {
         val jsonLogic = JsonLogic()
         jsonLogic.addOperation("objectList") { l, _ -> l }
@@ -279,7 +284,14 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
         return RSAResult(givenAnswers, requiredAnswers, shownAnswers, askQuestions)
     }
 
-    private fun checkOfflineWithoutData(eventsAndCheckinLists: Map<String, Long>, ticketid: String, type: TicketCheckProvider.CheckInType, answers: List<Answer>?, nonce: String?, allowQuestions: Boolean): TicketCheckProvider.CheckResult {
+    private fun checkOfflineWithoutData(
+        eventsAndCheckinLists: Map<String, Long>,
+        ticketid: String,
+        type: TicketCheckProvider.CheckInType,
+        answers: List<Answer>?,
+        nonce: String?,
+        allowQuestions: Boolean
+    ): TicketCheckProvider.CheckResult {
         val dt = now()
         val events = db.eventQueries.selectBySlugList(eventsAndCheckinLists.keys.toList())
             .executeAsList()
@@ -544,47 +556,28 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
         type: TicketCheckProvider.CheckInType,
         nonce: String?,
         allowQuestions: Boolean,
+        exchange_medium_type: String?,
+        exchange_medium_identifier: String?,
     ): TicketCheckProvider.CheckResult {
         val ticketid_cleaned = cleanInput(ticketid, source_type)
 
         sentry.addBreadcrumb("provider.check", "offline check started")
+
+        if (exchange_medium_type != null || exchange_medium_identifier != null) {
+            return TicketCheckProvider.CheckResult(
+                TicketCheckProvider.CheckResult.Type.ERROR,
+                "Media exchange is not supported in offline mode",
+                offline = true
+            )
+        }
 
         val tickets = db.orderPositionQueries.selectBySecretAndEventSlugs(
             secret = ticketid_cleaned,
             event_slugs = eventsAndCheckinLists.keys.toList(),
         ).executeAsList().map { it.toModel() }
 
-        if (tickets.size == 0) {
-            val medium = db.reusableMediumQueries.selectForCheck(
-                identifier = ticketid_cleaned,
-                type = source_type,
-                event_slugs = eventsAndCheckinLists.keys.toList(),
-            ).executeAsOneOrNull()?.toModel()
-            if (medium != null) {
-                val tickets = db.orderPositionQueries.selectByReusableMediumIdAndEventSlugs(
-                    reusablemedium_id = medium.id,
-                    event_slugs = eventsAndCheckinLists.keys.toList(),
-                ).executeAsList().map { it.toModel() }
-                return checkOfflineWithData(
-                    eventsAndCheckinLists,
-                    ticketid_cleaned,
-                    tickets,
-                    answers,
-                    ignore_unpaid,
-                    type,
-                    nonce,
-                    allowQuestions,
-                )
-            }
-
-            return checkOfflineWithoutData(
-                eventsAndCheckinLists,
-                ticketid_cleaned,
-                type,
-                answers ?: emptyList(),
-                nonce,
-                allowQuestions,
-            )
+        if (tickets.size == 1) {
+            return checkOfflineWithData(eventsAndCheckinLists, ticketid_cleaned, tickets, answers, ignore_unpaid, type, nonce = nonce, allowQuestions = allowQuestions, mediumUsed = false)
         } else if (tickets.size > 1) {
             val eventSlug = db.orderQueries.selectById(tickets[0].orderId).executeAsOne().event_slug!!
             val itemServerId = db.itemQueries.selectById(tickets[0].itemId).executeAsOne().server_id
@@ -605,16 +598,266 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
                 nonce = nonce,
             )
             return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.AMBIGUOUS)
+        } else {
+            // we don't have a matching ticket / orderposition, but it may be a reusable medium identifier
+            val medium = db.reusableMediumQueries.selectForCheck(
+                identifier = ticketid_cleaned,
+                type = source_type,
+                event_slugs = eventsAndCheckinLists.keys.toList(),
+            ).executeAsOneOrNull()?.toModel()
+            if (medium != null) {
+                val firstentry = eventsAndCheckinLists.entries.first()
+                if (!medium.active) {
+                    // FIXME: note that this was an medium source
+                    storeFailedCheckin(firstentry.key, firstentry.value, "invalid", ticketid, type, nonce = nonce)
+                    return TicketCheckProvider.CheckResult(
+                        TicketCheckProvider.CheckResult.Type.INVALID,
+                        "Medium not active",
+                        offline = true
+                    )
+                }
+
+                if (medium.expires?.isBefore(javaTimeNow()) == true) {
+                    // FIXME: note that this was an medium source
+                    storeFailedCheckin(firstentry.key, firstentry.value, "invalid", ticketid, type, nonce = nonce)
+                    return TicketCheckProvider.CheckResult(
+                        TicketCheckProvider.CheckResult.Type.INVALID,
+                        "Medium expired",
+                        offline = true
+                    )
+                }
+
+                // there may be multiple tickets / orderpositions linked to this medium
+                // e.g. a medium linked to tickets in multiple, different events or
+                // a medium that's linked to two tickets, one currently valid and one expired or in the future.
+                val tickets = db.orderPositionQueries.selectByReusableMediumIdAndEventSlugs(
+                    reusablemedium_id = medium.id,
+                    event_slugs = eventsAndCheckinLists.keys.toList(),
+                ).executeAsList().map { it.toModel() }
+                return checkOfflineWithData(
+                    eventsAndCheckinLists,
+                    ticketid_cleaned,
+                    tickets,
+                    answers,
+                    ignore_unpaid,
+                    type,
+                    nonce,
+                    allowQuestions,
+                    mediumUsed = true
+                )
+            }
+
+            return checkOfflineWithoutData(
+                eventsAndCheckinLists,
+                ticketid_cleaned,
+                type,
+                answers ?: emptyList(),
+                nonce,
+                allowQuestions,
+            )
         }
-        return checkOfflineWithData(eventsAndCheckinLists, ticketid_cleaned, tickets, answers, ignore_unpaid, type, nonce = nonce, allowQuestions = allowQuestions)
     }
 
-    private fun checkOfflineWithData(eventsAndCheckinLists: Map<String, Long>, secret: String, tickets: List<OrderPositionModel>, answers: List<Answer>?, ignore_unpaid: Boolean, type: TicketCheckProvider.CheckInType, nonce: String?, allowQuestions: Boolean): TicketCheckProvider.CheckResult {
+    data class PositionFilteringError(
+        val position: OrderPositionModel,
+        val eventSlug: String,
+        val list: CheckInList?,
+        val error: TicketCheckProvider.CheckResult.Type,
+        val message: String? = null
+    )
+
+    private fun filterPositions(eventsAndCheckinLists: Map<String, Long>, positions: List<OrderPositionModel>): Pair<List<OrderPositionModel>, List<PositionFilteringError>> {
+        var results = mutableListOf<OrderPositionModel>()
+        val errors = mutableListOf<PositionFilteringError>()
+        positions.forEach { position ->
+            val order = db.orderQueries.selectById(position.orderId).executeAsOne().toModel()
+
+            val eventSlug = order.eventSlug
+            val event = db.eventQueries.selectBySlug(eventSlug).executeAsOneOrNull()?.toModel()
+            if (event == null) {
+                errors.add(PositionFilteringError(position, eventSlug, null, TicketCheckProvider.CheckResult.Type.ERROR, "Event not found"))
+                return@forEach
+            }
+
+            val listId = eventsAndCheckinLists[eventSlug]
+            if (listId == null) {
+                errors.add(PositionFilteringError(position, eventSlug, null, TicketCheckProvider.CheckResult.Type.ERROR, "No check-in list selected"))
+                return@forEach
+            }
+
+            val list = db.checkInListQueries.selectByServerIdAndEventSlug(
+                server_id = listId,
+                event_slug = eventSlug,
+            ).executeAsOneOrNull()?.toModel()
+
+            if (list == null) {
+                errors.add(PositionFilteringError(position, eventSlug, null, TicketCheckProvider.CheckResult.Type.ERROR, "Check-in list not found"))
+                return@forEach
+            }
+
+            // server side: 3a.
+            var resultingPositions = mutableSetOf(position)
+            if (list.addonMatch) {
+                // Add-on matching, as per spec, but only if we have data, it's impossible in data-less mode
+                val candidates = mutableListOf<OrderPositionModel>()
+
+                val orderPositions = db.orderPositionQueries.selectForOrder(order.id).executeAsList()
+                    .map { it.toModel() }
+                candidates.addAll(orderPositions.filter {
+                    it.addonToServerId == position.serverId
+                })
+                // server side: 3b.
+                val filteredCandidates = if (!list.allItems) {
+                    val items = db.checkInListQueries.selectItemIdsForList(list.id)
+                        .executeAsList()
+                        .map {
+                            // Not-null assertion needed for SQLite
+                            it.id!!
+                        }
+                        .toHashSet()
+                    candidates.filter { candidate ->
+                        val candidateItem =
+                            db.itemQueries.selectById(candidate.itemId).executeAsOne()
+                        items.contains(candidateItem.id)
+                    }
+                } else {
+                    // This is a useless configuration that the backend won't allow, but we'll still handle
+                    // it here for completeness
+                    candidates
+                }
+
+                if (filteredCandidates.isEmpty()) {
+                    errors.add(PositionFilteringError(position, eventSlug, list, TicketCheckProvider.CheckResult.Type.PRODUCT))
+                } else if (filteredCandidates.size > 1) {
+                    errors.add(PositionFilteringError(position, eventSlug, list, TicketCheckProvider.CheckResult.Type.AMBIGUOUS))
+                } else {
+                    resultingPositions.add(filteredCandidates[0])
+                }
+            }
+
+            results.addAll(resultingPositions)
+        }
+
+        // server side: 3c.
+        if (results.size > 1) {
+            val nowOdt = javaTimeNow()
+            results = results.filter { op ->
+                (op.validFrom == null || op.validFrom < nowOdt) && (op.validUntil == null || op.validUntil > nowOdt)
+            }.toMutableList()
+        }
+
+        // None of the positions is valid today or has the correct product, too bad!
+        // We try to improve  the error message by selecting the product that will "work next" or - if none matches - "worked last".
+        if (results.isEmpty()) {
+            val nowOdt = javaTimeNow()
+            var nearestCandidate: OrderPositionModel? = null
+
+            positions.forEach {
+                if (it.validFrom != null &&
+                    (it.validFrom > nowOdt ||
+                    (nearestCandidate != null && it.validFrom < nearestCandidate.validFrom))) {
+                    nearestCandidate = it
+                }
+            }
+
+            if (nearestCandidate == null) {
+                positions.forEach {
+                    if (it.validUntil != null &&
+                        (it.validUntil < nowOdt ||
+                                (nearestCandidate != null && it.validUntil > nearestCandidate.validUntil))) {
+                        nearestCandidate = it
+                    }
+                }
+            }
+
+            if (nearestCandidate != null) {
+                val order = db.orderQueries.selectById(nearestCandidate.orderId).executeAsOne().toModel()
+
+                val eventSlug = order.eventSlug
+                val event = db.eventQueries.selectBySlug(eventSlug).executeAsOneOrNull()?.toModel()
+                if (event == null) {
+                    return Pair(listOf(), listOf(PositionFilteringError(nearestCandidate, eventSlug, null, TicketCheckProvider.CheckResult.Type.ERROR, "Event not found")))
+                }
+
+                val listId = eventsAndCheckinLists[eventSlug]
+                if (listId == null) {
+                    return Pair(listOf(), listOf(PositionFilteringError(nearestCandidate, eventSlug, null, TicketCheckProvider.CheckResult.Type.ERROR, "No check-in list selected")))
+                }
+
+                val list = db.checkInListQueries.selectByServerIdAndEventSlug(
+                    server_id = listId,
+                    event_slug = eventSlug,
+                ).executeAsOneOrNull()?.toModel()
+
+                if (list == null) {
+                    return Pair(listOf(), listOf(PositionFilteringError(nearestCandidate, eventSlug, null, TicketCheckProvider.CheckResult.Type.ERROR, "Check-in list not found")))
+                }
+
+                return Pair(listOf(), listOf(PositionFilteringError(nearestCandidate, eventSlug, list, TicketCheckProvider.CheckResult.Type.INVALID_TIME)))
+            }
+        }
+
+        return Pair(results, errors)
+    }
+
+    private fun checkOfflineWithData(
+        eventsAndCheckinLists: Map<String, Long>,
+        secret: String,
+        tickets: List<OrderPositionModel>,
+        answers: List<Answer>?,
+        ignore_unpaid: Boolean,
+        type: TicketCheckProvider.CheckInType,
+        nonce: String?,
+        allowQuestions: Boolean,
+        mediumUsed: Boolean
+    ): TicketCheckProvider.CheckResult {
         // !!! When extending this, also extend checkOfflineWithoutData !!!
         val dt = now()
 
-        val order = db.orderQueries.selectById(tickets[0].orderId).executeAsOne().toModel()
-        val item = db.itemQueries.selectById(tickets[0].itemId).executeAsOne().toModel()
+        val (positions, err) = filterPositions(eventsAndCheckinLists, tickets)
+        if (err.isNotEmpty()) {
+            val firstError = err.first()
+            val order = db.orderQueries.selectById(firstError.position.orderId).executeAsOne().toModel()
+            val item = db.itemQueries.selectById(firstError.position.itemId).executeAsOne().toModel()
+            if (firstError.list != null) {
+                when (firstError.error) {
+                    TicketCheckProvider.CheckResult.Type.PRODUCT ->
+                        storeFailedCheckin(firstError.eventSlug, firstError.list.serverId, "product", secret, type, position = firstError.position.serverId, item = item.serverId, variation = firstError.position.variationServerId, subevent = firstError.position.subEventServerId, nonce = nonce)
+                    TicketCheckProvider.CheckResult.Type.AMBIGUOUS ->
+                        storeFailedCheckin(firstError.eventSlug, firstError.list.serverId, "ambiguous", secret, type, position = firstError.position.serverId, item = item.serverId, variation = firstError.position.variationServerId, subevent = firstError.position.subEventServerId, nonce = nonce)
+                    TicketCheckProvider.CheckResult.Type.INVALID_TIME ->
+                        storeFailedCheckin(firstError.eventSlug, firstError.list.serverId, "invalid_time", secret, type, position = firstError.position.serverId, item = item.serverId, variation = firstError.position.variationServerId, subevent = firstError.position.subEventServerId, nonce = nonce)
+                    else -> {}
+                }
+            }
+
+            return TicketCheckProvider.CheckResult(
+                firstError.error,
+                firstError.message,
+                offline = true
+            ).apply {
+                orderCode = order.code
+                positionId = firstError.position.positionId
+            }
+        }
+        if (positions.isEmpty()) {
+            return TicketCheckProvider.CheckResult(
+                TicketCheckProvider.CheckResult.Type.ERROR,
+                "No matching ticket found",
+                offline = true
+            )
+        }
+        if (positions.size > 1) {
+            return TicketCheckProvider.CheckResult(
+                TicketCheckProvider.CheckResult.Type.AMBIGUOUS,
+                offline = true
+            )
+        }
+
+        val position = positions[0]
+
+        val order = db.orderQueries.selectById(position.orderId).executeAsOne().toModel()
+        val item = db.itemQueries.selectById(position.itemId).executeAsOne().toModel()
 
         val eventSlug = order.eventSlug
         val event = db.eventQueries.selectBySlug(eventSlug).executeAsOneOrNull()?.toModel()
@@ -626,43 +869,6 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
             event_slug = eventSlug,
         ).executeAsOneOrNull()?.toModel()
             ?: return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.ERROR, "Check-in list not found", offline = true)
-
-        val position = if (list.addonMatch) {
-            // Add-on matching, as per spec, but only if we have data, it's impossible in data-less mode
-            val candidates = mutableListOf(tickets[0])
-
-            val positions = db.orderPositionQueries.selectForOrder(order.id).executeAsList().map { it.toModel() }
-            candidates.addAll(positions.filter {
-                it.addonToServerId == tickets[0].serverId
-            })
-            val filteredCandidates = if (!list.allItems) {
-                val items = db.checkInListQueries.selectItemIdsForList(list.id)
-                    .executeAsList()
-                    .map {
-                        // Not-null assertion needed for SQLite
-                        it.id!!
-                    }
-                    .toHashSet()
-                candidates.filter { candidate ->
-                    val candidateItem = db.itemQueries.selectById(candidate.itemId).executeAsOne()
-                    items.contains(candidateItem.id)
-                }
-            } else {
-                // This is a useless configuration that the backend won't allow, but we'll still handle
-                // it here for completeness
-                candidates
-            }
-            if (filteredCandidates.isEmpty()) {
-                storeFailedCheckin(eventSlug, list.serverId, "product", secret, type, position = tickets[0].serverId, item = item.serverId, variation = tickets[0].variationServerId, subevent = tickets[0].subEventServerId, nonce = nonce)
-                return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.PRODUCT, offline = true)
-            } else if (filteredCandidates.size > 1) {
-                storeFailedCheckin(eventSlug, list.serverId, "ambiguous", secret, type, position = tickets[0].serverId, item = item.serverId, variation = tickets[0].variationServerId, subevent = tickets[0].subEventServerId, nonce = nonce)
-                return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.AMBIGUOUS, offline = true)
-            }
-            filteredCandidates[0]
-        } else {
-            tickets[0]
-        }
 
         val positionItem = if (position.id == tickets[0].id) {
             item
@@ -779,6 +985,28 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
             res.isCheckinAllowed = list.includePending && !order.validIfPending
             storeFailedCheckin(eventSlug, list.serverId, "unpaid", position.secret!!, type, position = position.serverId, item = positionItem.serverId, variation = position.variationServerId, subevent = position.subEventServerId, nonce = nonce)
             return res
+        }
+
+        val settings = db.settingsQueries.selectBySlug(eventSlug).executeAsOneOrNull()?.toModel()
+        val reusableMediaUsageEnforced = (settings?.json?.optBoolean("reusable_media_usage_enforced", false) == true)
+
+        val hasLinkedReusableMedium =
+            db.reusableMediumQueries.selectByLinkedOrderPosition(position.id)
+                .executeAsList().isNotEmpty()
+
+        if (positionItem.mediaPolicy != MediaPolicy.NONE && positionItem.mediaType != ReusableMediaType.NONE && !mediumUsed) {
+            if (!hasLinkedReusableMedium) {
+                res.type = TicketCheckProvider.CheckResult.Type.EXCHANGE_REQUIRED_OFFLINE
+                res.isCheckinAllowed = false
+                res.reasonExplanation = "This ticket needs to be exchanged, but this isn't possible while offline"
+                storeFailedCheckin(eventSlug, list.serverId, "exchange", position.secret!!, type, position = position.serverId, item = positionItem.serverId, variation = position.variationServerId, subevent = position.subEventServerId, nonce = nonce)
+                return res
+            } else if (reusableMediaUsageEnforced) {
+                res.type = TicketCheckProvider.CheckResult.Type.ALREADY_EXCHANGED
+                res.isCheckinAllowed = false
+                storeFailedCheckin(eventSlug, list.serverId, "already_exchanged", position.secret!!, type, position = position.serverId, item = positionItem.serverId, variation = position.variationServerId, subevent = position.subEventServerId, nonce = nonce)
+                return res
+            }
         }
 
         // !!! When extending this, also extend checkOfflineWithoutData !!!
