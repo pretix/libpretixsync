@@ -28,7 +28,7 @@ selectOrderIdsToDelete:
 SELECT orders.id
 FROM orders
 WHERE
-    (deleteAfterTimestamp < :current_timestamp AND deleteAfterTimestamp < 1)
+    (deleteAfterTimestamp < :current_timestamp AND deleteAfterTimestamp > 1)
     AND (orders.id NOT IN (
         SELECT order_ref
         FROM OrderPosition
