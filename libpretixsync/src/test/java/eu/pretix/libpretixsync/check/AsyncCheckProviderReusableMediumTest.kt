@@ -27,8 +27,8 @@ class AsyncCheckProviderReusableMediumTest : BaseDatabaseTest() {
         fakeApi = FakePretixApi("mtrmt")
         p = AsyncCheckProvider(configStore!!, db)
 
-        EventSyncAdapter(db, "event1", "event1", fakeApi!!, "", null).standaloneRefreshFromJSON(jsonResource("events/rmevent1.json"))
-        EventSyncAdapter(db, "event2", "event2", fakeApi!!, "", null).standaloneRefreshFromJSON(jsonResource("events/rmevent2.json"))
+        EventSyncAdapter(db, FakeFileStorage(),"event1", "event1", fakeApi!!, "", null).standaloneRefreshFromJSON(jsonResource("events/rmevent1.json"))
+        EventSyncAdapter(db, FakeFileStorage(),"event2", "event2", fakeApi!!, "", null).standaloneRefreshFromJSON(jsonResource("events/rmevent2.json"))
         ItemSyncAdapter(db, FakeFileStorage(), "event1", fakeApi!!, "", null).standaloneRefreshFromJSON(jsonResource("items/rmevent1-item1.json"))
         ItemSyncAdapter(db, FakeFileStorage(), "event2", fakeApi!!, "", null).standaloneRefreshFromJSON(jsonResource("items/rmevent2-item1.json"))
         CheckInListSyncAdapter(db, FakeFileStorage(), "event1", fakeApi!!, "", null, 0).standaloneRefreshFromJSON(
