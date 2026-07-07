@@ -13,6 +13,7 @@ import org.json.JSONObject
 
 class EventSyncAdapter(
     db: SyncDatabase,
+    fileStorage: FileStorage,
     eventSlug: String,
     key: String,
     api: PretixApi,
@@ -20,6 +21,7 @@ class EventSyncAdapter(
     feedback: ProgressFeedback? = null,
 ) : BaseSingleObjectSyncAdapter<Event>(
     db = db,
+    fileStorage = fileStorage,
     eventSlug = eventSlug,
     key = key,
     api = api,
