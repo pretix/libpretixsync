@@ -49,9 +49,9 @@ open class SettingsSyncAdapter(
     override fun getJSON(obj: Settings): JSONObject = JSONObject(obj.json_data!!)
 
     override fun insert(jsonobj: JSONObject) {
-        var jsonobj = jsonobj
+        val jsonobj = jsonobj
         listOf("pretixkiosk_screensaver_image").forEach { fieldName ->
-            jsonobj = processAndUpdateJSONdataWithPicture(jsonobj, fieldName, null)
+            processAndUpdateJSONdataWithPicture(jsonobj, fieldName, null)
         }
 
         db.settingsQueries.insert(
@@ -69,10 +69,9 @@ open class SettingsSyncAdapter(
     }
 
     override fun update(obj: Settings, jsonobj: JSONObject) {
-        var jsonobj = jsonobj
         val objjsondata = JSONObject(obj.json_data)
         listOf("pretixkiosk_screensaver_image").forEach { fieldName ->
-            jsonobj = processAndUpdateJSONdataWithPicture(jsonobj, fieldName, if (objjsondata.isNull(fieldName)) null else objjsondata.getString(fieldName))
+            processAndUpdateJSONdataWithPicture(jsonobj, fieldName, if (objjsondata.isNull(fieldName)) null else objjsondata.getString(fieldName))
         }
 
         db.settingsQueries.updateFromJson(
