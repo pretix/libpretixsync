@@ -28,7 +28,8 @@ CREATE TABLE Receipt (
     printed INTEGER AS Boolean DEFAULT 0 NOT NULL,
     server_id INTEGER,
     started INTEGER AS Boolean DEFAULT 0,
-    training INTEGER AS Boolean DEFAULT 0 NOT NULL
+    training INTEGER AS Boolean DEFAULT 0 NOT NULL,
+    websecret TEXT
 );
 
 CREATE INDEX Receipt_closing_index ON Receipt (closing);
