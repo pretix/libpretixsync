@@ -188,7 +188,7 @@ interface TicketCheckProvider {
         exchange_medium_identifier: String? = null,
     ): CheckResult
 
-    fun check(eventsAndCheckinLists: Map<String, Long>, ticketid: String): CheckResult
+    fun check(eventsAndCheckinLists: Map<String, Long>, ticketid: String, source_type: String = "barcode"): CheckResult
 
     fun annul(eventsAndCheckinLists: Map<String, Long>, nonce: String, explanation: String): AnnulResult
 
