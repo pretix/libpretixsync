@@ -178,7 +178,7 @@ interface TicketCheckProvider {
         exchange_medium_identifier: String? = null,
     ): CheckResult
 
-    fun check(eventsAndCheckinLists: Map<String, Long>, ticketid: String): CheckResult
+    fun check(eventsAndCheckinLists: Map<String, Long>, ticketid: String, source_type: String = "barcode"): CheckResult
     @Throws(CheckException::class)
     fun search(eventsAndCheckinLists: Map<String, Long>, query: String, page: Int): List<SearchResult>
 
