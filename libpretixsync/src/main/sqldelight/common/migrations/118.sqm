@@ -23,3 +23,6 @@ CREATE INDEX IF NOT EXISTS Question_Item_QuestionId_index ON Question_Item (Ques
 CREATE INDEX IF NOT EXISTS ReusableMedium_OrderPosition_ReusableMediumId_index ON ReusableMedium_OrderPosition (ReusableMediumId);
 CREATE INDEX IF NOT EXISTS ReusableMedium_OrderPosition_OrderPositionId_index ON ReusableMedium_OrderPosition (OrderPositionId);
 CREATE INDEX IF NOT EXISTS TicketLayout_server_id_index ON TicketLayout (server_id);
+CREATE INDEX IF NOT EXISTS Quota_event_slug_index ON Quota (event_slug);
+DROP INDEX IF EXISTS Receipt_canceled_index;
+DROP INDEX IF EXISTS ReceiptLine_canceled_index;
