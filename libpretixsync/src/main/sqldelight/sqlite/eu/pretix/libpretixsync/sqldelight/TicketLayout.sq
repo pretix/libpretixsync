@@ -8,3 +8,4 @@ CREATE TABLE TicketLayout (
     json_data TEXT,
     server_id INTEGER
 );
+CREATE INDEX TicketLayout_server_id_index ON TicketLayout (server_id);

@@ -19,3 +19,4 @@ CREATE TABLE Closing (
     payment_sum_cash REAL AS BigDecimal,
     server_id INTEGER
 );
+CREATE INDEX Closing_server_id_index ON Closing (server_id);

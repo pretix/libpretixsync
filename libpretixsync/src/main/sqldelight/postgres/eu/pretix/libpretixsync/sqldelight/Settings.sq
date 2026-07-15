@@ -13,3 +13,5 @@ CREATE TABLE Settings (
     vat_id character varying(255),
     zipcode character varying(255)
 );
+
+CREATE INDEX Settings_slug_index ON Settings (slug);

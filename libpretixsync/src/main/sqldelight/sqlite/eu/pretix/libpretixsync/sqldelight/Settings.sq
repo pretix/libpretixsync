@@ -13,3 +13,4 @@ CREATE TABLE Settings (
     vat_id TEXT,
     zipcode TEXT
 );
+CREATE INDEX Settings_slug_index ON Settings (slug);

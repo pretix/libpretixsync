@@ -3,3 +3,6 @@ CREATE TABLE Quota_Item (
     ItemId bigint NOT NULL REFERENCES Item (id) ON DELETE CASCADE,
     PRIMARY KEY (QuotaId, ItemId)
 );
+
+CREATE INDEX Quota_Item_ItemId_index ON Quota_Item (ItemId);
+CREATE INDEX Quota_Item_QuotaId_index ON Quota_Item (QuotaId);

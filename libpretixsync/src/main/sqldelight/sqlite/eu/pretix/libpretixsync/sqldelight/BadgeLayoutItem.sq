@@ -5,3 +5,6 @@ CREATE TABLE BadgeLayoutItem (
     layout INTEGER REFERENCES BadgeLayout (id) ON DELETE CASCADE,
     server_id INTEGER
 );
+CREATE INDEX BadgeLayoutItem_server_id_index ON BadgeLayoutItem (server_id);
+CREATE INDEX BadgeLayoutItem_item_index ON BadgeLayout (item);
+CREATE INDEX BadgeLayoutItem_layout_index ON BadgeLayout (layout);
