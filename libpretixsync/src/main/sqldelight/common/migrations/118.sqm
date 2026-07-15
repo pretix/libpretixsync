@@ -1,0 +1,1 @@
+CREATE INDEX IF NOT EXISTS OrderPosition_server_id_index ON OrderPosition (server_id);
