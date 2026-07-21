@@ -61,6 +61,7 @@ class OnlineCheckProvider(
         return try {
             val res = TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.ERROR)
             res.scanType = type
+            res.nonce = nonce_cleaned
             val responseObj = if (config.knownPretixVersion >= 40120001001) { // >= 4.12.0.dev1
                 api.redeem(
                     eventsAndCheckinLists.values.toList(),
@@ -350,6 +351,37 @@ class OnlineCheckProvider(
 
     override fun check(eventsAndCheckinLists: Map<String, Long>, ticketid: String): TicketCheckProvider.CheckResult {
         return check(eventsAndCheckinLists, ticketid, "barcode", ArrayList(), false, true, TicketCheckProvider.CheckInType.ENTRY)
+    }
+
+    override fun annul(
+        eventsAndCheckinLists: Map<String, Long>,
+        nonce: String,
+        explanation: String
+    ): TicketCheckProvider.AnnulResult {
+        // In case we just switchted from offline to online, cleanup similarly to AsyncCheckProvider
+        db.checkInQueries.setAnnulledByNonce(Date(), nonce)
+        db.queuedCheckInQueries.setAnnulledByNonce(Date(), nonce)
+
+        val idempotencyKey = NonceGenerator.nextNonce()
+        try {
+            api.annul(
+                eventsAndCheckinLists.values.toList(),
+                nonce,
+                explanation,
+                idempotencyKey,
+                if (fallback != null) fallbackTimeout.toLong() else null
+            )
+        } catch (e: ApiException) {
+            e.printStackTrace()
+            // Queue the annulment for a later attempt
+            val body = api.annulBody(eventsAndCheckinLists.values.toList(), nonce, explanation)
+            db.queuedCallQueries.insert(
+                body = body.toString(),
+                idempotency_key = idempotencyKey,
+                url = api.organizerResourceUrl("checkinrpc/annul"),
+            )
+        }
+        return TicketCheckProvider.AnnulResult(true)
     }
 
     @Throws(CheckException::class)

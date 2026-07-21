@@ -36,6 +36,8 @@ import org.json.JSONException
 import org.json.JSONObject
 import java.lang.Exception
 import java.nio.charset.Charset
+import java.text.DateFormat
+import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.util.*
@@ -44,14 +46,11 @@ import kotlin.collections.filter
 class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDatabase) : TicketCheckProvider {
     private var sentry: SentryInterface = DummySentryImplementation()
 
-    /*
-     */
-
     override fun setSentry(sentry: SentryInterface) {
         this.sentry = sentry
     }
 
-    private fun storeFailedCheckin(eventSlug: String, listId: Long, error_reason: String, raw_barcode: String, type: TicketCheckProvider.CheckInType, position: Long? = null, item: Long? = null, variation: Long? = null, subevent: Long? = null, nonce: String?) {
+    private fun storeFailedCheckin(eventSlug: String, listId: Long, error_reason: String, raw_barcode: String, type: TicketCheckProvider.CheckInType, position: Long? = null, item: Long? = null, variation: Long? = null, subevent: Long? = null, nonce: String) {
         /*
            :<json boolean error_reason: One of ``canceled``, ``invalid``, ``unpaid``, ``product``, ``rules``, ``revoked``,
                                         ``incomplete``, ``already_redeemed``, ``blocked``, ``invalid_time``, or ``error``. Required.
@@ -77,7 +76,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
             TicketCheckProvider.CheckInType.EXIT -> "exit"
         })
         jdoc.put("error_reason", error_reason)
-        if (nonce != null) jdoc.put("nonce", nonce)
+        jdoc.put("nonce", nonce)
         if (position != null && position > 0) jdoc.put("position", position)
         if (item != null && item > 0) jdoc.put("item", item)
         if (variation != null && variation > 0) jdoc.put("variation", variation)
@@ -86,7 +85,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
         val api = PretixApi.fromConfig(config)  // todo: uses wrong http client
         db.queuedCallQueries.insert(
             body = jdoc.toString(),
-            idempotency_key = NonceGenerator.nextNonce(),
+            idempotency_key = nonce,
             url = api.eventResourceUrl(eventSlug, "checkinlists") + listId + "/failed_checkins/",
         )
     }
@@ -289,7 +288,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
         ticketid: String,
         type: TicketCheckProvider.CheckInType,
         answers: List<Answer>?,
-        nonce: String?,
+        nonce: String,
         allowQuestions: Boolean
     ): TicketCheckProvider.CheckResult {
         val dt = now()
@@ -365,6 +364,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
         }
 
         val res = TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.ERROR, offline = true)
+        res.nonce = nonce
         res.eventSlug = eventSlug
         res.scanType = type
         res.ticket = item.internalName
@@ -385,7 +385,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
 
         val queuedCheckIns = db.queuedCheckInQueries.selectBySecret(ticketid)
             .executeAsList()
-            .filter { it.checkinListId == listId }
+            .filter { it.checkinListId == listId && it.annulled == null }
             .map { it.toModel() }
             .sortedWith(compareBy({ it.dateTime }, { it.id }))
 
@@ -531,10 +531,11 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
                     datetime = dt.toDate(),
                     datetime_string = QueuedCheckIn.formatDatetime(dt.toDate()),
                     event_slug = eventSlug,
-                    nonce = nonce ?: NonceGenerator.nextNonce(),
+                    nonce = nonce,
                     secret = ticketid,
                     source_type = null,
                     type = type.toString().lowercase(Locale.getDefault()),
+                    annulled = null,
                 )
             }
         }
@@ -544,6 +545,30 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
 
     override fun check(eventsAndCheckinLists: Map<String, Long>, ticketid: String): TicketCheckProvider.CheckResult {
         return check(eventsAndCheckinLists, ticketid, "barcode", ArrayList(), false, true, TicketCheckProvider.CheckInType.ENTRY)
+    }
+
+    override fun annul(
+        eventsAndCheckinLists: Map<String, Long>,
+        nonce: String,
+        explanation: String
+    ): TicketCheckProvider.AnnulResult {
+        // In case we have a locally-stored check-in, set it to annulled so we don't consider it in future offline scans
+        db.checkInQueries.setAnnulledByNonce(Date(), nonce)
+
+        // In case we have a queued check-in, set it to annulled so we don't consider it in future offline scans
+        // (it will still be uploaded)
+        db.queuedCheckInQueries.setAnnulledByNonce(Date(), nonce)
+
+        // Queue the actual annulment for upload to server
+        val api = PretixApi.fromConfig(config)
+        val body = api.annulBody(eventsAndCheckinLists.values.toList(), nonce, explanation)
+        db.queuedCallQueries.insert(
+            body = body.toString(),
+            idempotency_key = NonceGenerator.nextNonce(),
+            url = api.organizerResourceUrl("checkinrpc/annul"),
+        )
+
+        return TicketCheckProvider.AnnulResult(true)
     }
 
     override fun check(
@@ -560,6 +585,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
         exchange_medium_type: String?,
         exchange_medium_identifier: String?,
     ): TicketCheckProvider.CheckResult {
+        val nonce = nonce ?: NonceGenerator.nextNonce()
         val ticketid_cleaned = cleanInput(ticketid, source_type)
 
         sentry.addBreadcrumb("provider.check", "offline check started")
@@ -808,7 +834,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
         answers: List<Answer>?,
         ignore_unpaid: Boolean,
         type: TicketCheckProvider.CheckInType,
-        nonce: String?,
+        nonce: String,
         allowQuestions: Boolean,
         mediumUsed: Boolean
     ): TicketCheckProvider.CheckResult {
@@ -889,6 +915,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
         // !!! When extending this, also extend checkOfflineWithoutData !!!
 
         val res = TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.ERROR, offline = true)
+        res.nonce = nonce
         res.scanType = type
         res.ticket = positionItem.internalName
         val varid = position.variationServerId
@@ -923,7 +950,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
 
         val storedCheckIns = db.checkInQueries.selectByPositionId(position.id).executeAsList().map { it.toModel() }
         val checkIns = storedCheckIns.filter {
-            it.listServerId == listId
+            it.listServerId == listId && it.localAnnulled == null
         }.sortedWith(compareBy({ it.fullDateTime }, { it.id }))
 
         if (order.status != OrderModel.Status.PAID && order.status != OrderModel.Status.PENDING) {
@@ -1157,10 +1184,11 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
                     datetime = dt.toDate(),
                     datetime_string = QueuedCheckIn.formatDatetime(dt.toDate()),
                     event_slug = eventSlug,
-                    nonce = nonce ?: NonceGenerator.nextNonce(),
+                    nonce = nonce,
                     secret = position.secret,
                     source_type = null,
                     type = type.toString().lowercase(Locale.getDefault()),
+                    annulled = null
                 )
 
                 db.checkInQueries.insert(
@@ -1170,6 +1198,8 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
                     type = type.toString().lowercase(Locale.getDefault()),
                     datetime = dt.toDate(),
                     json_data = "{\"local\": true, \"type\": \"${type.toString().lowercase(Locale.getDefault())}\", \"datetime\": \"${QueuedCheckIn.formatDatetime(dt.toDate())}\"}",
+                    local_nonce = nonce,
+                    local_annulled = null,
                 )
             }
         }
@@ -1315,14 +1345,14 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
             sr.positionId = position.positionId
             sr.secret = position.secret
 
-            val queuedCheckIns = db.queuedCheckInQueries.countForSecretAndLists(
+            val queuedCheckIns = db.queuedCheckInQueries.countForSecretAndListsNotAnnulled(
                 secret = position.secret,
                 checkin_list_ids = eventsAndCheckinLists.values.toList(),
             ).executeAsOne()
             val checkIns = db.checkInQueries.selectByPositionId(position.id).executeAsList().map { it.toModel() }
             var is_checked_in = queuedCheckIns > 0
             for (ci in checkIns) {
-                if (eventsAndCheckinLists.containsValue(ci.listServerId)) {
+                if (eventsAndCheckinLists.containsValue(ci.listServerId) && ci.localAnnulled == null) {
                     is_checked_in = true
                     break
                 }
