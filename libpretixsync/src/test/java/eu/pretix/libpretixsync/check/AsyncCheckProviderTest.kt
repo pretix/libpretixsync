@@ -2,6 +2,7 @@ package eu.pretix.libpretixsync.check
 
 import eu.pretix.libpretixsync.db.Answer
 import eu.pretix.libpretixsync.db.BaseDatabaseTest
+import eu.pretix.libpretixsync.db.NonceGenerator
 import eu.pretix.libpretixsync.sync.CheckInListSyncAdapter
 import eu.pretix.libpretixsync.sync.EventSyncAdapter
 import eu.pretix.libpretixsync.sync.ItemSyncAdapter
@@ -1176,5 +1177,46 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         r = p!!.check(mapOf("demo2" to 7L, "demo" to 1L), "E4BibyTSylQOgeKjuMPiTDxi5HXPuTVsx1qCli3IL0143gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKAEAPAQA")
         assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
         assertEquals(db.queuedCheckInQueries.count().executeAsOne(), 1L)
+    }
+
+    @Test
+    fun testAnnullNotYetUploaded() {
+        var r = p!!.check(mapOf("demo" to 1L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+        val nonce = r.nonce!!
+
+        r = p!!.check(mapOf("demo" to 1L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.USED, r.type)
+        assertEquals(db.queuedCallQueries.count().executeAsOne(), 1L)
+
+        p!!.annul(mapOf("demo" to 1L), nonce, "Turnstile did not turn")
+        val qci = db.queuedCheckInQueries.selectAll().executeAsList()
+        assertEquals(qci.size, 1)
+        assertEquals(qci.first().nonce, nonce)
+        assert(qci.first().annulled != null)
+        assertEquals(db.queuedCallQueries.count().executeAsOne(), 2L)
+
+        r = p!!.check(mapOf("demo" to 1L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+    }
+
+    @Test
+    fun testSignedAnnullNotYetUploaded() {
+        var r = p!!.check(mapOf("demo" to 1L), "E4BibyTSylQOgeKjuMPiTDxi5HXPuTVsx1qCli3IL0143gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKAEAPAQA")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+        val nonce = r.nonce!!
+        r = p!!.check(mapOf("demo" to 1L), "E4BibyTSylQOgeKjuMPiTDxi5HXPuTVsx1qCli3IL0143gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKAEAPAQA")
+        assertEquals(TicketCheckProvider.CheckResult.Type.USED, r.type)
+        assertEquals(db.queuedCallQueries.count().executeAsOne(), 1L)
+
+        p!!.annul(mapOf("demo" to 1L), nonce, "Turnstile did not turn")
+        val qci = db.queuedCheckInQueries.selectAll().executeAsList()
+        assertEquals(qci.size, 1)
+        assertEquals(qci.first().nonce, nonce)
+        assert(qci.first().annulled != null)
+        assertEquals(db.queuedCallQueries.count().executeAsOne(), 2L)
+
+        r = p!!.check(mapOf("demo" to 1L), "E4BibyTSylQOgeKjuMPiTDxi5HXPuTVsx1qCli3IL0143gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKAEAPAQA")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
     }
 }
