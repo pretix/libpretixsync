@@ -1,6 +1,7 @@
 package eu.pretix.libpretixsync.check
 
 import eu.pretix.libpretixsync.db.BaseDatabaseTest
+import eu.pretix.libpretixsync.sqldelight.QueuedCall
 import eu.pretix.libpretixsync.sync.CheckInListSyncAdapter
 import eu.pretix.libpretixsync.sync.EventSyncAdapter
 import eu.pretix.libpretixsync.sync.ItemSyncAdapter
@@ -11,6 +12,7 @@ import eu.pretix.pretixscan.scanproxy.tests.test.FakeFileStorage
 import eu.pretix.pretixscan.scanproxy.tests.test.FakePretixApi
 import eu.pretix.pretixscan.scanproxy.tests.test.jsonResource
 import org.joda.time.format.ISODateTimeFormat
+import org.json.JSONObject
 import org.junit.Before
 import org.junit.Test
 
@@ -136,5 +138,20 @@ class AsyncCheckProviderReusableMediumTest : BaseDatabaseTest() {
         r = p!!.check(mapOf("event1" to 35L), "7777")
         assertEquals(TicketCheckProvider.CheckResult.Type.INVALID_TIME, r.type)
         assertEquals("W0JKM-7", r.orderCodeAndPositionId())
+    }
+
+
+    @Test
+    fun testMediumExpiredFailedCheckinSourceTypeStored() {
+        val sourceType = "nfc_uid"
+        assertEquals(0, db.queuedCallQueries.count().executeAsOne())
+        p!!.setNow(ISODateTimeFormat.dateTime().parseDateTime("2026-01-01T00:00:01.000Z"))
+        val r = p!!.check(mapOf("event1" to 35L), "6666", sourceType)
+        assertEquals(TicketCheckProvider.CheckResult.Type.INVALID, r.type)
+
+        assertEquals(1, db.queuedCallQueries.count().executeAsOne())
+        val queuedCall : QueuedCall = db.queuedCallQueries.selectAll().executeAsList().first()
+        val data = JSONObject(queuedCall.body)
+        assertEquals(sourceType, data.getString("raw_source_type"))
     }
 }
