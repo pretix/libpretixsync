@@ -7,9 +7,12 @@ CREATE TABLE CheckIn (
     listId INTEGER,
     position INTEGER REFERENCES OrderPosition (id) ON DELETE CASCADE,
     server_id INTEGER,
-    type TEXT
+    type TEXT,
+    local_nonce TEXT,
+    local_annulled TEXT AS Date
 );
 
 CREATE INDEX CheckIn_listId_index ON CheckIn (listId);
 CREATE INDEX CheckIn_position_index ON CheckIn (position);
 CREATE INDEX CheckIn_server_id_index ON CheckIn (server_id);
+CREATE INDEX CheckIn_local_nonce_index ON CheckIn (local_nonce);

@@ -16,14 +16,19 @@ count:
 SELECT COUNT(*)
 FROM QueuedCheckIn;
 
-countForSecretAndLists:
+countForSecretAndListsNotAnnulled:
 SELECT COUNT(*)
 FROM QueuedCheckIn
-WHERE secret = :secret AND checkinListId IN :checkin_list_ids;
+WHERE secret = :secret AND checkinListId IN :checkin_list_ids AND annulled IS NULL;
 
 delete:
 DELETE FROM QueuedCheckIn
 WHERE id = ?;
+
+setAnnulledByNonce:
+UPDATE QueuedCheckIn
+SET annulled = :annulled
+WHERE nonce = :nonce;
 
 insert:
 INSERT INTO QueuedCheckIn (
@@ -35,9 +40,11 @@ INSERT INTO QueuedCheckIn (
     nonce,
     secret,
     source_type,
-    type
+    type,
+    annulled
 )
 VALUES (
+    ?,
     ?,
     ?,
     ?,

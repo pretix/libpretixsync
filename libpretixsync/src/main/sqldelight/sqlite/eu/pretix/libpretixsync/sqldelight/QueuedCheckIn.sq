@@ -10,5 +10,8 @@ CREATE TABLE QueuedCheckIn (
     nonce TEXT,
     secret TEXT,
     source_type TEXT,
-    type TEXT
+    type TEXT,
+    annulled TEXT AS Date
 );
+
+CREATE INDEX QueuedCheckIn_nonce_index ON QueuedCheckIn (nonce);

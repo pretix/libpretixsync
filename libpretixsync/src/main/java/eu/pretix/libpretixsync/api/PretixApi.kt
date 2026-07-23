@@ -28,9 +28,12 @@ import java.net.SocketTimeoutException
 import java.net.URL
 import java.net.URLEncoder
 import java.nio.charset.Charset
+import java.text.DateFormat
+import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.TimeUnit
 import javax.net.ssl.SSLPeerUnverifiedException
+import kotlin.math.exp
 
 open class PretixApi(url: String, key: String, orgaSlug: String, version: Int, httpClientFactory: HttpClientFactory, val acceptLanguage: String? = null) {
     private val url: String
@@ -160,6 +163,42 @@ open class PretixApi(url: String, key: String, orgaSlug: String, version: Int, h
             pd += "&pdf_data=true"
         }
         return postResource(organizerResourceUrl("checkinrpc/redeem") + pd, body, null, callTimeout = callTimeout)
+    }
+
+    fun annulBody(lists: List<Long>, nonce: String, explanation: String): JSONObject {
+        val tz = TimeZone.getTimeZone("UTC")
+        val df: DateFormat = SimpleDateFormat(
+            "yyyy-MM-dd'T'HH:mm:ss'Z'",
+            Locale.ENGLISH
+        ) // Quoted "Z" to indicate UTC, no timezone offset
+        df.timeZone = tz
+        val jlists = JSONArray()
+        for (l in lists) {
+            jlists.put(l)
+        }
+        val body = JSONObject()
+        body.put("nonce", nonce)
+        body.put("lists", jlists)
+        body.put("datetime", df.format(Date()))
+        body.put("error_explanation", explanation)
+        return body
+    }
+
+    @Throws(ApiException::class, JSONException::class)
+    open fun annul(
+        lists: List<Long>,
+        nonce: String,
+        explanation: String,
+        idempotency_key: String?,
+        callTimeout: Long?
+    ): ApiResponse {
+        val body = annulBody(lists, nonce, explanation)
+        return postResource(
+            organizerResourceUrl("checkinrpc/annul"),
+            body,
+            idempotency_key = idempotency_key,
+            callTimeout = callTimeout
+        )
     }
 
     @Throws(ApiException::class)

@@ -10,6 +10,7 @@ import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.readValue
 import eu.pretix.libpretixsync.DummySentryImplementation
 import eu.pretix.libpretixsync.SentryInterface
+import eu.pretix.libpretixsync.api.AnnulInput
 import eu.pretix.libpretixsync.api.ApiException
 import eu.pretix.libpretixsync.api.CheckInputAnswer
 import eu.pretix.libpretixsync.api.CheckInputQuestion
@@ -215,6 +216,39 @@ class ProxyCheckProvider(private val config: ConfigStore, httpClientFactory: Htt
         } catch (e: IOException) {
             e.printStackTrace()
             throw CheckException(e.message, e)
+        }
+    }
+
+    override fun annul(
+        eventsAndCheckinLists: Map<String, Long>,
+        nonce: String,
+        explanation: String
+    ): TicketCheckProvider.AnnulResult {
+        val data = AnnulInput(
+            events_and_checkin_lists = eventsAndCheckinLists,
+            nonce = nonce,
+            explanation = explanation,
+        )
+
+        return try {
+            val request = Request.Builder()
+                .url(config.apiUrl + "/proxyapi/v1/rpc/annul/")  // todo: does not yet exist
+                .post(mapper.writeValueAsString(data).toRequestBody("application/json".toMediaType()))
+                .header("Authorization", "Device " + config.apiKey)
+                .build()
+            val body = execute(request)
+            mapper.readValue(body, TicketCheckProvider.AnnulResult::class.java)
+        } catch (e: ApiException) {
+            sentry.addBreadcrumb("provider.search", "API Error: " + e.message)
+            TicketCheckProvider.AnnulResult(false)
+        } catch (e: JsonProcessingException) {
+            e.printStackTrace()
+            TicketCheckProvider.AnnulResult(false)
+        } catch (e: IOException) {
+            e.printStackTrace()
+            TicketCheckProvider.AnnulResult(false)
+        } catch (e: CheckException) {
+            TicketCheckProvider.AnnulResult(false)
         }
     }
 }

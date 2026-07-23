@@ -1,0 +1,5 @@
+ALTER TABLE QueuedCheckIn ADD COLUMN annulled DATE NULL;
+ALTER TABLE CheckIn ADD COLUMN local_nonce character varying(255) NULL;
+ALTER TABLE CheckIn ADD COLUMN local_annulled DATE NULL;
+CREATE INDEX CheckIn_local_nonce_index ON CheckIn (local_nonce);
+CREATE INDEX QueuedCheckIn_nonce_index ON QueuedCheckIn (nonce);
