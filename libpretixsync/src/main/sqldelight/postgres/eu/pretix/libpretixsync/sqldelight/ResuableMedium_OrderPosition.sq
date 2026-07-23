@@ -3,3 +3,6 @@ CREATE TABLE ResuableMedium_OrderPosition (
     OrderPositionId integer NOT NULL REFERENCES OrderPosition(id) ON DELETE CASCADE,
     CONSTRAINT resuablemedium_orderposition_pkey PRIMARY KEY (ReusableMediumId, OrderPositionId)
 );
+
+CREATE INDEX ReusableMedium_OrderPosition_ReusableMediumId_index ON ReusableMedium_OrderPosition (ReusableMediumId);
+CREATE INDEX ReusableMedium_OrderPosition_OrderPositionId_index ON ReusableMedium_OrderPosition (OrderPositionId);

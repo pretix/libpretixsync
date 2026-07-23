@@ -8,3 +8,4 @@ CREATE TABLE BadgeLayout (
     json_data text,
     server_id bigint
 );
+CREATE INDEX BadgeLayout_server_id_index ON BadgeLayout (server_id);

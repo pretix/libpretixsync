@@ -4,3 +4,4 @@ CREATE TABLE TaxRule (
     json_data TEXT,
     server_id INTEGER
 );
+CREATE INDEX IF NOT EXISTS TaxRule_server_id ON TaxRule (server_id);

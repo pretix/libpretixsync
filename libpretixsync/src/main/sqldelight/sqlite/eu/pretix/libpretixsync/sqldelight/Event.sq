@@ -11,3 +11,4 @@ CREATE TABLE Event (
     live INTEGER AS Boolean NOT NULL,
     slug TEXT
 );
+CREATE INDEX Event_slug_index ON Event (slug);

@@ -3,3 +3,5 @@ CREATE TABLE CheckInList_Item (
     CheckInListId INTEGER REFERENCES CheckInList (id) ON DELETE CASCADE,
     PRIMARY KEY (ItemId, CheckInListId)
 );
+CREATE INDEX CheckInList_Item_ItemId_index ON CheckInList_Item (ItemId);
+CREATE INDEX CheckInList_Item_CheckInListID_index ON CheckInList_Item (CheckInListId);
