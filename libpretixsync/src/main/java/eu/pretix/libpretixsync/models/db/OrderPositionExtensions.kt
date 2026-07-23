@@ -2,6 +2,7 @@ package eu.pretix.libpretixsync.models.db
 
 import eu.pretix.libpretixsync.sqldelight.OrderPosition
 import eu.pretix.libpretixsync.sqldelight.SafeOffsetDateTimeMapper
+import eu.pretix.libpretixsync.utils.JSONUtils
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
@@ -21,15 +22,15 @@ fun OrderPosition.toModel(): OrderPositionModel {
         subEventServerId = this.subevent_id,
         variationServerId = parseVariationId(json),
         attendeeNameParts = json.optJSONObject("attendee_name_parts"),
-        city = json.optString("city", null),
-        company = json.optString("company", null),
-        country = json.optString("country", null),
-        email = json.optString("email", null),
-        street = json.optString("street", null),
-        zipcode = json.optString("zipcode", null),
+        city = JSONUtils.optString(json, "city"),
+        company = JSONUtils.optString(json, "company"),
+        country = JSONUtils.optString(json, "country"),
+        email = JSONUtils.optString(json, "email"),
+        street = JSONUtils.optString(json, "street"),
+        zipcode = JSONUtils.optString(json, "zipcode"),
         price = parsePrice(json),
         taxRate = parseTaxRate(json),
-        taxCode = parseTaxCode(json),
+        taxCode = JSONUtils.optString(json, "tax_code"),
         taxValue = parseTaxValue(json),
         seatName = parseSeatName(json),
         addonToServerId = parseAddonToServerId(json),
@@ -59,18 +60,6 @@ private fun parseVariationId(json: JSONObject): Long? {
 private fun parsePrice(json: JSONObject): BigDecimal? {
     try {
         return BigDecimal(json.getString("price"))
-    } catch (e: JSONException) {
-        e.printStackTrace()
-        return null
-    }
-}
-
-private fun parseTaxCode(json: JSONObject): String? {
-    try {
-        if (json.isNull("tax_code")) {
-            return null
-        }
-        return json.optString("tax_code", null)
     } catch (e: JSONException) {
         e.printStackTrace()
         return null
