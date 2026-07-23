@@ -8,3 +8,5 @@ CREATE TABLE Question (
     required boolean NOT NULL,
     server_id bigint
 );
+
+CREATE INDEX Question_server_id_index ON Question (server_id);

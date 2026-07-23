@@ -6,3 +6,5 @@ CREATE TABLE TaxRule (
     json_data text,
     server_id bigint
 );
+
+CREATE INDEX TaxRule_server_id ON TaxRule (server_id);

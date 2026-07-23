@@ -8,3 +8,5 @@ CREATE TABLE ItemCategory (
     "position" bigint,
     server_id bigint
 );
+
+CREATE INDEX ItemCategory_server_id_index ON ItemCategory (server_id);

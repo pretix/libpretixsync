@@ -10,3 +10,5 @@ CREATE TABLE Cashier (
     server_id INTEGER,
     userid TEXT
 );
+
+CREATE INDEX Cashier_server_id_index ON Cashier (server_id);
