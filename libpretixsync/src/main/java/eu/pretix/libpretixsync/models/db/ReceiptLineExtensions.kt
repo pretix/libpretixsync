@@ -50,4 +50,5 @@ fun ReceiptLine.toModel() =
         priceCalculatedFromNet = price_calculated_from_net == true,
         linePriceGross = line_price_gross ?: price,
         discountId = discount_id,
+        manualDiscountPercent = manual_discount_percent,
     )

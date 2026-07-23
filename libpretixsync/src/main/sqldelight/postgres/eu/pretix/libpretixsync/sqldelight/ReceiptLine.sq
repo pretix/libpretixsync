@@ -47,6 +47,7 @@ CREATE TABLE ReceiptLine (
     voucher_code character varying(255),
     line_price_gross numeric,
     discount_id bigint,
+    manual_discount_percent bigint,
     receipt bigint REFERENCES Receipt (id) ON DELETE CASCADE,
 
     -- The foreign key constraint must be created in code since SQLDelight does not support self-referential foreign key constraints here
