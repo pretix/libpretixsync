@@ -476,7 +476,12 @@ public class SyncManager {
                 }
             }
 
-
+            // After a download, table statistics might be worth re-evaluating for faster query
+            // execution. On SQLite, this will run PRAGMA optimize; which will be a no-op if there
+            // haven't been a lot of changes. On PostgreSQL, ANALYZE is a bit more expensive, so
+            // we'll see whether it is worth it.
+            // See recommendations on https://sqlite.org/lang_analyze.html
+            db.getCompatQueries().analyzeAfterSync();
         } catch (DeviceAccessRevokedException e) {
             db.getCompatQueries().truncateCheckIn();
             db.getCompatQueries().truncateOrderPosition();

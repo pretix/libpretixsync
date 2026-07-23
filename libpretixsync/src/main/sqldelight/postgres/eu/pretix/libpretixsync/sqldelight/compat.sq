@@ -127,3 +127,6 @@ UPDATE QueuedOrder
 SET
     locked = TRUE
 WHERE id = ?;
+
+analyzeAfterSync:
+ANALYZE SKIP_LOCKED;

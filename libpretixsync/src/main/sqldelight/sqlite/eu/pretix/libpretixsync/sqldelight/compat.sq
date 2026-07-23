@@ -127,3 +127,7 @@ UPDATE QueuedOrder
 SET
     locked = 1
 WHERE id = ?;
+
+
+analyzeAfterSync:
+PRAGMA optimize;
