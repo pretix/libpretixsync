@@ -220,6 +220,21 @@ public class SyncManager {
         return syncMinimalEventSet(null, 0L, feedback);
     }
 
+    public SyncResult uploadAsync(ProgressFeedback feedback) {
+        if (!configStore.isConfigured()) {
+            return new SyncResult(false, false, null);
+        }
+        canceled.setCanceled(false);
+        try {
+            upload(feedback);
+        } catch (SyncException e) {
+            configStore.setLastFailedSync(System.currentTimeMillis());
+            configStore.setLastFailedSyncMsg(e.getMessage());
+            return new SyncResult(true, false, e);
+        }
+        return new SyncResult(true, false, null);
+    }
+
     private void checkEventSelection(Long listId) throws EventSwitchRequested {
         try {
             if (configStore.getSynchronizedEvents().size() != 1) {
