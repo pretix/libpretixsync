@@ -697,10 +697,10 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
             }
 
             // server side: 3a.
-            var resultingPositions = mutableSetOf(position)
+            var resultingPositions = mutableSetOf<OrderPositionModel>()
             if (list.addonMatch) {
                 // Add-on matching, as per spec, but only if we have data, it's impossible in data-less mode
-                val candidates = mutableListOf<OrderPositionModel>()
+                val candidates = mutableListOf<OrderPositionModel>(position)
 
                 val orderPositions = db.orderPositionQueries.selectForOrder(order.id).executeAsList()
                     .map { it.toModel() }
@@ -734,6 +734,8 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
                 } else {
                     resultingPositions.add(filteredCandidates[0])
                 }
+            } else {
+                resultingPositions.add(position)
             }
 
             results.addAll(resultingPositions)
