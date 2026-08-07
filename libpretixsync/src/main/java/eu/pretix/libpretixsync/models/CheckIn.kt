@@ -9,4 +9,6 @@ data class CheckIn(
     val type: String?,
     val listServerId: Long?,
     val positionId: Long?,
+    val localNonce: String?,
+    val localAnnulled: OffsetDateTime?
 )
