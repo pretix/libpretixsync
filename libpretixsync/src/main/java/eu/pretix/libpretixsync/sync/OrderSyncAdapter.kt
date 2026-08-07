@@ -232,6 +232,8 @@ class OrderSyncAdapter(
                     position = positionId,
                     server_id = ci.optLong("id"),
                     type = ci.optString("type", "entry"),
+                    local_annulled = null,
+                    local_nonce = null,
                 )
                 checkinCreateCache.add(ciobj)
             }
@@ -262,6 +264,8 @@ class OrderSyncAdapter(
                     position = it.position,
                     server_id = it.server_id,
                     type = it.type,
+                    local_annulled = null,
+                    local_nonce = null,
             )
         }
         checkinCreateCache.clear()
@@ -568,6 +572,8 @@ class OrderSyncAdapter(
                 position = c.position,
                 server_id = c.server_id,
                 type = c.type,
+                local_annulled = null,
+                local_nonce = null,
             )
         }
 

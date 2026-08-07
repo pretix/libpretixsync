@@ -11,5 +11,8 @@ CREATE TABLE QueuedCheckIn (
     nonce character varying(255),
     secret character varying(255),
     source_type character varying(255),
-    type character varying(255)
+    type character varying(255),
+    annulled DATE AS Date
 );
+
+CREATE INDEX QueuedCheckIn_nonce_index ON QueuedCheckIn (nonce);
