@@ -2,6 +2,7 @@ package eu.pretix.libpretixsync.sync
 
 import app.cash.sqldelight.TransactionWithoutReturn
 import app.cash.sqldelight.db.QueryResult
+import eu.pretix.libpretixsync.SentryInterface
 import eu.pretix.libpretixsync.api.ApiException
 import eu.pretix.libpretixsync.api.PretixApi
 import eu.pretix.libpretixsync.sqldelight.Item
@@ -21,6 +22,7 @@ class TicketLayoutSyncAdapter(
     api: PretixApi,
     syncCycleId: String,
     feedback: ProgressFeedback?,
+    private val sentry: SentryInterface? = null,
     private val salesChannel: String = "pretixpos",
 ) : BaseDownloadSyncAdapter<TicketLayout, Long>(
     db = db,
@@ -223,7 +225,7 @@ class TicketLayoutSyncAdapter(
     }
 
     override fun runInTransaction(body: TransactionWithoutReturn.() -> Unit) {
-        db.ticketLayoutQueries.writeTransaction(db = db, body = body)
+        db.ticketLayoutQueries.writeTransaction(db = db, sentry = sentry, body = body)
     }
 
     override fun runBatch(parameterBatch: List<Long>): List<TicketLayout> =

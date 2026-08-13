@@ -355,7 +355,7 @@ public class SyncManager {
             configStore.setDeviceKnownGateID(gateID);
 
             if (vdata.has("medium_key_sets")) {
-                MediumKeySetSyncAdapter mkssa = new MediumKeySetSyncAdapter(db, fileStorage, api, configStore.getSyncCycleId(), null, vdata.getJSONArray("medium_key_sets"));
+                MediumKeySetSyncAdapter mkssa = new MediumKeySetSyncAdapter(db, fileStorage, api, configStore.getSyncCycleId(), null, vdata.getJSONArray("medium_key_sets"), sentry);
                 mkssa.download();
             }
 
@@ -381,7 +381,7 @@ public class SyncManager {
 
             if (profile == Profile.PRETIXPOS) {
                 try {
-                    download(new CashierSyncAdapter(db, fileStorage, api, configStore.getSyncCycleId(), feedback));
+                    download(new CashierSyncAdapter(db, fileStorage, api, configStore.getSyncCycleId(), feedback, sentry));
                 } catch (NotFoundApiException e) {
                     // ignore, this is only supported from a later pretixpos-backend version
                 }
@@ -390,7 +390,7 @@ public class SyncManager {
                 }
             }
 
-            download(new AllSubEventsSyncAdapter(db, fileStorage, api, configStore.getSyncCycleId(), feedback));
+            download(new AllSubEventsSyncAdapter(db, fileStorage, api, configStore.getSyncCycleId(), feedback, sentry));
             List<String> slugs;
             if (overrideEventSlug != null) {
                 slugs = new ArrayList<>();
@@ -404,59 +404,59 @@ public class SyncManager {
                     subEvent = overrideSubeventId;
                 }
                 try {
-                    download(new EventSyncAdapter(db, fileStorage, eventSlug, eventSlug, api, configStore.getSyncCycleId(), feedback));
+                    download(new EventSyncAdapter(db, fileStorage, eventSlug, eventSlug, api, configStore.getSyncCycleId(), feedback, sentry));
                 } catch (PermissionDeniedApiException e) {
                     e.eventSlug = eventSlug;
                     throw e;
                 }
-                download(new ItemCategorySyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
-                download(new ItemSyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
-                download(new QuestionSyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
+                download(new ItemCategorySyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback, sentry));
+                download(new ItemSyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback, sentry));
+                download(new QuestionSyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback, sentry));
                 if (profile == Profile.PRETIXPOS) {
-                    download(new DiscountSyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
-                    download(new QuotaSyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback, subEvent));
-                    download(new TaxRuleSyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
-                    download(new TicketLayoutSyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback, salesChannel));
+                    download(new DiscountSyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback, sentry));
+                    download(new QuotaSyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback, subEvent, sentry));
+                    download(new TaxRuleSyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback, sentry));
+                    download(new TicketLayoutSyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback, sentry, salesChannel));
                 }
-                download(new BadgeLayoutSyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
-                download(new BadgeLayoutItemSyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
-                download(new CheckInListSyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback, subEvent));
+                download(new BadgeLayoutSyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback, sentry));
+                download(new BadgeLayoutItemSyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback, sentry));
+                download(new CheckInListSyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback, subEvent, sentry));
                 if (profile == Profile.PRETIXSCAN || profile == Profile.PRETIXSCAN_ONLINE) {
                     // We don't need these on pretixPOS, so we can save some traffic
                     try {
-                        download(new RevokedTicketSecretSyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
+                        download(new RevokedTicketSecretSyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback, sentry));
                     } catch (NotFoundApiException e) {
                         // ignore, this is only supported from pretix 3.12.
                     }
                     try {
-                        download(new BlockedTicketSecretSyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback));
+                        download(new BlockedTicketSecretSyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback, sentry));
                     } catch (NotFoundApiException e) {
                         // ignore, this is only supported from pretix 4.17.
                     }
                 }
                 if (profile == Profile.PRETIXSCAN && !skip_orders) {
-                    OrderSyncAdapter osa = new OrderSyncAdapter(db, fileStorage, eventSlug, subEvent, with_pdf_data, false, api, configStore.getSyncCycleId(), feedback);
+                    OrderSyncAdapter osa = new OrderSyncAdapter(db, fileStorage, eventSlug, subEvent, with_pdf_data, false, api, configStore.getSyncCycleId(), feedback, sentry);
                     download(osa);
                     try {
-                        download(new ReusableMediaSyncAdapter(db, fileStorage, api, configStore.getSyncCycleId(), feedback));
+                        download(new ReusableMediaSyncAdapter(db, fileStorage, api, configStore.getSyncCycleId(), feedback, sentry));
                     } catch (NotFoundApiException e) {
                         // ignore, this is only supported from pretix 4.19.
                     }
                 }
 
                 try {
-                    download(new SettingsSyncAdapter(db, fileStorage, eventSlug, eventSlug, api, configStore.getSyncCycleId(), feedback));
+                    download(new SettingsSyncAdapter(db, fileStorage, eventSlug, eventSlug, api, configStore.getSyncCycleId(), feedback, sentry));
                 } catch (ApiException e) {
                     // Older pretix installations
                     // We don't need these on pretixSCAN, so we can save some traffic
                     if (profile == Profile.PRETIXPOS) {
-                        download(new InvoiceSettingsSyncAdapter(db, fileStorage, eventSlug, eventSlug, api, configStore.getSyncCycleId(), feedback));
+                        download(new InvoiceSettingsSyncAdapter(db, fileStorage, eventSlug, eventSlug, api, configStore.getSyncCycleId(), feedback, sentry));
                     }
                 }
             }
 
             if (profile == Profile.PRETIXSCAN && !skip_orders && overrideEventSlug == null) {
-                OrderCleanup oc = new OrderCleanup(db, fileStorage, api, configStore.getSyncCycleId(), feedback);
+                OrderCleanup oc = new OrderCleanup(db, fileStorage, api, configStore.getSyncCycleId(), feedback, sentry);
                 if ((System.currentTimeMillis() - configStore.getLastCleanup()) > 3600 * 1000 * 12) {
                     for (String eventSlug : configStore.getSynchronizedEvents()) {
                         oc.deleteOldSubevents(eventSlug, overrideSubeventId > 0L ? overrideSubeventId : configStore.getSelectedSubeventForEvent(eventSlug));
@@ -471,7 +471,7 @@ public class SyncManager {
                 db.getCompatQueries().truncateOrder();
                 db.getResourceSyncStatusQueries().deleteByResourceFilter("order%");
                 if ((System.currentTimeMillis() - configStore.getLastCleanup()) > 3600 * 1000 * 12) {
-                    OrderCleanup oc = new OrderCleanup(db, fileStorage, api, configStore.getSyncCycleId(), feedback);
+                    OrderCleanup oc = new OrderCleanup(db, fileStorage, api, configStore.getSyncCycleId(), feedback, sentry);
                     oc.deleteOldPdfImages();
                     configStore.setLastCleanup(System.currentTimeMillis());
                 }
@@ -633,7 +633,7 @@ public class SyncManager {
                 if (resp.getResponse().code() == 201) {
                     db.getReceiptQueries().updateOrderCode(resp.getData().getString("code"), qo.getReceipt());
                     db.getQueuedOrderQueries().delete(qo.getId());
-                    (new OrderSyncAdapter(db, fileStorage, qo.getEvent_slug(), null, true, true, api, configStore.getSyncCycleId(), null)).standaloneRefreshFromJSON(resp.getData());
+                    (new OrderSyncAdapter(db, fileStorage, qo.getEvent_slug(), null, true, true, api, configStore.getSyncCycleId(), null, sentry)).standaloneRefreshFromJSON(resp.getData());
                     if (connectivityFeedback != null) {
                         connectivityFeedback.recordSuccess(System.currentTimeMillis() - startedAt);
                     }

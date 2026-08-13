@@ -1,5 +1,6 @@
 package eu.pretix.libpretixsync.sync
 
+import eu.pretix.libpretixsync.SentryInterface
 import eu.pretix.libpretixsync.api.ApiException
 import eu.pretix.libpretixsync.api.PretixApi
 import eu.pretix.libpretixsync.models.db.toModel
@@ -10,14 +11,14 @@ import org.json.JSONException
 import java.time.Duration
 import kotlin.math.max
 
-class OrderCleanup(val db: SyncDatabase, val fileStorage: FileStorage, val api: PretixApi, val syncCycleId: String, val feedback: ProgressFeedback?) {
+class OrderCleanup(val db: SyncDatabase, val fileStorage: FileStorage, val api: PretixApi, val syncCycleId: String, val feedback: ProgressFeedback?, private val sentry: SentryInterface) {
     private var subeventsDeletionDate: MutableMap<Long, Long?> = HashMap()
     private fun deletionTimeForSubevent(sid: Long, eventSlug: String): Long? {
         if (subeventsDeletionDate.containsKey(sid)) {
             return subeventsDeletionDate[sid]
         }
         try {
-            SubEventSyncAdapter(db, fileStorage, eventSlug, sid.toString(), api, syncCycleId) { }.download()
+            SubEventSyncAdapter(db, fileStorage, eventSlug, sid.toString(), api, syncCycleId, sentry) { }.download()
         } catch (e: JSONException) {
             subeventsDeletionDate[sid] = null
             return null
@@ -124,7 +125,7 @@ class OrderCleanup(val db: SyncDatabase, val fileStorage: FileStorage, val api: 
 
             // Count affected rows manually, since there is no convenient way
             // to do this with one query that works on SQLite and Postgres
-            val count = db.orderCleanupQueries.writeTransactionWithResult(db = db) {
+            val count = db.orderCleanupQueries.writeTransactionWithResult(db, sentry) {
                 val count = db.orderCleanupQueries.countOrdersByIdList(idsToDelete).executeAsOne()
                 // sqlite foreign keys are created with `on delete cascade`,
                 // so order positions and checkins are handled automatically
@@ -175,7 +176,7 @@ class OrderCleanup(val db: SyncDatabase, val fileStorage: FileStorage, val api: 
 
                     // Count affected rows manually, since there is no convenient way
                     // to do this with one query that works on SQLite and Postgres
-                    val count = db.orderCleanupQueries.writeTransactionWithResult(db) {
+                    val count = db.orderCleanupQueries.writeTransactionWithResult(db, sentry) {
                         val count = db.orderCleanupQueries.countOrdersByIdList(idsToDelete).executeAsOne()
                         // sqlite foreign keys are created with `on delete cascade`,
                         // so order positions and checkins are handled automatically

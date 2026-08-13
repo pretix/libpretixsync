@@ -2,6 +2,7 @@ package eu.pretix.libpretixsync.sync
 
 import app.cash.sqldelight.TransactionWithoutReturn
 import app.cash.sqldelight.db.QueryResult
+import eu.pretix.libpretixsync.SentryInterface
 import eu.pretix.libpretixsync.api.PretixApi
 import eu.pretix.libpretixsync.sqldelight.Cashier
 import eu.pretix.libpretixsync.sqldelight.SyncDatabase
@@ -14,6 +15,7 @@ class CashierSyncAdapter(
     api: PretixApi,
     syncCycleId: String,
     feedback: SyncManager.ProgressFeedback?,
+    private val sentry: SentryInterface? = null,
 ) : BaseConditionalSyncAdapter<Cashier, Long>(
     db = db,
     fileStorage = fileStorage,
@@ -77,7 +79,7 @@ class CashierSyncAdapter(
     }
 
     override fun runInTransaction(body: TransactionWithoutReturn.() -> Unit) {
-        db.cashierQueries.writeTransaction(db = db, body = body)
+        db.cashierQueries.writeTransaction(db = db, sentry = sentry, body = body)
     }
 
     override fun runBatch(parameterBatch: List<Long>): List<Cashier> =

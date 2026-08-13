@@ -2,6 +2,7 @@ package eu.pretix.libpretixsync.sync
 
 import app.cash.sqldelight.TransactionWithoutReturn
 import app.cash.sqldelight.db.QueryResult
+import eu.pretix.libpretixsync.SentryInterface
 import eu.pretix.libpretixsync.api.ApiException
 import eu.pretix.libpretixsync.api.PretixApi
 import eu.pretix.libpretixsync.api.ResourceNotModified
@@ -21,6 +22,7 @@ class MediumKeySetSyncAdapter(
     syncCycleId: String,
     feedback: ProgressFeedback?,
     private var data: JSONArray,
+    private val sentry: SentryInterface? = null,
 ) : BaseDownloadSyncAdapter<MediumKeySet, Long>(
     db = db,
     api = api,
@@ -90,7 +92,7 @@ class MediumKeySetSyncAdapter(
     }
 
     override fun runInTransaction(body: TransactionWithoutReturn.() -> Unit) {
-        db.mediumKeySetQueries.writeTransaction(db = db, body = body)
+        db.mediumKeySetQueries.writeTransaction(db = db, sentry = sentry, body = body)
     }
 
     override fun runBatch(parameterBatch: List<Long>): List<MediumKeySet> =

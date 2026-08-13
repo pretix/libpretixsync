@@ -2,6 +2,7 @@ package eu.pretix.libpretixsync.sync
 
 import app.cash.sqldelight.TransactionWithoutReturn
 import app.cash.sqldelight.db.QueryResult
+import eu.pretix.libpretixsync.SentryInterface
 import eu.pretix.libpretixsync.api.ApiException
 import eu.pretix.libpretixsync.api.PretixApi
 import eu.pretix.libpretixsync.sqldelight.Item
@@ -23,6 +24,7 @@ class ItemSyncAdapter(
     api: PretixApi,
     syncCycleId: String,
     feedback: ProgressFeedback?,
+    private val sentry: SentryInterface? = null,
 ) : BaseConditionalSyncAdapter<Item, Long>(
     db = db,
     fileStorage = fileStorage,
@@ -149,7 +151,7 @@ class ItemSyncAdapter(
     }
 
     override fun runInTransaction(body: TransactionWithoutReturn.() -> Unit) {
-        db.itemQueries.writeTransaction(db = db, body = body)
+        db.itemQueries.writeTransaction(db = db, sentry = sentry, body = body)
     }
 
     override fun runBatch(parameterBatch: List<Long>): List<Item> =

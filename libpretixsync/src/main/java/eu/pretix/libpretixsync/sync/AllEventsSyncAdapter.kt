@@ -2,6 +2,7 @@ package eu.pretix.libpretixsync.sync
 
 import app.cash.sqldelight.TransactionWithoutReturn
 import app.cash.sqldelight.db.QueryResult
+import eu.pretix.libpretixsync.SentryInterface
 import eu.pretix.libpretixsync.api.PretixApi
 import eu.pretix.libpretixsync.sqldelight.Event
 import eu.pretix.libpretixsync.sqldelight.SyncDatabase
@@ -16,6 +17,7 @@ class AllEventsSyncAdapter(
     api: PretixApi,
     syncCycleId: String,
     feedback: ProgressFeedback?,
+    private val sentry: SentryInterface? = null,
 ) : BaseDownloadSyncAdapter<Event, String>(
     db = db,
     api = api,
@@ -101,7 +103,7 @@ class AllEventsSyncAdapter(
     }
 
     override fun runInTransaction(body: TransactionWithoutReturn.() -> Unit) {
-        db.eventQueries.writeTransaction(db = db, body = body)
+        db.eventQueries.writeTransaction(db = db, sentry = sentry, body = body)
     }
 
     override fun runBatch(parameterBatch: List<String>): List<Event> =

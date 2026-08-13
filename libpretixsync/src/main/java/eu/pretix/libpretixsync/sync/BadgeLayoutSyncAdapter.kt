@@ -2,6 +2,7 @@ package eu.pretix.libpretixsync.sync
 
 import app.cash.sqldelight.TransactionWithoutReturn
 import app.cash.sqldelight.db.QueryResult
+import eu.pretix.libpretixsync.SentryInterface
 import eu.pretix.libpretixsync.api.ApiException
 import eu.pretix.libpretixsync.api.PretixApi
 import eu.pretix.libpretixsync.sqldelight.BadgeLayout
@@ -19,6 +20,7 @@ class BadgeLayoutSyncAdapter(
     api: PretixApi,
     syncCycleId: String,
     feedback: ProgressFeedback?,
+    private val sentry: SentryInterface? = null,
 ) : BaseDownloadSyncAdapter<BadgeLayout, Long>(
     db = db,
     api = api,
@@ -131,7 +133,7 @@ class BadgeLayoutSyncAdapter(
     }
 
     override fun runInTransaction(body: TransactionWithoutReturn.() -> Unit) {
-        db.badgeLayoutQueries.writeTransaction(db = db, body = body)
+        db.badgeLayoutQueries.writeTransaction(db = db, sentry = sentry, body = body)
     }
 
     override fun runBatch(parameterBatch: List<Long>): List<BadgeLayout> =

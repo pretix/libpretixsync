@@ -2,6 +2,7 @@ package eu.pretix.libpretixsync.sync
 
 import app.cash.sqldelight.TransactionWithoutReturn
 import app.cash.sqldelight.db.QueryResult
+import eu.pretix.libpretixsync.SentryInterface
 import eu.pretix.libpretixsync.api.PretixApi
 import eu.pretix.libpretixsync.sqldelight.Migrations
 import eu.pretix.libpretixsync.sqldelight.Question
@@ -20,6 +21,7 @@ class QuestionSyncAdapter(
     api: PretixApi,
     syncCycleId: String,
     feedback: ProgressFeedback?,
+    private val sentry: SentryInterface? = null,
 ) : BaseConditionalSyncAdapter<Question, Long>(
     db = db,
     fileStorage = fileStorage,
@@ -55,7 +57,7 @@ class QuestionSyncAdapter(
     override fun insert(jsonobj: JSONObject) {
         // Called from within transaction in processPage
         // Set noEnclosing=false but keep transaction for when this gets called directly
-        val questionId = db.questionQueries.writeTransactionWithResult(db, noEnclosing = false) {
+        val questionId = db.questionQueries.writeTransactionWithResult(db, sentry, false) {
             db.questionQueries.insert(
                 event_slug = eventSlug,
                 json_data = jsonobj.toString(),
@@ -125,7 +127,7 @@ class QuestionSyncAdapter(
     }
 
     override fun runInTransaction(body: TransactionWithoutReturn.() -> Unit) {
-        db.questionQueries.writeTransaction(db = db, body = body)
+        db.questionQueries.writeTransaction(db = db, sentry = sentry, body = body)
     }
 
     override fun runBatch(parameterBatch: List<Long>): List<Question> =

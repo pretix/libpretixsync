@@ -2,6 +2,7 @@ package eu.pretix.libpretixsync.sync
 
 import app.cash.sqldelight.TransactionWithoutReturn
 import app.cash.sqldelight.db.QueryResult
+import eu.pretix.libpretixsync.SentryInterface
 import eu.pretix.libpretixsync.api.ApiException
 import eu.pretix.libpretixsync.api.PretixApi
 import eu.pretix.libpretixsync.api.ResourceNotModified
@@ -26,6 +27,7 @@ class ReusableMediaSyncAdapter(
     api: PretixApi,
     syncCycleId: String,
     feedback: ProgressFeedback?,
+    private val sentry: SentryInterface? = null,
 ) : BaseDownloadSyncAdapter<ReusableMedium, Long>(
     db = db,
     api = api,
@@ -75,7 +77,7 @@ class ReusableMediaSyncAdapter(
 
         // Called from within transaction in processPage
         // Set noEnclosing=false but keep transaction if this ever gets called directly
-        val rmId = db.reusableMediumQueries.writeTransactionWithResult(db, noEnclosing = false) {
+        val rmId = db.reusableMediumQueries.writeTransactionWithResult(db, sentry, false) {
             db.reusableMediumQueries.insert(
                 active = jsonobj.getBoolean("active"),
                 customer_id = jsonobj.optLong("customer"),
@@ -168,7 +170,7 @@ class ReusableMediaSyncAdapter(
     }
 
     override fun runInTransaction(body: TransactionWithoutReturn.() -> Unit) {
-        db.reusableMediumQueries.writeTransaction(db = db, body = body)
+        db.reusableMediumQueries.writeTransaction(db = db, sentry = sentry, body = body)
     }
 
     override fun runBatch(parameterBatch: List<Long>): List<ReusableMedium> =

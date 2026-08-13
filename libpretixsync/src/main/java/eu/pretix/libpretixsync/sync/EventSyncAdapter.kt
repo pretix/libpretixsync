@@ -1,6 +1,7 @@
 package eu.pretix.libpretixsync.sync
 
 import app.cash.sqldelight.TransactionWithoutReturn
+import eu.pretix.libpretixsync.SentryInterface
 import eu.pretix.libpretixsync.api.PretixApi
 import eu.pretix.libpretixsync.sqldelight.Event
 import eu.pretix.libpretixsync.sqldelight.Migrations
@@ -20,6 +21,7 @@ class EventSyncAdapter(
     api: PretixApi,
     syncCycleId: String,
     feedback: ProgressFeedback? = null,
+    private val sentry: SentryInterface? = null,
 ) : BaseSingleObjectSyncAdapter<Event>(
     db = db,
     fileStorage = fileStorage,
@@ -95,7 +97,7 @@ class EventSyncAdapter(
     }
 
     override fun runInTransaction(body: TransactionWithoutReturn.() -> Unit) {
-        db.eventQueries.writeTransaction(db = db, body = body)
+        db.eventQueries.writeTransaction(db = db, sentry = sentry, body = body)
     }
 
     @Throws(JSONException::class)

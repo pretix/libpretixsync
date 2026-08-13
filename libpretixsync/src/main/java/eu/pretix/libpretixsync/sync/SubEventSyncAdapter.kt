@@ -1,6 +1,7 @@
 package eu.pretix.libpretixsync.sync
 
 import app.cash.sqldelight.TransactionWithoutReturn
+import eu.pretix.libpretixsync.SentryInterface
 import eu.pretix.libpretixsync.api.PretixApi
 import eu.pretix.libpretixsync.sqldelight.Migrations
 import eu.pretix.libpretixsync.sqldelight.SubEvent
@@ -19,6 +20,7 @@ class SubEventSyncAdapter(
     key: String,
     api: PretixApi,
     syncCycleId: String,
+    private val sentry: SentryInterface? = null,
     feedback: ProgressFeedback? = null,
 ) : BaseSingleObjectSyncAdapter<SubEvent>(
     db = db,
@@ -91,7 +93,7 @@ class SubEventSyncAdapter(
     override fun getJSON(obj: SubEvent): JSONObject = JSONObject(obj.json_data!!)
 
     override fun runInTransaction(body: TransactionWithoutReturn.() -> Unit) {
-        db.subEventQueries.writeTransaction(db = db, body = body)
+        db.subEventQueries.writeTransaction(db = db, sentry = sentry, body = body)
     }
 
     @Throws(JSONException::class)
