@@ -5,6 +5,7 @@ import eu.pretix.libpretixsync.api.ApiException
 import eu.pretix.libpretixsync.api.PretixApi
 import eu.pretix.libpretixsync.sqldelight.Settings
 import eu.pretix.libpretixsync.sqldelight.SyncDatabase
+import eu.pretix.libpretixsync.sqldelight.writeTransaction
 import eu.pretix.libpretixsync.sync.SyncManager.ProgressFeedback
 import eu.pretix.libpretixsync.utils.HashUtils
 import org.json.JSONObject
@@ -89,7 +90,7 @@ open class SettingsSyncAdapter(
     }
 
     override fun runInTransaction(body: TransactionWithoutReturn.() -> Unit) {
-        db.settingsQueries.transaction(false, body)
+        db.settingsQueries.writeTransaction(db = db, body = body)
     }
 
     private fun processAndUpdateJSONdataWithPicture(jsonobj: JSONObject, fieldName: String, oldFilename: String?): JSONObject {

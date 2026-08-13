@@ -7,6 +7,7 @@ import eu.pretix.libpretixsync.api.PretixApi
 import eu.pretix.libpretixsync.sqldelight.Item
 import eu.pretix.libpretixsync.sqldelight.SyncDatabase
 import eu.pretix.libpretixsync.sqldelight.TicketLayout
+import eu.pretix.libpretixsync.sqldelight.writeTransaction
 import eu.pretix.libpretixsync.sync.SyncManager.ProgressFeedback
 import eu.pretix.libpretixsync.utils.HashUtils
 import org.json.JSONArray
@@ -222,7 +223,7 @@ class TicketLayoutSyncAdapter(
     }
 
     override fun runInTransaction(body: TransactionWithoutReturn.() -> Unit) {
-        db.ticketLayoutQueries.transaction(false, body)
+        db.ticketLayoutQueries.writeTransaction(db = db, body = body)
     }
 
     override fun runBatch(parameterBatch: List<Long>): List<TicketLayout> =

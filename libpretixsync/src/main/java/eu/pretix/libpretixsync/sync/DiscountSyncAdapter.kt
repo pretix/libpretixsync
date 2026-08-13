@@ -5,6 +5,7 @@ import app.cash.sqldelight.db.QueryResult
 import eu.pretix.libpretixsync.api.PretixApi
 import eu.pretix.libpretixsync.sqldelight.Discount
 import eu.pretix.libpretixsync.sqldelight.SyncDatabase
+import eu.pretix.libpretixsync.sqldelight.writeTransaction
 import eu.pretix.libpretixsync.sync.SyncManager.ProgressFeedback
 import org.joda.time.format.ISODateTimeFormat
 import org.json.JSONObject
@@ -98,7 +99,7 @@ class DiscountSyncAdapter(
     }
 
     override fun runInTransaction(body: TransactionWithoutReturn.() -> Unit) {
-        db.discountQueries.transaction(false, body)
+        db.discountQueries.writeTransaction(db = db, body = body)
     }
 
     override fun runBatch(parameterBatch: List<Long>): List<Discount> =

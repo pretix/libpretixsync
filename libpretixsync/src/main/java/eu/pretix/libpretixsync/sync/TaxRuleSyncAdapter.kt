@@ -5,6 +5,7 @@ import app.cash.sqldelight.db.QueryResult
 import eu.pretix.libpretixsync.api.PretixApi
 import eu.pretix.libpretixsync.sqldelight.SyncDatabase
 import eu.pretix.libpretixsync.sqldelight.TaxRule
+import eu.pretix.libpretixsync.sqldelight.writeTransaction
 import eu.pretix.libpretixsync.sync.SyncManager.ProgressFeedback
 import org.json.JSONObject
 
@@ -68,7 +69,7 @@ class TaxRuleSyncAdapter(
     }
 
     override fun runInTransaction(body: TransactionWithoutReturn.() -> Unit) {
-        db.taxRuleQueries.transaction(false, body)
+        db.taxRuleQueries.writeTransaction(db = db, body = body)
     }
 
     override fun runBatch(parameterBatch: List<Long>): List<TaxRule> =

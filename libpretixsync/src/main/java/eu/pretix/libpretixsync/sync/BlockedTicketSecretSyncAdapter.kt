@@ -8,6 +8,7 @@ import eu.pretix.libpretixsync.api.ResourceNotModified
 import eu.pretix.libpretixsync.sqldelight.BlockedTicketSecret
 import eu.pretix.libpretixsync.sqldelight.ResourceSyncStatus
 import eu.pretix.libpretixsync.sqldelight.SyncDatabase
+import eu.pretix.libpretixsync.sqldelight.writeTransaction
 import eu.pretix.libpretixsync.sync.SyncManager.ProgressFeedback
 import org.json.JSONException
 import org.json.JSONObject
@@ -96,7 +97,7 @@ class BlockedTicketSecretSyncAdapter(
     }
 
     override fun runInTransaction(body: TransactionWithoutReturn.() -> Unit) {
-        db.blockedTicketSecretQueries.transaction(false, body)
+        db.blockedTicketSecretQueries.writeTransaction(db = db, body = body)
     }
 
     override fun runBatch(parameterBatch: List<Long>): List<BlockedTicketSecret> =

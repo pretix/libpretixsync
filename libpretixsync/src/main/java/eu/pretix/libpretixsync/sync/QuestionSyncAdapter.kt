@@ -6,6 +6,8 @@ import eu.pretix.libpretixsync.api.PretixApi
 import eu.pretix.libpretixsync.sqldelight.Migrations
 import eu.pretix.libpretixsync.sqldelight.Question
 import eu.pretix.libpretixsync.sqldelight.SyncDatabase
+import eu.pretix.libpretixsync.sqldelight.writeTransaction
+import eu.pretix.libpretixsync.sqldelight.writeTransactionWithResult
 import eu.pretix.libpretixsync.sync.SyncManager.ProgressFeedback
 import eu.pretix.libpretixsync.utils.JSONUtils
 import org.json.JSONException
@@ -51,7 +53,9 @@ class QuestionSyncAdapter(
     }
 
     override fun insert(jsonobj: JSONObject) {
-        val questionId = db.questionQueries.transactionWithResult {
+        // Called from within transaction in processPage
+        // Set noEnclosing=false but keep transaction for when this gets called directly
+        val questionId = db.questionQueries.writeTransactionWithResult(db, noEnclosing = false) {
             db.questionQueries.insert(
                 event_slug = eventSlug,
                 json_data = jsonobj.toString(),
@@ -121,7 +125,7 @@ class QuestionSyncAdapter(
     }
 
     override fun runInTransaction(body: TransactionWithoutReturn.() -> Unit) {
-        db.questionQueries.transaction(false, body)
+        db.questionQueries.writeTransaction(db = db, body = body)
     }
 
     override fun runBatch(parameterBatch: List<Long>): List<Question> =

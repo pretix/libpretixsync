@@ -7,6 +7,7 @@ import eu.pretix.libpretixsync.api.PretixApi
 import eu.pretix.libpretixsync.api.ResourceNotModified
 import eu.pretix.libpretixsync.sqldelight.MediumKeySet
 import eu.pretix.libpretixsync.sqldelight.SyncDatabase
+import eu.pretix.libpretixsync.sqldelight.writeTransaction
 import eu.pretix.libpretixsync.sync.SyncManager.ProgressFeedback
 import org.json.JSONArray
 import org.json.JSONException
@@ -89,7 +90,7 @@ class MediumKeySetSyncAdapter(
     }
 
     override fun runInTransaction(body: TransactionWithoutReturn.() -> Unit) {
-        db.mediumKeySetQueries.transaction(false, body)
+        db.mediumKeySetQueries.writeTransaction(db = db, body = body)
     }
 
     override fun runBatch(parameterBatch: List<Long>): List<MediumKeySet> =

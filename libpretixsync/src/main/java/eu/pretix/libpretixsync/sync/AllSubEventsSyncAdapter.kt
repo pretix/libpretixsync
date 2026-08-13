@@ -8,6 +8,7 @@ import eu.pretix.libpretixsync.api.ResourceNotModified
 import eu.pretix.libpretixsync.sqldelight.ResourceSyncStatus
 import eu.pretix.libpretixsync.sqldelight.SubEvent
 import eu.pretix.libpretixsync.sqldelight.SyncDatabase
+import eu.pretix.libpretixsync.sqldelight.writeTransaction
 import eu.pretix.libpretixsync.sync.SyncManager.ProgressFeedback
 import org.joda.time.format.ISODateTimeFormat
 import org.json.JSONException
@@ -107,7 +108,7 @@ class AllSubEventsSyncAdapter(
     }
 
     override fun runInTransaction(body: TransactionWithoutReturn.() -> Unit) {
-        db.subEventQueries.transaction(false, body)
+        db.subEventQueries.writeTransaction(db = db, body = body)
     }
 
     override fun runBatch(parameterBatch: List<Long>): List<SubEvent> =

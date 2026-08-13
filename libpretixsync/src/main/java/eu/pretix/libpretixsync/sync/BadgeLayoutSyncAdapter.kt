@@ -6,6 +6,7 @@ import eu.pretix.libpretixsync.api.ApiException
 import eu.pretix.libpretixsync.api.PretixApi
 import eu.pretix.libpretixsync.sqldelight.BadgeLayout
 import eu.pretix.libpretixsync.sqldelight.SyncDatabase
+import eu.pretix.libpretixsync.sqldelight.writeTransaction
 import eu.pretix.libpretixsync.sync.SyncManager.ProgressFeedback
 import eu.pretix.libpretixsync.utils.HashUtils
 import org.json.JSONObject
@@ -130,7 +131,7 @@ class BadgeLayoutSyncAdapter(
     }
 
     override fun runInTransaction(body: TransactionWithoutReturn.() -> Unit) {
-        db.badgeLayoutQueries.transaction(false, body)
+        db.badgeLayoutQueries.writeTransaction(db = db, body = body)
     }
 
     override fun runBatch(parameterBatch: List<Long>): List<BadgeLayout> =

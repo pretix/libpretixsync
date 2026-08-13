@@ -7,6 +7,7 @@ import eu.pretix.libpretixsync.api.PretixApi
 import eu.pretix.libpretixsync.sqldelight.Item
 import eu.pretix.libpretixsync.sqldelight.Migrations
 import eu.pretix.libpretixsync.sqldelight.SyncDatabase
+import eu.pretix.libpretixsync.sqldelight.writeTransaction
 import eu.pretix.libpretixsync.sync.SyncManager.ProgressFeedback
 import eu.pretix.libpretixsync.utils.HashUtils
 import eu.pretix.libpretixsync.utils.JSONUtils
@@ -148,7 +149,7 @@ class ItemSyncAdapter(
     }
 
     override fun runInTransaction(body: TransactionWithoutReturn.() -> Unit) {
-        db.itemQueries.transaction(false, body)
+        db.itemQueries.writeTransaction(db = db, body = body)
     }
 
     override fun runBatch(parameterBatch: List<Long>): List<Item> =

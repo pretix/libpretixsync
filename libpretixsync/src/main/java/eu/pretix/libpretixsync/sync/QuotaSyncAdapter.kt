@@ -5,6 +5,8 @@ import app.cash.sqldelight.db.QueryResult
 import eu.pretix.libpretixsync.api.PretixApi
 import eu.pretix.libpretixsync.sqldelight.Quota
 import eu.pretix.libpretixsync.sqldelight.SyncDatabase
+import eu.pretix.libpretixsync.sqldelight.writeTransaction
+import eu.pretix.libpretixsync.sqldelight.writeTransactionWithResult
 import eu.pretix.libpretixsync.sync.SyncManager.ProgressFeedback
 import org.json.JSONObject
 
@@ -83,7 +85,9 @@ class QuotaSyncAdapter(
             Pair(null, null)
         }
 
-        val quotaId = db.quotaQueries.transactionWithResult {
+        // Called from within transaction in processPage
+        // Set noEnclosing=false but keep transaction if this ever gets called directly
+        val quotaId = db.quotaQueries.writeTransactionWithResult(db, noEnclosing = false) {
             db.quotaQueries.insert(
                 available = available,
                 available_number = availableNumber,
@@ -168,7 +172,7 @@ class QuotaSyncAdapter(
     }
 
     override fun runInTransaction(body: TransactionWithoutReturn.() -> Unit) =
-        db.quotaQueries.transaction(false, body)
+        db.quotaQueries.writeTransaction(db = db, body = body)
 
     override fun runBatch(parameterBatch: List<Long>): List<Quota> =
         db.quotaQueries.selectByServerIdListAndEventSlug(
