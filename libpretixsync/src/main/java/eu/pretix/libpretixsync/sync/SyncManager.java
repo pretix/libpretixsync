@@ -191,6 +191,7 @@ public class SyncManager {
                 feedback.postFeedback("Sync completed.");
             }
         } catch (SyncException e) {
+            e.printStackTrace();
             configStore.setLastFailedSync(System.currentTimeMillis());
             configStore.setLastFailedSyncMsg(e.getMessage());
             return new SyncResult(true, download, e);
