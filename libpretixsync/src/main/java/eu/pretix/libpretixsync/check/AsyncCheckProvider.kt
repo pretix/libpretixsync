@@ -1138,7 +1138,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
             .executeAsList()
             .map { it.toModel() }
 
-        val answerMap = position.answers?.toMutableMap() ?: mutableMapOf()
+        val answerMap = position.answersWithOptionIds?.toMutableMap() ?: mutableMapOf()
         if (answers != null) {
             for (a in answers) {
                 answerMap[(a.question as Question).serverId] = a.value
