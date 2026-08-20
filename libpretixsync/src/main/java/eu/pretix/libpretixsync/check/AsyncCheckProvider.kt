@@ -249,26 +249,20 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
             if (answerMap.containsKey(q.serverId)) {
                 answer = answerMap[q.serverId]
                 try {
-                    answer = q.clean_answer(answer, q.options, false)
                     val jo = JSONObject()
                     jo.put("answer", answer)
-                    jo.put("question", q.serverId)
+                    jo.put("question", q.serverId) // server expects question server_id here
                     if (q.askDuringCheckIn) {
                         givenAnswers.put(jo)
                     }
-                    if (q.showDuringCheckIn) {
-                        shownAnswers.add(TicketCheckProvider.QuestionAnswer(q, questionJson, answer))
-                    }
-                } catch (e: QuestionLike.ValidationException) {
+                } catch (_: JSONException) {
                     answer = ""
                     if (q.askDuringCheckIn) {
                         askQuestions = true
                     }
-                } catch (e: JSONException) {
-                    answer = ""
-                    if (q.askDuringCheckIn) {
-                        askQuestions = true
-                    }
+                }
+                if (q.showDuringCheckIn) {
+                    shownAnswers.add(TicketCheckProvider.QuestionAnswer(q, questionJson, answer))
                 }
             } else {
                 if (q.askDuringCheckIn) {
@@ -1138,7 +1132,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
             .executeAsList()
             .map { it.toModel() }
 
-        val answerMap = position.answersWithOptionIds?.toMutableMap() ?: mutableMapOf()
+        val answerMap = position.answers?.toMutableMap() ?: mutableMapOf()
         if (answers != null) {
             for (a in answers) {
                 answerMap[(a.question as Question).serverId] = a.value
