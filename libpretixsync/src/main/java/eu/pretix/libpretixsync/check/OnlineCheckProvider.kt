@@ -266,7 +266,7 @@ class OnlineCheckProvider(
                                 }
                             }
                         }
-                        res.shownAnswers = shownAnswers
+                        res.shownAnswers = shownAnswers.sortedBy { it.question.position }
                     }
                 }
 
