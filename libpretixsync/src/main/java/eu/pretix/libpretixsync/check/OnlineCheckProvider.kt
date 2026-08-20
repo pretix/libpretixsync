@@ -53,6 +53,7 @@ class OnlineCheckProvider(
         useOrderLocale: Boolean,
         exchange_medium_type: String?,
         exchange_medium_identifier: String?,
+        simulate: Boolean,
     ): TicketCheckProvider.CheckResult {
         val ticketid_cleaned = cleanInput(ticketid, source_type)
         val nonce_cleaned = nonce ?: NonceGenerator.nextNonce()
@@ -78,9 +79,11 @@ class OnlineCheckProvider(
                     use_order_locale = useOrderLocale,
                     exchange_medium_type = exchange_medium_type,
                     exchange_medium_identifier = exchange_medium_identifier,
+                    simulate = simulate,
                 )
             } else {
                 if (eventsAndCheckinLists.size != 1) throw CheckException("Multi-event scan not supported by server.")
+                if (simulate) throw CheckException("Simulate not supported by this server version.")
                 api.redeem(
                     eventsAndCheckinLists.keys.first(),
                     ticketid_cleaned,

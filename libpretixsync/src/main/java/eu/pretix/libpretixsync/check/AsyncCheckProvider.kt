@@ -559,10 +559,18 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
         useOrderLocale: Boolean,
         exchange_medium_type: String?,
         exchange_medium_identifier: String?,
+        simulate: Boolean
     ): TicketCheckProvider.CheckResult {
         val ticketid_cleaned = cleanInput(ticketid, source_type)
 
         sentry.addBreadcrumb("provider.check", "offline check started")
+
+        if (simulate) {
+            return TicketCheckProvider.CheckResult(
+                TicketCheckProvider.CheckResult.Type.ERROR,
+                "Simulate is not supported in offline mode",
+            )
+        }
 
         if (exchange_medium_type != null || exchange_medium_identifier != null) {
             return TicketCheckProvider.CheckResult(

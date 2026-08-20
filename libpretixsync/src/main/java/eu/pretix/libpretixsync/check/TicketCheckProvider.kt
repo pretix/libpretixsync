@@ -176,6 +176,7 @@ interface TicketCheckProvider {
         useOrderLocale: Boolean = false,
         exchange_medium_type: String? = null,
         exchange_medium_identifier: String? = null,
+        simulate: Boolean = false
     ): CheckResult
 
     fun check(eventsAndCheckinLists: Map<String, Long>, ticketid: String): CheckResult

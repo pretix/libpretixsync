@@ -116,6 +116,7 @@ open class PretixApi(url: String, key: String, orgaSlug: String, version: Int, h
         use_order_locale: Boolean = false,
         exchange_medium_type: String? = null,
         exchange_medium_identifier: String? = null,
+        simulate: Boolean = false,
     ): ApiResponse {
         val body = JSONObject()
         if (datetime != null) {
@@ -155,6 +156,7 @@ open class PretixApi(url: String, key: String, orgaSlug: String, version: Int, h
         body.put("lists", jlists)
         if (exchange_medium_type != null) body.put("exchange_medium_type", exchange_medium_type)
         if (exchange_medium_identifier != null) body.put("exchange_medium_identifier", exchange_medium_identifier)
+        if (simulate) body.put("simulate", true)
         var pd = "?expand=answers.question"
         if (pdf_data) {
             pd += "&pdf_data=true"
