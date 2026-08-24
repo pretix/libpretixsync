@@ -20,7 +20,8 @@ WHERE Question.id IN (
     SELECT Question_Item.QuestionId
     FROM Question_Item
     WHERE Question_Item.ItemId = :item_id
-);
+)
+ORDER BY Question.position ASC;
 
 selectByServerIdListAndEventSlug:
 SELECT *
