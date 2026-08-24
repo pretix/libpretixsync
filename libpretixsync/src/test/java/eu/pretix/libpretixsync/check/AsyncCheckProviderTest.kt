@@ -23,6 +23,7 @@ import java.util.ArrayList
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Ignore
 
 class AsyncCheckProviderTest : BaseDatabaseTest() {
     private var configStore: FakeConfigStore? = null
@@ -959,7 +960,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         assertEquals("[{\"answer\":\"True\",\"question\":1}]", qciList[0].answers)
     }
 
-    @Test
+    @Test @Ignore("Validation happens in the question dialog already, validation dropped from checkin itself")
     fun testQuestionsInvalidInput() {
         QuestionSyncAdapter(db, FakeFileStorage(), "demo", fakeApi!!, "", null).standaloneRefreshFromJSON(
             jsonResource("questions/question2.json")
@@ -971,7 +972,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         val ra = r.requiredAnswers!![0]
 
         val answers = ArrayList<Answer>()
-        answers.add(Answer(ra.question.toModel(), "True"))
+        answers.add(Answer(ra.question.toModel(), "True")) // should be a number
 
         r = p!!.check(mapOf("demo" to 1L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj", "barcode", answers, false, false, TicketCheckProvider.CheckInType.ENTRY)
         assertEquals(TicketCheckProvider.CheckResult.Type.ANSWERS_REQUIRED, r.type)
