@@ -130,3 +130,8 @@ WHERE id = ?;
 
 analyzeAfterSync:
 ANALYZE SKIP_LOCKED;
+
+-- TODO: Implement
+-- SQLite only
+-- upgradeTransaction:
+-- ;

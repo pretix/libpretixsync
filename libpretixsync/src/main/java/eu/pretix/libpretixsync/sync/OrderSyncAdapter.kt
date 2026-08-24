@@ -1,6 +1,7 @@
 package eu.pretix.libpretixsync.sync
 
 import app.cash.sqldelight.TransactionWithoutReturn
+import eu.pretix.libpretixsync.SentryInterface
 import eu.pretix.libpretixsync.api.ApiException
 import eu.pretix.libpretixsync.api.PretixApi
 import eu.pretix.libpretixsync.sqldelight.CheckIn
@@ -9,6 +10,8 @@ import eu.pretix.libpretixsync.sqldelight.Migrations
 import eu.pretix.libpretixsync.sqldelight.OrderPosition
 import eu.pretix.libpretixsync.sqldelight.ResourceSyncStatus
 import eu.pretix.libpretixsync.sqldelight.SyncDatabase
+import eu.pretix.libpretixsync.sqldelight.writeTransaction
+import eu.pretix.libpretixsync.sqldelight.writeTransactionWithResult
 import eu.pretix.libpretixsync.sync.SyncManager.ProgressFeedback
 import eu.pretix.libpretixsync.utils.HashUtils
 import eu.pretix.libpretixsync.utils.JSONUtils
@@ -35,6 +38,7 @@ class OrderSyncAdapter(
         api: PretixApi,
         syncCylceId: String,
         feedback: ProgressFeedback?,
+        private val sentry: SentryInterface? = null,
 ) : BaseDownloadSyncAdapter<Order, String>(db, api, syncCylceId, eventSlug, fileStorage, feedback) {
 
     private val itemCache: MutableMap<Long, Item> = HashMap()
@@ -156,7 +160,9 @@ class OrderSyncAdapter(
     private fun insertPositionObject(jsonobj: JSONObject, orderId: Long, jsonorder: JSONObject, parent: JSONObject?) {
         val posobj = preparePositionObject(jsonobj, orderId, jsonorder, parent)
 
-        val id = db.orderPositionQueries.transactionWithResult {
+        // Called from within transaction in processPage
+        // Set noEnclosing=false but keep transaction for when this gets called directly
+        val id = db.orderPositionQueries.writeTransactionWithResult(db, sentry, false) {
             db.orderPositionQueries.insert(
                 attendee_email = posobj.attendee_email,
                 attendee_name = posobj.attendee_name,
@@ -276,7 +282,9 @@ class OrderSyncAdapter(
         val json_data = JSONObject(jsonobj.toString())
         json_data.remove("positions")
 
-        val id = db.orderQueries.transactionWithResult {
+        // Called from within transaction in processPage
+        // Set noEnclosing=false but keep transaction for when this gets called directly
+        val id = db.orderQueries.writeTransactionWithResult(db, sentry, false) {
             db.orderQueries.insert(
                     checkin_attention = jsonobj.optBoolean("checkin_attention"),
                     checkin_text = jsonobj.optString("checkin_text"),
@@ -521,7 +529,7 @@ class OrderSyncAdapter(
     }
 
     override fun runInTransaction(body: TransactionWithoutReturn.() -> Unit) {
-        db.orderQueries.transaction(false, body)
+        db.orderQueries.writeTransaction(db = db, sentry = sentry, body = body)
     }
 
     override fun getJSON(obj: Order): JSONObject {
