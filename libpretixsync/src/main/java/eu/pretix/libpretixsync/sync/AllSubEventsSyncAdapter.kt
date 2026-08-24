@@ -2,12 +2,14 @@ package eu.pretix.libpretixsync.sync
 
 import app.cash.sqldelight.TransactionWithoutReturn
 import app.cash.sqldelight.db.QueryResult
+import eu.pretix.libpretixsync.SentryInterface
 import eu.pretix.libpretixsync.api.ApiException
 import eu.pretix.libpretixsync.api.PretixApi
 import eu.pretix.libpretixsync.api.ResourceNotModified
 import eu.pretix.libpretixsync.sqldelight.ResourceSyncStatus
 import eu.pretix.libpretixsync.sqldelight.SubEvent
 import eu.pretix.libpretixsync.sqldelight.SyncDatabase
+import eu.pretix.libpretixsync.sqldelight.writeTransaction
 import eu.pretix.libpretixsync.sync.SyncManager.ProgressFeedback
 import org.joda.time.format.ISODateTimeFormat
 import org.json.JSONException
@@ -22,6 +24,7 @@ class AllSubEventsSyncAdapter(
     api: PretixApi,
     syncCycleId: String,
     feedback: ProgressFeedback?,
+    private val sentry: SentryInterface? = null,
 ) : BaseDownloadSyncAdapter<SubEvent, Long>(
     db = db,
     api = api,
@@ -107,7 +110,7 @@ class AllSubEventsSyncAdapter(
     }
 
     override fun runInTransaction(body: TransactionWithoutReturn.() -> Unit) {
-        db.subEventQueries.transaction(false, body)
+        db.subEventQueries.writeTransaction(db = db, sentry = sentry, body = body)
     }
 
     override fun runBatch(parameterBatch: List<Long>): List<SubEvent> =
