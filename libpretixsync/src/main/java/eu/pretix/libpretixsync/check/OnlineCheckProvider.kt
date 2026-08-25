@@ -226,7 +226,6 @@ class OnlineCheckProvider(
                         res.locale = posjson.getString("order__locale")
                     }
                     res.position = posjson
-                    res.addons = collectAddons(posjson.getLong("id"))
                     val checkins = posjson.getJSONArray("checkins")
                     for (i in 0 until checkins.length()) {
                         val ci = checkins.getJSONObject(i)
@@ -355,34 +354,6 @@ class OnlineCheckProvider(
 
     override fun check(eventsAndCheckinLists: Map<String, Long>, ticketid: String, source_type: String): TicketCheckProvider.CheckResult {
         return check(eventsAndCheckinLists, ticketid, source_type, ArrayList(), false, true, TicketCheckProvider.CheckInType.ENTRY)
-    }
-
-    private fun collectAddons(positionServerId: Long): List<TicketCheckProvider.AddonInfo> {
-        val position = db.orderPositionQueries.selectByServerId(positionServerId)
-            .executeAsOneOrNull()?.toModel() ?: return emptyList()
-
-        return db.orderPositionQueries.selectForOrder(position.orderId)
-            .executeAsList()
-            .map { it.toModel() }
-            .filter { it.addonToServerId == positionServerId }
-            .map { addon ->
-                val addonItem = db.itemQueries.selectById(addon.itemId).executeAsOneOrNull()?.toModel()
-                val varid = addon.variationServerId
-                val variation = if (addonItem != null && varid != null && varid > 0) {
-                    try {
-                        addonItem.getVariation(varid)
-                    } catch (e: JSONException) {
-                        sentry.captureException(e)
-                        null
-                    }
-                } else null
-
-                TicketCheckProvider.AddonInfo(
-                    itemName = addonItem?.internalName,
-                    variationName = variation?.stringValue,
-                    attendeeName = addon.attendeeName,
-                )
-            }
     }
 
     override fun annul(
