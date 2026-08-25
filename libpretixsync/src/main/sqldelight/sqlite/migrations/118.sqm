@@ -26,3 +26,9 @@ CREATE INDEX IF NOT EXISTS TicketLayout_server_id_index ON TicketLayout (server_
 CREATE INDEX IF NOT EXISTS Quota_event_slug_index ON Quota (event_slug);
 DROP INDEX IF EXISTS Receipt_canceled_index;
 DROP INDEX IF EXISTS ReceiptLine_canceled_index;
+-- this should be 119.sqm, but we've accidentially shipped that with version 118 already:
+ALTER TABLE QueuedCheckIn ADD COLUMN annulled TEXT;
+ALTER TABLE CheckIn ADD COLUMN local_nonce TEXT;
+ALTER TABLE CheckIn ADD COLUMN local_annulled TEXT;
+CREATE INDEX IF NOT EXISTS QueuedCheckIn_nonce_index ON QueuedCheckIn (nonce);
+CREATE INDEX IF NOT EXISTS CheckIn_local_nonce_index ON CheckIn (local_nonce);
