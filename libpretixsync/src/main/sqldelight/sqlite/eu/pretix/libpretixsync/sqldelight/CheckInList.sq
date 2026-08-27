@@ -10,3 +10,4 @@ CREATE TABLE CheckInList (
     server_id INTEGER,
     subevent_id INTEGER
 );
+CREATE INDEX CheckInList_server_id_index ON CheckInList (server_id);

@@ -10,3 +10,4 @@ CREATE TABLE Cashier (
     server_id bigint,
     userid character varying(255)
 );
+CREATE INDEX Cashier_server_id_index ON Cashier (server_id);

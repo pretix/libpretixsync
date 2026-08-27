@@ -2,6 +2,7 @@ package eu.pretix.libpretixsync.check
 
 import eu.pretix.libpretixsync.db.Answer
 import eu.pretix.libpretixsync.db.BaseDatabaseTest
+import eu.pretix.libpretixsync.db.NonceGenerator
 import eu.pretix.libpretixsync.sync.CheckInListSyncAdapter
 import eu.pretix.libpretixsync.sync.EventSyncAdapter
 import eu.pretix.libpretixsync.sync.ItemSyncAdapter
@@ -22,6 +23,7 @@ import java.util.ArrayList
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Ignore
 
 class AsyncCheckProviderTest : BaseDatabaseTest() {
     private var configStore: FakeConfigStore? = null
@@ -34,8 +36,8 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         fakeApi = FakePretixApi()
         p = AsyncCheckProvider(configStore!!, db)
 
-        EventSyncAdapter(db, "demo", "demo", fakeApi!!, "", null).standaloneRefreshFromJSON(jsonResource("events/event1.json"))
-        EventSyncAdapter(db, "demo2", "demo2", fakeApi!!, "", null).standaloneRefreshFromJSON(jsonResource("events/event2.json"))
+        EventSyncAdapter(db, FakeFileStorage(), "demo", "demo", fakeApi!!, "", null).standaloneRefreshFromJSON(jsonResource("events/event1.json"))
+        EventSyncAdapter(db, FakeFileStorage(), "demo2", "demo2", fakeApi!!, "", null).standaloneRefreshFromJSON(jsonResource("events/event2.json"))
         ItemSyncAdapter(db, FakeFileStorage(), "demo", fakeApi!!, "", null).standaloneRefreshFromJSON(jsonResource("items/item1.json"))
         ItemSyncAdapter(db, FakeFileStorage(), "demo", fakeApi!!, "", null).standaloneRefreshFromJSON(jsonResource("items/item2.json"))
         ItemSyncAdapter(db, FakeFileStorage(), "demo", fakeApi!!, "", null).standaloneRefreshFromJSON(jsonResource("items/item3.json"))
@@ -64,7 +66,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         CheckInListSyncAdapter(db, FakeFileStorage(), "demo2", fakeApi!!, "", null, 0).standaloneRefreshFromJSON(
             jsonResource("checkinlists/event2-list7.json")
         )
-        SubEventSyncAdapter(db, "demo", "14", fakeApi!!, "", null).standaloneRefreshFromJSON(jsonResource("subevents/subevent1.json"))
+        SubEventSyncAdapter(db, FakeFileStorage(), "demo", "14", fakeApi!!, "", null).standaloneRefreshFromJSON(jsonResource("subevents/subevent1.json"))
 
         val osa = OrderSyncAdapter(db, FakeFileStorage(), "demo", 0, true, false, fakeApi!!, "", null)
         osa.standaloneRefreshFromJSON(jsonResource("orders/order1.json"))
@@ -958,7 +960,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         assertEquals("[{\"answer\":\"True\",\"question\":1}]", qciList[0].answers)
     }
 
-    @Test
+    @Test @Ignore("Validation happens in the question dialog already, validation dropped from checkin itself")
     fun testQuestionsInvalidInput() {
         QuestionSyncAdapter(db, FakeFileStorage(), "demo", fakeApi!!, "", null).standaloneRefreshFromJSON(
             jsonResource("questions/question2.json")
@@ -970,7 +972,7 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         val ra = r.requiredAnswers!![0]
 
         val answers = ArrayList<Answer>()
-        answers.add(Answer(ra.question.toModel(), "True"))
+        answers.add(Answer(ra.question.toModel(), "True")) // should be a number
 
         r = p!!.check(mapOf("demo" to 1L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj", "barcode", answers, false, false, TicketCheckProvider.CheckInType.ENTRY)
         assertEquals(TicketCheckProvider.CheckResult.Type.ANSWERS_REQUIRED, r.type)
@@ -1176,5 +1178,46 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
         r = p!!.check(mapOf("demo2" to 7L, "demo" to 1L), "E4BibyTSylQOgeKjuMPiTDxi5HXPuTVsx1qCli3IL0143gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKAEAPAQA")
         assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
         assertEquals(db.queuedCheckInQueries.count().executeAsOne(), 1L)
+    }
+
+    @Test
+    fun testAnnullNotYetUploaded() {
+        var r = p!!.check(mapOf("demo" to 1L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+        val nonce = r.nonce!!
+
+        r = p!!.check(mapOf("demo" to 1L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.USED, r.type)
+        assertEquals(db.queuedCallQueries.count().executeAsOne(), 1L)
+
+        p!!.annul(mapOf("demo" to 1L), nonce, "Turnstile did not turn")
+        val qci = db.queuedCheckInQueries.selectAll().executeAsList()
+        assertEquals(qci.size, 1)
+        assertEquals(qci.first().nonce, nonce)
+        assert(qci.first().annulled != null)
+        assertEquals(db.queuedCallQueries.count().executeAsOne(), 2L)
+
+        r = p!!.check(mapOf("demo" to 1L), "kfndgffgyw4tdgcacx6bb3bgemq69cxj")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+    }
+
+    @Test
+    fun testSignedAnnullNotYetUploaded() {
+        var r = p!!.check(mapOf("demo" to 1L), "E4BibyTSylQOgeKjuMPiTDxi5HXPuTVsx1qCli3IL0143gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKAEAPAQA")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+        val nonce = r.nonce!!
+        r = p!!.check(mapOf("demo" to 1L), "E4BibyTSylQOgeKjuMPiTDxi5HXPuTVsx1qCli3IL0143gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKAEAPAQA")
+        assertEquals(TicketCheckProvider.CheckResult.Type.USED, r.type)
+        assertEquals(db.queuedCallQueries.count().executeAsOne(), 1L)
+
+        p!!.annul(mapOf("demo" to 1L), nonce, "Turnstile did not turn")
+        val qci = db.queuedCheckInQueries.selectAll().executeAsList()
+        assertEquals(qci.size, 1)
+        assertEquals(qci.first().nonce, nonce)
+        assert(qci.first().annulled != null)
+        assertEquals(db.queuedCallQueries.count().executeAsOne(), 2L)
+
+        r = p!!.check(mapOf("demo" to 1L), "E4BibyTSylQOgeKjuMPiTDxi5HXPuTVsx1qCli3IL0143gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKAEAPAQA")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
     }
 }

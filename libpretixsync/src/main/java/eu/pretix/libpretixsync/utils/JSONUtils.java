@@ -22,6 +22,7 @@ package eu.pretix.libpretixsync.utils;
 
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.HashSet;
@@ -29,6 +30,14 @@ import java.util.Iterator;
 import java.util.Set;
 
 public class JSONUtils {
+
+    public static String optString(JSONObject object, String key) throws JSONException {
+        if (object.has(key) && !object.isNull(key)) {
+            return object.getString(key);
+        }
+        return null;
+    }
+
     private static Set<String> setFromIterable(Iterator<String> it) {
         HashSet<String> set = new HashSet<String>();
         while (it.hasNext()) {

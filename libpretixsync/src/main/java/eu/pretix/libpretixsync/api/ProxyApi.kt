@@ -32,6 +32,12 @@ data class MultiCheckInput(
     val simulate: Boolean = false,
 )
 
+data class AnnulInput(
+    val events_and_checkin_lists: Map<String, Long>,
+    val nonce: String,
+    val explanation: String,
+)
+
 data class CheckInput(
     val ticketid: String,
     val answers: List<CheckInputAnswer>?,

@@ -36,6 +36,8 @@ import org.json.JSONException
 import org.json.JSONObject
 import java.lang.Exception
 import java.nio.charset.Charset
+import java.text.DateFormat
+import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.util.*
@@ -44,14 +46,23 @@ import kotlin.collections.filter
 class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDatabase) : TicketCheckProvider {
     private var sentry: SentryInterface = DummySentryImplementation()
 
-    /*
-     */
-
     override fun setSentry(sentry: SentryInterface) {
         this.sentry = sentry
     }
 
-    private fun storeFailedCheckin(eventSlug: String, listId: Long, error_reason: String, raw_barcode: String, type: TicketCheckProvider.CheckInType, position: Long? = null, item: Long? = null, variation: Long? = null, subevent: Long? = null, nonce: String?) {
+    private fun storeFailedCheckin(
+        eventSlug: String,
+        listId: Long,
+        error_reason: String,
+        raw_barcode: String,
+        raw_source_type: String,
+        type: TicketCheckProvider.CheckInType,
+        position: Long? = null,
+        item: Long? = null,
+        variation: Long? = null,
+        subevent: Long? = null,
+        nonce: String
+    ) {
         /*
            :<json boolean error_reason: One of ``canceled``, ``invalid``, ``unpaid``, ``product``, ``rules``, ``revoked``,
                                         ``incomplete``, ``already_redeemed``, ``blocked``, ``invalid_time``, or ``error``. Required.
@@ -72,12 +83,13 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
         } else {
             jdoc.put("raw_barcode", raw_barcode)
         }
+        jdoc.put("raw_source_type", raw_source_type)
         jdoc.put("type", when (type) {
             TicketCheckProvider.CheckInType.ENTRY -> "entry"
             TicketCheckProvider.CheckInType.EXIT -> "exit"
         })
         jdoc.put("error_reason", error_reason)
-        if (nonce != null) jdoc.put("nonce", nonce)
+        jdoc.put("nonce", nonce)
         if (position != null && position > 0) jdoc.put("position", position)
         if (item != null && item > 0) jdoc.put("item", item)
         if (variation != null && variation > 0) jdoc.put("variation", variation)
@@ -86,7 +98,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
         val api = PretixApi.fromConfig(config)  // todo: uses wrong http client
         db.queuedCallQueries.insert(
             body = jdoc.toString(),
-            idempotency_key = NonceGenerator.nextNonce(),
+            idempotency_key = nonce,
             url = api.eventResourceUrl(eventSlug, "checkinlists") + listId + "/failed_checkins/",
         )
     }
@@ -250,26 +262,20 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
             if (answerMap.containsKey(q.serverId)) {
                 answer = answerMap[q.serverId]
                 try {
-                    answer = q.clean_answer(answer, q.options, false)
                     val jo = JSONObject()
                     jo.put("answer", answer)
-                    jo.put("question", q.serverId)
+                    jo.put("question", q.serverId) // server expects question server_id here
                     if (q.askDuringCheckIn) {
                         givenAnswers.put(jo)
                     }
-                    if (q.showDuringCheckIn) {
-                        shownAnswers.add(TicketCheckProvider.QuestionAnswer(q, questionJson, answer))
-                    }
-                } catch (e: QuestionLike.ValidationException) {
+                } catch (_: JSONException) {
                     answer = ""
                     if (q.askDuringCheckIn) {
                         askQuestions = true
                     }
-                } catch (e: JSONException) {
-                    answer = ""
-                    if (q.askDuringCheckIn) {
-                        askQuestions = true
-                    }
+                }
+                if (q.showDuringCheckIn) {
+                    shownAnswers.add(TicketCheckProvider.QuestionAnswer(q, questionJson, answer))
                 }
             } else {
                 if (q.askDuringCheckIn) {
@@ -287,9 +293,10 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
     private fun checkOfflineWithoutData(
         eventsAndCheckinLists: Map<String, Long>,
         ticketid: String,
+        source_type: String,
         type: TicketCheckProvider.CheckInType,
         answers: List<Answer>?,
-        nonce: String?,
+        nonce: String,
         allowQuestions: Boolean
     ): TicketCheckProvider.CheckResult {
         val dt = now()
@@ -305,7 +312,15 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
         }
         if (decoded == null || event == null) {
             val firstentry = eventsAndCheckinLists.entries.first()
-            storeFailedCheckin(firstentry.key, firstentry.value, "invalid", ticketid, type, nonce = nonce)
+            storeFailedCheckin(
+                firstentry.key,
+                firstentry.value,
+                "invalid",
+                ticketid,
+                source_type,
+                type,
+                nonce = nonce
+            )
             return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.INVALID, offline = true)
         }
         val listId = eventsAndCheckinLists[event.slug] ?: return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.ERROR, "Check-in list not set for event", offline = true)
@@ -318,23 +333,61 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
 
         val is_revoked = db.revokedTicketSecretQueries.countForSecret(ticketid).executeAsOne()
         if (is_revoked > 0) {
-            storeFailedCheckin(eventSlug, listId, "revoked", ticketid, type, nonce = nonce)
+            storeFailedCheckin(
+                eventSlug,
+                listId,
+                "revoked",
+                ticketid,
+                source_type,
+                type,
+                nonce = nonce
+            )
             return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.REVOKED, offline = true)
         }
 
         val is_blocked = db.blockedTicketSecretQueries.countBlockedForSecret(ticketid).executeAsOne()
         if (is_blocked > 0) {
-            storeFailedCheckin(eventSlug, listId, "blocked", ticketid, type, nonce = nonce)
+            storeFailedCheckin(
+                eventSlug,
+                listId,
+                "blocked",
+                ticketid,
+                source_type,
+                type,
+                nonce = nonce
+            )
             return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.BLOCKED, offline = true)
         }
 
         if (type != TicketCheckProvider.CheckInType.EXIT) {
             if (decoded.validFrom?.isAfter(now()) == true) {
-                storeFailedCheckin(eventSlug, listId, "invalid_time", ticketid, type, item = decoded.item, variation = decoded.variation, subevent = decoded.subevent, nonce = nonce)
+                storeFailedCheckin(
+                    eventSlug,
+                    listId,
+                    "invalid_time",
+                    ticketid,
+                    source_type,
+                    type,
+                    item = decoded.item,
+                    variation = decoded.variation,
+                    subevent = decoded.subevent,
+                    nonce = nonce
+                )
                 return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.INVALID_TIME, offline = true)
             }
             if (decoded.validUntil?.isBefore(now()) == true) {
-                storeFailedCheckin(eventSlug, listId, "invalid_time", ticketid, type, item = decoded.item, variation = decoded.variation, subevent = decoded.subevent, nonce = nonce)
+                storeFailedCheckin(
+                    eventSlug,
+                    listId,
+                    "invalid_time",
+                    ticketid,
+                    source_type,
+                    type,
+                    item = decoded.item,
+                    variation = decoded.variation,
+                    subevent = decoded.subevent,
+                    nonce = nonce
+                )
                 return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.INVALID_TIME, offline = true)
             }
         }
@@ -345,13 +398,32 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
                 item_server_id = decoded.item,
             ).executeAsOne()
             if (is_in_list == 0L) {
-                storeFailedCheckin(eventSlug, listId, "product", ticketid, type, item = decoded.item, variation = decoded.variation, subevent = decoded.subevent, nonce = nonce)
+                storeFailedCheckin(
+                    eventSlug,
+                    listId,
+                    "product",
+                    ticketid,
+                    source_type,
+                    type,
+                    item = decoded.item,
+                    variation = decoded.variation,
+                    subevent = decoded.subevent,
+                    nonce = nonce
+                )
                 return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.PRODUCT, offline = true)
             }
         }
 
         if (list.subEventId != null && list.subEventId > 0 && list.subEventId != decoded.subevent) {
-            storeFailedCheckin(eventSlug, listId, "invalid", ticketid, type, nonce = nonce)
+            storeFailedCheckin(
+                eventSlug,
+                listId,
+                "invalid",
+                ticketid,
+                source_type,
+                type,
+                nonce = nonce
+            )
             return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.INVALID, offline = true)
         }
 
@@ -360,11 +432,21 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
             event_slug = eventSlug,
         ).executeAsOneOrNull()?.toModel()
         if (item == null) {
-            storeFailedCheckin(eventSlug, listId, "error", ticketid, type, subevent = decoded.subevent, nonce = nonce)
+            storeFailedCheckin(
+                eventSlug,
+                listId,
+                "error",
+                ticketid,
+                source_type,
+                type,
+                subevent = decoded.subevent,
+                nonce = nonce
+            )
             return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.ERROR, "Item not found", offline = true)
         }
 
         val res = TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.ERROR, offline = true)
+        res.nonce = nonce
         res.eventSlug = eventSlug
         res.scanType = type
         res.ticket = item.internalName
@@ -385,7 +467,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
 
         val queuedCheckIns = db.queuedCheckInQueries.selectBySecret(ticketid)
             .executeAsList()
-            .filter { it.checkinListId == listId }
+            .filter { it.checkinListId == listId && it.annulled == null }
             .map { it.toModel() }
             .sortedWith(compareBy({ it.dateTime }, { it.id }))
 
@@ -454,6 +536,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
                         listId,
                         "rules",
                         ticketid,
+                        source_type,
                         type,
                         item = decoded.item,
                         variation = decoded.variation,
@@ -471,6 +554,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
                     listId,
                     "rules",
                     ticketid,
+                    source_type,
                     type,
                     item = decoded.item,
                     variation = decoded.variation,
@@ -520,7 +604,18 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
                 res.isCheckinAllowed = false
                 res.firstScanned = queuedCheckIns.first().fullDateTime
                 res.type = TicketCheckProvider.CheckResult.Type.USED
-                storeFailedCheckin(eventSlug, listId, "already_redeemed", ticketid, type, item = decoded.item, variation = decoded.variation, subevent = decoded.subevent, nonce = nonce)
+                storeFailedCheckin(
+                    eventSlug,
+                    listId,
+                    "already_redeemed",
+                    ticketid,
+                    source_type,
+                    type,
+                    item = decoded.item,
+                    variation = decoded.variation,
+                    subevent = decoded.subevent,
+                    nonce = nonce
+                )
             } else {
                 res.isCheckinAllowed = true
                 res.type = TicketCheckProvider.CheckResult.Type.VALID
@@ -531,10 +626,11 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
                     datetime = dt.toDate(),
                     datetime_string = QueuedCheckIn.formatDatetime(dt.toDate()),
                     event_slug = eventSlug,
-                    nonce = nonce ?: NonceGenerator.nextNonce(),
+                    nonce = nonce,
                     secret = ticketid,
                     source_type = null,
                     type = type.toString().lowercase(Locale.getDefault()),
+                    annulled = null,
                 )
             }
         }
@@ -542,8 +638,32 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
         // todo document missing stuff: rules, badge printing, questions
     }
 
-    override fun check(eventsAndCheckinLists: Map<String, Long>, ticketid: String): TicketCheckProvider.CheckResult {
-        return check(eventsAndCheckinLists, ticketid, "barcode", ArrayList(), false, true, TicketCheckProvider.CheckInType.ENTRY)
+    override fun check(eventsAndCheckinLists: Map<String, Long>, ticketid: String, source_type: String): TicketCheckProvider.CheckResult {
+        return check(eventsAndCheckinLists, ticketid, source_type, ArrayList(), false, true, TicketCheckProvider.CheckInType.ENTRY)
+    }
+
+    override fun annul(
+        eventsAndCheckinLists: Map<String, Long>,
+        nonce: String,
+        explanation: String
+    ): TicketCheckProvider.AnnulResult {
+        // In case we have a locally-stored check-in, set it to annulled so we don't consider it in future offline scans
+        db.checkInQueries.setAnnulledByNonce(Date(), nonce)
+
+        // In case we have a queued check-in, set it to annulled so we don't consider it in future offline scans
+        // (it will still be uploaded)
+        db.queuedCheckInQueries.setAnnulledByNonce(Date(), nonce)
+
+        // Queue the actual annulment for upload to server
+        val api = PretixApi.fromConfig(config)
+        val body = api.annulBody(eventsAndCheckinLists.values.toList(), nonce, explanation)
+        db.queuedCallQueries.insert(
+            body = body.toString(),
+            idempotency_key = NonceGenerator.nextNonce(),
+            url = api.organizerResourceUrl("checkinrpc/annul"),
+        )
+
+        return TicketCheckProvider.AnnulResult(true)
     }
 
     override fun check(
@@ -561,6 +681,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
         exchange_medium_identifier: String?,
         simulate: Boolean
     ): TicketCheckProvider.CheckResult {
+        val nonce = nonce ?: NonceGenerator.nextNonce()
         val ticketid_cleaned = cleanInput(ticketid, source_type)
 
         sentry.addBreadcrumb("provider.check", "offline check started")
@@ -586,7 +707,18 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
         ).executeAsList().map { it.toModel() }
 
         if (tickets.size == 1) {
-            return checkOfflineWithData(eventsAndCheckinLists, ticketid_cleaned, tickets, answers, ignore_unpaid, type, nonce = nonce, allowQuestions = allowQuestions, mediumUsed = false)
+            return checkOfflineWithData(
+                eventsAndCheckinLists,
+                ticketid_cleaned,
+                source_type,
+                tickets,
+                answers,
+                ignore_unpaid,
+                type,
+                nonce = nonce,
+                allowQuestions = allowQuestions,
+                mediumUsed = false
+            )
         } else if (tickets.size > 1) {
             val eventSlug = db.orderQueries.selectById(tickets[0].orderId).executeAsOne().event_slug!!
             val itemServerId = db.itemQueries.selectById(tickets[0].itemId).executeAsOne().server_id
@@ -599,6 +731,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
                 ),
                 "ambiguous",
                 ticketid_cleaned,
+                source_type,
                 type,
                 position = tickets[0].serverId,
                 item = itemServerId,
@@ -617,8 +750,15 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
             if (medium != null) {
                 val firstentry = eventsAndCheckinLists.entries.first()
                 if (!medium.active) {
-                    // FIXME: note that this was an medium source
-                    storeFailedCheckin(firstentry.key, firstentry.value, "invalid", ticketid, type, nonce = nonce)
+                    storeFailedCheckin(
+                        firstentry.key,
+                        firstentry.value,
+                        "invalid",
+                        ticketid,
+                        source_type,
+                        type,
+                        nonce = nonce
+                    )
                     return TicketCheckProvider.CheckResult(
                         TicketCheckProvider.CheckResult.Type.INVALID,
                         "Medium not active",
@@ -627,8 +767,15 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
                 }
 
                 if (medium.expires?.isBefore(javaTimeNow()) == true) {
-                    // FIXME: note that this was an medium source
-                    storeFailedCheckin(firstentry.key, firstentry.value, "invalid", ticketid, type, nonce = nonce)
+                    storeFailedCheckin(
+                        firstentry.key,
+                        firstentry.value,
+                        "invalid",
+                        ticketid,
+                        source_type,
+                        type,
+                        nonce = nonce
+                    )
                     return TicketCheckProvider.CheckResult(
                         TicketCheckProvider.CheckResult.Type.INVALID,
                         "Medium expired",
@@ -646,6 +793,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
                 return checkOfflineWithData(
                     eventsAndCheckinLists,
                     ticketid_cleaned,
+                    source_type,
                     tickets,
                     answers,
                     ignore_unpaid,
@@ -659,6 +807,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
             return checkOfflineWithoutData(
                 eventsAndCheckinLists,
                 ticketid_cleaned,
+                source_type,
                 type,
                 answers ?: emptyList(),
                 nonce,
@@ -705,10 +854,10 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
             }
 
             // server side: 3a.
-            var resultingPositions = mutableSetOf(position)
+            var resultingPositions = mutableSetOf<OrderPositionModel>()
             if (list.addonMatch) {
                 // Add-on matching, as per spec, but only if we have data, it's impossible in data-less mode
-                val candidates = mutableListOf<OrderPositionModel>()
+                val candidates = mutableListOf<OrderPositionModel>(position)
 
                 val orderPositions = db.orderPositionQueries.selectForOrder(order.id).executeAsList()
                     .map { it.toModel() }
@@ -742,6 +891,8 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
                 } else {
                     resultingPositions.add(filteredCandidates[0])
                 }
+            } else {
+                resultingPositions.add(position)
             }
 
             results.addAll(resultingPositions)
@@ -812,11 +963,12 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
     private fun checkOfflineWithData(
         eventsAndCheckinLists: Map<String, Long>,
         secret: String,
+        source_type: String,
         tickets: List<OrderPositionModel>,
         answers: List<Answer>?,
         ignore_unpaid: Boolean,
         type: TicketCheckProvider.CheckInType,
-        nonce: String?,
+        nonce: String,
         allowQuestions: Boolean,
         mediumUsed: Boolean
     ): TicketCheckProvider.CheckResult {
@@ -831,11 +983,47 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
             if (firstError.list != null) {
                 when (firstError.error) {
                     TicketCheckProvider.CheckResult.Type.PRODUCT ->
-                        storeFailedCheckin(firstError.eventSlug, firstError.list.serverId, "product", secret, type, position = firstError.position.serverId, item = item.serverId, variation = firstError.position.variationServerId, subevent = firstError.position.subEventServerId, nonce = nonce)
+                        storeFailedCheckin(
+                            firstError.eventSlug,
+                            firstError.list.serverId,
+                            "product",
+                            secret,
+                            source_type,
+                            type,
+                            position = firstError.position.serverId,
+                            item = item.serverId,
+                            variation = firstError.position.variationServerId,
+                            subevent = firstError.position.subEventServerId,
+                            nonce = nonce
+                        )
                     TicketCheckProvider.CheckResult.Type.AMBIGUOUS ->
-                        storeFailedCheckin(firstError.eventSlug, firstError.list.serverId, "ambiguous", secret, type, position = firstError.position.serverId, item = item.serverId, variation = firstError.position.variationServerId, subevent = firstError.position.subEventServerId, nonce = nonce)
+                        storeFailedCheckin(
+                            firstError.eventSlug,
+                            firstError.list.serverId,
+                            "ambiguous",
+                            secret,
+                            source_type,
+                            type,
+                            position = firstError.position.serverId,
+                            item = item.serverId,
+                            variation = firstError.position.variationServerId,
+                            subevent = firstError.position.subEventServerId,
+                            nonce = nonce
+                        )
                     TicketCheckProvider.CheckResult.Type.INVALID_TIME ->
-                        storeFailedCheckin(firstError.eventSlug, firstError.list.serverId, "invalid_time", secret, type, position = firstError.position.serverId, item = item.serverId, variation = firstError.position.variationServerId, subevent = firstError.position.subEventServerId, nonce = nonce)
+                        storeFailedCheckin(
+                            firstError.eventSlug,
+                            firstError.list.serverId,
+                            "invalid_time",
+                            secret,
+                            source_type,
+                            type,
+                            position = firstError.position.serverId,
+                            item = item.serverId,
+                            variation = firstError.position.variationServerId,
+                            subevent = firstError.position.subEventServerId,
+                            nonce = nonce
+                        )
                     else -> {}
                 }
             }
@@ -890,13 +1078,26 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
             JSONObject(db.orderPositionQueries.selectById(position.id).executeAsOne().json_data)
         } catch (e: JSONException) {
             sentry.captureException(e)
-            storeFailedCheckin(eventSlug, list.serverId, "error", position.secret!!, type, position = position.serverId, item = positionItem.serverId, variation = position.variationServerId, subevent = position.subEventServerId, nonce = nonce)
+            storeFailedCheckin(
+                eventSlug,
+                list.serverId,
+                "error",
+                position.secret!!,
+                source_type,
+                type,
+                position = position.serverId,
+                item = positionItem.serverId,
+                variation = position.variationServerId,
+                subevent = position.subEventServerId,
+                nonce = nonce
+            )
             return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.ERROR, offline = true)
         }
 
         // !!! When extending this, also extend checkOfflineWithoutData !!!
 
         val res = TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.ERROR, offline = true)
+        res.nonce = nonce
         res.scanType = type
         res.ticket = positionItem.internalName
         val varid = position.variationServerId
@@ -931,27 +1132,63 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
 
         val storedCheckIns = db.checkInQueries.selectByPositionId(position.id).executeAsList().map { it.toModel() }
         val checkIns = storedCheckIns.filter {
-            it.listServerId == listId
+            it.listServerId == listId && it.localAnnulled == null
         }.sortedWith(compareBy({ it.fullDateTime }, { it.id }))
 
         if (order.status != OrderModel.Status.PAID && order.status != OrderModel.Status.PENDING) {
             res.type = TicketCheckProvider.CheckResult.Type.CANCELED
             res.isCheckinAllowed = false
-            storeFailedCheckin(eventSlug, list.serverId, "canceled", position.secret!!, type, position = position.serverId, item = positionItem.serverId, variation = position.variationServerId, subevent = position.subEventServerId, nonce = nonce)
+            storeFailedCheckin(
+                eventSlug,
+                list.serverId,
+                "canceled",
+                position.secret!!,
+                source_type,
+                type,
+                position = position.serverId,
+                item = positionItem.serverId,
+                variation = position.variationServerId,
+                subevent = position.subEventServerId,
+                nonce = nonce
+            )
             return res
         }
 
         if (position.blocked) {
             res.type = TicketCheckProvider.CheckResult.Type.BLOCKED
             res.isCheckinAllowed = false
-            storeFailedCheckin(eventSlug, list.serverId, "blocked", position.secret!!, type, position = position.serverId, item = positionItem.serverId, variation = position.variationServerId, subevent = position.subEventServerId, nonce = nonce)
+            storeFailedCheckin(
+                eventSlug,
+                list.serverId,
+                "blocked",
+                position.secret!!,
+                source_type,
+                type,
+                position = position.serverId,
+                item = positionItem.serverId,
+                variation = position.variationServerId,
+                subevent = position.subEventServerId,
+                nonce = nonce
+            )
             return res
         }
 
         if (order.status != OrderModel.Status.PAID && order.requiresApproval) {
             res.type = TicketCheckProvider.CheckResult.Type.UNAPPROVED
             res.isCheckinAllowed = false
-            storeFailedCheckin(eventSlug, list.serverId, "unapproved", position.secret!!, type, position = position.serverId, item = positionItem.serverId, variation = position.variationServerId, subevent = position.subEventServerId, nonce = nonce)
+            storeFailedCheckin(
+                eventSlug,
+                list.serverId,
+                "unapproved",
+                position.secret!!,
+                source_type,
+                type,
+                position = position.serverId,
+                item = positionItem.serverId,
+                variation = position.variationServerId,
+                subevent = position.subEventServerId,
+                nonce = nonce
+            )
             return res
         }
 
@@ -960,14 +1197,38 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
             if (validFrom != null && validFrom.isAfter(javaTimeNow())) {
                 res.type = TicketCheckProvider.CheckResult.Type.INVALID_TIME
                 res.isCheckinAllowed = false
-                storeFailedCheckin(eventSlug, list.serverId, "invalid_time", position.secret!!, type, position = position.serverId, item = positionItem.serverId, variation = position.variationServerId, subevent = position.subEventServerId, nonce = nonce)
+                storeFailedCheckin(
+                    eventSlug,
+                    list.serverId,
+                    "invalid_time",
+                    position.secret!!,
+                    source_type,
+                    type,
+                    position = position.serverId,
+                    item = positionItem.serverId,
+                    variation = position.variationServerId,
+                    subevent = position.subEventServerId,
+                    nonce = nonce
+                )
                 return res
             }
             val validUntil = position.validUntil
             if (validUntil != null && validUntil.isBefore(javaTimeNow())) {
                 res.type = TicketCheckProvider.CheckResult.Type.INVALID_TIME
                 res.isCheckinAllowed = false
-                storeFailedCheckin(eventSlug, list.serverId, "invalid_time", position.secret!!, type, position = position.serverId, item = positionItem.serverId, variation = position.variationServerId, subevent = position.subEventServerId, nonce = nonce)
+                storeFailedCheckin(
+                    eventSlug,
+                    list.serverId,
+                    "invalid_time",
+                    position.secret!!,
+                    source_type,
+                    type,
+                    position = position.serverId,
+                    item = positionItem.serverId,
+                    variation = position.variationServerId,
+                    subevent = position.subEventServerId,
+                    nonce = nonce
+                )
                 return res
             }
         }
@@ -978,7 +1239,19 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
                 item_server_id = item.serverId,
             ).executeAsOne()
             if (is_in_list == 0L) {
-                storeFailedCheckin(eventSlug, list.serverId, "product", position.secret!!, type, position = position.serverId, item = positionItem.serverId, variation = position.variationServerId, subevent = position.subEventServerId, nonce = nonce)
+                storeFailedCheckin(
+                    eventSlug,
+                    list.serverId,
+                    "product",
+                    position.secret!!,
+                    source_type,
+                    type,
+                    position = position.serverId,
+                    item = positionItem.serverId,
+                    variation = position.variationServerId,
+                    subevent = position.subEventServerId,
+                    nonce = nonce
+                )
                 res.type = TicketCheckProvider.CheckResult.Type.PRODUCT
                 res.isCheckinAllowed = false
                 return res
@@ -986,14 +1259,38 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
         }
 
         if (list.subEventId != null && list.subEventId > 0 && list.subEventId != position.subEventServerId) {
-            storeFailedCheckin(eventSlug, list.subEventId, "invalid", position.secret!!, type, position = position.serverId, item = positionItem.serverId, variation = position.variationServerId, subevent = position.subEventServerId, nonce = nonce)
+            storeFailedCheckin(
+                eventSlug,
+                list.subEventId,
+                "invalid",
+                position.secret!!,
+                source_type,
+                type,
+                position = position.serverId,
+                item = positionItem.serverId,
+                variation = position.variationServerId,
+                subevent = position.subEventServerId,
+                nonce = nonce
+            )
             return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.INVALID, offline = true)
         }
 
         if (!order.hasValidStatus && !(ignore_unpaid && list.includePending)) {
             res.type = TicketCheckProvider.CheckResult.Type.UNPAID
             res.isCheckinAllowed = list.includePending && !order.validIfPending
-            storeFailedCheckin(eventSlug, list.serverId, "unpaid", position.secret!!, type, position = position.serverId, item = positionItem.serverId, variation = position.variationServerId, subevent = position.subEventServerId, nonce = nonce)
+            storeFailedCheckin(
+                eventSlug,
+                list.serverId,
+                "unpaid",
+                position.secret!!,
+                source_type,
+                type,
+                position = position.serverId,
+                item = positionItem.serverId,
+                variation = position.variationServerId,
+                subevent = position.subEventServerId,
+                nonce = nonce
+            )
             return res
         }
 
@@ -1009,12 +1306,36 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
                 res.type = TicketCheckProvider.CheckResult.Type.EXCHANGE_REQUIRED_OFFLINE
                 res.isCheckinAllowed = false
                 res.reasonExplanation = "This ticket needs to be exchanged, but this isn't possible while offline"
-                storeFailedCheckin(eventSlug, list.serverId, "exchange", position.secret!!, type, position = position.serverId, item = positionItem.serverId, variation = position.variationServerId, subevent = position.subEventServerId, nonce = nonce)
+                storeFailedCheckin(
+                    eventSlug,
+                    list.serverId,
+                    "exchange",
+                    position.secret!!,
+                    source_type,
+                    type,
+                    position = position.serverId,
+                    item = positionItem.serverId,
+                    variation = position.variationServerId,
+                    subevent = position.subEventServerId,
+                    nonce = nonce
+                )
                 return res
             } else if (reusableMediaUsageEnforced) {
                 res.type = TicketCheckProvider.CheckResult.Type.ALREADY_EXCHANGED
                 res.isCheckinAllowed = false
-                storeFailedCheckin(eventSlug, list.serverId, "already_exchanged", position.secret!!, type, position = position.serverId, item = positionItem.serverId, variation = position.variationServerId, subevent = position.subEventServerId, nonce = nonce)
+                storeFailedCheckin(
+                    eventSlug,
+                    list.serverId,
+                    "already_exchanged",
+                    position.secret!!,
+                    source_type,
+                    type,
+                    position = position.serverId,
+                    item = positionItem.serverId,
+                    variation = position.variationServerId,
+                    subevent = position.subEventServerId,
+                    nonce = nonce
+                )
                 return res
             }
         }
@@ -1082,6 +1403,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
                         list.serverId,
                         "rules",
                         position.secret!!,
+                        source_type,
                         type,
                         position = position.serverId,
                         item = positionItem.serverId,
@@ -1100,6 +1422,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
                     list.serverId,
                     "rules",
                     position.secret!!,
+                    source_type,
                     type,
                     position = position.serverId,
                     item = positionItem.serverId,
@@ -1154,7 +1477,19 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
                 res.isCheckinAllowed = false
                 res.firstScanned = checkIns.first().fullDateTime.toDate()
                 res.type = TicketCheckProvider.CheckResult.Type.USED
-                storeFailedCheckin(eventSlug, list.serverId, "already_redeemed", position.secret!!, type, position = position.serverId, item = positionItem.serverId, variation = position.variationServerId, subevent = position.subEventServerId, nonce = nonce)
+                storeFailedCheckin(
+                    eventSlug,
+                    list.serverId,
+                    "already_redeemed",
+                    position.secret!!,
+                    source_type,
+                    type,
+                    position = position.serverId,
+                    item = positionItem.serverId,
+                    variation = position.variationServerId,
+                    subevent = position.subEventServerId,
+                    nonce = nonce
+                )
             } else {
                 res.isCheckinAllowed = true
                 res.type = TicketCheckProvider.CheckResult.Type.VALID
@@ -1165,10 +1500,11 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
                     datetime = dt.toDate(),
                     datetime_string = QueuedCheckIn.formatDatetime(dt.toDate()),
                     event_slug = eventSlug,
-                    nonce = nonce ?: NonceGenerator.nextNonce(),
+                    nonce = nonce,
                     secret = position.secret,
                     source_type = null,
                     type = type.toString().lowercase(Locale.getDefault()),
+                    annulled = null
                 )
 
                 db.checkInQueries.insert(
@@ -1178,6 +1514,8 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
                     type = type.toString().lowercase(Locale.getDefault()),
                     datetime = dt.toDate(),
                     json_data = "{\"local\": true, \"type\": \"${type.toString().lowercase(Locale.getDefault())}\", \"datetime\": \"${QueuedCheckIn.formatDatetime(dt.toDate())}\"}",
+                    local_nonce = nonce,
+                    local_annulled = null,
                 )
             }
         }
@@ -1323,14 +1661,14 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
             sr.positionId = position.positionId
             sr.secret = position.secret
 
-            val queuedCheckIns = db.queuedCheckInQueries.countForSecretAndLists(
+            val queuedCheckIns = db.queuedCheckInQueries.countForSecretAndListsNotAnnulled(
                 secret = position.secret,
                 checkin_list_ids = eventsAndCheckinLists.values.toList(),
             ).executeAsOne()
             val checkIns = db.checkInQueries.selectByPositionId(position.id).executeAsList().map { it.toModel() }
             var is_checked_in = queuedCheckIns > 0
             for (ci in checkIns) {
-                if (eventsAndCheckinLists.containsValue(ci.listServerId)) {
+                if (eventsAndCheckinLists.containsValue(ci.listServerId) && ci.localAnnulled == null) {
                     is_checked_in = true
                     break
                 }

@@ -127,3 +127,10 @@ UPDATE QueuedOrder
 SET
     locked = 1
 WHERE id = ?;
+
+analyzeAfterSync:
+PRAGMA optimize;
+
+-- Workaround to upgrade a transaction from read to read-write
+upgradeTransaction:
+UPDATE Settings SET id = -1 WHERE id = -1;

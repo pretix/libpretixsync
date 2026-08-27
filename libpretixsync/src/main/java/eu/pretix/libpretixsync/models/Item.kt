@@ -5,6 +5,7 @@ import eu.pretix.libpretixsync.db.ItemBundle
 import eu.pretix.libpretixsync.db.ItemVariation
 import eu.pretix.libpretixsync.db.MediaPolicy
 import eu.pretix.libpretixsync.db.ReusableMediaType
+import eu.pretix.libpretixsync.utils.JSONUtils
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
@@ -134,4 +135,90 @@ class Item(
                 null
             }
         }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as Item
+
+        if (id != other.id) return false
+        if (serverId != other.serverId) return false
+        if (active != other.active) return false
+        if (admission != other.admission) return false
+        if (isPersonalized != other.isPersonalized) return false
+        if (hasVariations != other.hasVariations) return false
+        if (hasDynamicValidityWithCustomStart != other.hasDynamicValidityWithCustomStart) return false
+        if (hasDynamicValidityWithTimeOfDay != other.hasDynamicValidityWithTimeOfDay) return false
+        if (dynamicValidityDayLimit != other.dynamicValidityDayLimit) return false
+        if (categoryServerId != other.categoryServerId) return false
+        if (position != other.position) return false
+        if (ticketLayoutServerId != other.ticketLayoutServerId) return false
+        if (ticketLayoutPretixPosId != other.ticketLayoutPretixPosId) return false
+        if (requireVoucher != other.requireVoucher) return false
+        if (hideWithoutVoucher != other.hideWithoutVoucher) return false
+        if (isGiftcard != other.isGiftcard) return false
+        if (requireBundling != other.requireBundling) return false
+        if (taxRuleId != other.taxRuleId) return false
+        if (hasFreePrice != other.hasFreePrice) return false
+        if (generateTickets != other.generateTickets) return false
+        if (requiresCheckInAttention != other.requiresCheckInAttention) return false
+        if (name != other.name) return false
+        if (!JSONUtils.similar(nameI18n, other.nameI18n)) return false
+        if (description != other.description) return false
+        if (!JSONUtils.similar(descriptionI18n, other.descriptionI18n)) return false
+        if (internalName != other.internalName) return false
+        if (checkInText != other.checkInText) return false
+        if (eventSlug != other.eventSlug) return false
+        if (pictureFilename != other.pictureFilename) return false
+        if (defaultPrice != other.defaultPrice) return false
+        if (mediaPolicy != other.mediaPolicy) return false
+        if (mediaType != other.mediaType) return false
+        if (!JSONUtils.similar(_variations, other._variations)) return false
+        if (!JSONUtils.similar(_bundles, other._bundles)) return false
+        if (!JSONUtils.similar(_addons, other._addons)) return false
+        if (!JSONUtils.similar(_salesChannels, other._salesChannels)) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = id.hashCode()
+        result = 31 * result + serverId.hashCode()
+        result = 31 * result + active.hashCode()
+        result = 31 * result + admission.hashCode()
+        result = 31 * result + isPersonalized.hashCode()
+        result = 31 * result + hasVariations.hashCode()
+        result = 31 * result + hasDynamicValidityWithCustomStart.hashCode()
+        result = 31 * result + hasDynamicValidityWithTimeOfDay.hashCode()
+        result = 31 * result + (dynamicValidityDayLimit?.hashCode() ?: 0)
+        result = 31 * result + (categoryServerId?.hashCode() ?: 0)
+        result = 31 * result + (position?.hashCode() ?: 0)
+        result = 31 * result + (ticketLayoutServerId?.hashCode() ?: 0)
+        result = 31 * result + (ticketLayoutPretixPosId?.hashCode() ?: 0)
+        result = 31 * result + requireVoucher.hashCode()
+        result = 31 * result + hideWithoutVoucher.hashCode()
+        result = 31 * result + isGiftcard.hashCode()
+        result = 31 * result + requireBundling.hashCode()
+        result = 31 * result + taxRuleId.hashCode()
+        result = 31 * result + hasFreePrice.hashCode()
+        result = 31 * result + generateTickets.hashCode()
+        result = 31 * result + requiresCheckInAttention.hashCode()
+        result = 31 * result + name.hashCode()
+        result = 31 * result + nameI18n.hashCode()
+        result = 31 * result + description.hashCode()
+        result = 31 * result + descriptionI18n.hashCode()
+        result = 31 * result + internalName.hashCode()
+        result = 31 * result + (checkInText?.hashCode() ?: 0)
+        result = 31 * result + (eventSlug?.hashCode() ?: 0)
+        result = 31 * result + (pictureFilename?.hashCode() ?: 0)
+        result = 31 * result + defaultPrice.hashCode()
+        result = 31 * result + mediaPolicy.hashCode()
+        result = 31 * result + mediaType.hashCode()
+        result = 31 * result + _variations.hashCode()
+        result = 31 * result + _bundles.hashCode()
+        result = 31 * result + _addons.hashCode()
+        result = 31 * result + (_salesChannels?.hashCode() ?: 0)
+        return result
+    }
 }

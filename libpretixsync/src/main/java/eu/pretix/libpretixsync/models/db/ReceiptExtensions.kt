@@ -36,4 +36,5 @@ fun Receipt.toModel() =
         invoiceNameParts = invoice_name_parts,
         orderEmail = order_email,
         orderPhone = order_phone,
+        webSecret = websecret,
     )

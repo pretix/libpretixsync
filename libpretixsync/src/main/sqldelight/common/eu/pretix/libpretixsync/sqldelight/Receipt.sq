@@ -38,7 +38,8 @@ INSERT INTO Receipt (
     printed,
     server_id,
     started,
-    training
+    training,
+    websecret
 )
 VALUES (
     ?,
@@ -67,9 +68,10 @@ VALUES (
     ?,
     ?,
     ?,
+    ?,
     ?
-);
 
+);
 updateOrderCode:
 UPDATE Receipt
 SET

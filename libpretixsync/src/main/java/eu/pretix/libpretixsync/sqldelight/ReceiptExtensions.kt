@@ -63,6 +63,7 @@ fun Receipt.toJSON(): JSONObject {
     jo.put("cashier", cashier_numericid)
     jo.put("training", training)
     jo.put("additional_text", additional_text)
+    jo.put("web_secret", if (websecret != null) websecret else JSONObject.NULL)
 
     // the following columns are not persisted on the server,
     // but only used locally to act as holders of data

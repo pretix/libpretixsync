@@ -62,6 +62,7 @@ public abstract class BaseDatabaseTest {
         db = SyncDatabase.Companion.invoke(
                 driver,
                 new CheckIn.Adapter(
+                        dateAdapter,
                         dateAdapter
                 ),
                 new Closing.Adapter(
@@ -79,6 +80,7 @@ public abstract class BaseDatabaseTest {
                         dateAdapter
                 ),
                 new QueuedCheckIn.Adapter(
+                        dateAdapter,
                         dateAdapter
                 ),
                 new Receipt.Adapter(

@@ -28,6 +28,7 @@ data class Receipt(
     val emailTo: String? = null,
     val closing: Long? = null,
     val additionalText: String? = null,
+    val webSecret: String? = null,
 ) {
     enum class PaymentType(val value: String) {
         CASH("cash"),

@@ -15,6 +15,7 @@ import org.json.JSONObject
 abstract class BaseSingleObjectSyncAdapter<T>(
     protected var db: SyncDatabase,
     protected var eventSlug: String,
+    protected var fileStorage: FileStorage,
     protected var key: String,
     protected var api: PretixApi,
     protected var syncCycleId: String,

@@ -11,3 +11,5 @@ CREATE TABLE Event (
     live boolean NOT NULL,
     slug character varying(255)
 );
+
+CREATE INDEX Event_slug_index ON Event (slug);
