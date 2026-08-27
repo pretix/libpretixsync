@@ -158,7 +158,7 @@ open class PretixApi(url: String, key: String, orgaSlug: String, version: Int, h
         body.put("lists", jlists)
         if (exchange_medium_type != null) body.put("exchange_medium_type", exchange_medium_type)
         if (exchange_medium_identifier != null) body.put("exchange_medium_identifier", exchange_medium_identifier)
-        var pd = "?expand=answers.question"
+        var pd = "?expand=answers.question&expand=addons"
         if (pdf_data) {
             pd += "&pdf_data=true"
         }

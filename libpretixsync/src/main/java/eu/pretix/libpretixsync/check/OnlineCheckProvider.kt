@@ -223,6 +223,26 @@ class OnlineCheckProvider(
                         res.locale = posjson.getString("order__locale")
                     }
                     res.position = posjson
+                    val addonsJson = posjson.optJSONArray("addons")
+                    if (addonsJson != null) {
+                        val addons = mutableListOf<TicketCheckProvider.AddonInfo>()
+                        for (i in 0 until addonsJson.length()) {
+                            val a = addonsJson.getJSONObject(i)
+                            val addonItem = db.itemQueries.selectByServerId(a.getLong("item")).executeAsOneOrNull()?.toModel()
+                            val variation = if (addonItem != null && a.optLong("variation", 0) > 0) {
+                                addonItem.getVariation(a.getLong("variation"))
+                            } else null
+                            addons.add(
+                                TicketCheckProvider.AddonInfo(
+                                    itemName = addonItem?.internalName,
+                                    variationName = variation?.stringValue,
+                                    attendeeName = if (a.isNull("attendee_name")) null else a.optString("attendee_name"),
+                                )
+                            )
+                        }
+                        res.addons = addons
+                    }
+
                     val checkins = posjson.getJSONArray("checkins")
                     for (i in 0 until checkins.length()) {
                         val ci = checkins.getJSONObject(i)
