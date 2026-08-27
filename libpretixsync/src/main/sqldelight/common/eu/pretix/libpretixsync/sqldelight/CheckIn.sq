@@ -23,6 +23,9 @@ DELETE FROM CheckIn WHERE id = ?;
 deleteByIdList:
 DELETE FROM CheckIn WHERE id IN ?;
 
+setAnnulledByNonce:
+UPDATE CheckIn SET local_annulled = :annulled WHERE local_nonce = :nonce;
+
 insert:
 INSERT INTO CheckIn (
     datetime,
@@ -30,9 +33,13 @@ INSERT INTO CheckIn (
     listId,
     position,
     server_id,
-    type
+    type,
+    local_annulled,
+    local_nonce
 )
 VALUES (
+    ?,
+    ?,
     ?,
     ?,
     ?,

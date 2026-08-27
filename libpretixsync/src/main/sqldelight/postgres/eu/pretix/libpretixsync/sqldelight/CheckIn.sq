@@ -8,9 +8,12 @@ CREATE TABLE CheckIn (
     listId bigint,
     server_id bigint,
     type character varying(255),
+    local_nonce character varying(255),
+    local_annulled DATE AS Date,
     "position" bigint REFERENCES OrderPosition (id) ON DELETE CASCADE
 );
 
 CREATE INDEX CheckIn_listId_index ON CheckIn (listId);
 CREATE INDEX CheckIn_position_index ON CheckIn (position);
 CREATE INDEX CheckIn_server_id_index ON CheckIn (server_id);
+CREATE INDEX CheckIn_local_nonce_index ON CheckIn (local_nonce);

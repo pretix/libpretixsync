@@ -64,6 +64,7 @@ interface TicketCheckProvider {
         }
 
         var type: Type? = null
+        var nonce: String? = null
         var scanType: CheckInType = CheckInType.ENTRY
         var ticket: String? = null
         var variation: String? = null
@@ -107,6 +108,15 @@ interface TicketCheckProvider {
             } else {
                 return orderCode
             }
+        }
+    }
+
+    class AnnulResult {
+        // only says whether the call worked, not whether something was actually annulled, which might only be decided later on the server
+        var ok: Boolean = false
+
+        constructor (ok: Boolean) {
+            this.ok = ok
         }
     }
 
@@ -178,7 +188,10 @@ interface TicketCheckProvider {
         exchange_medium_identifier: String? = null,
     ): CheckResult
 
-    fun check(eventsAndCheckinLists: Map<String, Long>, ticketid: String): CheckResult
+    fun check(eventsAndCheckinLists: Map<String, Long>, ticketid: String, source_type: String = "barcode"): CheckResult
+
+    fun annul(eventsAndCheckinLists: Map<String, Long>, nonce: String, explanation: String): AnnulResult
+
     @Throws(CheckException::class)
     fun search(eventsAndCheckinLists: Map<String, Long>, query: String, page: Int): List<SearchResult>
 
