@@ -58,6 +58,7 @@ private fun parseTotal(json: JSONObject): BigDecimal? {
 
 private fun parsePendingTotal(json: JSONObject): BigDecimal? {
     try {
+        if (!json.has("payments") || !json.has("refunds")) { return null }
         var total = BigDecimal(json.getString("total"))
         if (json.getString("status") == "c") {
             total = BigDecimal.ZERO
@@ -89,6 +90,7 @@ private fun parsePendingTotal(json: JSONObject): BigDecimal? {
 
 private fun parsePayments(json: JSONObject): JSONArray {
     try {
+        if (!json.has("payments")) { return JSONArray() }
         return json.getJSONArray("payments")
     } catch (e: JSONException) {
         e.printStackTrace()
@@ -98,6 +100,7 @@ private fun parsePayments(json: JSONObject): JSONArray {
 
 private fun parseRefunds(json: JSONObject): JSONArray {
     try {
+        if (!json.has("refunds")) { return JSONArray() }
         return json.getJSONArray("refunds")
     } catch (e: JSONException) {
         e.printStackTrace()
