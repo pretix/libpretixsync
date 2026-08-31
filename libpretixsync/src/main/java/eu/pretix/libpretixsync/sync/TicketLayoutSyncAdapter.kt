@@ -191,6 +191,7 @@ class TicketLayoutSyncAdapter(
                     }
                     `is`.close()
                     os.close()
+                    file.response.close()
                     result = local_filename
                 } catch (e: ApiException) {
                     // TODO: What to do?

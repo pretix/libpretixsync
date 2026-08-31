@@ -276,7 +276,9 @@ open class PretixApi(url: String, key: String, orgaSlug: String, version: Int, h
             request = request.header("X-Idempotency-Key", idempotency_key)
         }
         return try {
-            apiCall(request.build(), false)
+            val r = apiCall(request.build(), false)
+            r.response.close()
+            r
         } catch (resourceNotModified: ResourceNotModified) {
             resourceNotModified.printStackTrace()
             throw FinalApiException("Resource not modified")
@@ -374,6 +376,7 @@ open class PretixApi(url: String, key: String, orgaSlug: String, version: Int, h
 
     @Throws(ApiException::class)
     open fun downloadFile(full_url: String): ApiResponse {
+        // Caller needs to close response!
         var request = Request.Builder()
                 .url(full_url)
                 .header("Authorization", "Device $key")
@@ -438,6 +441,8 @@ open class PretixApi(url: String, key: String, orgaSlug: String, version: Int, h
             } catch (e: IOException) {
                 e.printStackTrace()
                 throw ApiException("Connection error: " + e.message, e)
+            } finally {
+                response.close()
             }
         }
         if (response.code >= 500) {
@@ -447,6 +452,7 @@ open class PretixApi(url: String, key: String, orgaSlug: String, version: Int, h
             response.close()
             throw NotFoundApiException("Server error: Resource not found.")
         } else if (response.code == 304) {
+            response.close()
             throw ResourceNotModified()
         } else if (response.code == 403) {
             response.close()
@@ -463,6 +469,7 @@ open class PretixApi(url: String, key: String, orgaSlug: String, version: Int, h
                 try {
                     val err = JSONObject(body)
                     if (err.optString("detail", "") == "Device access has been revoked.") {
+                        response.close()
                         throw DeviceAccessRevokedException("Device access has been revoked.")
                     }
                 } catch (e: JSONException) {
@@ -480,6 +487,7 @@ open class PretixApi(url: String, key: String, orgaSlug: String, version: Int, h
                         response
                 )
             } else {
+                // Caller needs to close response!
                 ApiResponse(
                         null,
                         response
@@ -488,7 +496,9 @@ open class PretixApi(url: String, key: String, orgaSlug: String, version: Int, h
         } catch (e: JSONException) {
             e.printStackTrace()
             sentry.captureException(e)
-            throw ApiException("Invalid JSON received: " + body.take(100), e)
+            val err = ApiException("Invalid JSON received: " + body.take(100), e)
+            response.close()
+            throw err
         }
     }
 

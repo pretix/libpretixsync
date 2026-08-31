@@ -615,6 +615,7 @@ class OrderSyncAdapter(
                         while ((`is`.read(buffer).also { byteread = it }) != -1) {
                             os.write(buffer, 0, byteread)
                         }
+                        file.response.close()
                         `is`.close()
                         os.close()
                     } catch (e: ApiException) {
