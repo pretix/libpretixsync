@@ -23,7 +23,7 @@ androidx-sqlite = { module = "androidx.sqlite:sqlite", version.ref = "sqlite" } 
 eddsa = { module = "net.i2p.crypto:eddsa", version.ref = "eddsa" }
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jacksonDatabind" }
 jackson-moduleKotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin", version.ref = "jacksonModuleKotlin" }
-jackson-datatype-joda = { module = "com.fasterxml.jackson.module:jackson-datatype-joda", version.ref = "jacksonModuleKotlin" }
+jackson-datatype-joda = { module = "com.fasterxml.jackson.datatype:jackson-datatype-joda", version.ref = "jacksonModuleKotlin" }
 javax-annotation = { module = "javax.annotation:javax.annotation-api", version.ref = "javaxAnnotation" }
 joda-time = { module = "joda-time:joda-time", version.ref = "jodaTime" }
 json = { module = "org.json:json", version.ref = "json" }
