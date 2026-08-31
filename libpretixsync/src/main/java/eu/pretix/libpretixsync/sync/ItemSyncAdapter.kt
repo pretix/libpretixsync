@@ -126,6 +126,7 @@ class ItemSyncAdapter(
                     while (inStream.read(buffer).also { byteread = it } != -1) {
                         outStream.write(buffer, 0, byteread)
                     }
+                    file.response.close()
                     inStream.close()
                     outStream.close()
                     result = local_filename
