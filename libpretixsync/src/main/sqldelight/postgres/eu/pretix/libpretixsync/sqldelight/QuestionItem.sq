@@ -1,8 +1,0 @@
-CREATE TABLE Question_Item (
-    ItemId bigint NOT NULL REFERENCES Item (id) ON DELETE CASCADE,
-    QuestionId bigint NOT NULL REFERENCES Question (id) ON DELETE CASCADE,
-    PRIMARY KEY (ItemId, QuestionId)
-);
-
-CREATE INDEX Question_Item_ItemId_index ON Question_Item (ItemId);
-CREATE INDEX Question_Item_QuestionId_index ON Question_Item (QuestionId);
