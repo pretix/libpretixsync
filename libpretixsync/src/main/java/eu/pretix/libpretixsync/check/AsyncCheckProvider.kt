@@ -21,6 +21,8 @@ import eu.pretix.libpretixsync.models.Question
 import eu.pretix.libpretixsync.models.QueuedCheckIn
 import eu.pretix.libpretixsync.models.db.toModel
 import eu.pretix.libpretixsync.sqldelight.SyncDatabase
+import eu.pretix.libpretixsync.sqldelight.writeTransaction
+import eu.pretix.libpretixsync.sqldelight.writeTransactionWithResult
 import eu.pretix.libpretixsync.utils.cleanInput
 import eu.pretix.libpretixsync.utils.codec.binary.Base64
 import eu.pretix.libpretixsync.utils.codec.binary.Base64.decodeBase64
@@ -96,11 +98,13 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
         if (subevent != null && subevent > 0) jdoc.put("subevent", subevent)
 
         val api = PretixApi.fromConfig(config)  // todo: uses wrong http client
-        db.queuedCallQueries.insert(
-            body = jdoc.toString(),
-            idempotency_key = nonce,
-            url = api.eventResourceUrl(eventSlug, "checkinlists") + listId + "/failed_checkins/",
-        )
+        db.writeTransaction(db, sentry) {
+            db.queuedCallQueries.insert(
+                body = jdoc.toString(),
+                idempotency_key = nonce,
+                url = api.eventResourceUrl(eventSlug, "checkinlists") + listId + "/failed_checkins/",
+            )
+        }
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -657,11 +661,13 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
         // Queue the actual annulment for upload to server
         val api = PretixApi.fromConfig(config)
         val body = api.annulBody(eventsAndCheckinLists.values.toList(), nonce, explanation)
-        db.queuedCallQueries.insert(
-            body = body.toString(),
-            idempotency_key = NonceGenerator.nextNonce(),
-            url = api.organizerResourceUrl("checkinrpc/annul"),
-        )
+        db.writeTransaction(db, sentry) {
+            db.queuedCallQueries.insert(
+                body = body.toString(),
+                idempotency_key = NonceGenerator.nextNonce(),
+                url = api.organizerResourceUrl("checkinrpc/annul"),
+            )
+        }
 
         return TicketCheckProvider.AnnulResult(true)
     }
@@ -699,18 +705,20 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
         ).executeAsList().map { it.toModel() }
 
         if (tickets.size == 1) {
-            return checkOfflineWithData(
-                eventsAndCheckinLists,
-                ticketid_cleaned,
-                source_type,
-                tickets,
-                answers,
-                ignore_unpaid,
-                type,
-                nonce = nonce,
-                allowQuestions = allowQuestions,
-                mediumUsed = false
-            )
+            return db.queuedCheckInQueries.writeTransactionWithResult(db, sentry) {
+                checkOfflineWithData(
+                    eventsAndCheckinLists,
+                    ticketid_cleaned,
+                    source_type,
+                    tickets,
+                    answers,
+                    ignore_unpaid,
+                    type,
+                    nonce = nonce,
+                    allowQuestions = allowQuestions,
+                    mediumUsed = false
+                )
+            }
         } else if (tickets.size > 1) {
             val eventSlug = db.orderQueries.selectById(tickets[0].orderId).executeAsOne().event_slug!!
             val itemServerId = db.itemQueries.selectById(tickets[0].itemId).executeAsOne().server_id
@@ -782,29 +790,33 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
                     reusablemedium_id = medium.id,
                     event_slugs = eventsAndCheckinLists.keys.toList(),
                 ).executeAsList().map { it.toModel() }
-                return checkOfflineWithData(
+                return db.queuedCheckInQueries.writeTransactionWithResult(db, sentry) {
+                    checkOfflineWithData(
+                        eventsAndCheckinLists,
+                        ticketid_cleaned,
+                        source_type,
+                        tickets,
+                        answers,
+                        ignore_unpaid,
+                        type,
+                        nonce,
+                        allowQuestions,
+                        mediumUsed = true
+                    )
+                }
+            }
+
+            return db.queuedCheckInQueries.writeTransactionWithResult(db, sentry) {
+                checkOfflineWithoutData(
                     eventsAndCheckinLists,
                     ticketid_cleaned,
                     source_type,
-                    tickets,
-                    answers,
-                    ignore_unpaid,
                     type,
+                    answers ?: emptyList(),
                     nonce,
                     allowQuestions,
-                    mediumUsed = true
                 )
             }
-
-            return checkOfflineWithoutData(
-                eventsAndCheckinLists,
-                ticketid_cleaned,
-                source_type,
-                type,
-                answers ?: emptyList(),
-                nonce,
-                allowQuestions,
-            )
         }
     }
 
@@ -1505,7 +1517,9 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
                     position = position.id,
                     type = type.toString().lowercase(Locale.getDefault()),
                     datetime = dt.toDate(),
-                    json_data = "{\"local\": true, \"type\": \"${type.toString().lowercase(Locale.getDefault())}\", \"datetime\": \"${QueuedCheckIn.formatDatetime(dt.toDate())}\"}",
+                    json_data = "{\"local\": true, \"type\": \"${
+                        type.toString().lowercase(Locale.getDefault())
+                    }\", \"datetime\": \"${QueuedCheckIn.formatDatetime(dt.toDate())}\"}",
                     local_nonce = nonce,
                     local_annulled = null,
                 )

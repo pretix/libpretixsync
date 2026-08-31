@@ -62,9 +62,7 @@ data class CheckInputQuestion(
 )
 
 data class SearchInput(
+    val events_and_checkin_lists: Map<String, Long>,
     val query: String,
     val page: Int,
-
-    // TODO: Check unused values
-    val events_and_checkin_lists: Map<String, Long>,
 )
