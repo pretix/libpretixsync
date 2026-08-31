@@ -2,12 +2,12 @@
 buildconfig = "5.7.1"
 eddsa = "0.3.0"
 jacksonDatabind = "2.13.2.2" # Upgrade only if we drop Android SDK <26
-jacksonModuleKotlin = "2.13.2" # Upgrade only if we drop Android SDK <26
+jackson = "2.13.2" # Upgrade only if we drop Android SDK <26
 javaxAnnotation = "1.3.2"
 jodaTime = "2.10.10"
 json = "20090211" # Use older org.json version to have an environment equivalent to the android platform
 jsr250 = "1.0"
-junitVersion = "4.13.2"
+junit = "4.13.2"
 kotlin = "2.2.21"
 okhttp = "4.9.3"
 protobuf = "3.21.1"
@@ -21,18 +21,19 @@ streamsupportCfuture = "1.7.3"
 [libraries]
 androidx-sqlite = { module = "androidx.sqlite:sqlite", version.ref = "sqlite" } # used in parent android projects
 eddsa = { module = "net.i2p.crypto:eddsa", version.ref = "eddsa" }
+jackson-core = { module = "com.fasterxml.jackson.core:jackson-core", version.ref = "jackson" } # used in parent android projects
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jacksonDatabind" }
-jackson-moduleKotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin", version.ref = "jacksonModuleKotlin" }
-jackson-datatype-joda = { module = "com.fasterxml.jackson.datatype:jackson-datatype-joda", version.ref = "jacksonModuleKotlin" }
+jackson-moduleKotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin", version.ref = "jackson" }
+jackson-datatype-joda = { module = "com.fasterxml.jackson.datatype:jackson-datatype-joda", version.ref = "jackson" } # used in parent android projects
 javax-annotation = { module = "javax.annotation:javax.annotation-api", version.ref = "javaxAnnotation" }
 joda-time = { module = "joda-time:joda-time", version.ref = "jodaTime" }
 json = { module = "org.json:json", version.ref = "json" }
 jsr250 = { module = "javax.annotation:jsr250-api", version.ref = "jsr250" }
-junit-junit = { module = "junit:junit", version.ref = "junitVersion" }
+junit = { module = "junit:junit", version.ref = "junit" }
 okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
 okhttp-tls = { module = "com.squareup.okhttp3:okhttp-tls", version.ref = "okhttp" } # used in parent android projects
 protobuf-javalite = { module = "com.google.protobuf:protobuf-javalite", version.ref = "protobuf" }
-sqlcipher-android = { module = "net.zetetic:sqlcipher-android", version.ref = "sqlcipher-android" }  # used in parent android projects
+sqlcipher-android = { module = "net.zetetic:sqlcipher-android", version.ref = "sqlcipher-android" } # used in parent android projects
 sqldelight-sqlite-driver = { module = "app.cash.sqldelight:sqlite-driver", version.ref = "sqldelight" }
 sqldelight-android-driver = { module = "app.cash.sqldelight:android-driver", version.ref = "sqldelight" } # used in parent android projects
 sqlite-jdbc = { module = "org.xerial:sqlite-jdbc", version.ref = "sqliteJdbc" }

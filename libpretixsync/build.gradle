@@ -106,9 +106,9 @@ dependencies {
 
     annotationProcessor syncLibs.jsr250
 
-    testFixturesImplementation syncLibs.junit.junit
+    testFixturesImplementation syncLibs.junit
     testFixturesImplementation syncLibs.sqlite.jdbc
-    testImplementation syncLibs.junit.junit
+    testImplementation syncLibs.junit
     testImplementation syncLibs.sqlite.jdbc
 }
 
