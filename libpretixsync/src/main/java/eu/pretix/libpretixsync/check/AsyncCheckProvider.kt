@@ -952,6 +952,34 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
         return Pair(results, errors)
     }
 
+    private fun collectAddons(
+        order: OrderModel,
+        position: OrderPositionModel,
+    ): List<TicketCheckProvider.AddonInfo> {
+        return db.orderPositionQueries.selectForOrder(order.id)
+            .executeAsList()
+            .map { it.toModel() }
+            .filter { it.addonToServerId == position.serverId }
+            .map { addon ->
+                val addonItem = db.itemQueries.selectById(addon.itemId).executeAsOne().toModel()
+                val varid = addon.variationServerId
+                val variation = if (varid != null && varid > 0) {
+                    try {
+                        addonItem.getVariation(varid)
+                    } catch (e: JSONException) {
+                        sentry.captureException(e)
+                        null
+                    }
+                } else null
+
+                TicketCheckProvider.AddonInfo(
+                    itemName = addonItem.internalName,
+                    variationName = variation?.stringValue,
+                    attendeeName = addon.attendeeName,
+                )
+            }
+    }
+
     private fun checkOfflineWithData(
         eventsAndCheckinLists: Map<String, Long>,
         secret: String,
@@ -1121,7 +1149,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
 
         res.isRequireAttention = require_attention || variation?.isCheckin_attention == true
         res.checkinTexts = listOfNotNull(order.checkInText?.trim(), variation?.checkin_text?.trim(), item.checkInText?.trim()).filterNot { it.isBlank() || it == "null" }
-
+        res.addons = collectAddons(order, position)
         val storedCheckIns = db.checkInQueries.selectByPositionId(position.id).executeAsList().map { it.toModel() }
         val checkIns = storedCheckIns.filter {
             it.listServerId == listId && it.localAnnulled == null
