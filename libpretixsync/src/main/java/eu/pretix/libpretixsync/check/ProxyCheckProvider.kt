@@ -114,6 +114,7 @@ class ProxyCheckProvider(private val config: ConfigStore, httpClientFactory: Htt
         useOrderLocale: Boolean,
         exchange_medium_type: String?,
         exchange_medium_identifier: String?,
+        simulate: Boolean
     ): TicketCheckProvider.CheckResult {
         val answersInput = answers?.map {
             val questionModel = it.question as Question // TODO: Can we avoid the cast?
@@ -137,6 +138,7 @@ class ProxyCheckProvider(private val config: ConfigStore, httpClientFactory: Htt
             nonce = nonce,
             exchange_medium_type = exchange_medium_type,
             exchange_medium_identifier = exchange_medium_identifier,
+            simulate = simulate,
         )
 
         return try {
