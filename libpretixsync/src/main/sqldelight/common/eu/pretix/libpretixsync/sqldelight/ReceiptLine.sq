@@ -60,9 +60,11 @@ INSERT INTO ReceiptLine (
     variation_id,
     voucher_code,
     line_price_gross,
-    discount_id
+    discount_id,
+    manual_discount_percent
 )
 VALUES (
+    ?,
     ?,
     ?,
     ?,

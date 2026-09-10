@@ -1,0 +1,3 @@
+import java.math.BigDecimal;
+
+ALTER TABLE ReceiptLine ADD manual_discount_percent REAL AS BigDecimal;
