@@ -49,7 +49,8 @@ CREATE TABLE ReceiptLine (
     variation_id INTEGER,
     voucher_code TEXT,
     line_price_gross REAL AS BigDecimal,
-    discount_id INTEGER
+    discount_id INTEGER,
+    manual_discount_percent REAL AS BigDecimal
 );
 
 CREATE INDEX ReceiptLine_addon_to_index ON ReceiptLine (addon_to);

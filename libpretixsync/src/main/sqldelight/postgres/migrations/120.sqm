@@ -1,0 +1,1 @@
+ALTER TABLE ReceiptLine ADD manual_discount_percent numeric;

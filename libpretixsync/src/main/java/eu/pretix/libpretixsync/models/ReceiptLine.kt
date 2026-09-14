@@ -50,7 +50,8 @@ data class ReceiptLine(
     val giftCardSecret: String? = null,
     val priceCalculatedFromNet: Boolean = false,
     val linePriceGross: BigDecimal,
-    val discountId: Long? = null
+    val discountId: Long? = null,
+    val manualDiscountPercent: BigDecimal? = null
 ) {
     enum class Type(val value: String) {
         PRODUCT_SALE("PRODUCT_SALE"),
