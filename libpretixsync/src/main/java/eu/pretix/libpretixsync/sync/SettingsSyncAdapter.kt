@@ -1,10 +1,12 @@
 package eu.pretix.libpretixsync.sync
 
 import app.cash.sqldelight.TransactionWithoutReturn
+import eu.pretix.libpretixsync.SentryInterface
 import eu.pretix.libpretixsync.api.ApiException
 import eu.pretix.libpretixsync.api.PretixApi
 import eu.pretix.libpretixsync.sqldelight.Settings
 import eu.pretix.libpretixsync.sqldelight.SyncDatabase
+import eu.pretix.libpretixsync.sqldelight.writeTransaction
 import eu.pretix.libpretixsync.sync.SyncManager.ProgressFeedback
 import eu.pretix.libpretixsync.utils.HashUtils
 import org.json.JSONObject
@@ -19,6 +21,7 @@ open class SettingsSyncAdapter(
     api: PretixApi,
     syncCycleId: String,
     feedback: ProgressFeedback? = null,
+    protected val sentry: SentryInterface,
 ) : BaseSingleObjectSyncAdapter<Settings>(
     db = db,
     fileStorage = fileStorage,
@@ -89,7 +92,7 @@ open class SettingsSyncAdapter(
     }
 
     override fun runInTransaction(body: TransactionWithoutReturn.() -> Unit) {
-        db.settingsQueries.transaction(false, body)
+        db.settingsQueries.writeTransaction(db = db, sentry = sentry, body = body)
     }
 
     private fun processAndUpdateJSONdataWithPicture(jsonobj: JSONObject, fieldName: String, oldFilename: String?): JSONObject {

@@ -46,6 +46,7 @@ class FakePretixApi(var orgaSlug: String = "demo") : PretixApi("http://1.1.1.1/"
         use_order_locale: Boolean,
         exchange_medium_type: String?,
         exchange_medium_identifier: String?,
+        simulate: Boolean,
     ): ApiResponse {
         redeemRequestSecret = secret
         redeemRequestDatetime = datetime

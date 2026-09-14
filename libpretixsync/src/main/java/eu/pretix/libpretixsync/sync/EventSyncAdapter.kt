@@ -1,10 +1,12 @@
 package eu.pretix.libpretixsync.sync
 
 import app.cash.sqldelight.TransactionWithoutReturn
+import eu.pretix.libpretixsync.SentryInterface
 import eu.pretix.libpretixsync.api.PretixApi
 import eu.pretix.libpretixsync.sqldelight.Event
 import eu.pretix.libpretixsync.sqldelight.Migrations
 import eu.pretix.libpretixsync.sqldelight.SyncDatabase
+import eu.pretix.libpretixsync.sqldelight.writeTransaction
 import eu.pretix.libpretixsync.sync.SyncManager.ProgressFeedback
 import eu.pretix.libpretixsync.utils.JSONUtils
 import org.joda.time.format.ISODateTimeFormat
@@ -19,6 +21,7 @@ class EventSyncAdapter(
     api: PretixApi,
     syncCycleId: String,
     feedback: ProgressFeedback? = null,
+    private val sentry: SentryInterface? = null,
 ) : BaseSingleObjectSyncAdapter<Event>(
     db = db,
     fileStorage = fileStorage,
@@ -94,7 +97,7 @@ class EventSyncAdapter(
     }
 
     override fun runInTransaction(body: TransactionWithoutReturn.() -> Unit) {
-        db.eventQueries.transaction(false, body)
+        db.eventQueries.writeTransaction(db = db, sentry = sentry, body = body)
     }
 
     @Throws(JSONException::class)

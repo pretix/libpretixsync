@@ -44,7 +44,10 @@
       "answers": [
         {
           "question": 1,
-          "answer": "True"
+          "answer": "True",
+          "question_identifier": "AAAABBBC",
+          "options": [],
+          "option_identifiers": []
         }
       ],
       "tax_rule": null,

@@ -140,8 +140,8 @@ private fun parseAnswersWithOptionIds(json: JSONObject): Map<Long, String>? {
         val res: MutableMap<Long, String> = HashMap()
         for (i in 0 until arr.length()) {
             val a = arr.getJSONObject(i)
-            val opts = a.getJSONArray("options")
-            if (opts.length() > 0) {
+            val opts = a.optJSONArray("options")
+            if (opts != null && opts.length() > 0) {
                 val aw = StringBuilder()
                 for (j in 0 until opts.length()) {
                     if (aw.length > 0) {

@@ -42,6 +42,7 @@ fun Item.toModel(): ItemModel {
         taxRuleId = parseTaxRuleId(json),
         defaultPrice = parseDefaultPrice(json),
         hasFreePrice = parseHasFreePrice(json),
+        suggestedPrice = parseSuggestedPrice(json),
         mediaPolicy = parseMediaPolicy(json),
         mediaType = parseMediaType(json),
         generateTickets = this.isGenerateTickets,
@@ -202,6 +203,17 @@ private fun parseHasFreePrice(json: JSONObject): Boolean {
     } catch (e: JSONException) {
         e.printStackTrace()
         false
+    }
+}
+
+private fun parseSuggestedPrice(json: JSONObject): BigDecimal? {
+    return try {
+        if (json.isNull("free_price_suggestion")) {
+            null
+        } else BigDecimal(json.getString("free_price_suggestion"))
+    } catch (e: JSONException) {
+        e.printStackTrace()
+        null
     }
 }
 

@@ -8,13 +8,12 @@ pluginManagement {
     }
 }
 
-// workaround: plugin definition with version here, so a standalone build is possible
-// but building it inside the multi module project doesn't exit with "unknown version already on classpath" error
-plugins {
-    id "org.jetbrains.kotlin.jvm" version "2.2.21" apply false
-    id "com.google.protobuf" version "0.9.5" apply false
-    id "app.cash.sqldelight" version "2.1.0" apply false
-    id "com.github.gmazzo.buildconfig" version "5.7.1" apply false
+dependencyResolutionManagement {
+    versionCatalogs {
+        syncLibs {
+            from(files("gradle/libs.versions.toml"))
+        }
+    }
 }
 
 rootProject.name = 'eu.pretix.libpretixsync'

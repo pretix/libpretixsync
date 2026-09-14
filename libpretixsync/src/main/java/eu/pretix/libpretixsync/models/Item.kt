@@ -42,6 +42,7 @@ class Item(
     val taxRuleId: Long = 0,
     val defaultPrice: BigDecimal = BigDecimal("0.00"),
     val hasFreePrice: Boolean = false,
+    val suggestedPrice: BigDecimal? = null,
     val mediaPolicy: MediaPolicy = MediaPolicy.NONE,
     val mediaType: ReusableMediaType = ReusableMediaType.NONE,
     val generateTickets: Boolean = false,
@@ -172,6 +173,7 @@ class Item(
         if (eventSlug != other.eventSlug) return false
         if (pictureFilename != other.pictureFilename) return false
         if (defaultPrice != other.defaultPrice) return false
+        if (suggestedPrice != other.suggestedPrice) return false
         if (mediaPolicy != other.mediaPolicy) return false
         if (mediaType != other.mediaType) return false
         if (!JSONUtils.similar(_variations, other._variations)) return false
@@ -213,6 +215,7 @@ class Item(
         result = 31 * result + (eventSlug?.hashCode() ?: 0)
         result = 31 * result + (pictureFilename?.hashCode() ?: 0)
         result = 31 * result + defaultPrice.hashCode()
+        result = 31 * result + (suggestedPrice?.hashCode() ?: 0)
         result = 31 * result + mediaPolicy.hashCode()
         result = 31 * result + mediaType.hashCode()
         result = 31 * result + _variations.hashCode()

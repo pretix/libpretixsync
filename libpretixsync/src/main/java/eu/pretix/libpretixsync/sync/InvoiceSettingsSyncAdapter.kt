@@ -1,5 +1,6 @@
 package eu.pretix.libpretixsync.sync
 
+import eu.pretix.libpretixsync.SentryInterface
 import eu.pretix.libpretixsync.api.PretixApi
 import eu.pretix.libpretixsync.sqldelight.SyncDatabase
 import eu.pretix.libpretixsync.sync.SyncManager.ProgressFeedback
@@ -12,6 +13,7 @@ class InvoiceSettingsSyncAdapter(
     api: PretixApi,
     syncCycleId: String,
     feedback: ProgressFeedback? = null,
+    sentry: SentryInterface,
 ) : SettingsSyncAdapter(
     db = db,
     fileStorage = fileStorage,
@@ -20,6 +22,7 @@ class InvoiceSettingsSyncAdapter(
     api = api,
     syncCycleId = syncCycleId,
     feedback = feedback,
+    sentry = sentry,
 ) {
     override fun getUrl(): String {
         return api.eventResourceUrl(eventSlug, "invoicesettings")

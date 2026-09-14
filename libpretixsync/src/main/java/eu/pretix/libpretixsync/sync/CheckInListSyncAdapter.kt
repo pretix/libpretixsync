@@ -2,10 +2,13 @@ package eu.pretix.libpretixsync.sync
 
 import app.cash.sqldelight.TransactionWithoutReturn
 import app.cash.sqldelight.db.QueryResult
+import eu.pretix.libpretixsync.SentryInterface
 import eu.pretix.libpretixsync.api.PretixApi
 import eu.pretix.libpretixsync.sqldelight.CheckInList
 import eu.pretix.libpretixsync.sqldelight.Migrations
 import eu.pretix.libpretixsync.sqldelight.SyncDatabase
+import eu.pretix.libpretixsync.sqldelight.writeTransaction
+import eu.pretix.libpretixsync.sqldelight.writeTransactionWithResult
 import eu.pretix.libpretixsync.sync.SyncManager.ProgressFeedback
 import eu.pretix.libpretixsync.utils.JSONUtils
 import org.json.JSONException
@@ -19,6 +22,7 @@ class CheckInListSyncAdapter(
     syncCycleId: String,
     feedback: ProgressFeedback?,
     private val subeventId: Long?,
+    private val sentry: SentryInterface? = null,
 ) : BaseConditionalSyncAdapter<CheckInList, Long>(
     db = db,
     fileStorage = fileStorage,
@@ -68,7 +72,9 @@ class CheckInListSyncAdapter(
     }
 
     override fun insert(jsonobj: JSONObject) {
-        val listId = db.checkInListQueries.transactionWithResult {
+        // Called from within transaction in processPage
+        // Set noEnclosing=false but keep transaction if this ever gets called directly
+        val listId = db.checkInListQueries.writeTransactionWithResult(db, sentry, false) {
             db.checkInListQueries.insert(
                 all_items = jsonobj.optBoolean("all_products"),
                 event_slug = eventSlug,
@@ -143,7 +149,7 @@ class CheckInListSyncAdapter(
     }
 
     override fun runInTransaction(body: TransactionWithoutReturn.() -> Unit) {
-        db.checkInListQueries.transaction(false, body)
+        db.checkInListQueries.writeTransaction(db = db, sentry = sentry, body = body)
     }
 
     override fun runBatch(parameterBatch: List<Long>): List<CheckInList> =
