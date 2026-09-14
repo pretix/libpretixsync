@@ -41,5 +41,6 @@ data class Receipt(
         EXTERNAL("external"),
         TERMINAL_CSB60("terminal_csb60"),
         ADYEN_LEGACY("adyen_legacy"),
+        SPOS("spos"),
     }
 }
