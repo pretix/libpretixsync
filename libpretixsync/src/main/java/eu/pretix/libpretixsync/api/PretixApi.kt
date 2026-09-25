@@ -467,17 +467,21 @@ open class PretixApi(url: String, key: String, orgaSlug: String, version: Int, h
             throw FinalApiException("Server error: " + response.code + ".")
         }
         if (response.code == 401) {
-            if (body.startsWith("{")) {
+            val detail = if (body.startsWith("{")) {
                 try {
-                    val err = JSONObject(body)
-                    if (err.optString("detail", "") == "Device access has been revoked.") {
-                        response.close()
-                        throw DeviceAccessRevokedException("Device access has been revoked.")
-                    }
+                    JSONObject(body).optString("detail", "")
                 } catch (e: JSONException) {
                     e.printStackTrace()
+                    ""
                 }
+            } else {
+                ""
             }
+            response.close()
+            if (detail == "Device access has been revoked.") {
+                throw DeviceAccessRevokedException("Device access has been revoked.")
+            }
+            throw UnauthorizedApiException(detail.ifEmpty { "Server error: Unauthorized." })
         }
         return try {
             if (json && response.code != 204) {
