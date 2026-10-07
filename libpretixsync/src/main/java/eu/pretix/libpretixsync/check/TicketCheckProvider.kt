@@ -55,6 +55,13 @@ interface TicketCheckProvider {
         // required for de-serialization
         constructor() {}
     }
+    data class AddonInfo(
+        val itemName: String? = null,
+        val variationName: String? = null,
+        val attendeeName: String? = null,
+        val isBundled: Boolean = false,
+        val checkedIn: Boolean? = null,
+    )
 
     class CheckResult {
         enum class Type {
@@ -75,6 +82,7 @@ interface TicketCheckProvider {
         var positionId: Long? = null
         var firstScanned: Date? = null
         var addonText: String? = null
+        var addons: List<AddonInfo>? = null
         var reasonExplanation: String? = null
         var checkinTexts: List<String>? = null
         var isRequireAttention = false
