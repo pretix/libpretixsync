@@ -527,10 +527,12 @@ public class SyncManager {
                         call.getIdempotency_key()
                 );
                 if (response.getResponse().code() < 500) {
-                    db.getQueuedCallQueries().delete(call.getId());
                     if (response.getResponse().code() >= 400) {
                         sentry.captureException(new ApiException("Received response (" + response.getResponse().code() + ") for queued call: " + response.getData().toString()));
                         // We ignore 400s, because we can't do something about them
+                        db.getQueuedCallQueries().updateIdempotencyKey(NonceGenerator.nextNonce(), call.getId());
+                    } else {
+                        db.getQueuedCallQueries().delete(call.getId());
                     }
                 } else {
                     throw new SyncException(response.getData().toString());
@@ -546,12 +548,17 @@ public class SyncManager {
                     sentry.addBreadcrumb("sync.queue", "API Error: " + e.getMessage());
                     throw new SyncException(e.getMessage());
                 }
-            } catch (PermissionDeniedApiException | DeviceAccessRevokedException | UnauthorizedApiException e) {
-                sentry.addBreadcrumb("sync.queue", "API Error: " + e.getMessage());
-                db.getQueuedCallQueries().updateIdempotencyKey(NonceGenerator.nextNonce(), call.getId());
-                throw new SyncException(e.getMessage());
             } catch (ApiException e) {
                 sentry.addBreadcrumb("sync.queue", "API Error: " + e.getMessage());
+                if (e instanceof DeviceAccessRevokedException // 401
+                    || e instanceof UnauthorizedApiException // 401
+                    || e instanceof PermissionDeniedApiException // 403
+                    || e instanceof NotFoundApiException // 404
+                    || e instanceof FinalApiException // >= 405
+                    || e instanceof ConflictApiException // 409
+                ) {
+                    db.getQueuedCallQueries().updateIdempotencyKey(NonceGenerator.nextNonce(), call.getId());
+                }
                 throw new SyncException(e.getMessage());
             }
         }
