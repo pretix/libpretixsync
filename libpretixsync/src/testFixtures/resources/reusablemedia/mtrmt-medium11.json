@@ -1,0 +1,21 @@
+{
+  "id": 37,
+  "organizer": "mtrmt",
+  "created": "2026-05-08T10:00:05.758077Z",
+  "updated": "2026-05-08T10:07:20.207322Z",
+  "type": "nfc_uid",
+  "identifier": "1212",
+  "claim_token": null,
+  "label": null,
+  "active": true,
+  "expires": null,
+  "customer": null,
+  "linked_orderpositions": [
+    18722,
+    18721
+  ],
+  "linked_giftcard": null,
+  "info": {},
+  "notes": "Two tickets of different products with overlapping validity in the same event",
+  "linked_orderposition": null
+}

@@ -465,6 +465,28 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
         res.isRequireAttention = require_attention || (variation?.isCheckin_attention == true)
         res.checkinTexts = listOfNotNull(variation?.checkin_text?.trim(), item.checkInText?.trim()).filterNot { it.isBlank() }.filterNot { it.isBlank() || it == "null" }
 
+        val settings = db.settingsQueries.selectBySlug(eventSlug).executeAsOneOrNull()?.toModel()
+        val reusableMediaUsageEnforced = (settings?.json?.optBoolean("reusable_media_usage_enforced", false) == true)
+
+        if (item.mediaPolicy != MediaPolicy.NONE && item.mediaType != ReusableMediaType.NONE && reusableMediaUsageEnforced) {
+            res.type = TicketCheckProvider.CheckResult.Type.EXCHANGE_REQUIRED_OFFLINE
+            res.isCheckinAllowed = false
+            res.reasonExplanation = "This ticket needs to be exchanged, but this isn't possible while offline"
+            storeFailedCheckin(
+                eventSlug,
+                listId,
+                "exchange",
+                ticketid,
+                source_type,
+                type,
+                item = item.serverId,
+                variation = decoded.variation,
+                subevent = decoded.subevent,
+                nonce = nonce
+            )
+            return res
+        }
+
         val queuedCheckIns = db.queuedCheckInQueries.selectBySecret(ticketid)
             .executeAsList()
             .filter { it.checkinListId == listId && it.annulled == null }
@@ -824,9 +846,20 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
         val message: String? = null
     )
 
+    private fun isProductOnList(list: CheckInList, position: OrderPositionModel): Boolean {
+        if (list.allItems) {
+            return true
+        }
+
+        return db.checkInListQueries.selectItemIdsForList(list.id)
+            .executeAsList()
+            .any { it.id == position.itemId }
+    }
+
     private fun filterPositions(eventsAndCheckinLists: Map<String, Long>, positions: List<OrderPositionModel>): Pair<List<OrderPositionModel>, List<PositionFilteringError>> {
         var results = mutableListOf<OrderPositionModel>()
         val errors = mutableListOf<PositionFilteringError>()
+        val listsByPositionId = mutableMapOf<Long, CheckInList>()
         positions.forEach { position ->
             val order = db.orderQueries.selectById(position.orderId).executeAsOne().toModel()
 
@@ -864,25 +897,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
                 candidates.addAll(orderPositions.filter {
                     it.addonToServerId == position.serverId
                 })
-                // server side: 3b.
-                val filteredCandidates = if (!list.allItems) {
-                    val items = db.checkInListQueries.selectItemIdsForList(list.id)
-                        .executeAsList()
-                        .map {
-                            // Not-null assertion needed for SQLite
-                            it.id!!
-                        }
-                        .toHashSet()
-                    candidates.filter { candidate ->
-                        val candidateItem =
-                            db.itemQueries.selectById(candidate.itemId).executeAsOne()
-                        items.contains(candidateItem.id)
-                    }
-                } else {
-                    // This is a useless configuration that the backend won't allow, but we'll still handle
-                    // it here for completeness
-                    candidates
-                }
+                val filteredCandidates = candidates.filter { isProductOnList(list, it) }
 
                 if (filteredCandidates.isEmpty()) {
                     errors.add(PositionFilteringError(position, eventSlug, list, TicketCheckProvider.CheckResult.Type.PRODUCT))
@@ -896,6 +911,14 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
             }
 
             results.addAll(resultingPositions)
+            resultingPositions.forEach { listsByPositionId[it.id] = list }
+        }
+
+        val candidatePositions = results.toList()
+
+        // server side: 3b.
+        if (results.size > 1) {
+            results = results.filter { isProductOnList(listsByPositionId.getValue(it.id), it) }.toMutableList()
         }
 
         // server side: 3c.
@@ -910,50 +933,16 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
         // We try to improve  the error message by selecting the product that will "work next" or - if none matches - "worked last".
         if (results.isEmpty()) {
             val nowOdt = javaTimeNow()
-            var nearestCandidate: OrderPositionModel? = null
+            val fallbackCandidate = candidatePositions
+                .filter { it.validFrom != null && it.validFrom > nowOdt }
+                .minByOrNull { it.validFrom!! }
+                ?: candidatePositions
+                    .filter { it.validUntil != null && it.validUntil < nowOdt }
+                    .maxByOrNull { it.validUntil!! }
+                ?: candidatePositions.firstOrNull()
 
-            positions.forEach {
-                if (it.validFrom != null &&
-                    (it.validFrom > nowOdt ||
-                    (nearestCandidate != null && it.validFrom < nearestCandidate.validFrom))) {
-                    nearestCandidate = it
-                }
-            }
-
-            if (nearestCandidate == null) {
-                positions.forEach {
-                    if (it.validUntil != null &&
-                        (it.validUntil < nowOdt ||
-                                (nearestCandidate != null && it.validUntil > nearestCandidate.validUntil))) {
-                        nearestCandidate = it
-                    }
-                }
-            }
-
-            if (nearestCandidate != null) {
-                val order = db.orderQueries.selectById(nearestCandidate.orderId).executeAsOne().toModel()
-
-                val eventSlug = order.eventSlug
-                val event = db.eventQueries.selectBySlug(eventSlug).executeAsOneOrNull()?.toModel()
-                if (event == null) {
-                    return Pair(listOf(), listOf(PositionFilteringError(nearestCandidate, eventSlug, null, TicketCheckProvider.CheckResult.Type.ERROR, "Event not found")))
-                }
-
-                val listId = eventsAndCheckinLists[eventSlug]
-                if (listId == null) {
-                    return Pair(listOf(), listOf(PositionFilteringError(nearestCandidate, eventSlug, null, TicketCheckProvider.CheckResult.Type.ERROR, "No check-in list selected")))
-                }
-
-                val list = db.checkInListQueries.selectByServerIdAndEventSlug(
-                    server_id = listId,
-                    event_slug = eventSlug,
-                ).executeAsOneOrNull()?.toModel()
-
-                if (list == null) {
-                    return Pair(listOf(), listOf(PositionFilteringError(nearestCandidate, eventSlug, null, TicketCheckProvider.CheckResult.Type.ERROR, "Check-in list not found")))
-                }
-
-                return Pair(listOf(), listOf(PositionFilteringError(nearestCandidate, eventSlug, list, TicketCheckProvider.CheckResult.Type.INVALID_TIME)))
+            if (fallbackCandidate != null) {
+                results = mutableListOf(fallbackCandidate)
             }
         }
 
@@ -1029,20 +1018,6 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
                             firstError.eventSlug,
                             firstError.list.serverId,
                             "ambiguous",
-                            secret,
-                            source_type,
-                            type,
-                            position = firstError.position.serverId,
-                            item = item.serverId,
-                            variation = firstError.position.variationServerId,
-                            subevent = firstError.position.subEventServerId,
-                            nonce = nonce
-                        )
-                    TicketCheckProvider.CheckResult.Type.INVALID_TIME ->
-                        storeFailedCheckin(
-                            firstError.eventSlug,
-                            firstError.list.serverId,
-                            "invalid_time",
                             secret,
                             source_type,
                             type,
@@ -1229,7 +1204,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
                     eventSlug,
                     list.serverId,
                     "invalid_time",
-                    position.secret!!,
+                    secret,
                     source_type,
                     type,
                     position = position.serverId,
@@ -1248,7 +1223,7 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
                     eventSlug,
                     list.serverId,
                     "invalid_time",
-                    position.secret!!,
+                    secret,
                     source_type,
                     type,
                     position = position.serverId,
@@ -1289,8 +1264,8 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
         if (list.subEventId != null && list.subEventId > 0 && list.subEventId != position.subEventServerId) {
             storeFailedCheckin(
                 eventSlug,
-                list.subEventId,
-                "invalid",
+                list.serverId,
+                "product",
                 position.secret!!,
                 source_type,
                 type,
@@ -1300,7 +1275,9 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
                 subevent = position.subEventServerId,
                 nonce = nonce
             )
-            return TicketCheckProvider.CheckResult(TicketCheckProvider.CheckResult.Type.INVALID, offline = true)
+            res.type = TicketCheckProvider.CheckResult.Type.PRODUCT
+            res.isCheckinAllowed = false
+            return res
         }
 
         if (!order.hasValidStatus && !(ignore_unpaid && list.includePending)) {

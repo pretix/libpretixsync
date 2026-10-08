@@ -1,0 +1,19 @@
+{
+  "id": 36,
+  "name": "Add-on match",
+  "all_products": false,
+  "limit_products": [
+    215
+  ],
+  "subevent": null,
+  "checkin_count": 0,
+  "position_count": 2,
+  "include_pending": false,
+  "allow_multiple_entries": false,
+  "allow_entry_after_exit": true,
+  "rules": {},
+  "exit_all_at": null,
+  "addon_match": true,
+  "ignore_in_statistics": false,
+  "consider_tickets_used": true
+}

@@ -1,0 +1,21 @@
+{
+  "id": 36,
+  "organizer": "mtrmt",
+  "created": "2026-05-13T07:31:23.075971Z",
+  "updated": "2026-05-13T07:31:23.076011Z",
+  "type": "barcode",
+  "identifier": "0000",
+  "claim_token": null,
+  "label": null,
+  "active": true,
+  "expires": null,
+  "customer": null,
+  "linked_orderpositions": [
+    18711,
+    18713
+  ],
+  "linked_giftcard": null,
+  "info": {},
+  "notes": "Two tickets with add-ons, non overlapping with a bit spacing in between, same event",
+  "linked_orderposition": null
+}

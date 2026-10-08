@@ -1,0 +1,13 @@
+{
+  "id": 11,
+  "name": "Date 2 only",
+  "all_products": true,
+  "limit_products": [],
+  "subevent": 15,
+  "checkin_count": 0,
+  "position_count": 0,
+  "include_pending": false,
+  "allow_multiple_entries": false,
+  "allow_entry_after_exit": true,
+  "rules": {}
+}
