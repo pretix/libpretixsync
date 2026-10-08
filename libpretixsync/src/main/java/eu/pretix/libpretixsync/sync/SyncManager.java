@@ -1,6 +1,7 @@
 package eu.pretix.libpretixsync.sync;
 
 import eu.pretix.libpretixsync.api.*;
+import eu.pretix.libpretixsync.db.NonceGenerator;
 import eu.pretix.libpretixsync.models.Question;
 import eu.pretix.libpretixsync.models.db.QuestionExtensionsKt;
 import eu.pretix.libpretixsync.sqldelight.Closing;
@@ -545,6 +546,10 @@ public class SyncManager {
                     sentry.addBreadcrumb("sync.queue", "API Error: " + e.getMessage());
                     throw new SyncException(e.getMessage());
                 }
+            } catch (PermissionDeniedApiException | DeviceAccessRevokedException | UnauthorizedApiException e) {
+                sentry.addBreadcrumb("sync.queue", "API Error: " + e.getMessage());
+                db.getQueuedCallQueries().updateIdempotencyKey(NonceGenerator.nextNonce(), call.getId());
+                throw new SyncException(e.getMessage());
             } catch (ApiException e) {
                 sentry.addBreadcrumb("sync.queue", "API Error: " + e.getMessage());
                 throw new SyncException(e.getMessage());
