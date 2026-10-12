@@ -1,6 +1,7 @@
 package eu.pretix.libpretixsync.sync;
 
 import eu.pretix.libpretixsync.api.*;
+import eu.pretix.libpretixsync.db.NonceGenerator;
 import eu.pretix.libpretixsync.models.Question;
 import eu.pretix.libpretixsync.models.db.QuestionExtensionsKt;
 import eu.pretix.libpretixsync.sqldelight.Closing;
@@ -526,10 +527,12 @@ public class SyncManager {
                         call.getIdempotency_key()
                 );
                 if (response.getResponse().code() < 500) {
-                    db.getQueuedCallQueries().delete(call.getId());
                     if (response.getResponse().code() >= 400) {
                         sentry.captureException(new ApiException("Received response (" + response.getResponse().code() + ") for queued call: " + response.getData().toString()));
                         // We ignore 400s, because we can't do something about them
+                        db.getQueuedCallQueries().updateIdempotencyKey(NonceGenerator.nextNonce(), call.getId());
+                    } else {
+                        db.getQueuedCallQueries().delete(call.getId());
                     }
                 } else {
                     throw new SyncException(response.getData().toString());
@@ -547,6 +550,15 @@ public class SyncManager {
                 }
             } catch (ApiException e) {
                 sentry.addBreadcrumb("sync.queue", "API Error: " + e.getMessage());
+                if (e instanceof DeviceAccessRevokedException // 401
+                    || e instanceof UnauthorizedApiException // 401
+                    || e instanceof PermissionDeniedApiException // 403
+                    || e instanceof NotFoundApiException // 404
+                    || e instanceof FinalApiException // >= 405
+                    || e instanceof ConflictApiException // 409
+                ) {
+                    db.getQueuedCallQueries().updateIdempotencyKey(NonceGenerator.nextNonce(), call.getId());
+                }
                 throw new SyncException(e.getMessage());
             }
         }
@@ -615,9 +627,9 @@ public class SyncManager {
 
         List<QueuedOrder> orders = db.getQueuedOrderQueries().selectUnlockedWithoutError().executeAsList();
 
-        try {
-            int i = 0;
-            for (QueuedOrder qo : orders) {
+        int i = 0;
+        for (QueuedOrder qo : orders) {
+            try {
                 if (feedback != null && i % 10 == 0) {
                     feedback.postFeedback("Uploading orders (" + i + "/" + orders.size() + ") …");
                 }
@@ -641,19 +653,31 @@ public class SyncManager {
                     // TODO: User feedback or log in some way?
                     db.getQueuedOrderQueries().updateError(resp.getData().toString(), qo.getId());
                 }
+                if (resp.getResponse().code() >= 400 && resp.getResponse().code() <= 500) {
+                    db.getQueuedOrderQueries().updateIdempotencyKey(NonceGenerator.nextNonce(), qo.getId());
+                }
+            } catch (JSONException e) {
+                if (connectivityFeedback != null) {
+                    connectivityFeedback.recordError();
+                }
+                sentry.captureException(e);
+                throw new SyncException("Unknown server response: " + e.getMessage());
+            } catch (ApiException e) {
+                if (connectivityFeedback != null) {
+                    connectivityFeedback.recordError();
+                }
+                sentry.addBreadcrumb("sync.queue", "API Error: " + e.getMessage());
+                if (e instanceof DeviceAccessRevokedException // 401
+                    || e instanceof UnauthorizedApiException // 401
+                    || e instanceof PermissionDeniedApiException // 403
+                    || e instanceof NotFoundApiException // 404
+                    || e instanceof FinalApiException // >= 405
+                    || e instanceof ConflictApiException // 409
+                ) {
+                    db.getQueuedOrderQueries().updateIdempotencyKey(NonceGenerator.nextNonce(), qo.getId());
+                }
+                throw new SyncException(e.getMessage());
             }
-        } catch (JSONException e) {
-            if (connectivityFeedback != null) {
-                connectivityFeedback.recordError();
-            }
-            sentry.captureException(e);
-            throw new SyncException("Unknown server response: " + e.getMessage());
-        } catch (ApiException e) {
-            if (connectivityFeedback != null) {
-                connectivityFeedback.recordError();
-            }
-            sentry.addBreadcrumb("sync.queue", "API Error: " + e.getMessage());
-            throw new SyncException(e.getMessage());
         }
 
         sentry.addBreadcrumb("sync.queue", "Receipt upload complete");

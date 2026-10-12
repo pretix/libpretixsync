@@ -26,3 +26,9 @@ VALUES (
     ?,
     ?
 );
+
+updateIdempotencyKey:
+UPDATE QueuedCall
+SET
+    idempotency_key = ?
+WHERE id = ?;

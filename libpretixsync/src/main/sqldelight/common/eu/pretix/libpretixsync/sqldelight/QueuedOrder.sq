@@ -36,3 +36,9 @@ UPDATE QueuedOrder
 SET
     error = ?
 WHERE id = ?;
+
+updateIdempotencyKey:
+UPDATE QueuedOrder
+SET
+    idempotency_key = ?
+WHERE id = ?;
