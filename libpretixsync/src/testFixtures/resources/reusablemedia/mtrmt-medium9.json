@@ -1,0 +1,20 @@
+{
+  "id": 35,
+  "organizer": "mtrmt",
+  "created": "2026-05-13T07:31:23.075971Z",
+  "updated": "2026-05-13T07:31:23.076011Z",
+  "type": "barcode",
+  "identifier": "9999",
+  "claim_token": null,
+  "label": null,
+  "active": true,
+  "expires": null,
+  "customer": null,
+  "linked_orderpositions": [18699, 18702],
+  "linked_giftcard": null,
+  "info": {
+
+  },
+  "notes": "Two tickets, non overlapping, the one starting later stored first, same event",
+  "linked_orderposition": null
+}
