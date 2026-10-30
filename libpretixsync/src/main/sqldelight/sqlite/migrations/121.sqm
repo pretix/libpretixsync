@@ -1,0 +1,5 @@
+import java.math.BigDecimal;
+
+ALTER TABLE ReceiptLine ADD price_includes_rounding_correction REAL AS BigDecimal DEFAULT 0 NOT NULL;
+ALTER TABLE ReceiptLine ADD tax_value_includes_rounding_correction REAL AS BigDecimal DEFAULT 0 NOT NULL;
+ALTER TABLE Receipt ADD tax_rounding_mode TEXT DEFAULT 'line' NOT NULL;
