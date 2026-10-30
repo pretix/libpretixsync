@@ -40,6 +40,7 @@ INSERT INTO ReceiptLine (
     listed_price,
     positionid,
     price,
+    price_includes_rounding_correction,
     price_after_voucher,
     price_calculated_from_net,
     receipt,
@@ -54,6 +55,7 @@ INSERT INTO ReceiptLine (
     tax_rate,
     tax_rule,
     tax_value,
+    tax_value_includes_rounding_correction,
     tax_code,
     type,
     use_reusable_medium,
@@ -64,6 +66,8 @@ INSERT INTO ReceiptLine (
     manual_discount_percent
 )
 VALUES (
+    ?,
+    ?,
     ?,
     ?,
     ?,

@@ -29,7 +29,8 @@ CREATE TABLE Receipt (
     started boolean DEFAULT FALSE,
     training boolean DEFAULT FALSE NOT NULL,
     closing bigint REFERENCES Closing (id) ON DELETE CASCADE,
-    websecret character varying(255)
+    websecret character varying(255),
+    tax_rounding_mode character varying(255) DEFAULT 'line' NOT NULL
 );
 
 CREATE INDEX Receipt_closing_index ON Receipt (closing);
