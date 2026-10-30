@@ -97,6 +97,8 @@ public abstract class BaseDatabaseTest {
                         bigDecimalAdapter,
                         bigDecimalAdapter,
                         bigDecimalAdapter,
+                        bigDecimalAdapter,
+                        bigDecimalAdapter,
                         bigDecimalAdapter
                 ),
                 new ReceiptPayment.Adapter(

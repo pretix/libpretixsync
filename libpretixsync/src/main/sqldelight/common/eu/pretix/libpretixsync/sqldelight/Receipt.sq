@@ -39,9 +39,11 @@ INSERT INTO Receipt (
     server_id,
     started,
     training,
-    websecret
+    websecret,
+    tax_rounding_mode
 )
 VALUES (
+    ?,
     ?,
     ?,
     ?,

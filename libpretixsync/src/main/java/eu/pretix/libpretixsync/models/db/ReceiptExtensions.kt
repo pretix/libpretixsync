@@ -37,4 +37,5 @@ fun Receipt.toModel() =
         orderEmail = order_email,
         orderPhone = order_phone,
         webSecret = websecret,
+        taxRoundingMode = tax_rounding_mode,
     )
