@@ -73,6 +73,8 @@ class Questionnaire(
         override val dependencyValues: List<String>,
         val dataField: DataField?
     ) : QuestionLike() {
+        override val serializeOptionToIdentifier = true
+
         override val type: QuestionType
             get() = dataField?.type
                 ?: throw IllegalArgumentException("Cannot use text block as QuestionLike")

@@ -36,6 +36,8 @@ abstract class QuestionLike {
     open val dependencyValues: List<String>
         get() = ArrayList<String>()
 
+    open protected val serializeOptionToIdentifier = false
+
     @Throws(ValidationException::class)
     open fun warnAnswer(
         answer: String?,
@@ -84,24 +86,21 @@ abstract class QuestionLike {
         } else if (type == QuestionType.B) {
             return if (answer == "True" || answer == "true") "True" else "False"
         } else if (type == QuestionType.C) {
-            for (o in opts) {
-                // TODO: migrate to identifiers
-                if (o.serverId.toString().equals(answer)) {
-                    return answer
-                }
+            return if (serializeOptionToIdentifier) {
+                opts.find { it.identifier == answer }?.identifier ?: throw ValidationException("Invalid choice supplied")
+            } else {
+                opts.find { it.serverId.toString() == answer }?.serverId?.toString() ?: throw ValidationException("Invalid choice supplied")
             }
-            throw ValidationException("Invalid choice supplied")
         } else if (type == QuestionType.M) {
             val validChoices: MutableSet<String?> = HashSet<String?>()
             for (o in opts) {
-                // TODO: migrate to identifiers
-                validChoices.add(o.serverId.toString())
-            }
-            for (a in answer.split(",".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()) {
-                if (!validChoices.contains(a)) {
-                    throw ValidationException("Invalid choice supplied")
+                if (serializeOptionToIdentifier) {
+                    validChoices.add(o.identifier)
+                } else {
+                    validChoices.add(o.serverId.toString())
                 }
             }
+            return validChoices.joinToString(",")
         } else if (type == QuestionType.D) {
             val dateFormat = SimpleDateFormat("yyyy-MM-dd")
             dateFormat.setLenient(false)
