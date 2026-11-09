@@ -1,23 +1,15 @@
 package eu.pretix.libpretixsync.db
 
 
-class QuestionOption {
-    var server_id: Long? = null
-    var position: Long? = null
-    var identifier: String? = null
-    var value: String? = null
-
-    constructor(server_id: Long?, position: Long?, identifier: String?, value: String?) {
-        this.server_id = server_id
-        this.position = position
-        this.identifier = identifier
-        this.value = value
-    }
-
-    constructor()
-
+data class QuestionOption(
+    @Deprecated("Remove after pretix 2026.10 is no longer supported")
+    val serverId: Long? = null,
+    val position: Long,
+    val identifier: String,
+    val value: String
+) {
 
     override fun toString(): String {
-        return value!!
+        return value
     }
 }
