@@ -22,6 +22,7 @@ class QuestionnaireSyncAdapter(
     syncCycleId: String,
     feedback: ProgressFeedback?,
     private val sentry: SentryInterface? = null,
+    private val salesChannel: String = "pretixpos",
 ) : BaseConditionalSyncAdapter<Questionnaire, Long>(
     db = db,
     fileStorage = fileStorage,
@@ -31,13 +32,17 @@ class QuestionnaireSyncAdapter(
     feedback = feedback,
 ) {
 
-    override fun getResourceName(): String = "questions"
+    override fun getResourceName(): String = "questionnaires"
 
     override fun getId(obj: Questionnaire): Long = obj.server_id!!
 
     override fun getId(obj: JSONObject): Long = obj.getLong("id")
 
     override fun getJSON(obj: Questionnaire): JSONObject = JSONObject(obj.json_data!!)
+
+    override fun getUrl(): String {
+        return api.eventResourceUrl(eventSlug, getResourceName()) + "?sales_channel=" + salesChannel + "&expand=rows.datafield&expand_name_fields=true"
+    }
 
     override fun queryKnownIDs(): MutableSet<Long> {
         val res = mutableSetOf<Long>()
