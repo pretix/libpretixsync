@@ -73,6 +73,10 @@ public interface ConfigStore {
 
     public Long getKnownPretixVersion();
 
+    public void setQuestionnaireSupportEnabled(Boolean val);
+
+    public Boolean getQuestionnaireSupportEnabled();
+
     public Boolean getAutoSwitchRequested();
 
     public Set<String> getKnownLiveEventSlugs();
