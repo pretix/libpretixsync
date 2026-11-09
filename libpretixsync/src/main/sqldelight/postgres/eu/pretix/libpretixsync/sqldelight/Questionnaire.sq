@@ -1,0 +1,10 @@
+CREATE TABLE Questionnaire (
+    id serial AS Long PRIMARY KEY NOT NULL,
+    event_slug character varying(255),
+    type character varying(255),
+    json_data text,
+    "position" bigint,
+    server_id bigint
+);
+
+CREATE INDEX Questionnaire_server_id_index ON Questionnaire (server_id);

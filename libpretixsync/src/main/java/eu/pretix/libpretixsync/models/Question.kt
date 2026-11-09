@@ -4,6 +4,7 @@ import eu.pretix.libpretixsync.check.QuestionType
 import eu.pretix.libpretixsync.db.QuestionLike
 import eu.pretix.libpretixsync.db.QuestionOption
 
+@Deprecated("Remove after pretix 2026.10 is no longer supported")
 class Question(
     val id: Long,
     val serverId: Long,

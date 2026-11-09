@@ -9,6 +9,7 @@ import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
 
+@Deprecated("Remove after pretix 2026.10 is no longer supported")
 fun Question.toModel(): QuestionModel {
     val json = JSONObject(this.json_data!!)
 

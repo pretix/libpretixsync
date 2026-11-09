@@ -1,0 +1,8 @@
+CREATE TABLE Questionnaire_Item (
+    ItemId bigint NOT NULL REFERENCES Item (id) ON DELETE CASCADE,
+    QuestionnaireId bigint NOT NULL REFERENCES Questionnaire (id) ON DELETE CASCADE,
+    PRIMARY KEY (ItemId, QuestionnaireId)
+);
+
+CREATE INDEX Questionnaire_Item_ItemId_index ON Questionnaire_Item (ItemId);
+CREATE INDEX Questionnaire_Item_QuestionId_index ON Questionnaire_Item (QuestionId);
