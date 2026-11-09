@@ -32,7 +32,7 @@ fun Event.toModel(): EventModel {
 
 private fun getName(json: JSONObject): String =
     try {
-        I18nString.toString(json.getJSONObject("name"))
+        I18nString.toString(json.getJSONObject("name")) ?: ""
     } catch (e: JSONException) {
         e.printStackTrace()
         ""

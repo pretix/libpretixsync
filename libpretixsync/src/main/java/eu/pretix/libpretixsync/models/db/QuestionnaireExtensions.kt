@@ -1,6 +1,7 @@
 package eu.pretix.libpretixsync.models.db
 
 import eu.pretix.libpretixsync.check.QuestionType
+import eu.pretix.libpretixsync.db.QuestionOption
 import eu.pretix.libpretixsync.sqldelight.Questionnaire
 import eu.pretix.libpretixsync.sqldelight.SafeOffsetDateTimeMapper
 import eu.pretix.libpretixsync.utils.I18nString
@@ -17,7 +18,7 @@ fun Questionnaire.toModel(): QuestionnaireModel {
     val json = JSONObject(this.json_data!!)
 
     val jRows = json.getJSONArray("rows")
-    val rows = mutableListOf<QuestionnaireModel.Row>()
+    val rows = mutableListOf<QuestionnaireModel.RowSpec>()
     for (i in 0 until jRows.length()) {
         val jRow = jRows.getJSONObject(i)
         val jDatafield = jRow.getJSONObject("datafield")
@@ -26,7 +27,7 @@ fun Questionnaire.toModel(): QuestionnaireModel {
             identifier = jDatafield.getString("identifier"),
             showDuringCheckin = jDatafield.getBoolean("show_during_checkin"),
             printOnInvoice = jDatafield.getBoolean("print_on_invoice"),
-            printOnInvoiceLabel = I18nString.toString(jDatafield.getJSONObject("print_on_invoice_label")),
+            printOnInvoiceLabel = if (jDatafield.isNull("print_on_invoice_label")) null else I18nString.toString(jDatafield.getJSONObject("print_on_invoice_label")) ?: "",
             validNumberMin = parseBigDecimal(jDatafield, "valid_number_min"),
             validNumberMax = parseBigDecimal(jDatafield, "valid_number_max"),
             validDatetimeMin = SafeOffsetDateTimeMapper.decode(jDatafield, "valid_datetime_min"),
@@ -40,11 +41,11 @@ fun Questionnaire.toModel(): QuestionnaireModel {
             internalName = jDatafield.getString("internal_name"),
             options = parseOptions(jDatafield),
         )
-        val row = QuestionnaireModel.Row(
+        val row = QuestionnaireModel.RowSpec(
             dataField = datafield,
             required = jRow.getBoolean("required"),
-            label = I18nString.toString(jRow.getJSONObject("label")),
-            helpText = I18nString.toString(jRow.getJSONObject("help_text")),
+            label = I18nString.toString(jRow.getJSONObject("label")) ?: "",
+            helpText = I18nString.toString(jRow.getJSONObject("help_text")) ?: "",
             renderedHelpText = jRow.getString("rendered_help_text"),
             dependencyDataField = if (jRow.isNull("dependency_question")) null else jRow.getString("dependency_question"),  // TODO proposed backend change
             dependencyValues = parseStringList(jRow.getJSONArray("dependency_values")),
@@ -57,7 +58,7 @@ fun Questionnaire.toModel(): QuestionnaireModel {
         type = this.type!!,
         position = this.position!!,
         internalName = json.getString("internal_name"),
-        rows = rows.toImmutableList(),
+        rows = rows,
     )
 }
 
@@ -107,15 +108,16 @@ private fun parseType(json: JSONObject): QuestionType {
     }
 }
 
-private fun parseOptions(json: JSONObject): List<QuestionnaireModel.Option> {
+private fun parseOptions(json: JSONObject): List<QuestionOption> {
     val jOptions = json.getJSONArray("options")
-    val response = mutableListOf<QuestionnaireModel.Option>()
+    val response = mutableListOf<QuestionOption>()
     for (i in 0 until jOptions.length()) {
         val jOpt = jOptions.getJSONObject(i)
         response.add(
-            QuestionnaireModel.Option(
+            QuestionOption(
+                serverId = null,
                 identifier = jOpt.getString("identifier"),
-                answer = I18nString.toString(jOpt.getJSONObject("answer")),
+                value = I18nString.toString(jOpt.getJSONObject("answer")) ?: "",
                 position = jOpt.getLong("position"),
             )
         )

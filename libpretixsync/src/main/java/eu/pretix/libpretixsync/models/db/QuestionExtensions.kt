@@ -69,7 +69,7 @@ private fun parseIdentifier(json: JSONObject): String {
 
 private fun parseQuestion(json: JSONObject): String {
     return try {
-        I18nString.toString(json.getJSONObject("question"))
+        I18nString.toString(json.getJSONObject("question")) ?: ""
     } catch (e: JSONException) {
         e.printStackTrace()
         "<invalid>"
@@ -84,7 +84,7 @@ private fun parseOptions(json: JSONObject): List<QuestionOption>? {
             val oobj = arr.getJSONObject(i)
             var answ: String?
             answ = try {
-                I18nString.toString(oobj.getJSONObject("answer"))
+                I18nString.toString(oobj.getJSONObject("answer")) ?: ""
             } catch (e: JSONException) {
                 oobj.getString("answer")
             }
