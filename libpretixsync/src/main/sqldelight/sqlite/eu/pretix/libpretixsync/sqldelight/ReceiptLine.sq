@@ -7,13 +7,13 @@ CREATE TABLE ReceiptLine (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     addon_to INTEGER REFERENCES ReceiptLine (id) ON DELETE CASCADE,
     answers TEXT,
-    attendee_city TEXT,
-    attendee_company TEXT,
-    attendee_country TEXT,
-    attendee_email TEXT,
-    attendee_name TEXT,
-    attendee_street TEXT,
-    attendee_zipcode TEXT,
+    attendee_city TEXT,  -- Deprecated, do not use for new questionnaires, keep for historical data
+    attendee_company TEXT,  -- Deprecated, do not use for new questionnaires, keep for historical data
+    attendee_country TEXT,  -- Deprecated, do not use for new questionnaires, keep for historical data
+    attendee_email TEXT,  -- Deprecated, do not use for new questionnaires, keep for historical data
+    attendee_name TEXT,  -- Deprecated, do not use for new questionnaires, keep for historical data
+    attendee_street TEXT,  -- Deprecated, do not use for new questionnaires, keep for historical data
+    attendee_zipcode TEXT,  -- Deprecated, do not use for new questionnaires, keep for historical data
     canceled INTEGER AS Boolean NOT NULL,
     canceled_because_of_receipt INTEGER AS Boolean DEFAULT 0,
     cart_expires TEXT AS Date,

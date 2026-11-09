@@ -412,7 +412,14 @@ public class SyncManager {
                 }
                 download(new ItemCategorySyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback, sentry));
                 download(new ItemSyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback, sentry));
-                download(new QuestionSyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback, sentry));
+                try {
+                    download(new QuestionnaireSyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback, sentry));
+                    // Do not keep old questions around when we have questionnaires, as the data is redundant
+                    QuestionSyncAdapter.Companion.wipeForEvent(db, eventSlug);
+                } catch (NotFoundApiException e) {
+                    // pretix 2026.10 or older
+                    download(new QuestionSyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback, sentry));
+                }
                 if (profile == Profile.PRETIXPOS) {
                     download(new DiscountSyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback, sentry));
                     download(new QuotaSyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback, subEvent, sentry));

@@ -14,6 +14,7 @@ import eu.pretix.libpretixsync.utils.JSONUtils
 import org.json.JSONException
 import org.json.JSONObject
 
+@Deprecated("Remove after pretix 2026.10 is no longer supported")
 class QuestionSyncAdapter(
     db: SyncDatabase,
     fileStorage: FileStorage,
@@ -153,4 +154,11 @@ class QuestionSyncAdapter(
         }
     }
 
+    companion object {
+        fun wipeForEvent(db: SyncDatabase, slug: String) {
+            db.questionQueries.deleteAllItemRelationsForEventSlug(slug)
+            db.questionQueries.deleteAllForEventSlug(slug)
+        }
+    }
 }
+

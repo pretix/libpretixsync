@@ -82,3 +82,13 @@ WHERE ItemId = :item_id AND QuestionId = :question_id;
 deleteItemRelationsForQuestion:
 DELETE FROM Question_Item
 WHERE QuestionId = :question_id;
+
+deleteAllForEventSlug:
+DELETE FROM Question
+WHERE event_slug = ?;
+
+deleteAllItemRelationsForEventSlug:
+DELETE FROM Question_Item
+WHERE QuestionId IN (
+    SELECT id FROM Question WHERE event_slug = ?
+);
