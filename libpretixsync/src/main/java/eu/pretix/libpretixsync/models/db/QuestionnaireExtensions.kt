@@ -58,6 +58,8 @@ fun Questionnaire.toModel(): QuestionnaireModel {
         type = this.type!!,
         position = this.position!!,
         internalName = json.getString("internal_name"),
+        allSalesChannels = json.getBoolean("all_sales_channels"),
+        limitSalesChannels = parseStringList(json.getJSONArray("limit_sales_channels")),
         rows = rows,
     )
 }

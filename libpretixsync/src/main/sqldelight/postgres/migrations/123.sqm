@@ -16,3 +16,4 @@ CREATE TABLE Questionnaire_Item (
 
 CREATE INDEX Questionnaire_Item_ItemId_index ON Questionnaire_Item (ItemId);
 CREATE INDEX Questionnaire_Item_QuestionId_index ON Questionnaire_Item (QuestionId);
+ALTER TABLE Receipt ADD answers text;
