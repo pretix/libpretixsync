@@ -41,7 +41,7 @@ class QuestionnaireSyncAdapter(
     override fun getJSON(obj: Questionnaire): JSONObject = JSONObject(obj.json_data!!)
 
     override fun getUrl(): String {
-        return api.eventResourceUrl(eventSlug, getResourceName()) + "?sales_channel=" + salesChannel + "&expand=rows.datafield&expand_name_fields=true"
+        return api.eventResourceUrl(eventSlug, getResourceName()) + "?expand=rows.datafield&expand_name_fields=true"
     }
 
     override fun queryKnownIDs(): MutableSet<Long> {

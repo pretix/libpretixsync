@@ -15,6 +15,8 @@ class Questionnaire(
     val type: String,
     val internalName: String,
     val position: Long,
+    val allSalesChannels: Boolean,
+    val limitSalesChannels: List<String>,
     rows: List<RowSpec>
 ) {
     val rows = rows.map {

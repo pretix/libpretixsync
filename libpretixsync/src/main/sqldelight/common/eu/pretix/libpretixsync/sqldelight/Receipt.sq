@@ -40,7 +40,8 @@ INSERT INTO Receipt (
     started,
     training,
     websecret,
-    tax_rounding_mode
+    tax_rounding_mode,
+    answers
 )
 VALUES (
     ?,
@@ -71,9 +72,10 @@ VALUES (
     ?,
     ?,
     ?,
+    ?,
     ?
-
 );
+
 updateOrderCode:
 UPDATE Receipt
 SET
