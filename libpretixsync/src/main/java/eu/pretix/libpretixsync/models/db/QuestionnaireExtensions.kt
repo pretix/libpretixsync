@@ -47,7 +47,7 @@ fun Questionnaire.toModel(): QuestionnaireModel {
             label = I18nString.toString(jRow.getJSONObject("label")) ?: "",
             helpText = I18nString.toString(jRow.getJSONObject("help_text")) ?: "",
             renderedHelpText = jRow.getString("rendered_help_text"),
-            dependencyDataField = if (jRow.isNull("dependency_question")) null else jRow.getString("dependency_question"),  // TODO proposed backend change
+            dependencyDataField = if (jRow.isNull("dependency_datafield")) null else jRow.getString("dependency_datafield"),
             dependencyValues = parseStringList(jRow.getJSONArray("dependency_values")),
         )
         rows.add(row)
