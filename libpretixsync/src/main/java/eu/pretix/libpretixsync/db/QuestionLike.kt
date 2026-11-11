@@ -87,9 +87,9 @@ abstract class QuestionLike {
             return if (answer == "True" || answer == "true") "True" else "False"
         } else if (type == QuestionType.C) {
             return if (serializeOptionToIdentifier) {
-                opts.find { it.identifier == answer }?.identifier ?: throw ValidationException("Invalid choice supplied")
+                opts.firstOrNull()?.identifier ?: throw ValidationException("Invalid choice supplied")
             } else {
-                opts.find { it.serverId.toString() == answer }?.serverId?.toString() ?: throw ValidationException("Invalid choice supplied")
+                opts.firstOrNull()?.serverId?.toString() ?: throw ValidationException("Invalid choice supplied")
             }
         } else if (type == QuestionType.M) {
             val validChoices: MutableSet<String?> = HashSet<String?>()
