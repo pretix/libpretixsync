@@ -23,6 +23,7 @@ class Item(
     val description: String = "",
     val descriptionI18n: JSONObject = JSONObject(),
     val internalName: String = "",
+    @Deprecated("No longer used by pretix 2027.1")
     val isPersonalized: Boolean = true,
     val hasVariations: Boolean = false,
     val hasDynamicValidityWithCustomStart: Boolean = false,
