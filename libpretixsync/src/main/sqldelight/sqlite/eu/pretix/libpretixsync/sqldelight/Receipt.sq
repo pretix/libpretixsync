@@ -30,7 +30,8 @@ CREATE TABLE Receipt (
     started INTEGER AS Boolean DEFAULT 0,
     training INTEGER AS Boolean DEFAULT 0 NOT NULL,
     websecret TEXT,
-    tax_rounding_mode TEXT DEFAULT 'line' NOT NULL
+    tax_rounding_mode TEXT DEFAULT 'line' NOT NULL,
+    answers TEXT
 );
 
 CREATE INDEX Receipt_closing_index ON Receipt (closing);

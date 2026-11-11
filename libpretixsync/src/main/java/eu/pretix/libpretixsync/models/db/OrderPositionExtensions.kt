@@ -28,6 +28,7 @@ fun OrderPosition.toModel(): OrderPositionModel {
         email = JSONUtils.optString(json, "email"),
         street = JSONUtils.optString(json, "street"),
         zipcode = JSONUtils.optString(json, "zipcode"),
+        state = JSONUtils.optString(json, "state"),
         price = parsePrice(json),
         taxRate = parseTaxRate(json),
         taxCode = JSONUtils.optString(json, "tax_code"),
@@ -38,7 +39,9 @@ fun OrderPosition.toModel(): OrderPositionModel {
         validFrom = SafeOffsetDateTimeMapper.decode(json, "valid_from"),
         validUntil = SafeOffsetDateTimeMapper.decode(json, "valid_until"),
         answers = parseAnswers(json),
+        answersByIdentifier = parseAnswersByIdentifier(json),
         answersWithOptionIds = parseAnswersWithOptionIds(json),
+        answersByIdentifierWithOptionIdentifiers = parseAnswersByIdentifierWithOptionIdentifiers(json),
         attendeeEmail = this.attendee_email,
         attendeeName = this.attendee_name,
     )
@@ -152,6 +155,47 @@ private fun parseAnswersWithOptionIds(json: JSONObject): Map<Long, String>? {
                 res[a.getLong("question")] = aw.toString()
             } else {
                 res[a.getLong("question")] = a.getString("answer")
+            }
+        }
+        return res
+    } catch (e: JSONException) {
+        e.printStackTrace()
+        return null
+    }
+}
+
+private fun parseAnswersByIdentifier(json: JSONObject): Map<String, String>? {
+    try {
+        val arr: JSONArray = json.getJSONArray("answers")
+        val res: MutableMap<String, String> = HashMap()
+        for (i in 0 until arr.length()) {
+            res[arr.getJSONObject(i).getString("datafield")] = arr.getJSONObject(i).getString("answer")
+        }
+        return res
+    } catch (e: JSONException) {
+        e.printStackTrace()
+        return null
+    }
+}
+
+private fun parseAnswersByIdentifierWithOptionIdentifiers(json: JSONObject): Map<String, String>? {
+    try {
+        val arr: JSONArray = json.getJSONArray("answers")
+        val res: MutableMap<String, String> = HashMap()
+        for (i in 0 until arr.length()) {
+            val a = arr.getJSONObject(i)
+            val opts = a.optJSONArray("option_identifiers")
+            if (opts != null && opts.length() > 0) {
+                val aw = StringBuilder()
+                for (j in 0 until opts.length()) {
+                    if (aw.length > 0) {
+                        aw.append(",")
+                    }
+                    aw.append(opts.getString(j))
+                }
+                res[a.getString("datafield")] = aw.toString()
+            } else {
+                res[a.getString("datafield")] = a.getString("answer")
             }
         }
         return res

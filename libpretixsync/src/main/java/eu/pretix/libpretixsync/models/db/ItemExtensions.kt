@@ -59,7 +59,7 @@ private fun parseInternalName(json: JSONObject): String {
         val internal: String = json.optString("internal_name")
         if (internal != null && !internal.isEmpty() && "null" != internal) {
             internal
-        } else I18nString.toString(json.getJSONObject("name"))
+        } else I18nString.toString(json.getJSONObject("name")) ?: ""
     } catch (e: JSONException) {
         e.printStackTrace()
         ""
@@ -68,7 +68,7 @@ private fun parseInternalName(json: JSONObject): String {
 
 private fun parseName(json: JSONObject): String {
     return try {
-        I18nString.toString(json.getJSONObject("name"))
+        I18nString.toString(json.getJSONObject("name")) ?: ""
     } catch (e: JSONException) {
         e.printStackTrace()
         ""

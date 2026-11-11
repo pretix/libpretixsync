@@ -1,6 +1,7 @@
 package eu.pretix.libpretixsync.models
 
 import org.json.JSONArray
+import org.json.JSONObject
 import java.math.BigDecimal
 
 class Order(
@@ -8,10 +9,14 @@ class Order(
     val eventSlug: String,
     val requiresCheckInAttention: Boolean,
     val status: Status,
+    val salesChannel: String,
     val code: String? = null,
     val checkInText: String? = null,
     val testMode: Boolean = false,
     val email: String? = null,
+    val phone: String? = null,
+    val invoiceAddress: JSONObject? = null,
+    val invoiceAddressNameParts: JSONObject? = null,
     val requiresApproval: Boolean = false,
     val validIfPending: Boolean = false,
     val total: BigDecimal? = null,
@@ -19,6 +24,8 @@ class Order(
     val payments: JSONArray = JSONArray(),
     val refunds: JSONArray = JSONArray(),
     val locale: String? = null,
+    val answersByIdentifier: Map<String, String>? = null,
+    val answersByIdentifierWithOptionIdentifiers: Map<String, String>? = null,
 ) {
 
     val hasValidStatus = when (status) {

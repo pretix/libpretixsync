@@ -22,10 +22,10 @@ class QuestionAnswerRequiredValidationTest {
             position = 0L,
         )
 
-        q.clean_answer("True", q.options, false)
+        q.cleanAnswer("True", q.options!!, false)
 
         try {
-            q.clean_answer("False", q.options, false)
+            q.cleanAnswer("False", q.options!!, false)
             fail("Expected an ValidationException to be thrown")
         } catch (e: QuestionLike.ValidationException) {
         }
@@ -46,7 +46,7 @@ class QuestionAnswerRequiredValidationTest {
         )
 
         try {
-            q.clean_answer("False", q.options, true)
+            q.cleanAnswer("False", q.options!!, true)
         } catch (e: QuestionLike.ValidationException) {
             fail("Expected that a ValidationException is not thrown")
         }
@@ -66,10 +66,10 @@ class QuestionAnswerRequiredValidationTest {
             position = 0L,
         )
 
-        q.clean_answer("True", q.options, false)
-        q.clean_answer("False", q.options, false)
+        q.cleanAnswer("True", q.options!!, false)
+        q.cleanAnswer("False", q.options!!, false)
         try {
-            q.clean_answer("", q.options, false)
+            q.cleanAnswer("", q.options!!, false)
             fail("Expected an ValidationException to be thrown")
         } catch (e: QuestionLike.ValidationException) {
         }
@@ -89,7 +89,7 @@ class QuestionAnswerRequiredValidationTest {
         )
 
         try {
-            q.clean_answer("", q.options, true)
+            q.cleanAnswer("", q.options!!, true)
         } catch (e: QuestionLike.ValidationException) {
             fail("Expected that a ValidationException is not thrown")
         }

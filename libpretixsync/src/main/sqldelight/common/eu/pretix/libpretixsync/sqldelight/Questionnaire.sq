@@ -1,0 +1,89 @@
+selectByServerId:
+SELECT *
+FROM Questionnaire
+WHERE server_id = ?;
+
+selectByServerIdList:
+SELECT *
+FROM Questionnaire
+WHERE server_id IN ?;
+
+selectByEventSlug:
+SELECT *
+FROM Questionnaire
+WHERE event_slug = ?;
+
+selectByEventSlugAndType:
+SELECT *
+FROM Questionnaire
+WHERE event_slug = ? AND type = ?;
+
+selectForItem:
+SELECT Questionnaire.*
+FROM Questionnaire
+WHERE Questionnaire.id IN (
+    SELECT Questionnaire_Item.QuestionnaireId
+    FROM Questionnaire_Item
+    WHERE Questionnaire_Item.ItemId = :item_id
+)
+ORDER BY Questionnaire.position ASC;
+
+selectByServerIdListAndEventSlug:
+SELECT *
+FROM Questionnaire
+WHERE server_id IN ? AND event_slug = ?;
+
+selectServerIdsByEventSlug:
+SELECT server_id
+FROM Questionnaire
+WHERE event_slug = ?;
+
+deleteByServerId:
+DELETE FROM Questionnaire
+WHERE server_id = ?;
+
+insert:
+INSERT INTO Questionnaire(
+    event_slug,
+    type,
+    json_data,
+    "position",
+    server_id
+) VALUES(
+    ?,
+    ?,
+    ?,
+    ?,
+    ?
+);
+
+updateFromJson:
+UPDATE Questionnaire
+SET
+    event_slug = ?,
+    json_data = ?,
+    "position" = ?,
+    type = ?
+WHERE id = ?;
+
+selectRelationsForQuestionnaire:
+SELECT *
+FROM Questionnaire_Item
+WHERE QuestionnaireId = :question_id;
+
+insertItemRelation:
+INSERT INTO Questionnaire_Item(
+    ItemId,
+    QuestionnaireId
+) VALUES(
+    :item_id,
+    :questionnaire_id
+);
+
+deleteItemRelation:
+DELETE FROM Questionnaire_Item
+WHERE ItemId = :item_id AND QuestionnaireId = :questionnaire_id;
+
+deleteItemRelationsForQuestionnaire:
+DELETE FROM Questionnaire_Item
+WHERE QuestionnaireId = :questionnaire_id;
