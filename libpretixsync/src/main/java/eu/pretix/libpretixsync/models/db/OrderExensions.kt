@@ -2,6 +2,7 @@ package eu.pretix.libpretixsync.models.db
 
 import eu.pretix.libpretixsync.models.Order
 import eu.pretix.libpretixsync.sqldelight.Orders
+import eu.pretix.libpretixsync.utils.JSONUtils
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
@@ -26,6 +27,7 @@ fun Orders.toModel(): Order {
         payments = parsePayments(json),
         refunds = parseRefunds(json),
         locale = parseLocale(json),
+        salesChannel = JSONUtils.optString(json, "sales_channel"),
     )
 }
 

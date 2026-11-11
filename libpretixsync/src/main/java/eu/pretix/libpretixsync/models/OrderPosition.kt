@@ -16,6 +16,7 @@ class OrderPosition(
     val variationServerId: Long? = null,
     val attendeeNameParts: JSONObject? = null,
     val city: String? = null,
+    val state: String? = null,
     val company: String? = null,
     val country: String? = null,
     val email: String? = null,
@@ -31,7 +32,9 @@ class OrderPosition(
     val validFrom: OffsetDateTime? = null,
     val validUntil: OffsetDateTime? = null,
     val answers: Map<Long, String>? = null,
+    val answersByIdentifier: Map<String, String>? = null,
     val answersWithOptionIds: Map<Long, String>? = null,
+    val answersByIdentifierWithOptionIdentifiers: Map<String, String>? = null,
     attendeeEmail: String? = null,
     attendeeName: String? = null,
 ) : OrderPositionLike {

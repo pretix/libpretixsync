@@ -8,6 +8,7 @@ class Order(
     val eventSlug: String,
     val requiresCheckInAttention: Boolean,
     val status: Status,
+    val salesChannel: String,
     val code: String? = null,
     val checkInText: String? = null,
     val testMode: Boolean = false,
