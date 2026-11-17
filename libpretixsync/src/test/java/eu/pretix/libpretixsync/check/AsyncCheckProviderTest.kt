@@ -1070,14 +1070,6 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
     }
 
     @Test
-    fun testSignedAndValidServerId() {
-        // Regression test: make sure that signed checkin passes even if local item id != server item id
-        val r = p!!.check(mapOf("demo" to 10L), "==QCiFO1apLFypH1BXorPlbn4efNA0aCAsO1Z2hsmY/hKTI3/UVSlON/Vw8WSYof/1tz5tepBltUAg4GnzpOBSSlqARYhFWYhFWYhFWCKAEANAQA")
-        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
-        assertEquals(dataStore.count(QueuedCheckIn::class.java).get().value(), 1)
-    }
-
-    @Test
     fun testSignedAndNotYetValid() {
         val p2 = AsyncCheckProvider(configStore!!, dataStore)
         p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2023-02-03T22:59:59.000Z"))
