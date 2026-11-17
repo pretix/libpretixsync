@@ -6,6 +6,7 @@ import net.i2p.crypto.eddsa.EdDSAEngine
 import net.i2p.crypto.eddsa.EdDSAPublicKey
 import net.i2p.crypto.eddsa.spec.EdDSANamedCurveTable
 import net.i2p.crypto.eddsa.spec.EdDSAPublicKeySpec
+import java.math.BigInteger
 import java.nio.charset.Charset
 
 fun readPubkeyFromPem(pem: String): EdDSAPublicKey {
@@ -21,7 +22,24 @@ fun readPubkeyFromPem(pem: String): EdDSAPublicKey {
     return EdDSAPublicKey(keySpec)
 }
 
+private val ED25519_GROUP_ORDER: BigInteger =
+    BigInteger.ONE.shiftLeft(252).add(BigInteger("27742317777372353535851937790883648493"))
+
+/**
+ * Source: https://github.com/i2p/i2p.i2p/commit/d7d1dcb5399c61cf2916ccc45aa25b0209c88712#diff-658f7b1aa34b58d27796fccdb8b756c72702d64ae44703374960f1cb89a5a5c3R306
+ */
+internal fun isCanonicalSignature(signature: ByteArray): Boolean {
+    if (signature.size != 64) {
+        return false
+    }
+    val s = BigInteger(1, signature.copyOfRange(32, 64).reversedArray())
+    return s < ED25519_GROUP_ORDER
+}
+
 fun isValidSignature(payload: ByteArray, signature: ByteArray, publicKey: EdDSAPublicKey): Boolean {
+    if (!isCanonicalSignature(signature)) {
+        return false
+    }
     val engine = EdDSAEngine()
     engine.initVerify(publicKey)
     return engine.verifyOneShot(payload, signature)
