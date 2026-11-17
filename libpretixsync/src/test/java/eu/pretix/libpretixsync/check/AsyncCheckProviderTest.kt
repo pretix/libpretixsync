@@ -1051,6 +1051,52 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
     }
 
     @Test
+    fun testSignedAndValidLength() {
+        var r = p!!.check(mapOf("demo" to 1L), "E4BibyTSylQOgeKjuMPiTDxi5HXPuTVsx1qCli3IL0143gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKAEAPAQA")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+        assertEquals(db.queuedCheckInQueries.count().executeAsOne(), 1L)
+
+        // data length too long
+        r = p!!.check(mapOf("demo" to 1L), "E4BibyTSylQOgeKjuMPiTDxi5HXPuTVsx1qCli3IL0143gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKAEAeAQA")
+        assertEquals(TicketCheckProvider.CheckResult.Type.INVALID, r.type)
+
+        // sig length too long
+        r = p!!.check(mapOf("demo" to 1L), "E4BibyTSylQOgeKjuMPiTDxi5HXPuTVsx1qCli3IL0143gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKAGAPAQA")
+        assertEquals(TicketCheckProvider.CheckResult.Type.INVALID, r.type)
+
+        // high bits in the length fields
+        r = p!!.check(mapOf("demo" to 1L), "E4BibyTSylQOgeKjuMPiTDxi5HXPuTVsx1qCli3IL0143gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKwTAPAQA")
+        assertEquals(TicketCheckProvider.CheckResult.Type.INVALID, r.type)
+
+        // Entire thing too long
+        r = p!!.check(mapOf("demo" to 1L), "AAE4BibyTSylQOgeKjuMPiTDxi5HXPuTVsx1qCli3IL0143gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKAEAPAQA")
+        assertEquals(TicketCheckProvider.CheckResult.Type.INVALID, r.type)
+
+        // Wrong padding
+        r = p!!.check(mapOf("demo" to 1L), "==E4BibyTSylQOgeKjuMPiTDxi5HXPuTVsx1qCli3IL0143gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKAEAPAQA")
+        assertEquals(TicketCheckProvider.CheckResult.Type.INVALID, r.type)
+    }
+
+    @Test
+    fun testSignedAndRevokedNotAcceptedWithNonCanonicalSignature() {
+        db.revokedTicketSecretQueries.insert(
+            created = "2020-10-19T10:00:00+00:00",
+            event_slug = configStore!!.eventSlug,
+            json_data = "{}",
+            secret = "E4BibyTSylQOgeKjuMPiTDxi5HXPuTVsx1qCli3IL0143gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKAEAPAQA",
+            server_id = 1L,
+        )
+
+        val r = p!!.check(mapOf("demo" to 1L), "E4BibyTSylQOgeKjuMPiTDxi5HXPuTVsx1qCli3IL0143gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKAEAPAQA")
+        assertEquals(TicketCheckProvider.CheckResult.Type.REVOKED, r.type)
+
+        // Same payload and R as the revoked ticket, signature S replaced by S + L
+        val r2 = p!!.check(mapOf("demo" to 1L), "U4BibyTSylQOgeKjuMPiTXiaz/E4lH/hJ/bb/WNGfr043gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKAEAPAQA")
+        assertEquals(TicketCheckProvider.CheckResult.Type.INVALID, r2.type)
+        assertEquals(db.queuedCheckInQueries.count().executeAsOne(), 0L)
+    }
+
+    @Test
     fun testSignedAndValidServerId() {
         // Regression test: make sure that signed checkin passes even if local item id != server item id
         val r = p!!.check(mapOf("demo" to 10L), "==QCiFO1apLFypH1BXorPlbn4efNA0aCAsO1Z2hsmY/hKTI3/UVSlON/Vw8WSYof/1tz5tepBltUAg4GnzpOBSSlqARYhFWYhFWYhFWCKAEANAQA")
