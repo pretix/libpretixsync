@@ -12,6 +12,7 @@ import eu.pretix.libpretixsync.db.Order
 import eu.pretix.libpretixsync.utils.cleanInput
 import eu.pretix.libpretixsync.utils.codec.binary.Base64
 import eu.pretix.libpretixsync.utils.codec.binary.Base64.decodeBase64
+import eu.pretix.libpretixsync.utils.codec.binary.Base64.encodeBase64
 import eu.pretix.libpretixsync.utils.logic.JsonLogic
 import eu.pretix.libpretixsync.utils.logic.truthy
 import io.requery.BlockingEntityStore
@@ -187,10 +188,25 @@ class AsyncCheckProvider(private val config: ConfigStore, private val dataStore:
         if (version != 0x01) {
             return null
         }
-        val payloadLength = rawbytes[1].toUByte().toInt().shl(2) + rawbytes[2].toUByte().toInt()
-        val signatureLength = rawbytes[3].toUByte().toInt().shl(2) + rawbytes[4].toUByte().toInt()
+        val payloadLength = rawbytes[1].toUByte().toInt().shl(8) + rawbytes[2].toUByte().toInt()
+        val signatureLength = rawbytes[3].toUByte().toInt().shl(8) + rawbytes[4].toUByte().toInt()
+        if (5 + payloadLength + signatureLength != rawbytes.size) {
+            return null
+        }
         val payload = rawbytes.copyOfRange(5, 5 + payloadLength)
         val signature = rawbytes.copyOfRange(5 + payloadLength, 5 + payloadLength + signatureLength)
+
+        // Check for manipulation of the base64 input by the user (appending padding, etc)
+        val reassembled = encodeBase64(byteArrayOf(
+            0x01,
+            (payloadLength shr 8).toByte(),
+            (payloadLength and 0xFF).toByte(),
+            (signatureLength shr 8).toByte(),
+            (signatureLength and 0xFF).toByte(),
+        ) + payload + signature).reversed().toByteArray()
+        if (qrcode != reassembled.toString(Charset.defaultCharset())) {
+            return null
+        }
 
         val validKeys = event.validKeys?.optJSONArray("pretix_sig1") ?: return null
         for (vki in 0 until validKeys.length()) {

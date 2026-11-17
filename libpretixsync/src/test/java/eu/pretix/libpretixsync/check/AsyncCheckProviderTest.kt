@@ -1025,6 +1025,59 @@ class AsyncCheckProviderTest : BaseDatabaseTest() {
     }
 
     @Test
+    fun testSignedAndValidLength() {
+        var r = p!!.check(mapOf("demo" to 1L), "E4BibyTSylQOgeKjuMPiTDxi5HXPuTVsx1qCli3IL0143gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKAEAPAQA")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+        assertEquals(dataStore.count(QueuedCheckIn::class.java).get().value(), 1)
+
+        // data length too long
+        r = p!!.check(mapOf("demo" to 1L), "E4BibyTSylQOgeKjuMPiTDxi5HXPuTVsx1qCli3IL0143gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKAEAeAQA")
+        assertEquals(TicketCheckProvider.CheckResult.Type.INVALID, r.type)
+
+        // sig length too long
+        r = p!!.check(mapOf("demo" to 1L), "E4BibyTSylQOgeKjuMPiTDxi5HXPuTVsx1qCli3IL0143gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKAGAPAQA")
+        assertEquals(TicketCheckProvider.CheckResult.Type.INVALID, r.type)
+
+        // high bits in the length fields
+        r = p!!.check(mapOf("demo" to 1L), "E4BibyTSylQOgeKjuMPiTDxi5HXPuTVsx1qCli3IL0143gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKwTAPAQA")
+        assertEquals(TicketCheckProvider.CheckResult.Type.INVALID, r.type)
+
+        // Entire thing too long
+        r = p!!.check(mapOf("demo" to 1L), "AAE4BibyTSylQOgeKjuMPiTDxi5HXPuTVsx1qCli3IL0143gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKAEAPAQA")
+        assertEquals(TicketCheckProvider.CheckResult.Type.INVALID, r.type)
+
+        // Wrong padding
+        r = p!!.check(mapOf("demo" to 1L), "==E4BibyTSylQOgeKjuMPiTDxi5HXPuTVsx1qCli3IL0143gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKAEAPAQA")
+        assertEquals(TicketCheckProvider.CheckResult.Type.INVALID, r.type)
+    }
+
+    @Test
+    fun testSignedAndRevokedNotAcceptedWithNonCanonicalSignature() {
+        val rev = RevokedTicketSecret()
+        rev.setEvent_slug(configStore!!.eventSlug)
+        rev.setCreated("2020-10-19T10:00:00+00:00")
+        rev.setSecret("E4BibyTSylQOgeKjuMPiTDxi5HXPuTVsx1qCli3IL0143gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKAEAPAQA")
+        rev.setJson_data("{}")
+        dataStore.insert(rev)
+
+        val r = p!!.check(mapOf("demo" to 1L), "E4BibyTSylQOgeKjuMPiTDxi5HXPuTVsx1qCli3IL0143gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKAEAPAQA")
+        assertEquals(TicketCheckProvider.CheckResult.Type.REVOKED, r.type)
+
+        // Same payload and R as the revoked ticket, signature S replaced by S + L
+        val r2 = p!!.check(mapOf("demo" to 1L), "U4BibyTSylQOgeKjuMPiTXiaz/E4lH/hJ/bb/WNGfr043gj0EZXOB9iQInANxRFJTt4Pf9nXnHdB91Qk/RN0L5AIBABSxw2TKFnSUNUCKAEAPAQA")
+        assertEquals(TicketCheckProvider.CheckResult.Type.INVALID, r2.type)
+        assertEquals(dataStore.count(QueuedCheckIn::class.java).get().value(), 0)
+    }
+
+    @Test
+    fun testSignedAndValidServerId() {
+        // Regression test: make sure that signed checkin passes even if local item id != server item id
+        val r = p!!.check(mapOf("demo" to 10L), "==QCiFO1apLFypH1BXorPlbn4efNA0aCAsO1Z2hsmY/hKTI3/UVSlON/Vw8WSYof/1tz5tepBltUAg4GnzpOBSSlqARYhFWYhFWYhFWCKAEANAQA")
+        assertEquals(TicketCheckProvider.CheckResult.Type.VALID, r.type)
+        assertEquals(dataStore.count(QueuedCheckIn::class.java).get().value(), 1)
+    }
+
+    @Test
     fun testSignedAndNotYetValid() {
         val p2 = AsyncCheckProvider(configStore!!, dataStore)
         p2.setNow(ISODateTimeFormat.dateTime().parseDateTime("2023-02-03T22:59:59.000Z"))
