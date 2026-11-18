@@ -29,6 +29,7 @@ data class Receipt(
     val closing: Long? = null,
     val additionalText: String? = null,
     val webSecret: String? = null,
+    val taxRoundingMode: String = "line",
 ) {
     enum class PaymentType(val value: String) {
         CASH("cash"),
