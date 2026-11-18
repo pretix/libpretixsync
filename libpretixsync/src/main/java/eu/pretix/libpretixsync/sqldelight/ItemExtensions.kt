@@ -8,7 +8,7 @@ val Item.name: String
     get() {
         val json = JSONObject(json_data)
         return try {
-            I18nString.toString(json.getJSONObject("name"))
+            I18nString.toString(json.getJSONObject("name")) ?: ""
         } catch (e: JSONException) {
             e.printStackTrace()
             ""

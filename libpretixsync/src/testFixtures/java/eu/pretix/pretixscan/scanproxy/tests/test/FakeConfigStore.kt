@@ -127,6 +127,13 @@ class FakeConfigStore(var organizer_slug: String = "demo", var event_slug: Strin
         return 0L
     }
 
+    override fun setQuestionnaireSupportEnabled(`val`: Boolean?) {
+    }
+
+    override fun getQuestionnaireSupportEnabled(): Boolean? {
+        return true
+    }
+
     override fun getAutoSwitchRequested(): Boolean {
         return false
     }

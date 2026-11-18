@@ -1,4 +1,4 @@
-CREATE TABLE Question_Item (
+CREATE TABLE Question_Item (  -- Deprecated, Remove after pretix 2026.10 is no longer supported
     ItemId INTEGER REFERENCES Item (id) ON DELETE CASCADE,
     QuestionId INTEGER REFERENCES Question (id) ON DELETE CASCADE,
     PRIMARY KEY (ItemId, QuestionId)

@@ -1,0 +1,1 @@
+ALTER TABLE Receipt ADD tax_rounding_mode answers text;

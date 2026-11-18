@@ -1,0 +1,18 @@
+CREATE TABLE Questionnaire (
+    id serial AS Long PRIMARY KEY NOT NULL,
+    event_slug character varying(255),
+    type character varying(255),
+    json_data text,
+    "position" bigint,
+    server_id bigint
+);
+
+CREATE INDEX Questionnaire_server_id_index ON Questionnaire (server_id);
+CREATE TABLE Questionnaire_Item (
+    ItemId bigint NOT NULL REFERENCES Item (id) ON DELETE CASCADE,
+    QuestionnaireId bigint NOT NULL REFERENCES Questionnaire (id) ON DELETE CASCADE,
+    PRIMARY KEY (ItemId, QuestionnaireId)
+);
+
+CREATE INDEX Questionnaire_Item_ItemId_index ON Questionnaire_Item (ItemId);
+CREATE INDEX Questionnaire_Item_QuestionId_index ON Questionnaire_Item (QuestionId);

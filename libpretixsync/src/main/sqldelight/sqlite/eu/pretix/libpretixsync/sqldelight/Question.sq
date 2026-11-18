@@ -1,6 +1,6 @@
 import kotlin.Boolean;
 
-CREATE TABLE Question (
+CREATE TABLE Question (  -- Deprecated, Remove after pretix 2026.10 is no longer supported
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     event_slug TEXT,
     json_data TEXT,

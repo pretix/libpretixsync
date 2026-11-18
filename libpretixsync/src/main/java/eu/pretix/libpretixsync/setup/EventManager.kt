@@ -128,7 +128,7 @@ data class RemoteEvent(
         val live: Boolean
 ) {
     val name: String
-        get() = I18nString.toString(name_i18n)
+        get() = I18nString.toString(name_i18n) ?: ""
 
     val isRunning: Boolean
         get() = date_from.isBeforeNow && date_to?.isAfterNow == true
