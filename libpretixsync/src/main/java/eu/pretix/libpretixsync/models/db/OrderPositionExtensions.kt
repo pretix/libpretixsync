@@ -35,6 +35,7 @@ fun OrderPosition.toModel(): OrderPositionModel {
         seatName = parseSeatName(json),
         addonToServerId = parseAddonToServerId(json),
         blocked = parseBlocked(json),
+        canceled = parseCanceled(json),
         validFrom = SafeOffsetDateTimeMapper.decode(json, "valid_from"),
         validUntil = SafeOffsetDateTimeMapper.decode(json, "valid_until"),
         answers = parseAnswers(json),
@@ -114,6 +115,18 @@ fun parseBlocked(json: JSONObject): Boolean {
             return false
         }
         return true
+    } catch (e: JSONException) {
+        e.printStackTrace()
+        return false
+    }
+}
+
+fun parseCanceled(json: JSONObject): Boolean {
+    try {
+        if (!json.has("canceled") || json.isNull("canceled")) {
+            return false
+        }
+        return json.getBoolean("canceled")
     } catch (e: JSONException) {
         e.printStackTrace()
         return false

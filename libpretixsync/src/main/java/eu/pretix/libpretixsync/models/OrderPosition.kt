@@ -28,6 +28,7 @@ class OrderPosition(
     val seatName: String? = null,
     val addonToServerId: Long? = null,
     val blocked: Boolean = false,
+    val canceled: Boolean = false,
     val validFrom: OffsetDateTime? = null,
     val validUntil: OffsetDateTime? = null,
     val answers: Map<Long, String>? = null,
