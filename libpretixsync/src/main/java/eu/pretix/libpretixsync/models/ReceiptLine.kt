@@ -13,6 +13,7 @@ data class ReceiptLine(
     val positionId: Long,
     val type: Type,
     val price: BigDecimal,
+    val priceIncludesRoundingCorrection: BigDecimal = BigDecimal("0.00"),
     val listedPrice: BigDecimal? = null,
     val priceAfterVoucher: BigDecimal? = null,
     val customPriceInput: BigDecimal? = null,
@@ -28,6 +29,7 @@ data class ReceiptLine(
     val taxRate: BigDecimal? = null,
     val taxRule: Long? = null,
     val taxValue: BigDecimal? = null,
+    val taxValueIncludesRoundingCorrection: BigDecimal = BigDecimal("0.00"),
     val taxCode: String? = null,
     val eventDateFrom: OffsetDateTime? = null,
     val eventDateTo: OffsetDateTime? = null,
@@ -81,6 +83,10 @@ data class ReceiptLine(
             return this.toString().startsWith("CHANGE_")
         }
     }
+
+    val grossPriceBeforeRounding = price - priceIncludesRoundingCorrection
+    val taxValueBeforeRounding = (taxValue ?: BigDecimal.ZERO) - taxValueIncludesRoundingCorrection
+    val netPriceBeforeRounding = grossPriceBeforeRounding - (taxValueBeforeRounding ?: BigDecimal.ZERO)
 
     val hasAttendeeData: Boolean
         get() = !attendeeName.isNullOrEmpty() ||

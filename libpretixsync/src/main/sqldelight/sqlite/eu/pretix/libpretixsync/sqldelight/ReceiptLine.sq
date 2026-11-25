@@ -1,3 +1,4 @@
+import eu.pretix.libpretixsync.sqldelight.BigDecimalAdapter;
 import java.math.BigDecimal;
 import java.util.Date;
 import kotlin.Boolean;
@@ -29,6 +30,7 @@ CREATE TABLE ReceiptLine (
     listed_price REAL AS BigDecimal,
     positionid INTEGER,
     price REAL AS BigDecimal,
+    price_includes_rounding_correction REAL AS BigDecimal DEFAULT 0 NOT NULL,
     price_after_voucher REAL AS BigDecimal,
     price_calculated_from_net INTEGER AS Boolean DEFAULT 0,
     receipt INTEGER REFERENCES Receipt (id) ON DELETE CASCADE,
@@ -43,6 +45,7 @@ CREATE TABLE ReceiptLine (
     tax_rate REAL AS BigDecimal,
     tax_rule INTEGER,
     tax_value REAL AS BigDecimal,
+    tax_value_includes_rounding_correction REAL AS BigDecimal DEFAULT 0 NOT NULL,
     tax_code TEXT,
     type TEXT,
     use_reusable_medium INTEGER,
