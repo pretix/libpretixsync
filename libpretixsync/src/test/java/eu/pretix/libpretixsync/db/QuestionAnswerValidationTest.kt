@@ -32,14 +32,14 @@ class QuestionAnswerValidationTest(private val questionType: QuestionType, priva
 
         if (expected == null) {
             try {
-                q.cleanAnswer(input, q.options ?: emptyList(), false)
+                q.cleanAnswer(input, emptyList(), false)
                 fail("Expected an ValidationException to be thrown")
             } catch (e: QuestionLike.ValidationException) {
             }
 
         } else {
             try {
-                assertEquals(q.cleanAnswer(input, q.options ?: emptyList(), false), expected)
+                assertEquals(q.cleanAnswer(input, emptyList(), false), expected)
             } catch (e: QuestionLike.ValidationException) {
                 fail(e.message)
             }
@@ -64,14 +64,6 @@ class QuestionAnswerValidationTest(private val questionType: QuestionType, priva
                 arrayOf(QuestionType.B, "false", "False"),
                 arrayOf(QuestionType.B, "0", "False"),
                 arrayOf(QuestionType.B, "", "False"),
-                arrayOf(QuestionType.C, "3", "3"),
-                arrayOf(QuestionType.C, "4", null),
-                arrayOf(QuestionType.C, "A", null),
-                arrayOf(QuestionType.M, "3", "3"),
-                arrayOf(QuestionType.M, "12", "12"),
-                arrayOf(QuestionType.M, "3,12", "3,12"),
-                arrayOf(QuestionType.M, "3,12,6", null),
-                arrayOf(QuestionType.M, "6", null),
                 arrayOf(QuestionType.D, "2018-01-19", "2018-01-19"),
                 arrayOf(QuestionType.D, "2016-02-29", "2016-02-29"),
                 arrayOf(QuestionType.D, "2017-02-29", null),

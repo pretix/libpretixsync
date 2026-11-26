@@ -58,6 +58,10 @@ abstract class QuestionLike {
                 if (answer != "True" && answer != "true") {
                     throw ValidationException("Question is required")
                 }
+            } else if (type == QuestionType.C || type == QuestionType.M) {
+                if (opts.isEmpty()) {
+                    throw ValidationException("Question is required")
+                }
             } else if (answer == null || answer.trim { it <= ' ' } == "") {
                 throw ValidationException("Question is required")
             }

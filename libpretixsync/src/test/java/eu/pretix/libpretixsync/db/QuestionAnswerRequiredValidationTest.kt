@@ -22,10 +22,10 @@ class QuestionAnswerRequiredValidationTest {
             position = 0L,
         )
 
-        q.cleanAnswer("True", q.options!!, false)
+        q.cleanAnswer("True", emptyList(), false)
 
         try {
-            q.cleanAnswer("False", q.options!!, false)
+            q.cleanAnswer("False", emptyList(), false)
             fail("Expected an ValidationException to be thrown")
         } catch (e: QuestionLike.ValidationException) {
         }
@@ -46,7 +46,7 @@ class QuestionAnswerRequiredValidationTest {
         )
 
         try {
-            q.cleanAnswer("False", q.options!!, true)
+            q.cleanAnswer("False", emptyList(), true)
         } catch (e: QuestionLike.ValidationException) {
             fail("Expected that a ValidationException is not thrown")
         }
@@ -66,10 +66,10 @@ class QuestionAnswerRequiredValidationTest {
             position = 0L,
         )
 
-        q.cleanAnswer("True", q.options!!, false)
-        q.cleanAnswer("False", q.options!!, false)
+        q.cleanAnswer("True", emptyList(), false)
+        q.cleanAnswer("False", emptyList(), false)
         try {
-            q.cleanAnswer("", q.options!!, false)
+            q.cleanAnswer("", emptyList(), false)
             fail("Expected an ValidationException to be thrown")
         } catch (e: QuestionLike.ValidationException) {
         }
@@ -89,9 +89,34 @@ class QuestionAnswerRequiredValidationTest {
         )
 
         try {
-            q.cleanAnswer("", q.options!!, true)
+            q.cleanAnswer("", emptyList(), true)
         } catch (e: QuestionLike.ValidationException) {
             fail("Expected that a ValidationException is not thrown")
+        }
+    }
+
+    @Test
+    fun testChoiceLooksAtOptions() {
+        val q = QuestionModel(
+            type = QuestionType.C,
+            required = true,
+            question = "Test",
+            identifier = "ABTBAB8S",
+            askDuringCheckIn = false,
+            options = listOf(
+                QuestionOption(3L, 2, "AAA1", "A"),
+                QuestionOption(12L, 1, "BBB2", "B"),
+            ),
+            id = 1L,
+            serverId = 1L,
+            eventSlug = "",
+            position = 0L,
+        )
+
+        try {
+            q.cleanAnswer("3", emptyList(), false)
+            fail("Expected an ValidationException to be thrown")
+        } catch (e: QuestionLike.ValidationException) {
         }
     }
 }
