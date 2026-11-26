@@ -27,10 +27,8 @@ class Order(
     val refunds: JSONArray = JSONArray(),
     val locale: String? = null,
     val comment: String? = null,
-    val answersByIdentifier: Map<String, String>? = null,
-    val answersByIdentifierWithOptionIdentifiers: Map<String, String>? = null,
+    val answers: List<Answer>,
 ) {
-
     val hasValidStatus = when (status) {
         Status.PAID -> true
         Status.PENDING -> validIfPending

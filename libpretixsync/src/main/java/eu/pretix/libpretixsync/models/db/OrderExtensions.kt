@@ -1,5 +1,6 @@
 package eu.pretix.libpretixsync.models.db
 
+import eu.pretix.libpretixsync.models.Answer
 import eu.pretix.libpretixsync.models.Order
 import eu.pretix.libpretixsync.sqldelight.Orders
 import eu.pretix.libpretixsync.sqldelight.SafeOffsetDateTimeMapper
@@ -34,8 +35,7 @@ fun Orders.toModel(): Order {
         comment = JSONUtils.optString(json, "comment"),
         invoiceAddress = parseInvoiceAddress(json),
         invoiceAddressNameParts = parseInvoiceAddressNameParts(json),
-        answersByIdentifier = parseAnswersByIdentifier(json),
-        answersByIdentifierWithOptionIdentifiers = parseAnswersByIdentifierWithOptionIdentifiers(json),
+        answers = parseAnswers(json),
     )
 }
 
@@ -127,47 +127,6 @@ private fun parseLocale(json: JSONObject): String? {
     }
 }
 
-private fun parseAnswersByIdentifier(json: JSONObject): Map<String, String>? {
-    try {
-        val arr: JSONArray = json.getJSONArray("answers")
-        val res: MutableMap<String, String> = HashMap()
-        for (i in 0 until arr.length()) {
-            res[arr.getJSONObject(i).getString("datafield")] = arr.getJSONObject(i).getString("answer")
-        }
-        return res
-    } catch (e: JSONException) {
-        e.printStackTrace()
-        return null
-    }
-}
-
-private fun parseAnswersByIdentifierWithOptionIdentifiers(json: JSONObject): Map<String, String>? {
-    try {
-        val arr: JSONArray = json.getJSONArray("answers")
-        val res: MutableMap<String, String> = HashMap()
-        for (i in 0 until arr.length()) {
-            val a = arr.getJSONObject(i)
-            val opts = a.optJSONArray("option_identifiers")
-            if (opts != null && opts.length() > 0) {
-                val aw = StringBuilder()
-                for (j in 0 until opts.length()) {
-                    if (aw.length > 0) {
-                        aw.append(",")
-                    }
-                    aw.append(opts.getString(j))
-                }
-                res[a.getString("datafield")] = aw.toString()
-            } else {
-                res[a.getString("datafield")] = a.getString("answer")
-            }
-        }
-        return res
-    } catch (e: JSONException) {
-        e.printStackTrace()
-        return null
-    }
-}
-
 private fun parseInvoiceAddressNameParts(json: JSONObject): JSONObject? {
     try {
         if (json.isNull("invoice_address")) return null
@@ -185,5 +144,25 @@ private fun parseInvoiceAddress(json: JSONObject): JSONObject? {
     } catch (e: JSONException) {
         e.printStackTrace()
         return null
+    }
+}
+
+private fun parseAnswers(json: JSONObject): List<Answer> {
+    try {
+        val arr: JSONArray = json.getJSONArray("answers")
+        val res = mutableListOf<Answer>()
+        for (i in 0 until arr.length()) {
+            val a = arr.getJSONObject(i)
+            res.add(Answer(
+                datafield = if (a.has("datafield")) a.getString("datafield") else a.getString("question_identifier"),
+                answer = a.getString("answer"),
+                optionIds = JSONUtils.getLongArray(a, "options").toList(),
+                optionIdentifiers = JSONUtils.getStringArray(a, "option_identifiers").toList(),
+            ))
+        }
+        return res
+    } catch (e: JSONException) {
+        e.printStackTrace()
+        return emptyList()
     }
 }
