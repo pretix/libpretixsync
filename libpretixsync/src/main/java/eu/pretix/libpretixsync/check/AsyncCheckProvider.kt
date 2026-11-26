@@ -15,10 +15,13 @@ import eu.pretix.libpretixsync.db.ReusableMediaType
 import eu.pretix.libpretixsync.models.CheckIn
 import eu.pretix.libpretixsync.models.CheckInList
 import eu.pretix.libpretixsync.models.Event
+import eu.pretix.libpretixsync.models.Item
 import eu.pretix.libpretixsync.models.Order as OrderModel
 import eu.pretix.libpretixsync.models.OrderPosition as OrderPositionModel
 import eu.pretix.libpretixsync.models.Question
+import eu.pretix.libpretixsync.models.Questionnaire
 import eu.pretix.libpretixsync.models.QueuedCheckIn
+import eu.pretix.libpretixsync.models.db.toLegacyLikeJSON
 import eu.pretix.libpretixsync.models.db.toModel
 import eu.pretix.libpretixsync.sqldelight.SyncDatabase
 import eu.pretix.libpretixsync.utils.cleanInput
@@ -262,44 +265,90 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
         val shownAnswers: MutableList<TicketCheckProvider.QuestionAnswer>,
         val askQuestions: Boolean,
     )
-    private fun extractRequiredShownAnswers(questions: List<Question>, answerMap: Map<Long, String>): RSAResult {
+    private fun extractRequiredShownAnswers(questions: List<QuestionLike>, answerMap: Map<String, String>): RSAResult {
         val givenAnswers = JSONArray()
         val requiredAnswers: MutableList<TicketCheckProvider.QuestionAnswer> = ArrayList()
         val shownAnswers: MutableList<TicketCheckProvider.QuestionAnswer> = ArrayList()
         var askQuestions = false
+        var position = 0
 
         for (q in questions) {
-            val questionJson = db.questionQueries.selectByServerId(q.serverId).executeAsOne().json_data!!
+            if (q is Question) {
+                val questionJson =
+                    db.questionQueries.selectByServerId(q.serverId).executeAsOne().json_data!!
 
-            if (!q.askDuringCheckIn && !q.showDuringCheckIn) {
-                continue
-            }
-            var answer: String? = ""
-            if (answerMap.containsKey(q.serverId)) {
-                answer = answerMap[q.serverId]
-                try {
-                    val jo = JSONObject()
-                    jo.put("answer", answer)
-                    jo.put("question", q.serverId) // server expects question server_id here
-                    if (q.askDuringCheckIn) {
-                        givenAnswers.put(jo)
+                if (!q.askDuringCheckIn && !q.showDuringCheckIn) {
+                    continue
+                }
+                var answer: String? = ""
+                if (answerMap.containsKey(q.identifier)) {
+                    answer = answerMap[q.identifier]
+                    try {
+                        val jo = JSONObject()
+                        jo.put("answer", answer)
+                        jo.put("question", q.serverId) // server expects question server_id here
+                        if (q.askDuringCheckIn) {
+                            givenAnswers.put(jo)
+                        }
+                    } catch (_: JSONException) {
+                        answer = ""
+                        if (q.askDuringCheckIn) {
+                            askQuestions = true
+                        }
                     }
-                } catch (_: JSONException) {
-                    answer = ""
+                    if (q.showDuringCheckIn) {
+                        shownAnswers.add(
+                            TicketCheckProvider.QuestionAnswer(
+                                q,
+                                questionJson,
+                                answer
+                            )
+                        )
+                    }
+                } else {
                     if (q.askDuringCheckIn) {
                         askQuestions = true
                     }
                 }
-                if (q.showDuringCheckIn) {
-                    shownAnswers.add(TicketCheckProvider.QuestionAnswer(q, questionJson, answer))
+                if (q.askDuringCheckIn) {
+                    requiredAnswers.add(TicketCheckProvider.QuestionAnswer(q, questionJson, answer))
+                }
+            } else if (q is Questionnaire.Row) {
+                var answer: String? = ""
+                if (answerMap.containsKey(q.identifier)) {
+                    answer = answerMap[q.identifier]
+                    try {
+                        val jo = JSONObject()
+                        jo.put("answer", answer)
+                        jo.put("question", q.identifier) // server expects question server_id here
+                        if (q.parent.type == "position_checkin") {
+                            givenAnswers.put(jo)
+                        }
+                    } catch (_: JSONException) {
+                        answer = ""
+                        if (q.parent.type == "position_checkin") {
+                            askQuestions = true
+                        }
+                    }
+                    if (q.dataField?.showDuringCheckin == true) {
+                        shownAnswers.add(
+                            TicketCheckProvider.QuestionAnswer(
+                                q,
+                                position++.toLong(),
+                                answer
+                            )
+                        )
+                    }
+                } else {
+                    if (q.parent.type == "position_checkin") {
+                        askQuestions = true
+                    }
+                }
+                if (q.parent.type == "position_checkin") {
+                    requiredAnswers.add(TicketCheckProvider.QuestionAnswer(q, position++.toLong(), answer))
                 }
             } else {
-                if (q.askDuringCheckIn) {
-                    askQuestions = true
-                }
-            }
-            if (q.askDuringCheckIn) {
-                requiredAnswers.add(TicketCheckProvider.QuestionAnswer(q, questionJson, answer))
+                throw NotImplementedError("Unknown question type")
             }
         }
 
@@ -581,14 +630,11 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
             }
         }
 
-        val questions = db.questionQueries.selectForItem(item.id)
-            .executeAsList()
-            .map { it.toModel() }
-
-        val answerMap = mutableMapOf<Long, String>()
+        val questions = questionsFor(item)
+        val answerMap = mutableMapOf<String, String>()
         if (answers != null) {
             for (a in answers) {
-                answerMap[(a.question as Question).serverId] = a.value
+                answerMap[a.question.identifier] = a.value
             }
         }
         var givenAnswers = JSONArray()
@@ -1480,14 +1526,11 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
 
         // !!! When extending this, also extend checkOfflineWithoutData !!!
 
-        val questions = db.questionQueries.selectForItem(item.id)
-            .executeAsList()
-            .map { it.toModel() }
-
-        val answerMap = position.answers!!.map { Pair(it.question!!, it.answer) }.toMap().toMutableMap()
+        val questions = questionsFor(item)
+        val answerMap = position.answers.associate { Pair(it.datafield, it.answer) }.toMutableMap()
         if (answers != null) {
             for (a in answers) {
-                answerMap[(a.question as Question).serverId] = a.value
+                answerMap[a.question.identifier] = a.value
             }
         }
         var givenAnswers = JSONArray()
@@ -1879,4 +1922,36 @@ class AsyncCheckProvider(private val config: ConfigStore, private val db: SyncDa
     // Replicates the behaviour of AbstractQueuedCheckIn.getFullDatetime()
     private val QueuedCheckIn.fullDateTime : Date
         get() = DateTime(this.dateTime.toInstant().toEpochMilli()).toDate()
+
+    private fun questionsFor(item: Item): List<QuestionLike> {
+        if (config.questionnaireSupportEnabled) {
+            val questionnaires = db.questionnaireQueries.selectForItem(item.id).executeAsList()
+                .map { it.toModel() }.filter { it.type.startsWith("position_") }.sortedBy { it.position }
+
+            val questions = mutableListOf<QuestionLike>()
+            val identifiersSeen = mutableSetOf<String>()
+
+            for (q in questionnaires) {
+                for (r in q.rows) {
+                    if (r.dataField == null) {
+                        // Skip text-only blocks for now, not supported in SCAN
+                        continue
+                    }
+                    if (identifiersSeen.contains(r.identifier)) {
+                        // Skip duplicate identifiers on same form. Usually safe, unless dependencies are involved, in which case
+                        // the customer created an impossible configuration.
+                        continue
+                    }
+                    questions.add(r)
+                    identifiersSeen.add(r.identifier)
+                }
+            }
+            return questions
+        } else {
+            return db.questionQueries.selectForItem(item.id)
+                .executeAsList()
+                .map { it.toModel() }
+
+        }
+    }
 }

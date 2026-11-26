@@ -24,6 +24,8 @@ class Questionnaire(
     }
 
     data class DataField(
+        @Deprecated("serverId should not be used, can be 0 for system fields, remove when old proxy support is fully removed")
+        val serverId: Long,
         val identifier: String,
         val type: QuestionType,
         val internalName: String,

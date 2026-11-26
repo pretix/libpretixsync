@@ -2,6 +2,7 @@ package eu.pretix.libpretixsync.models.db
 
 import eu.pretix.libpretixsync.check.QuestionType
 import eu.pretix.libpretixsync.db.QuestionOption
+import eu.pretix.libpretixsync.sqldelight.Closing
 import eu.pretix.libpretixsync.sqldelight.Questionnaire
 import eu.pretix.libpretixsync.sqldelight.SafeOffsetDateTimeMapper
 import eu.pretix.libpretixsync.utils.I18nString
@@ -10,8 +11,13 @@ import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
 import java.math.BigDecimal
+import java.math.RoundingMode
+import java.text.DateFormat
+import java.text.SimpleDateFormat
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
+import java.util.TimeZone
 import eu.pretix.libpretixsync.models.Questionnaire as QuestionnaireModel
 
 fun Questionnaire.toModel(): QuestionnaireModel {
@@ -24,6 +30,7 @@ fun Questionnaire.toModel(): QuestionnaireModel {
         val jDatafield = jRow.getJSONObject("datafield")
 
         val datafield = QuestionnaireModel.DataField(
+            serverId = if (jDatafield.isNull("id")) 0L else jDatafield.getLong("id"),
             identifier = jDatafield.getString("identifier"),
             showDuringCheckin = jDatafield.getBoolean("show_during_checkin"),
             printOnInvoice = jDatafield.getBoolean("print_on_invoice"),
@@ -133,4 +140,48 @@ private fun parseStringList(json: JSONArray): List<String> {
         response.add(json.getString(i))
     }
     return response.toImmutableList()
+}
+
+
+@Deprecated("serverId should not be used, can be 0 for system fields, remove when old proxy support is fully removed")
+fun QuestionnaireModel.Row.toLegacyLikeJSON(): String {
+    val datetimef = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSX");
+    val datef = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+    val jo = JSONObject()
+    jo.put("id", dataField!!.serverId)
+    jo.put("question", JSONObject().apply { put("en", label) })
+    jo.put("help_text", JSONObject().apply { put("en", helpText) })
+    jo.put("type", type.name)
+    jo.put("required", required)
+    jo.put("items", JSONArray())  // ignored for this purpose
+    jo.put("position", 1)  // ignored for this purpose
+    jo.put("identifier", identifier)
+    jo.put("ask_during_checkin", parent.type == "position_checkin")
+    jo.put("show_during_checkin", dataField.showDuringCheckin)
+    jo.put("hidden", parent.type == "position_hidden")
+    jo.put("print_on_invoice", dataField.printOnInvoice)
+    jo.put("valid_number_min", dataField.validNumberMin)
+    jo.put("valid_number_max", dataField.validNumberMin)
+    jo.put("valid_date_min", dataField.validDateMin?.format(datef))
+    jo.put("valid_date_max", dataField.validDateMax?.format(datef))
+    jo.put("valid_datetime_min", dataField.validDatetimeMin?.format(datetimef))
+    jo.put("valid_datetime_max", dataField.validDatetimeMax?.format(datetimef))
+    jo.put("valid_string_length_min", dataField.validStringLengthMin)
+    jo.put("valid_string_length_max", dataField.validStringLengthMax)
+    jo.put("valid_file_portrait", dataField.validFilePortrait)
+    // dependency_question not supported
+
+    val options = JSONArray()
+    for (opt in this.options ?: emptyList()) {
+        val jopt = JSONObject()
+        jopt.put("id", opt.serverId ?: 0L)
+        jopt.put("identifier", opt.identifier)
+        jopt.put("position", opt.position)
+        jopt.put("answer", JSONObject().apply { put("en", opt.value) })
+        options.put(jopt)
+    }
+
+    jo.put("options", options)
+    return jo.toString()
 }
