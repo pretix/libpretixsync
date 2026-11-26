@@ -22,7 +22,6 @@ class QuestionnaireSyncAdapter(
     syncCycleId: String,
     feedback: ProgressFeedback?,
     private val sentry: SentryInterface? = null,
-    private val salesChannel: String = "pretixpos",
 ) : BaseConditionalSyncAdapter<Questionnaire, Long>(
     db = db,
     fileStorage = fileStorage,

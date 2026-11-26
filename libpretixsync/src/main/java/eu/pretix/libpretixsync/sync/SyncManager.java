@@ -413,7 +413,7 @@ public class SyncManager {
                 download(new ItemCategorySyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback, sentry));
                 download(new ItemSyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback, sentry));
                 try {
-                    download(new QuestionnaireSyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback, sentry, salesChannel));
+                    download(new QuestionnaireSyncAdapter(db, fileStorage, eventSlug, api, configStore.getSyncCycleId(), feedback, sentry));
                     // Do not keep old questions around when we have questionnaires, as the data is redundant
                     configStore.setQuestionnaireSupportEnabled(true);
                     QuestionSyncAdapter.Companion.wipeForEvent(db, eventSlug);
