@@ -1,0 +1,11 @@
+import kotlin.Boolean;
+
+CREATE TABLE Questionnaire (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    event_slug TEXT,
+    type TEXT,
+    json_data TEXT,
+    position INTEGER,
+    server_id INTEGER
+);
+CREATE INDEX Questionnaire_server_id_index ON Questionnaire (server_id);

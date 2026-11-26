@@ -1,6 +1,7 @@
 package eu.pretix.libpretixsync.models.db
 
 import eu.pretix.libpretixsync.sqldelight.Receipt
+import org.json.JSONArray
 import eu.pretix.libpretixsync.models.Receipt as ReceiptModel
 
 fun Receipt.toModel() =
@@ -38,4 +39,5 @@ fun Receipt.toModel() =
         orderPhone = order_phone,
         webSecret = websecret,
         taxRoundingMode = tax_rounding_mode,
+        answers = if (answers == null) null else JSONArray(answers),
     )

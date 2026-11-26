@@ -68,6 +68,7 @@ open class PretixApi(url: String, key: String, orgaSlug: String, version: Int, h
         val answerbody = JSONObject()
         if (answers != null) {
             for (a in answers) {
+                // TODO: Refactor to new list of dict format when dropping support for pretix 2026.10
                 if (a.value.startsWith("file:///")) {
                     val fileid = uploadFile(File(a.value.substring(7)), when (a.value.split(".").last()) {
                         "jpeg", "jpg" -> "image/jpeg".toMediaTypeOrNull()!!
@@ -134,6 +135,7 @@ open class PretixApi(url: String, key: String, orgaSlug: String, version: Int, h
         if (answers != null) {
             for (a in answers) {
                 if (a.value.startsWith("file:///")) {
+                    // TODO: Refactor to new list of dict format when dropping support for pretix 2026.10
                     val fileid = uploadFile(File(a.value.substring(7)), when (a.value.split(".").last()) {
                         "jpeg", "jpg" -> "image/jpeg".toMediaTypeOrNull()!!
                         "png" -> "image/png".toMediaTypeOrNull()!!

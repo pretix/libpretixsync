@@ -1,17 +1,24 @@
 package eu.pretix.libpretixsync.models
 
 import org.json.JSONArray
+import org.json.JSONObject
 import java.math.BigDecimal
+import java.time.OffsetDateTime
 
 class Order(
     val id: Long,
     val eventSlug: String,
     val requiresCheckInAttention: Boolean,
     val status: Status,
+    val datetime: OffsetDateTime,
+    val salesChannel: String,
     val code: String? = null,
     val checkInText: String? = null,
     val testMode: Boolean = false,
     val email: String? = null,
+    val phone: String? = null,
+    val invoiceAddress: JSONObject? = null,
+    val invoiceAddressNameParts: JSONObject? = null,
     val requiresApproval: Boolean = false,
     val validIfPending: Boolean = false,
     val total: BigDecimal? = null,
@@ -19,8 +26,9 @@ class Order(
     val payments: JSONArray = JSONArray(),
     val refunds: JSONArray = JSONArray(),
     val locale: String? = null,
+    val comment: String? = null,
+    val answers: List<Answer>,
 ) {
-
     val hasValidStatus = when (status) {
         Status.PAID -> true
         Status.PENDING -> validIfPending

@@ -4,6 +4,8 @@ import eu.pretix.libpretixsync.SentryInterface
 import eu.pretix.libpretixsync.db.Answer
 import eu.pretix.libpretixsync.db.MediaPolicy
 import eu.pretix.libpretixsync.db.ReusableMediaType
+import eu.pretix.libpretixsync.models.Questionnaire
+import eu.pretix.libpretixsync.models.db.toLegacyLikeJSON
 import eu.pretix.libpretixsync.models.db.toModel
 import eu.pretix.libpretixsync.sqldelight.Question
 import eu.pretix.libpretixsync.models.Question as QuestionModel
@@ -31,6 +33,13 @@ interface TicketCheckProvider {
             json_data = jsonData,
         )
 
+        constructor(model: Questionnaire.Row, position: Long) : this(
+            server_id = model.dataField!!.serverId,
+            required = model.required,
+            position = position,
+            json_data = model.toLegacyLikeJSON(),
+        )
+
         fun toModel() = Question(
             server_id = server_id,
             position = position,
@@ -46,6 +55,11 @@ interface TicketCheckProvider {
         lateinit var question: QuestionOutput
 
         var currentValue: String? = null
+
+        constructor(question: Questionnaire.Row, position: Long, currentValue: String?) {
+            this.question = QuestionOutput(question, position)
+            this.currentValue = currentValue
+        }
 
         constructor(question: QuestionModel, jsonData: String, currentValue: String?) {
             this.question = QuestionOutput(question, jsonData)

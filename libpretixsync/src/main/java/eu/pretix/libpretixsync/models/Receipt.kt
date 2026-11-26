@@ -1,5 +1,6 @@
 package eu.pretix.libpretixsync.models
 
+import org.json.JSONArray
 import java.util.Date
 
 data class Receipt(
@@ -30,6 +31,7 @@ data class Receipt(
     val additionalText: String? = null,
     val webSecret: String? = null,
     val taxRoundingMode: String = "line",
+    val answers: JSONArray? = null,
 ) {
     enum class PaymentType(val value: String) {
         CASH("cash"),

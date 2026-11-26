@@ -16,6 +16,7 @@ class OrderPosition(
     val variationServerId: Long? = null,
     val attendeeNameParts: JSONObject? = null,
     val city: String? = null,
+    val state: String? = null,
     val company: String? = null,
     val country: String? = null,
     val email: String? = null,
@@ -30,13 +31,21 @@ class OrderPosition(
     val blocked: Boolean = false,
     val validFrom: OffsetDateTime? = null,
     val validUntil: OffsetDateTime? = null,
-    val answers: Map<Long, String>? = null,
-    val answersWithOptionIds: Map<Long, String>? = null,
+    val answers: List<PositionAnswer>,
     attendeeEmail: String? = null,
     attendeeName: String? = null,
 ) : OrderPositionLike {
     private val _attendeeEmail = attendeeEmail
     private val _attendeeName = attendeeName
+
+    @Deprecated("Remove after pretix 2026.10 is no longer supported")
+    class PositionAnswer(
+        val question: Long?,
+        datafield: String,
+        answer: String,
+        optionIds: List<Long>,
+        optionIdentifiers: List<String>,
+    ): Answer(datafield, answer, optionIds, optionIdentifiers)
 
     override fun getJSON(): JSONObject {
         // TODO: Remove RemoteObject from OrderPositionLike?

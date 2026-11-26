@@ -25,15 +25,43 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
+
+import okhttp3.internal.Util;
 
 public class JSONUtils {
 
     public static String optString(JSONObject object, String key) throws JSONException {
         if (object.has(key) && !object.isNull(key)) {
             return object.getString(key);
+        }
+        return null;
+    }
+
+    public static List<Long> getLongArray(JSONObject object, String key) throws JSONException {
+        if (object.has(key) && !object.isNull(key)) {
+            JSONArray a = object.getJSONArray(key);
+            List<Long> res = new ArrayList<>();
+            for (int i = 0; i < a.length(); i++) {
+                res.add(a.getLong(i));
+            }
+            return Util.toImmutableList(res);
+        }
+        return null;
+    }
+
+    public static List<String> getStringArray(JSONObject object, String key) throws JSONException {
+        if (object.has(key) && !object.isNull(key)) {
+            JSONArray a = object.getJSONArray(key);
+            List<String> res = new ArrayList<>();
+            for (int i = 0; i < a.length(); i++) {
+                res.add(a.getString(i));
+            }
+            return Util.toImmutableList(res);
         }
         return null;
     }

@@ -1,7 +1,10 @@
 package eu.pretix.libpretixsync.models.db
 
+import eu.pretix.libpretixsync.models.Answer
 import eu.pretix.libpretixsync.models.Order
 import eu.pretix.libpretixsync.sqldelight.Orders
+import eu.pretix.libpretixsync.sqldelight.SafeOffsetDateTimeMapper
+import eu.pretix.libpretixsync.utils.JSONUtils
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
@@ -26,6 +29,13 @@ fun Orders.toModel(): Order {
         payments = parsePayments(json),
         refunds = parseRefunds(json),
         locale = parseLocale(json),
+        salesChannel = JSONUtils.optString(json, "sales_channel"),
+        phone = JSONUtils.optString(json, "phone"),
+        datetime = SafeOffsetDateTimeMapper.decode(json, "datetime")!!,
+        comment = JSONUtils.optString(json, "comment"),
+        invoiceAddress = parseInvoiceAddress(json),
+        invoiceAddressNameParts = parseInvoiceAddressNameParts(json),
+        answers = parseAnswers(json),
     )
 }
 
@@ -114,5 +124,45 @@ private fun parseLocale(json: JSONObject): String? {
     } catch (e: JSONException) {
         e.printStackTrace()
         return null
+    }
+}
+
+private fun parseInvoiceAddressNameParts(json: JSONObject): JSONObject? {
+    try {
+        if (json.isNull("invoice_address")) return null
+        return json.getJSONObject("invoice_address").getJSONObject("name_parts")
+    } catch (e: JSONException) {
+        e.printStackTrace()
+        return null
+    }
+}
+
+private fun parseInvoiceAddress(json: JSONObject): JSONObject? {
+    try {
+        if (json.isNull("invoice_address")) return null
+        return json.getJSONObject("invoice_address")
+    } catch (e: JSONException) {
+        e.printStackTrace()
+        return null
+    }
+}
+
+private fun parseAnswers(json: JSONObject): List<Answer> {
+    try {
+        val arr: JSONArray = json.getJSONArray("answers")
+        val res = mutableListOf<Answer>()
+        for (i in 0 until arr.length()) {
+            val a = arr.getJSONObject(i)
+            res.add(Answer(
+                datafield = if (a.has("datafield")) a.getString("datafield") else a.getString("question_identifier"),
+                answer = a.getString("answer"),
+                optionIds = JSONUtils.getLongArray(a, "options").toList(),
+                optionIdentifiers = JSONUtils.getStringArray(a, "option_identifiers").toList(),
+            ))
+        }
+        return res
+    } catch (e: JSONException) {
+        e.printStackTrace()
+        return emptyList()
     }
 }

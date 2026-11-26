@@ -28,6 +28,7 @@ fun OrderPosition.toModel(): OrderPositionModel {
         email = JSONUtils.optString(json, "email"),
         street = JSONUtils.optString(json, "street"),
         zipcode = JSONUtils.optString(json, "zipcode"),
+        state = JSONUtils.optString(json, "state"),
         price = parsePrice(json),
         taxRate = parseTaxRate(json),
         taxCode = JSONUtils.optString(json, "tax_code"),
@@ -38,7 +39,6 @@ fun OrderPosition.toModel(): OrderPositionModel {
         validFrom = SafeOffsetDateTimeMapper.decode(json, "valid_from"),
         validUntil = SafeOffsetDateTimeMapper.decode(json, "valid_until"),
         answers = parseAnswers(json),
-        answersWithOptionIds = parseAnswersWithOptionIds(json),
         attendeeEmail = this.attendee_email,
         attendeeName = this.attendee_name,
     )
@@ -120,43 +120,23 @@ fun parseBlocked(json: JSONObject): Boolean {
     }
 }
 
-private fun parseAnswers(json: JSONObject): Map<Long, String>? {
+private fun parseAnswers(json: JSONObject): List<OrderPositionModel.PositionAnswer> {
     try {
         val arr: JSONArray = json.getJSONArray("answers")
-        val res: MutableMap<Long, String> = HashMap()
-        for (i in 0 until arr.length()) {
-            res[arr.getJSONObject(i).getLong("question")] = arr.getJSONObject(i).getString("answer")
-        }
-        return res
-    } catch (e: JSONException) {
-        e.printStackTrace()
-        return null
-    }
-}
-
-private fun parseAnswersWithOptionIds(json: JSONObject): Map<Long, String>? {
-    try {
-        val arr: JSONArray = json.getJSONArray("answers")
-        val res: MutableMap<Long, String> = HashMap()
+        val res = mutableListOf<OrderPositionModel.PositionAnswer>()
         for (i in 0 until arr.length()) {
             val a = arr.getJSONObject(i)
-            val opts = a.optJSONArray("options")
-            if (opts != null && opts.length() > 0) {
-                val aw = StringBuilder()
-                for (j in 0 until opts.length()) {
-                    if (aw.length > 0) {
-                        aw.append(",")
-                    }
-                    aw.append(opts.getLong(j))
-                }
-                res[a.getLong("question")] = aw.toString()
-            } else {
-                res[a.getLong("question")] = a.getString("answer")
-            }
+            res.add(OrderPositionModel.PositionAnswer(
+                question = if (a.has("question")) a.getLong("question") else null,
+                datafield = if (a.has("datafield")) a.getString("datafield") else a.getString("question_identifier"),
+                answer = a.getString("answer"),
+                optionIds = JSONUtils.getLongArray(a, "options"),
+                optionIdentifiers = JSONUtils.getStringArray(a, "option_identifiers"),
+            ))
         }
         return res
     } catch (e: JSONException) {
         e.printStackTrace()
-        return null
+        return emptyList()
     }
 }
