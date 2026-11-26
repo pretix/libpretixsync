@@ -2,6 +2,7 @@ package eu.pretix.libpretixsync.models.db
 
 import eu.pretix.libpretixsync.models.Order
 import eu.pretix.libpretixsync.sqldelight.Orders
+import eu.pretix.libpretixsync.sqldelight.SafeOffsetDateTimeMapper
 import eu.pretix.libpretixsync.utils.JSONUtils
 import org.json.JSONArray
 import org.json.JSONException
@@ -29,6 +30,8 @@ fun Orders.toModel(): Order {
         locale = parseLocale(json),
         salesChannel = JSONUtils.optString(json, "sales_channel"),
         phone = JSONUtils.optString(json, "phone"),
+        datetime = SafeOffsetDateTimeMapper.decode(json, "datetime")!!,
+        comment = JSONUtils.optString(json, "comment"),
         invoiceAddress = parseInvoiceAddress(json),
         invoiceAddressNameParts = parseInvoiceAddressNameParts(json),
         answersByIdentifier = parseAnswersByIdentifier(json),
